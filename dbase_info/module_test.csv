@@ -1,0 +1,10 @@
+mod_test_no,serial PRIMARY KEY,,
+module_no,INT,fk_mod_test,module_assembly
+rel_hum,TEXT,,
+prog_v,TEXT[],,
+meas_v,TEXT[],,
+meas_i,TEXT[],,
+meas_r,TEXT[],,
+date_test,DATE,,
+time_test,TIME,,
+inspector,TEXT,,

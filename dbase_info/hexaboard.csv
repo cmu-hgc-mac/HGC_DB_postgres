@@ -1,0 +1,6 @@
+hxb_no,serial PRIMARY KEY,,
+hxb_name,TEXT,,
+hxb_received,DATE,,
+hxb_inspected,DATE,,
+hxb_passed,BOOLEAN,,
+module_no,INT,fk_mod_hxb,module_assembly

@@ -1,0 +1,5 @@
+sen_no,serial PRIMARY KEY,,
+sen_name,TEXT,,
+sen_received,DATE,,
+bp_passed,boolean,,
+proto_no,INT,fk_pm_si,proto_assembly

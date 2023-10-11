@@ -1,0 +1,6 @@
+bp_no,serial PRIMARY KEY,,
+bp_name,TEXT,,
+bp_received,DATE,,
+bp_inspected,DATE,,
+bp_passed,boolean,,
+proto_no,INT,fk_pm_bp,proto_assembly
