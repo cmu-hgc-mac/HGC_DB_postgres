@@ -26,12 +26,14 @@ def connect_db():
 
     # Connect to the database
     conn = psycopg2.connect(**db_params)
-    cursor = conn.cursor()
+#     cursor = conn.cursor()
     
-    return cursor
+    return conn
+
 
 def get_table_name():
-    cursor = connect_db()
+    conn = connect_db()
+    cursor = conn.cursor()
     cursor.execute(
         """ 
         SELECT tablename FROM pg_tables 
