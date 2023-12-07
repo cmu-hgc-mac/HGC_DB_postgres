@@ -43,3 +43,11 @@ def get_table_name():
     
     tables = [row[0] for row in cursor.fetchall()]
     return tables
+
+def print_tree(current_dict, indent=""):
+    for key, value in current_dict.items():
+        if isinstance(value, dict):
+            print(f"{indent}{key}:")
+            print_tree(value, indent + "  ")
+        else:
+            print(f"{indent}{key}: {value}")
