@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><html><body><root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<header>
+<type>
+<extension_table_name>SI_MODULE_BASEPLATE</extension_table_name>
+<name>Si Module Baseplate Test Data</name>
+</type>
+<run>
+<run_name>Flatness/thickness measurements</run_name>
+<run_begin_timestamp>2023-10-04 13:27:52.927779</run_begin_timestamp>
+<run_end_timestamp>2023-10-04 13:27:52.927779</run_end_timestamp>
+<initiated_by_user>simurthy</initiated_by_user>
+<location>CMU</location>
+<comment_description>Measured flatness/thickness data</comment_description>
+</run>
+</header>
+<data_set>
+<comment_description>Upload measured data</comment_description>
+<version>1</version>
+<part mode="auto">
+<serial_number>320-BA-PF0-VR-00004</serial_number>
+<kind_of_part>PCB/Kapton Baseplate LD Full</kind_of_part>
+</part>
+<data>
+<flatness>0.062</flatness>
+<thickness>1.219</thickness>
+<grade>Green</grade>
+<comments>None</comments>
+</data>
+</data_set>
+</root></body></html>
