@@ -74,14 +74,7 @@ conn.commit()
 
 print('Data is successfully uploaded to the database!')
 
-## close connection
-# cursor.close()
-# conn.close()
-
 ## delete blank rows where value IS blank
-# conn = connect_db()
-# cursor = conn.cursor()
-
 delete_blank_query = """
 DELETE FROM bp_inspect
 WHERE TRIM(value) = '';
