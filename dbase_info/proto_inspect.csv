@@ -1,7 +1,6 @@
 proto_row_no,serial PRIMARY KEY,,
 proto_no,INT,fk_pm_insp,proto_assembly
 proto_name,TEXT,,
-feature_name,TEXT,,
 nominal,TEXT,,
 deviation,TEXT,,
 thickness,TEXT,,

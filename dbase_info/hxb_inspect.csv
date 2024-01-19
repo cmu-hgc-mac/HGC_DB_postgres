@@ -1,7 +1,6 @@
 hxb_row_no,serial PRIMARY KEY,,
 hxb_no,INT,fk_hxb_insp,hexaboard
 hxb_name,TEXT,,
-feature_name,TEXT,,
 nominal,TEXT,,
 deviation,TEXT,,
 thickness,TEXT,,
