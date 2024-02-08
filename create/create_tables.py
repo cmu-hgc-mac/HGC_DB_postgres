@@ -73,7 +73,7 @@ def create_table(schema_name, table_name, table_columns):
 
 loc = '../dbase_info/'
 # fname_list = get_csv_fname(loc)
-fname_list = ['module_assembly.csv', 'proto_assembly.csv','baseplate.csv', 'sensor.csv', 'hexaboard.csv', 'bp_inspect.csv', 'hxb_inspect.csv', 'proto_inspect.csv','module_inspect.csv', 'module_test.csv']
+fname_list = ['module_assembly.csv', 'proto_assembly.csv','baseplate.csv', 'sensor.csv', 'hexaboard.csv', 'bp_inspect.csv', 'hxb_inspect.csv', 'proto_inspect.csv','module_inspect.csv', 'module_iv_test.csv','module_pedestal_test.csv','module_pedestal_plots.csv']
 
 ## Define the table name and schema
 for fname in fname_list:
