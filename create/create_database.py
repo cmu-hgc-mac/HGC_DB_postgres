@@ -9,7 +9,7 @@ import sshtunnel
 print("Creating a new database...")
 # Database connection parameters for new database
 db_params = {
-    'dbname': open('../dbase_info/dbfname.txt','r').read(),
+    'dbname': (open('../dbase_info/dbfname.txt','r').read()).split('\n')[0].split(' ')[0],
     'user': 'postgres',   # Assuming this is the superuser
     'password': input('Set superuser password: '),
     'host': 'localhost',  # Change this if your PostgreSQL server is on a different host
