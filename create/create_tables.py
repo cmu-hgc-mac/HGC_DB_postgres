@@ -9,7 +9,7 @@ from psycopg2 import sql
 print('Creating tables in the database...')
 # Database connection parameters
 db_params = {
-    'dbname': open('../dbase_info/dbfname.txt','r').read(),
+    'dbname': (open('../dbase_info/dbfname.txt','r').read()).split('\n')[0].split(' ')[0],
     'user': 'postgres',
     'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
     'host': 'localhost',  
