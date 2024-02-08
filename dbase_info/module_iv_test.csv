@@ -1,5 +1,6 @@
 mod_test_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_test,module_assembly
+module_name,TEXT,,
 rel_hum,TEXT,,
 prog_v,TEXT[],,
 meas_v,TEXT[],,
