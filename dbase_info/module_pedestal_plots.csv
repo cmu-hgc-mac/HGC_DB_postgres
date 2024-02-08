@@ -1,7 +1,6 @@
 ped_plottest_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_pedplot,module_assembly
 module_name,TEXT,,
-comment,TEXT,,
 adc_mean_hexmap,BYTEA,,
 adc_stdd_hexmap,BYTEA,,
 adc_median_hexmap,BYTEA,,
