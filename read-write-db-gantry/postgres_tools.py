@@ -1,22 +1,20 @@
-import psycopg2
-from psycopg2 import sql
+import asyncpg
+import asyncio
 
 def get_query(table_name):
     if table_name == 'module_assembly':
-        query = f""" 
+        pre_query = f""" 
     INSERT INTO {table_name} 
     (module_name, proto_name, hxb_name, position, region, ass_tray_id, comp_tray_id, put_id, tape_batch, epoxy_batch, operator)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """
+    VALUES   """  ### maintain space
     elif table_name == 'proto_assembly':
-        query = f""" 
+        pre_query = f""" 
     INSERT INTO {table_name} 
     (proto_name, bp_name, sen_name, position, region, ass_tray_id, comp_tray_id, put_id, tape_batch, epoxy_batch, operator)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """
-    else:
-        query = None
-        print('Table not found. Check argument.')
+    VALUES   """ ### maintain space
+         
+    data_placeholder = ', '.join(['${}'.format(i) for i in range(1, len(pre_query.split(','))+1)])
+    query = f"""{pre_query} {'({})'.format(data_placeholder)}"""
     return query
 
 def get_query_read(component_type):
@@ -31,56 +29,47 @@ def get_query_read(component_type):
         print('Table not found. Check argument.')
     return query
 
-
-def upload_PostgreSQL(table_name,
-                      db_upload):
+async def upload_PostgreSQL(table_name, db_upload):
+    conn = await asyncpg.connect(
+        host='localhost',
+        database='hgcdb',
+        user='postgres',
+        password='hgcal'
+    )
     
-    # conn = connect_db()
-
-    conn = psycopg2.connect(
-        host = 'localhost',
-        database = 'hgcdb',
-        user = 'postgres',
-        password = 'hgcal')
-    
-    cursor = conn.cursor()
-    print('Connection successful. \n')
+    print('Connection successful.\n')
 
     schema_name = 'public'
-    table_exists_query = sql.SQL("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = %s);")
-    cursor.execute(table_exists_query, [schema_name, table_name])
-    table_exists = cursor.fetchone()[0]## this gives true/false
-    
-    query = get_query(table_name)
-    
-    data = tuple(db_upload)
+    table_exists_query = """
+    SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.tables 
+        WHERE table_schema = $1 
+        AND table_name = $2
+    );
+    """
+    table_exists = await conn.fetchval(table_exists_query, schema_name, table_name)   
     if table_exists:
-        cursor.execute(query, data)
-        conn.commit()
+        query = get_query(table_name)
+        await conn.execute(query, *db_upload)
         print(f'Data is successfully uploaded to the {table_name}!')
-    
     else:
         print(f'Table {table_name} does not exist in the database.')
-        
-    ## close connection
-    cursor.close()
-    conn.close()
-    
-    return None
+    await conn.close()
 
-def request_PostgreSQL(component_type):
 
-    conn = psycopg2.connect(
-        host = 'localhost',
-        database = 'hgcdb',
-        user = 'postgres',
-        password = 'hgcal')
-    
-    cursor = conn.cursor();
-    query = get_query_read(component_type)
-    
-    cursor.execute(query)
-    value = cursor.fetchall();
-    
-    cursor.close(); conn.close();
+async def fetch_PostgreSQL(query):
+    conn = await asyncpg.connect(
+        host='localhost',
+        database='hgcdb',
+        user='postgres',
+        password='hgcal'
+    )
+    value = await conn.fetch(query)
+    await conn.close()
     return value
+
+async def request_PostgreSQL(component_type):
+    result = await fetch_PostgreSQL(get_query_read(component_type))
+    return result
+  
