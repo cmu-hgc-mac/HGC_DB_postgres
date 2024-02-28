@@ -1,4 +1,4 @@
-ped_test_no,serial PRIMARY KEY,,
+hxb_pedtest_no,serial PRIMARY KEY,,
 hxb_no_no,INT,fk_hxb_ped,hexaboard
 hxb_no_name,TEXT,,
 rel_hum,TEXT,,
