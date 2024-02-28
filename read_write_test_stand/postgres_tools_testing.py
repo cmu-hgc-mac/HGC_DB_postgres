@@ -23,7 +23,7 @@ def get_query(table_name):
 
 async def upload_PostgreSQL(table_name, db_upload_data):
     conn = await asyncpg.connect(
-        host='localhost',
+        host='cmsmac04.phys.cmu.edu',
         database='hgcdb',
         user='postgres',
         password='hgcal'
