@@ -2,6 +2,7 @@ mod_test_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_ivtest,module_assembly
 module_name,TEXT,,
 rel_hum,TEXT,,
+temp_c,TEXT,,
 prog_v,DOUBLE PRECISION[],,
 meas_v,DOUBLE PRECISION[],,
 meas_i,DOUBLE PRECISION[],,
