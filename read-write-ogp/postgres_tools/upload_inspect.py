@@ -10,22 +10,22 @@ def get_query(table_name):
     if table_name == 'bp_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (bp_name, bp_material, geometry, resolution, flatness, thickness, x_points, y_points, z_points, date_inspect, time_inspect, hexplot, inspector, comment)
+        (bp_name, bp_material, geometry, resolution, flatness, thickness, x_points, y_points, z_points, weight, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES """
     elif table_name == 'hxb_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (hxb_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, date_inspect, time_inspect, hexplot, inspector, comment)
+        (hxb_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, weight, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES  """
     elif table_name == 'proto_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (proto_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, date_inspect, time_inspect, hexplot, inspector, comment)
+        (proto_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, weight, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES  """
     elif table_name == 'module_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (module_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, date_inspect, time_inspect, hexplot, inspector, comment)
+        (module_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, weight, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES  """
     data_placeholder = ', '.join(['${}'.format(i) for i in range(1, len(pre_query.split(','))+1)])
     query = f"""{pre_query} {'({})'.format(data_placeholder)}"""

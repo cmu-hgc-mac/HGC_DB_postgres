@@ -56,6 +56,7 @@ mappings = np.array([None],dtype=object)
 sensor_Heights = AppendHeights(sheetnames,key, mappings)  ####### This prints line details
 inspector = 'cmuperson'
 comment = ''
+weight = 100
 
 date_inspect = datetime.now().date()
 time_inspect = datetime.now().time()
@@ -72,14 +73,14 @@ for i in range(len(filenames)):
     print(float(mod_flats[0]))
     if comp_type == 'baseplates':
         material = 'cf'
-        db_upload = [modtitle, material, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment] 
+        db_upload = [modtitle, material, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), weight, date_inspect, time_inspect, im_bytes, inspector, comment] 
     elif comp_type == 'hexaboards':
-        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment]
+        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), weight, date_inspect, time_inspect, im_bytes, inspector, comment]
     else:
         if check(Tray1file) & check(Tray2file):
             Traysheets = loadsheet([Tray1file,Tray2file])
         XOffset, YOffset, AngleOff = get_offsets([GantryTrayFile, OGPSurveyfile], Traysheets)
-        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), XOffset, YOffset, AngleOff, date_inspect, time_inspect, im_bytes, inspector, comment]
+        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), XOffset, YOffset, AngleOff, weight, date_inspect, time_inspect, im_bytes, inspector, comment]
     
     upload_PostgreSQL(db_table_name, db_upload)
     print(db_upload)
