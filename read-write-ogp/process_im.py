@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys
+import os, sys, asyncio, send2trash
 import matplotlib
 matplotlib.use('Agg')
 from ogp_height_plotter import loadsheet, AppendFlats, AppendHeights, plot2d, uploadPostgres, get_offsets, check
@@ -11,12 +11,12 @@ print('this', OGPSurveyfile)
 GantryTrayFile = OGPSurveyfile.split('OGP_results')[0]+'OGP_results/assembly_trays/assembly_tray_input.xls'
 Tray1file = OGPSurveyfile.split('OGP_results')[0]+'data/Tray 1 for NSH.xls'
 Tray2file = OGPSurveyfile.split('OGP_results')[0]+'data/Tray 2 for NSH.xls'
-
+trash_file = False
 
 if OGPSurveyfile.find('/') > 0:
     filesuffix = (OGPSurveyfile.split('/')[-1]).split('.')[0]
     comp_type = OGPSurveyfile.split('/')[-2]
-elif OGPSurveyfile.find('\\') > 0:
+elif OGPSurveyfile.find('\\') > 0:    ############ this may not be needed.
     filesuffix = (OGPSurveyfile.split('\\')[-1]).split('.')[0]
     comp_type = OGPSurveyfile.split('\\')[-2]
 else:
@@ -56,7 +56,6 @@ mappings = np.array([None],dtype=object)
 sensor_Heights = AppendHeights(sheetnames,key, mappings)  ####### This prints line details
 inspector = 'cmuperson'
 comment = ''
-weight = 100
 
 date_inspect = datetime.now().date()
 time_inspect = datetime.now().time()
@@ -73,19 +72,21 @@ for i in range(len(filenames)):
     print(float(mod_flats[0]))
     if comp_type == 'baseplates':
         material = 'cf'
-        db_upload = [modtitle, material, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), weight, date_inspect, time_inspect, im_bytes, inspector, comment] 
+        db_upload = [modtitle, material, geometry, resolution, mod_flats[i], np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment] 
     elif comp_type == 'hexaboards':
-        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), weight, date_inspect, time_inspect, im_bytes, inspector, comment]
+        db_upload = [modtitle, geometry, resolution, mod_flats[i], np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment]
     else:
         if check(Tray1file) & check(Tray2file):
             Traysheets = loadsheet([Tray1file,Tray2file])
         XOffset, YOffset, AngleOff = get_offsets([GantryTrayFile, OGPSurveyfile], Traysheets)
-        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), XOffset, YOffset, AngleOff, weight, date_inspect, time_inspect, im_bytes, inspector, comment]
+        db_upload = [modtitle, geometry, resolution, mod_flats[i], np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), XOffset, YOffset, AngleOff, date_inspect, time_inspect, im_bytes, inspector, comment]
     
-    upload_PostgreSQL(db_table_name, db_upload)
-    print(db_upload)
+    asyncio.run(upload_PostgreSQL(db_table_name, db_upload))
+    print(db_upload[0:6])
     print('Done')
-
+    if trash_file:
+        send2trash.send2trash(OGPSurveyfile)
+        print(f'Moved {OGPSurveyfile} to recycle bin.')
 ##### Upload to Postgres ##########
 ####### sensor_Heights x,y,z
 ####### mod_flats
@@ -95,13 +96,13 @@ for i in range(len(filenames)):
 
 
 
-inspector = 'cmu_person'
+'''inspector = 'cmu_person'
 resolution = 'LD'
 geometry = 'full'
 material = 'cf'
 comments = ''
 inspectDate, inspectTime = 0,0
-np.savetxt('sensor_Heights.txt',sensor_Heights[0])
+np.savetxt('sensor_Heights.txt',sensor_Heights[0])'''
 
 
 '''for i in range(len(filenames)):
