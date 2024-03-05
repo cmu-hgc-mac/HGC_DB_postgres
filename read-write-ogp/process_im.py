@@ -1,12 +1,10 @@
 import numpy as np
-import os
-import sys
+import os, sys
 import matplotlib
 matplotlib.use('Agg')
 from ogp_height_plotter import loadsheet, AppendFlats, AppendHeights, plot2d, uploadPostgres, get_offsets, check
 from postgres_tools.upload_inspect import upload_PostgreSQL
-
-import psycopg2
+from datetime import datetime
 
 OGPSurveyfile = sys.argv[1]
 print('this', OGPSurveyfile)
@@ -59,9 +57,14 @@ sensor_Heights = AppendHeights(sheetnames,key, mappings)  ####### This prints li
 inspector = 'cmuperson'
 comment = ''
 
+date_inspect = datetime.now().date()
+time_inspect = datetime.now().time()
+# date_inspect = datetime.strptime(date, '%Y-%m-%d')
+# time_inspect = datetime.strptime(time, '%H:%M:%S.%f')
+
 for i in range(len(filenames)):
     modtitle = f"{sheetnames[i]}"
-    plot2d(sensor_Heights[i][0], sensor_Heights[i][1], sensor_Heights[i][2],
+    im_bytes = plot2d(sensor_Heights[i][0], sensor_Heights[i][1], sensor_Heights[i][2],
            limit = 0, vmini=vmini, vmaxi=vmaxi, 
            center = 25, rotate = 345, new_angle = new_angle,
            title = modtitle, savename = f"{comp_type}\{filesuffix}_heights", value = 1,details=1, day_count = None, mod_flat = mod_flats[i], show_plot = False)
@@ -69,14 +72,14 @@ for i in range(len(filenames)):
     print(float(mod_flats[0]))
     if comp_type == 'baseplates':
         material = 'cf'
-        db_upload = [modtitle, material, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), inspector, comment] 
+        db_upload = [modtitle, material, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment] 
     elif comp_type == 'hexaboards':
-        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), inspector, comment]
+        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment]
     else:
         if check(Tray1file) & check(Tray2file):
             Traysheets = loadsheet([Tray1file,Tray2file])
         XOffset, YOffset, AngleOff = get_offsets([GantryTrayFile, OGPSurveyfile], Traysheets)
-        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), XOffset, YOffset, AngleOff, inspector, comment]
+        db_upload = [modtitle, geometry, resolution, float(mod_flats[i]), np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), XOffset, YOffset, AngleOff, date_inspect, time_inspect, im_bytes, inspector, comment]
     
     upload_PostgreSQL(db_table_name, db_upload)
     print(db_upload)
