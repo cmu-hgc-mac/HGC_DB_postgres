@@ -1,5 +1,5 @@
 ped_pedtest_no,serial PRIMARY KEY,,
-module_no,INT,fk_mod_pedtest,module_assembly
+module_no,INT,fk_mod_pedtest,module_info
 module_name,TEXT,,
 rel_hum,TEXT,,
 temp_c,TEXT,,

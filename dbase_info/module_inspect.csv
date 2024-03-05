@@ -1,5 +1,5 @@
 mod_row_no,serial PRIMARY KEY,,
-module_no,INT,fk_mod_insp,module_assembly
+module_no,INT,fk_mod_insp,module_info
 module_name,TEXT,,
 geometry,TEXT,,
 resolution,TEXT,,

@@ -1,5 +1,4 @@
 module_ass,serial PRIMARY KEY,,
-module_no,INT,fk_mod_ass,module_info
 module_name,TEXT,,
 proto_name,TEXT,,
 hxb_name,TEXT,,
@@ -13,3 +12,6 @@ epoxy_batch,TEXT,,
 date_assem,DATE,,
 time_assem,TIME,,
 operator,TEXT,,
+rel_hum,TEXT,,
+temp_c,TEXT,,
+module_no,INT,fk_mod_ass,module_info

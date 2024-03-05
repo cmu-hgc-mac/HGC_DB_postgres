@@ -12,4 +12,7 @@ epoxy_batch,TEXT,,
 date_inspect,DATE,,
 time_inspect,TIME,,
 operator,TEXT,,
-module_no,INT,fk_mod_pm,module_assembly
+inspected,DATE,,
+rel_hum,TEXT,,
+temp_c,TEXT,,
+module_no,INT,fk_mod_pm,module_info
