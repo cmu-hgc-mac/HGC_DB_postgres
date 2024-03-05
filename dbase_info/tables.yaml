@@ -1,3 +1,4 @@
+dbname: 'hgcdb'
 tables:
   - 
     fname: 'module_info.csv'
