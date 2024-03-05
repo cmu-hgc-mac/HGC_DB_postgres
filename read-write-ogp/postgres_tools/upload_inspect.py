@@ -1,11 +1,6 @@
-
-import psycopg2
-import os
-import csv
-import sys
+import os, csv, sys
 sys.path.append('../')
-from psycopg2 import sql
-import asyncio, asynpg
+import asyncio, asyncpg
 import numpy as np
 import json
 # from utils import connect_db #, get_table_name
@@ -38,7 +33,7 @@ def get_query(table_name):
 
 
 async def upload_PostgreSQL(table_name, db_upload_data):
-    conn = psycopg2.connect(
+    conn = await asyncpg.connect(
         host = 'cmsmac04.phys.cmu.edu',
         database = 'hgcdb',
         user = 'postgres',
