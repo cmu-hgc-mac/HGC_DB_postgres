@@ -5,27 +5,58 @@ import numpy as np
 import json
 # from utils import connect_db #, get_table_name
 
+def get_query_read(component_type, bp_name = None):
+    if component_type == 'protomodule':
+        query = """SELECT proto_name, thickness, geometry, resolution FROM proto_inspect WHERE geometry = 'full'"""    
+    elif component_type == 'hexaboard':
+        query = """SELECT hxb_name, thickness, geometry, resolution FROM hxb_inspect WHERE geometry = 'full'"""
+    elif component_type == 'baseplate':
+        query = """SELECT bp_name, thickness, geometry, resolution FROM bp_inspect WHERE geometry = 'full'"""
+    elif component_type == 'baseplate_name':
+        query = """SELECT bp_name FROM bp_inspect WHERE geometry = 'full' ORDER BY bp_row_no DESC LIMIT 10;"""
+    elif component_type == 'baseplate_plot':
+        query = f"""SELECT hexplot FROM bp_inspect WHERE bp_name = '{bp_name}'"""
+    else:
+        query = None
+        print('Table not found. Check argument.')
+    return query
+
+
+async def fetch_PostgreSQL(query):
+    conn = await asyncpg.connect(
+        host='cmsmac04.phys.cmu.edu',
+        database='hgcdb',
+        user='postgres',
+        password='hgcal'
+    )
+    value = await conn.fetch(query)
+    await conn.close()
+    return value
+
+async def request_PostgreSQL(component_type, bp_name = None):
+    result = await fetch_PostgreSQL(get_query_read(component_type, bp_name ))
+    return result
 
 def get_query(table_name):
     if table_name == 'bp_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (bp_name, bp_material, geometry, resolution, flatness, thickness, x_points, y_points, z_points, weight, date_inspect, time_inspect, hexplot, inspector, comment)
+        (bp_name, bp_material, geometry, resolution, flatness, thickness, x_points, y_points, z_points, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES """
     elif table_name == 'hxb_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (hxb_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, weight, date_inspect, time_inspect, hexplot, inspector, comment)
+        (hxb_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES  """
     elif table_name == 'proto_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (proto_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, weight, date_inspect, time_inspect, hexplot, inspector, comment)
+        (proto_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES  """
     elif table_name == 'module_inspect':
         pre_query = f""" 
         INSERT INTO {table_name} 
-        (module_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, weight, date_inspect, time_inspect, hexplot, inspector, comment)
+        (module_name, geometry, resolution, flatness, thickness, x_points, y_points, z_points, x_offset, y_offset, ang_offset, date_inspect, time_inspect, hexplot, inspector, comment)
         VALUES  """
     data_placeholder = ', '.join(['${}'.format(i) for i in range(1, len(pre_query.split(','))+1)])
     query = f"""{pre_query} {'({})'.format(data_placeholder)}"""
@@ -55,7 +86,7 @@ async def upload_PostgreSQL(table_name, db_upload_data):
         query = get_query(table_name)
         await conn.execute(query, *db_upload_data)
         print(f'Executing query: {query}')
-        print(f'Data is successfully uploaded to the {table_name}!')
+        print(f'Data successfully uploaded to the {table_name}!')
     else:
         print(f'Table {table_name} does not exist in the database.')
     await conn.close()
