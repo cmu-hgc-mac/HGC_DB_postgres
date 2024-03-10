@@ -1,21 +1,22 @@
 import sys
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRectF, QRect, QPoint
+from PyQt5.QtGui import QPainter, QPen, QColor, QRegion, QPainterPath
+from PyQt5.QtWidgets import QWidget, QScrollArea, QVBoxLayout
 
 class TriStateButton(QPushButton):
-    def __init__(self, state_counter, state_counter_labels, state_button_labels, label_text, parent=None):
+    def __init__(self, state_counter, state_counter_labels, state_button_labels, label_text, label_pos, angle_start, angle_span, parent=None):
         super().__init__(parent)
-        self.dotSize = 15
-        self.setFixedSize(self.dotSize, self.dotSize)
-        self.state = 0  # 0: default, 1: orange with '?', 2: red with 'X'
-        self.setStyleSheet(f"border-radius: {int(self.dotSize/2)}px; background-color: #3498db; color: white;")
-        self.clicked.connect(self.changeState)
+        self.angle_start = angle_start
+        self.angle_span = angle_span
         self.state_counter = state_counter
         self.state_counter_labels = state_counter_labels
-        self.state_button_labels =  state_button_labels
+        self.state_button_labels = state_button_labels
         self.label_text = label_text
-        # self.state_buttons = {0: [], 1: [], 2: []}  # Store buttons in each state
+        self.label_pos = label_pos
+        self.state = 0
+        self.clicked.connect(self.changeState)
 
     def changeState(self):
         old_state = self.state
@@ -23,59 +24,70 @@ class TriStateButton(QPushButton):
         self.state_counter[old_state] -= 1
         self.state_counter[self.state] += 1
         self.updateCounter()
-        if self.state == 0:
-            self.setStyleSheet(f"border-radius: {int(self.dotSize/2)}px; background-color: #3498db; color: white;")
-            self.setText("")
-        elif self.state == 1:
-            self.setStyleSheet(f"border-radius: {int(self.dotSize/2)}px; background-color: #e67e22; color: white;")
-            self.setText("?")
-        elif self.state == 2:
-            self.setStyleSheet(f"border-radius: {int(self.dotSize/2)}px; background-color: #e74c3c; color: white;")
-            self.setText("X")
-        self.setFixedSize(self.dotSize, self.dotSize)
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        radius = min(self.width(), self.height()) // 2
-        self.setStyleSheet(f"border-radius: {radius}px; background-color: {self.palette().button().color().name()}; color: white;")
+        self.update()
 
     def updateCounter(self):
         altlab = ['nom','redo','bad']        
         for state, count_label in self.state_counter_labels.items():
             count_label.setText(f"{altlab[state]}: {self.state_counter[state]}")
 
-       # Update labels of buttons in each state
-        for state , count_label in self.state_counter_labels.items():
-            buttons_in_state = [button.label_text for button in self.parent().findChildren(TriStateButton) if button.state == state]
-            # print(buttons_in_state)
-            self.state_button_labels[state].setText(f"{altlab[state]}: {' '.join(buttons_in_state)}")
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        rect = QRectF(0, 0, self.width(), self.height())
+        pen = QPen(Qt.black)
+        painter.setPen(pen)
+        if self.state == 0:
+            painter.setBrush(QColor('#3498db'))
+        elif self.state == 1:
+            painter.setBrush(Qt.yellow)
+        elif self.state == 2:
+            painter.setBrush(Qt.red)
+        painter.drawPie(rect, int(self.angle_start*16), int(self.angle_span * 16))
+        # painter.drawPie(rect, 90*16, int(120 * 16))
 
-        # # Update labels of buttons in each state
-        # for state, count_label in self.state_counter_labels.items():
-        #     buttons_in_state = [button.text() for button in self.parent().findChildren(TriStateButton) if button.state == state]
-        #     self.state_button_labels[state].setText(f"{altlab[state]}: {' '.join(buttons_in_state)}")
+        # Draw label
+        font = painter.font()
+        font.setPointSize(7)
+        painter.setFont(font)
+        # label_rect = QRectF(5, 5 , self.width(), self.height())  # Adjust label position relative to button
+        label_rect = QRectF(self.label_pos[0], self.label_pos[1] , self.width()+2, -0 +self.height())  # Adjust label position relative to button
+        painter.drawText(label_rect, Qt.AlignCenter, self.label_text)
+
+        # Create a region based on the pie slice shape
+        region = QRegion()
+        path = QPainterPath()
+        path.moveTo(self.width() / 2, self.height() / 2)
+        path.arcTo(rect, self.angle_start, self.angle_span)
+        region += QRegion(path.toFillPolygon().toPolygon())
+        self.setMask(region)
+
+        # mask_rect = QRect(-5, -5, self.width() + 10, self.height() + 10)  # Adjust the padding as needed
+        # region = QRegion(mask_rect, QRegion.Ellipse)
+        # region -= QRegion(mask_rect, QRegion.Ellipse)  # Use mask_rect instead of rect
+        # self.setMask(region)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("Tri-State Buttons")
-        self.setGeometry(100, 100, 600, 600)
-        center_x = self.width() / 2
-        center_y = self.height() / 2
+        self.setGeometry(0, 0, 1000, 900)
 
-        # button_labels = ['a', 'b', 'c', 'd', 'e']
-        # positions = [[0.1, 0.3], [0.6, 0.2], [0.6, 0.8], [0.3, 0.5], [0.9, 0.5]]
-        # np.random.seed(10); n = 10; 
-        # positions = np.array([np.random.rand(n),np.random.rand(n)]).transpose()
-        # button_labels = np.arange(50).astype(str)
-        # self.state_counter = {0: n, 1: 0, 2: 0}
+        self.scroll = QScrollArea()
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidgetResizable(True)  # Allow the widget inside the scroll area to resize
+        self.setCentralWidget(self.scroll)
 
-        s = 6
-        positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.2,0.35,0.43]])
-        button_labels = np.arange(len(positions)).astype(str)
+        self.widget = QWidget()
+        self.scroll.setWidget(self.widget)
+        self.vbox = QVBoxLayout()  # Create a layout for the buttons
+        self.widget.setLayout(self.vbox)  # Set the layout for the widget contained within the scroll area
+        self.widget.adjustSize()
+    
 
-        self.state_counter = {0: len(positions), 1: 0, 2: 0}
+        self.state_counter = {0: 72, 1: 0, 2: 0}
         self.state_counter_labels = {}
         self.state_button_labels = {}
 
@@ -85,26 +97,42 @@ class MainWindow(QMainWindow):
             lab.move(20, 0 + state * 20)
             self.state_counter_labels[state] = lab
 
-        for state in self.state_counter:
-            label = QLabel(f"{altlab[state]}: ", self)
-            label.move(20, 80 + state * 20)
-            self.state_button_labels[state] = label
+        for i in range(60):  ##### This allows scrolling. Weirdly..
+            label = QLabel(f"")
+            self.vbox.addWidget(label)
 
-        for pos, label_text in zip(positions, button_labels):
-            button = TriStateButton(self.state_counter, self.state_counter_labels, self.state_button_labels, label_text, self)
-            x = int(pos[0] * self.width() + center_x - button.width()/2)
-            y = int(pos[1] * self.height() + center_y - button.height()/2)
-            button.move(x, y)
+        s = 6
+        positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.28,0.35]])#,0.43,0.6,0.8,1]])
 
-             # Create label for the button
-            label = QLabel(label_text, self)
-            label.move(x + button.width() + 2, y + button.height())
-            label.setAlignment(Qt.AlignVCenter)
-            label.setStyleSheet("font-size: 16px;")
+        num_buttons = 3
+        center_x = self.width() / 2
+        center_y = self.height() / 2
+        radius = 40  # Radius of the circle
+        angle_spans = [120, 120, 120]  # Angle spans for each button
+        start_angle = 0  # Initial angle for the first button
+
+        for ind, pos in enumerate(positions):
+            button_labels = (np.array([1,2,3])+3*ind).astype(str) # Labels for buttons
+            # print(button_labels)
+            for label_text, angle_span in zip(button_labels, angle_spans):
+                label_pos_x = int(12*np.cos(np.radians(start_angle + angle_span/2)))
+                label_pos_y = int(-12*np.sin(np.radians(start_angle + angle_span/2)))
+                label_pos = [label_pos_x,label_pos_y]
+                button = TriStateButton(self.state_counter, self.state_counter_labels, self.state_button_labels, label_text, label_pos, start_angle, angle_span, self.widget)
+                x = int(pos[0] * self.width() + center_x + 2*np.cos(np.radians(start_angle + angle_span/2))) # Keeps the buttons from overlapping
+                y = int(pos[1] * self.height() + center_y - 2*np.sin(np.radians(start_angle + angle_span/2))) # Keeps the buttons from overlapping
+                button.setGeometry(x, y, radius, radius)
+                button.show()                
+                start_angle += angle_span
+        
+
+                # label = QLabel(label_text, self)
+                # label.move(label_pos_x, label_pos_y)
+                # label.setAlignment(Qt.AlignVCenter)
+                # label.setStyleSheet("font-size: 11px;")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     mainWindow = MainWindow()
     mainWindow.show()
     sys.exit(app.exec_())
-

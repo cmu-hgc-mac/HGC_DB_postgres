@@ -1,8 +1,8 @@
 import sys
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel#, QScroll
 from PyQt5.QtCore import Qt, QRectF, QRect
-from PyQt5.QtGui import QPainter, QPen, QColor, QRegion, QPainterPath
+from PyQt5.QtGui import QPainter, QPen, QColor, QRegion, QPainterPath#, pyqtSignal
 
 class TriStateButton(QPushButton):
     def __init__(self, state_counter, state_counter_labels, state_button_labels, label_text, angle_start, angle_span, parent=None):
@@ -58,10 +58,10 @@ class TriStateButton(QPushButton):
         region += QRegion(path.toFillPolygon().toPolygon())
         self.setMask(region)
 
-        ### mask_rect = QRect(-5, -5, self.width() + 10, self.height() + 10)  # Adjust the padding as needed
-        ### region = QRegion(mask_rect, QRegion.Ellipse)
-        ### region -= QRegion(mask_rect, QRegion.Ellipse)  # Use mask_rect instead of rect
-        ### self.setMask(region)
+        # mask_rect = QRect(-5, -5, self.width() + 10, self.height() + 10)  # Adjust the padding as needed
+        # region = QRegion(mask_rect, QRegion.Ellipse)
+        # region -= QRegion(mask_rect, QRegion.Ellipse)  # Use mask_rect instead of rect
+        # self.setMask(region)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -80,21 +80,26 @@ class MainWindow(QMainWindow):
             lab.move(20, 0 + state * 20)
             self.state_counter_labels[state] = lab
 
+        s = 6
+        positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.2,0.35,0.43]])
+
         num_buttons = 3
         center_x = self.width() / 2
         center_y = self.height() / 2
         radius = 36  # Radius of the circle
-        button_labels = ['1', '2', '3']  # Labels for buttons
         angle_spans = [120, 120, 120]  # Angle spans for each button
         start_angle = 0  # Initial angle for the first button
 
-        for label_text, angle_span in zip(button_labels, angle_spans):
-            button = TriStateButton(self.state_counter, self.state_counter_labels, self.state_button_labels, label_text, start_angle, angle_span, self)
-            x = int(center_x + 2*np.cos(np.radians(start_angle + angle_span/2)))# + radius * np.cos(np.radians(start_angle)) - 0)
-            y = int(center_y - 2*np.sin(np.radians(start_angle + angle_span/2)))# + radius * np.sin(np.radians(start_angle)) - 0)
-            button.setGeometry(x, y, radius, radius)
-            button.show()
-            start_angle += angle_span
+        for ind, pos in enumerate(positions):
+            button_labels = (np.array([1,2,3])+3*ind).astype(str) # Labels for buttons
+            print(button_labels)
+            for label_text, angle_span in zip(button_labels, angle_spans):
+                button = TriStateButton(self.state_counter, self.state_counter_labels, self.state_button_labels, label_text, start_angle, angle_span, self)
+                x = int(pos[0] * self.width() + center_x + 2*np.cos(np.radians(start_angle + angle_span/2))) # Keeps the buttons from overlapping
+                y = int(pos[1] * self.height() + center_y - 2*np.sin(np.radians(start_angle + angle_span/2))) # Keeps the buttons from overlapping
+                button.setGeometry(x, y, radius, radius)
+                button.show()
+                start_angle += angle_span
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
