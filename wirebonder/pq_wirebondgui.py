@@ -1,4 +1,4 @@
-import sys
+import sys, csv
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel
 from PyQt5.QtCore import Qt, QRectF, QRect, QPoint
@@ -101,19 +101,30 @@ class MainWindow(QMainWindow):
             label = QLabel(f"")
             self.vbox.addWidget(label)
 
-        s = 6
-        positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.28,0.35]])#,0.43,0.6,0.8,1]])
+        # s = 6
+        # positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.28,0.35]])#,0.43,0.6,0.8,1]])
 
+        fname = '/Users/sindhu/Documents/GitHub/HGC_DB_postgres/wirebonder/V3-LD-Hexaboard-V1.3.csv'
+        with open(fname, 'r') as file:
+            csvf = csv.DictReader(file)
+            filerows = np.array([[row['Center X'],row['Center Y (flipped)'],row['direction']] for row in csvf])
+            direction = (filerows[:,2]).astype(int)
+            positions = (filerows[:,0:2]).astype(float)/200
+            circpositions = positions[direction==0]
+            positions, updown = positions[direction!=0], direction[direction!=0]
+
+    
         num_buttons = 3
         center_x = self.width() / 2
         center_y = self.height() / 2
-        radius = 40  # Radius of the circle
+        radius = 35  # Radius of the circle
         angle_spans = [120, 120, 120]  # Angle spans for each button
-        start_angle = 0  # Initial angle for the first button
+        pre_angle = 90  # Initial angle for the first button
+        # start_angle=90    
 
         for ind, pos in enumerate(positions):
             button_labels = (np.array([1,2,3])+3*ind).astype(str) # Labels for buttons
-            # print(button_labels)
+            start_angle = pre_angle*updown[ind]
             for label_text, angle_span in zip(button_labels, angle_spans):
                 label_pos_x = int(12*np.cos(np.radians(start_angle + angle_span/2)))
                 label_pos_y = int(-12*np.sin(np.radians(start_angle + angle_span/2)))
@@ -125,6 +136,17 @@ class MainWindow(QMainWindow):
                 button.show()                
                 start_angle += angle_span
         
+
+        for ind, pos in enumerate(circpositions):
+            button_labels = str(ind) # Labels for buttons ####### change this
+            start_angle, angle_span = 0,390
+            label_pos = [0,0]
+            button = TriStateButton(self.state_counter, self.state_counter_labels, self.state_button_labels, label_text, label_pos, start_angle, angle_span, self.widget)
+            x = int(pos[0] * self.width() + center_x )
+            y = int(pos[1] * self.height() + center_y)
+            button.setGeometry(x, y, radius, radius)
+            button.show()                
+            start_angle += angle_span
 
                 # label = QLabel(label_text, self)
                 # label.move(label_pos_x, label_pos_y)
