@@ -3,7 +3,7 @@
 
  ## Getting started
 
-Install [postgreSQL-15 with pgAdmin4](https://www.postgresql.org/download/) on your computers.
+Install [postgreSQL-15 with pgAdmin4](https://www.postgresql.org/download/) on your computers. Make sure you add ```psql``` to you path.
 
 In Python 3.6 or greater:
 ```
