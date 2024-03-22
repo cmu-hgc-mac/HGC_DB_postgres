@@ -8,7 +8,6 @@ Install [postgreSQL-15 with pgAdmin4](https://www.postgresql.org/download/) on y
 In Python 3.6 or greater:
 ```
 pip install asyncpg
-pip install psycopg2
 conda install -c anaconda psycopg2
 pip install pwinput
 ```
