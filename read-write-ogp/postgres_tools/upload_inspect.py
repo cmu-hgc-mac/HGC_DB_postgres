@@ -5,7 +5,8 @@ import numpy as np
 import json
 # from utils import connect_db #, get_table_name
 
-def get_query_read(component_type, bp_name = None):
+'''
+def get_query_read(component_type, part_name = None):
     if component_type == 'protomodule':
         query = """SELECT proto_name, thickness, geometry, resolution FROM proto_inspect WHERE geometry = 'full'"""    
     elif component_type == 'hexaboard':
@@ -13,12 +14,22 @@ def get_query_read(component_type, bp_name = None):
     elif component_type == 'baseplate':
         query = """SELECT bp_name, thickness, geometry, resolution FROM bp_inspect WHERE geometry = 'full'"""
     elif component_type == 'baseplate_name':
-        query = """SELECT bp_name FROM bp_inspect WHERE geometry = 'full' ORDER BY bp_row_no DESC LIMIT 10;"""
+        query = """SELECT bp_name FROM {part}_inspect WHERE geometry = 'full' ORDER BY bp_row_no DESC LIMIT 10;"""
     elif component_type == 'baseplate_plot':
-        query = f"""SELECT hexplot FROM bp_inspect WHERE bp_name = '{bp_name}'"""
+        query = f"""SELECT hexplot FROM {}_inspect WHERE bp_name = '{part_name}'"""
     else:
         query = None
         print('Table not found. Check argument.')
+    return query
+'''
+comptable = {'baseplate':{'prefix': 'bp', 'pkprefix': 'bp'},'hexaboard':{'prefix': 'hxb', 'pkprefix': 'hxb'},'protomodule':{'prefix': 'proto', 'pkprefix': 'proto'},'module':{'prefix': 'module', 'pkprefix': 'mod'}}
+
+def get_query_read(component_type, part_name = None, comptable=comptable):
+    #comptable = {'baseplate':{'prefix': 'bp', 'pkprefix': 'bp'},'hexaboard':{'prefix': 'hxb', 'pkprefix': 'hxb'},'protomodule':{'prefix': 'proto', 'pkprefix': 'proto'},'module':{'prefix': 'module', 'pkprefix': 'mod'}}
+    if part_name is None:
+        query = f"""SELECT {comptable[component_type]['prefix']}_name FROM {comptable[component_type]['prefix']}_inspect ORDER BY {comptable[component_type]['pkprefix']}_row_no DESC LIMIT 10;"""
+    else:
+        query = f"""SELECT hexplot FROM {comptable[component_type]['prefix']}_inspect WHERE {comptable[component_type]['prefix']}_name = '{part_name}'"""
     return query
 
 
