@@ -3,7 +3,7 @@ from tkinter import filedialog, ttk
 import subprocess, os, asyncio
 from io import BytesIO
 from PIL import Image, ImageTk
-from postgres_tools.upload_inspect import request_PostgreSQL
+from postgres_tools.upload_inspect import request_PostgreSQL, comptable
 
 def select_files():
     file_paths = filedialog.askopenfilenames()
@@ -28,7 +28,7 @@ def process_selected_files():
             output_text.config(state=tk.NORMAL)
             output_text.delete(1.0, tk.END)
             for file_path in file_paths:
-                output_text.insert(tk.END, f'Processing file: {file_path}\n')
+                output_text.insert(tk.END, f'Processed file: {file_path}\n')
                 call_script_with_plotting(file_path)
             output_text.config(state=tk.DISABLED)
             output_scrollbar.config(command=output_text.yview)
@@ -46,7 +46,8 @@ def process_selected_files():
 
 def call_script_with_plotting(file_path):
     script_path = 'process_im.py'
-    command = ['python', script_path, file_path]
+    if '.xls' in file_path.lower():
+        command = ['python', script_path, file_path]
 
     try:
         subprocess.run(command, check=True)
@@ -54,36 +55,50 @@ def call_script_with_plotting(file_path):
         print(f'Error running subprocess: {e}')
 
 
-def update_image_list(file_paths):
+def update_image_list(file_paths, image_list):
     image_list.delete(0, tk.END)
     for file_path in file_paths:
         image_list.insert(tk.END, os.path.basename(file_path))  # Display only the file name
+    return image_list
 
 def display_selected_image(event):
+    selected_subtab = nested_notebook.tab(nested_notebook.select(), "text")
     selection = event.widget.curselection()
     if selection:
-        index = selection[0]
-        file_path = image_list.get(index)
-        print(file_path)
-        im = asyncio.run(request_PostgreSQL('baseplate_plot', file_path))[0]['hexplot']
+        file_path = event.widget.get(selection[0])
+        im = asyncio.run(request_PostgreSQL(selected_subtab, file_path))
         #image = Image.open(file_path)
-        image = Image.open(BytesIO(im))
-        aspect_ratio = image.width / image.height
-        new_width = 600  # Set the width of the image label
-        new_height = int(new_width / aspect_ratio)
-        image = image.resize((new_width, new_height))
-        photo = ImageTk.PhotoImage(image)
-        image_label.config(image=photo)
-        image_label.image = photo  # Keep a reference to avoid garbage collection
+        if im != []:
+            image = Image.open(BytesIO(im[0]['hexplot']))
+            aspect_ratio = image.width / image.height
+            new_width = 600  # Set the width of the image label
+            new_height = int(new_width / aspect_ratio)
+            image = image.resize((new_width, new_height))
+            photo = ImageTk.PhotoImage(image)
+            image_label.config(image=photo)
+            image_label.image = photo  # Keep a reference to avoid garbage collection
     else:
         image_label.config(image=None)
 
 def refresh_listbox():
-    global pe
-    re = asyncio.run(request_PostgreSQL('baseplate_name'))
-    pe = [r['bp_name'] for r in re]
-    update_image_list(pe)
+    global subtab_label
+    for s in range(len(subtab_label)):
+        re = asyncio.run(request_PostgreSQL(subtab_label[s]))
+        pe = [r[f"{comptable[subtab_label[s]]['prefix']}_name"] for r in re]
+        image_lists[s] = update_image_list(pe, image_lists[s])
 
+def submit_comment(event):
+    comment = comment_entry.get()
+    if comment:
+        print(comment)
+        selected_subtab = nested_notebook.tab(nested_notebook.select(), "text")
+        selection = event.widget.curselection()
+        if selection:
+            selected_subtab = nested_notebook.tab(nested_notebook.select(), "text")
+            list_item = image_list.get(selection[0])
+            print(f"Subtab: {selected_subtab}, List item: {list_item}, Comment: {comment}")
+        else:
+            print("Please select an item from the list.")
 
 ##################################################################
         
@@ -101,34 +116,59 @@ notebook = ttk.Notebook(root)
 # Create and configure first tab
 tab1 = ttk.Frame(notebook)
 notebook.add(tab1, text='View Plots')
+notebook.pack(expand=True, fill="both")
+
+# Create nested notebook with subtabs
+nested_notebook = ttk.Notebook(tab1)
+nested_notebook.pack(expand=True, fill="both")
+
+subtabs = []
+image_lists = []
+subtab_label = ['baseplate','hexaboard','protomodule','module']
+for s in range(len(subtab_label)):  ## bp, hxp, pml, ml
+    subtabs.append(ttk.Frame(nested_notebook))
+    nested_notebook.add(subtabs[s], text=subtab_label[s])
 
 # Create and configure listbox for image selection
-image_list_frame = tk.Frame(tab1)
-image_list_scrollbar = tk.Scrollbar(image_list_frame)
-image_list = tk.Listbox(image_list_frame, yscrollcommand=image_list_scrollbar.set, selectmode=tk.SINGLE, height=5, width=30) # Adjust the height and width of the listbox
-image_list_scrollbar.config(command=image_list.yview)
-image_list_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-image_list.pack(pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)  # Adjust side and padding of the listbox
-image_list_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+for s in range(len(subtab_label)):
+    image_list_frame = tk.Frame(subtabs[s])
+    image_list_scrollbar = tk.Scrollbar(image_list_frame)
+    image_list = tk.Listbox(image_list_frame, yscrollcommand=image_list_scrollbar.set, selectmode=tk.SINGLE, height=12, width=30) # Adjust the height and width of the listbox
+    image_list_scrollbar.config(command=image_list.yview)
+    image_list_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    image_list.pack(pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)  # Adjust side and padding of the listbox
+    image_list_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+    image_list.bind('<<ListboxSelect>>', display_selected_image)
+    image_lists.append(image_list)
 
-# image_list.bind('<<ListboxSelect>>', display_selected_image)
 
-# pe = ['a.png','b.png','c.png','a.png','b.png','c.png','a.png','b.png','c.png','a.png','b.png','c.png','a.png','b.png','c.png','a.png','b.png','c.png','a.png','b.png','c.png','a.png','b.png','c.png']
-re = asyncio.run(request_PostgreSQL('baseplate_name'))
-pe = [r['bp_name'] for r in re]
+    # pe = ['a.png','b.png','c.png','a.png']
+refresh_listbox()
 
-for entry in pe:
-    image_list.insert(tk.END, entry)
-
-image_list.bind('<<ListboxSelect>>', display_selected_image)
+    # Create and configure comment box
+# comment_frame = tk.Frame(tab1)
+# comment_label = tk.Label(comment_frame, text="Comment:")
+# comment_label.pack(side=tk.LEFT, padx=(10, 5))
+# comment_entry = tk.Entry(comment_frame, width=50)  # Adjust width of the comment entry
+# comment_entry.pack(side=tk.LEFT, padx=(0, 5))
+# submit_button = tk.Button(comment_frame, text="Submit Comment", command=submit_comment())
+# submit_button.pack(side=tk.LEFT)
+# comment_frame.pack(pady=5, fill=tk.X)
 
 image_display_frame = tk.Frame(tab1)
 image_label = tk.Label(image_display_frame)
 image_label.pack(pady=10)  # Adjust padding of the image label
 image_display_frame.pack(pady=10)
 
-refresh_button = tk.Button(tab1, text="Refresh List", command=refresh_listbox)
+refresh_button = tk.Button(tab1, text="Refresh", command=refresh_listbox)
 refresh_button.pack()
+
+
+### Include the watching portion
+#info_show = tk.Label(tab1, text = f'Watching directory: C:/Users/Admin/.../OGP_results')
+#info_show.pack()
+
+
 
 ##########################################################################
 
