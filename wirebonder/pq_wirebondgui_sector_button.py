@@ -1,4 +1,4 @@
-import sys
+import sys, csv
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel#, QScroll
 from PyQt5.QtCore import Qt, QRectF, QRect
@@ -80,13 +80,19 @@ class MainWindow(QMainWindow):
             lab.move(20, 0 + state * 20)
             self.state_counter_labels[state] = lab
 
-        s = 6
-        positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.2,0.35,0.43]])
+        # s = 6
+        # positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.2,0.35,0.43]])
+        
+        fname = 'stepholes.csv'
+        with open(fname, 'r') as file:
+            csvf = csv.DictReader(file)
+            positions = np.array([[row['Center X'],row['Center Y (flipped)']] for row in csvf]).astype(float)/200
 
+        
         num_buttons = 3
         center_x = self.width() / 2
         center_y = self.height() / 2
-        radius = 36  # Radius of the circle
+        radius = 35  # Radius of the circle
         angle_spans = [120, 120, 120]  # Angle spans for each button
         start_angle = 0  # Initial angle for the first button
 

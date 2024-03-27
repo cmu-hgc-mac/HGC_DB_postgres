@@ -1,8 +1,6 @@
 hxb_row_no,serial PRIMARY KEY,,
 hxb_no,INT,fk_hxb_insp,hexaboard
 hxb_name,TEXT,,
-geometry,TEXT,,
-resolution,TEXT,,
 flatness,DOUBLE PRECISION,,
 thickness,DOUBLE PRECISION,,
 x_points,DOUBLE PRECISION[],,

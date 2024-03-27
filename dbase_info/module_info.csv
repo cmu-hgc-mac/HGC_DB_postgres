@@ -1,5 +1,7 @@
 module_no,serial PRIMARY KEY,,
 module_name,TEXT,,
+geometry,TEXT,,
+resolution,TEXT,,
 assembled,DATE,,
 inspected,DATE,,
 wb_front,DATE,,

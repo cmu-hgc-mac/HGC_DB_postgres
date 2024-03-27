@@ -1,9 +1,6 @@
 bp_row_no,serial PRIMARY KEY,,
 bp_no,INT,fk_bp_insp,baseplate
 bp_name,TEXT,,
-bp_material,TEXT,,
-geometry,TEXT,,
-resolution,TEXT,,
 flatness,DOUBLE PRECISION,,
 thickness,DOUBLE PRECISION,,
 x_points,DOUBLE PRECISION[],,

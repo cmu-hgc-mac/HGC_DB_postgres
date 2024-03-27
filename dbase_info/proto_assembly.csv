@@ -1,5 +1,7 @@
 proto_no,serial PRIMARY KEY,,
 proto_name,TEXT,,
+geometry,TEXT,,
+resolution,TEXT,,
 bp_name,TEXT,,
 sen_name,TEXT,,
 position,INT,,

@@ -1,5 +1,7 @@
 sen_no,serial PRIMARY KEY,,
 sen_name,TEXT,,
+geometry,TEXT,,
+resolution,TEXT,,
 sen_received,DATE,,
 bp_passed,boolean,,
 comment,TEXT,,

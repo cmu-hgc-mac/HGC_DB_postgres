@@ -1,5 +1,7 @@
 hxb_no,serial PRIMARY KEY,,
 hxb_name,TEXT,,
+geometry,TEXT,,
+resolution,TEXT,,
 hxb_received,DATE,,
 hxb_inspected,DATE,,
 hxb_tested,DATE,,
