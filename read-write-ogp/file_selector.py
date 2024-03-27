@@ -87,18 +87,18 @@ def refresh_listbox():
         pe = [r[f"{comptable[subtab_label[s]]['prefix']}_name"] for r in re]
         image_lists[s] = update_image_list(pe, image_lists[s])
 
-def submit_comment(event):
-    comment = comment_entry.get()
-    if comment:
-        print(comment)
-        selected_subtab = nested_notebook.tab(nested_notebook.select(), "text")
-        selection = event.widget.curselection()
-        if selection:
-            selected_subtab = nested_notebook.tab(nested_notebook.select(), "text")
-            list_item = image_list.get(selection[0])
-            print(f"Subtab: {selected_subtab}, List item: {list_item}, Comment: {comment}")
-        else:
-            print("Please select an item from the list.")
+# def submit_comment(event):
+    # comment = comment_entry.get()
+    # if comment:
+    #     print(comment)
+    #     selected_subtab = nested_notebook.tab(nested_notebook.select(), "text")
+    #     selection = event.widget.curselection()
+    #     if selection:
+    #         selected_subtab = nested_notebook.tab(nested_notebook.select(), "text")
+    #         list_item = image_list.get(selection[0])
+    #         print(f"Subtab: {selected_subtab}, List item: {list_item}, Comment: {comment}")
+    #     else:
+    #         print("Please select an item from the list.")
 
 ##################################################################
         
