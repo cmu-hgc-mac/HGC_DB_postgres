@@ -22,7 +22,7 @@ def get_query_read(component_type, part_name = None):
         print('Table not found. Check argument.')
     return query
 '''
-comptable = {'baseplate':{'prefix': 'bp', 'pkprefix': 'bp'},'hexaboard':{'prefix': 'hxb', 'pkprefix': 'hxb'},'protomodule':{'prefix': 'proto', 'pkprefix': 'proto'},'module':{'prefix': 'module', 'pkprefix': 'mod'}}
+comptable = {'baseplate':{'prefix': 'bp', 'pkprefix': 'bp'},'hexaboard':{'prefix': 'hxb', 'pkprefix': 'hxb'},'protomodule':{'prefix': 'proto', 'pkprefix': 'proto'},'module':{'prefix': 'module', 'pkprefix': 'module'}}
 
 def get_query_read(component_type, part_name = None, comptable=comptable):
     #comptable = {'baseplate':{'prefix': 'bp', 'pkprefix': 'bp'},'hexaboard':{'prefix': 'hxb', 'pkprefix': 'hxb'},'protomodule':{'prefix': 'proto', 'pkprefix': 'proto'},'module':{'prefix': 'module', 'pkprefix': 'mod'}}

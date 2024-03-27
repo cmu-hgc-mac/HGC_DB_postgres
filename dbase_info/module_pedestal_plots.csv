@@ -1,4 +1,4 @@
-ped_plottest_no,serial PRIMARY KEY,,
+mod_plottest_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_pedplot,module_info
 module_name,TEXT,,
 adc_mean_hexmap,BYTEA,,
