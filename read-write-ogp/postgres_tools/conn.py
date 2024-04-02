@@ -2,6 +2,8 @@ host = 'localhost'
 database='hgcdb'
 user='postgres'
 password='hgcal'
+inst_code = 'CM'
+institution_name = 'Carnegie Mellon University'
 
 # import pwinput
 
