@@ -3,7 +3,7 @@ sys.path.append('../')
 import asyncio, asyncpg
 import numpy as np
 import json
-from conn import host, database, user, password
+from postgres_tools.conn import host, database, user, password
 # from utils import connect_db #, get_table_name
 
 '''
