@@ -17,6 +17,8 @@ tables:
       'ogp_user': 'INSERT, SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'proto_assembly.csv' 
@@ -25,6 +27,8 @@ tables:
       'ogp_user': 'SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'baseplate.csv' 
@@ -33,6 +37,8 @@ tables:
       'ogp_user': 'INSERT, SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'sensor.csv'
@@ -41,6 +47,8 @@ tables:
       'ogp_user': 'INSERT, SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'hexaboard.csv'
@@ -50,6 +58,7 @@ tables:
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
       'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'bp_inspect.csv' 
@@ -58,6 +67,8 @@ tables:
       'ogp_user': 'INSERT, SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'hxb_inspect.csv' 
@@ -66,14 +77,18 @@ tables:
       'ogp_user': 'INSERT, SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'hxb_pedestal_test.csv'
     description: ''
     permission:
+      'ogp_user': 'SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
       'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'proto_inspect.csv' 
@@ -82,6 +97,8 @@ tables:
       'ogp_user': 'INSERT, SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'module_inspect.csv' 
@@ -90,24 +107,35 @@ tables:
       'ogp_user': 'INSERT, SELECT'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'module_iv_test.csv' 
     description: ''
     permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
       'viewer': 'SELECT'
       'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'module_pedestal_test.csv' 
     description: ''
     permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
       'viewer': 'SELECT'
       'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'module_pedestal_plots.csv'
     description: ''
     permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
       'viewer': 'SELECT'
       'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
