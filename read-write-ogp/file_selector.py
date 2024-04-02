@@ -179,12 +179,13 @@ notebook.add(tab2, text='Upload Files')
 select_button = tk.Button(tab2, text='Select Files', command=select_files)
 process_button = tk.Button(tab2, text='Process Selected Files', command=process_selected_files)
 
+select_button.pack(pady=10)
+
 file_paths_scrollbar = tk.Scrollbar(tab2)
 file_paths_text = tk.Text(tab2, height=15, width=90, wrap=tk.WORD, state=tk.DISABLED, yscrollcommand=file_paths_scrollbar.set)
 file_paths_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 file_paths_text.pack(pady=10)
 
-select_button.pack(pady=10)
 process_button.pack(pady=10)
 
 output_scrollbar = tk.Scrollbar(tab2)
