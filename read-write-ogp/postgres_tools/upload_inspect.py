@@ -3,6 +3,7 @@ sys.path.append('../')
 import asyncio, asyncpg
 import numpy as np
 import json
+from conn import host, database, user, password
 # from utils import connect_db #, get_table_name
 
 '''
@@ -36,10 +37,10 @@ def get_query_read(component_type, part_name = None, comptable=comptable):
 
 async def fetch_PostgreSQL(query):
     conn = await asyncpg.connect(
-        host='cmsmac04.phys.cmu.edu',
-        database='hgcdb',
-        user='postgres',
-        password='hgcal'
+        host=host,
+        database=database,
+        user=user,
+        password=password
     )
     value = await conn.fetch(query)
     await conn.close()
@@ -77,10 +78,10 @@ def get_query(table_name):
 
 async def upload_PostgreSQL(table_name, db_upload_data):
     conn = await asyncpg.connect(
-        host = 'cmsmac04.phys.cmu.edu',
-        database = 'hgcdb',
-        user = 'postgres',
-        password = 'hgcal')
+        host=host,
+        database=database,
+        user=user,
+        password=password)
     
     print('Connection successful. \n')
 
