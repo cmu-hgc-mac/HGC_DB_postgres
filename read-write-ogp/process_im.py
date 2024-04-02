@@ -6,7 +6,7 @@ from ogp_height_plotter import loadsheet, AppendFlats, AppendHeights, plot2d, up
 from postgres_tools.upload_inspect import upload_PostgreSQL
 from datetime import datetime
 
-OGPSurveyfile = sys.argv[1]
+(sys.argv[1]).replace("\\", "/")
 print(f'filename: {OGPSurveyfile}')
 GantryTrayFile = OGPSurveyfile.split('OGP_results')[0]+'OGP_results/assembly_trays/assembly_tray_input.xls'
 Tray1file = OGPSurveyfile.split('OGP_results')[0]+'data/Tray 1 for NSH.xls'
