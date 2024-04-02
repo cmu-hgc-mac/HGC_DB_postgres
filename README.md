@@ -29,7 +29,3 @@ Each MAC requires the following to replicate this setup:
 3. Update the two config files to listen for the other computers in the lab.
 4. Decide superuser and other user passwords (doesn't have to be too complicated.)
 
-## Table hierarchy generated from pgAdmin4
-![Table hierarchy generated from pgAdmin4](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/db_at_a_glance.png?raw=true)
-
-(To view chart in pgAdmin4, right-click on the name of the database and select 'ERD for Database'.)
