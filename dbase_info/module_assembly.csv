@@ -1,5 +1,7 @@
 module_ass,serial PRIMARY KEY,,
 module_name,TEXT,,
+geometry,TEXT,,
+resolution,TEXT,,
 proto_name,TEXT,,
 hxb_name,TEXT,,
 position,INT,,
