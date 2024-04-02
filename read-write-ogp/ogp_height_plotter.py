@@ -246,8 +246,9 @@ def plot2d(x, y, zheight, limit = 0, vmini=1.05, vmaxi=4.5, center = 0, rotate =
     buffer = BytesIO()
     plt.savefig(f"{(savename.split('/'))[-1]}.png", bbox_inches='tight') # uncomment here for saving the 2d plot
     plt.savefig(buffer, format='png', bbox_inches='tight')
+    buffer.seek(0)
     plt.close()
-    return buffer.getvalue
+    return buffer.read()
 
 def get_data(x, y, zheight, limit = 0, vmini=1.05, vmaxi=4.5, center = 0, rotate = 0 , new_angle = 120, details = 0, title="", savename="", value = 1, day_count = None, mod_flat = None, show_plot = True):
 
