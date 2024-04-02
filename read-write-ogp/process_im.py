@@ -7,22 +7,23 @@ from postgres_tools.upload_inspect import upload_PostgreSQL
 from datetime import datetime
 
 OGPSurveyfile = sys.argv[1]
-print('this', OGPSurveyfile)
+print(f'filename: {OGPSurveyfile}')
 GantryTrayFile = OGPSurveyfile.split('OGP_results')[0]+'OGP_results/assembly_trays/assembly_tray_input.xls'
 Tray1file = OGPSurveyfile.split('OGP_results')[0]+'data/Tray 1 for NSH.xls'
 Tray2file = OGPSurveyfile.split('OGP_results')[0]+'data/Tray 2 for NSH.xls'
 trash_file = False
 
-if OGPSurveyfile.find('/') > 0:
+if '/' in OGPSurveyfile:
     filesuffix = (OGPSurveyfile.split('/')[-1]).split('.')[0]
     comp_type = OGPSurveyfile.split('/')[-2]
-elif OGPSurveyfile.find('\\') > 0:    ############ this may not be needed.
+elif '\\' in OGPSurveyfile:    ############ this may not be needed.
     filesuffix = (OGPSurveyfile.split('\\')[-1]).split('.')[0]
     comp_type = OGPSurveyfile.split('\\')[-2]
 else:
     filesuffix = OGPSurveyfile.split('.')[0]
     comp_type = None
 
+print(f'Component type: {comp_type}')
 if comp_type == 'baseplates':
     key = "Surface"
     vmini, vmaxi= 1.2, 2.2
@@ -36,7 +37,7 @@ elif comp_type == 'hexaboards':
 elif comp_type == 'protomodules':
     key = "Thick"
     vmini, vmaxi= 1.37, 1.79
-    new_angle = 0
+    new_angle = 270
     db_table_name = 'proto_inspect'
 else:
     key = "Thick"
@@ -45,7 +46,7 @@ else:
     comp_type == 'modules'
     db_table_name = 'module_inspect'
 
-
+print(key)
 
 resolution = 'LD'
 geometry = 'full'
@@ -64,6 +65,8 @@ time_inspect = datetime.now().time()
 
 for i in range(len(filenames)):
     modtitle = f"{sheetnames[i]}"
+    #modtitle = f"{(filenames[i].split('/')[-1]).split('.')[0]}"
+    print('modtitle',modtitle)
     im_bytes = plot2d(sensor_Heights[i][0], sensor_Heights[i][1], sensor_Heights[i][2],
            limit = 0, vmini=vmini, vmaxi=vmaxi, 
            center = 25, rotate = 345, new_angle = new_angle,
