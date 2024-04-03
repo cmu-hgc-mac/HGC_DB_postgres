@@ -1,6 +1,6 @@
 host = 'localhost'
 database='hgcdb'
-user='postgres'
+user='ogp_user'
 password='hgcal'
 inst_code = 'CM'
 institution_name = 'Carnegie Mellon University'
