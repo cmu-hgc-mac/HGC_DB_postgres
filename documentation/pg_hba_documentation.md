@@ -9,7 +9,7 @@ A whitelist of IP addresses of the other stations need to be added to ```pg_hba.
 
 # Find path to pg_hba.conf and edit
 1. In command prompt: `psql -U postgres -c 'SHOW config_file'` in Mac/Linux. For Windows, do the same in Powershell as Administrator.
-2. Enter postrges password when `Password for user postgres` is prompted.
+2. Enter postrges password when prompted.
 3. Note the global path to `postgresql.conf` file. The `pg_hba.conf` can be found in the same directory. 
 4. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                                   
