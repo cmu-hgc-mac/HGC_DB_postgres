@@ -5,9 +5,9 @@
 
 ### 1. Specify a server name of your choice
 ![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/47753236-a575-4f51-8a73-16c6d6cb1596)
-### 2. Under `Connection`, set hostname as `localhost`. Set username and password for the type of role as found in [tables.yaml]
+### 2. Under `Connection`, set hostname as `localhost`. Set username and password for the type of role as found in [tables.yaml](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml)
 **Table view and writepermissions will be apply here.**
-(https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml)
+
 ![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/c1729f24-9437-4d0e-89d7-8580968e892b)
 
 ### 3. Under `SSH Tunnel`, set the tunnel name, user, and password of the database computer. Save.
