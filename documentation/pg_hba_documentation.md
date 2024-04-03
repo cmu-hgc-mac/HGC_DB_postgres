@@ -48,5 +48,5 @@ conn = asyncio.run(asyncpg.connect(
         password=<b>'db_password'</b>
         database='postgres',
         user='postgres'))
-print('Connection succesful!')
+print('Connection successful!')
 </pre>
