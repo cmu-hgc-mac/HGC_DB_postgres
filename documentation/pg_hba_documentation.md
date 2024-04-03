@@ -1,6 +1,6 @@
 # How to connect a non-database computer to the database
 This section goes through a step-by-step instruction to connect a computer to a database computer. 
-A whitelist of ip addresses of the other stations need to be added to ```pg_hba.conf``` on the database.
+A whitelist of IP addresses of the other stations need to be added to ```pg_hba.conf``` on the database.
 **The following actions should be done just once** when you set up the database. 
 
 - This step can be performed only after postgres is installed and ```psql``` is added to path.
