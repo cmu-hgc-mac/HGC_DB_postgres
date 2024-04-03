@@ -15,7 +15,7 @@ A whitelist of IP addresses of the other stations need to be added to ```pg_hba.
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                                   
 
 **note**:
-It is customary to have postgres.conf under ```PostgreSQL/15/main/``` in Mac/Linux. In Windows, it is typically found under ```C:/Program Files/PostgreSQL/l5/data/```.
+It is customary to have pg_hba.conf under ```PostgreSQL/15/main/``` in Mac/Linux. In Windows, it is typically found under ```C:/Program Files/PostgreSQL/l5/data/```.
 
 5. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
   ```local  all  all  [station ip address or hostname] trust```
