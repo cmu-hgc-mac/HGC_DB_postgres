@@ -5,8 +5,11 @@
 
 ### 1. Specify a server name of your choice
 ![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/47753236-a575-4f51-8a73-16c6d6cb1596)
-### 2. Under `Connection`, set hostname and password with hostname as `localhost`
-![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/bfd0d3e3-650c-4c09-aa5b-9f94b2c99c80)
+### 2. Under `Connection`, set hostname as `localhost`. Set username and password for the type of role as found in [tables.yaml]
+**Table view and writepermissions will be apply here.**
+(https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml)
+![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/c1729f24-9437-4d0e-89d7-8580968e892b)
+
 ### 3. Under `SSH Tunnel`, set the tunnel name, user, and password of the database computer. Save.
 ![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/adb6342f-e90d-4a2c-a8de-702d3618104f)
 ### 4. Refresh to see the new server.
