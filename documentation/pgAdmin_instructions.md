@@ -1,5 +1,7 @@
 # Viewing tables at a workstation with pgAdmin4
 
+IP Adress whitelist needs to be set up on the database prior to this step. ([Instructions](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/documentation/pg_hba_documentation.md))
+
 ## Register a new server at the workstation
 ![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/475dafdb-725f-44b5-96b4-f50dff813446)
 
