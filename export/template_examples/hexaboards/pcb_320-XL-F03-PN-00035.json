@@ -1,0 +1,37 @@
+{
+    "PROPERTIES": [
+        "kind_of_part",
+        "record_insertion_user",
+        "location",
+        "comment_description",
+        "initiated_by_user",
+        "flatness",
+        "thickness",
+        "grade",
+        "comments",
+        "test_files",
+        "module",
+        "step_pcb",
+        "barcode"
+    ],
+    "DEFAULTS": {
+        "comments": "",
+        "comment_description": "",
+        "kind_of_part": "PCB None None"
+    },
+    "ID": "320-XL-F03-PN-00035",
+    "kind_of_part": "PCB LD Full",
+    "record_insertion_user": "ekloiber",
+    "location": "CMU",
+    "comment_description": "",
+    "initiated_by_user": null,
+    "flatness": 0.969,
+    "thickness": 1.36,
+    "grade": "Green",
+    "comments": "",
+    "test_files": null,
+    "module": "320-ML-F2CX-CM-0003",
+    "step_pcb": "CMU_7",
+    "barcode": "035",
+    "partlistfile": "C:\\WINDOWS\\system32\\SharedUI\\filemanager_data\\partlist\\pcbs.json"
+}

@@ -1,5 +1,8 @@
 bp_no,serial PRIMARY KEY,,
 bp_name,TEXT,,
+bp_material,TEXT,,
+geometry,TEXT,,
+resolution,TEXT,,
 bp_received,DATE,,
 bp_inspected,DATE,,
 bp_passed,boolean,,
