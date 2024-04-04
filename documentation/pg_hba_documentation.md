@@ -41,7 +41,8 @@ port = 5432                             # (change requires restart)
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                
 8. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
  **```host  all  all  [station ip address or hostname] trust```**
-9. Save and close `pg_hba.conf`. 10. Restart postgreSQL15.
+9. Save and close `pg_hba.conf`.
+10. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
 
 ### Example
 ```
@@ -61,6 +62,8 @@ host    all             all             192.168.0.1/32              trust
 - For numerical IP addresses, **`/32` must be included after the address.**
 - Do **NOT** include `/32` for human-readable hostname.
 
+# Restart postgreSQL
+Closing and opening pgAdmin4 should restart postgreSQL
  
 # Test connection
 After adding the station hostname to the database, run the following in `python3` at that station with the appropriate **database hostname and password** for the default `postgres` user and database.
