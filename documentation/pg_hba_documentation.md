@@ -19,7 +19,7 @@ A whitelist of IP addresses of the other stations need to be added to ```pg_hba.
 In Mac/Linux, it is customary to find it under ```PostgreSQL/15/main/pg_hba.conf``` . In Windows, it is typically found under ```C:/Program Files/PostgreSQL/l5/data/pg_hba.conf```.
 
 5. Under `Connections and Authentication`, change `listen_addresses` to `'*'` from `localhost`.
-6. Save and close `postgresql.conf`.
+6. Save and close `postgresql.conf`. ([Restart required](pg_hba_documentation.md#restart-postgresql)).
 
 ```
 #------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ host    all             all             192.168.0.1/32              trust
 - Do **NOT** include `/32` for human-readable hostname.
 
 # Restart postgreSQL
-Closing and opening pgAdmin4 should restart postgreSQL
+Closing and opening pgAdmin4 should restart postgreSQL.
  
 # Test connection
 After adding the station hostname to the database, run the following in `python3` at that station with the appropriate **database hostname and password** for the default `postgres` user and database.
