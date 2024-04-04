@@ -16,9 +16,9 @@ def connect_db():
     connect to your postsgresql database
     '''
     db_params = {
-        'dbname': 'testdb2',
+        'dbname': open('../dbase_info/dbfname.txt','r').read(),
         'user': 'postgres',   # Assuming this is the superuser
-        'password': input('Set superuser password: /n'),
+        'password': input('Set superuser password: '),
         # 'password': pwinput.pwinput(prompt='Set superuser password: ', mask='*'),
         'host': 'localhost',  # Change this if your PostgreSQL server is on a different host
         'port': '5432'        # Default PostgreSQL port
