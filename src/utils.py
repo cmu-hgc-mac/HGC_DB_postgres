@@ -2,6 +2,7 @@ import psycopg2
 import os
 import sys
 import csv
+import yaml
 
 '''
 When you want to use the functions stored here, please add the followings at the top:
@@ -15,13 +16,18 @@ def connect_db():
     '''
     connect to your postsgresql database
     '''
+    
+    yaml_file_path = '../dbase_info/initial_config.yaml'
+    with open(yaml_file_path, 'r') as file:
+        data = yaml.safe_load(file)
+        
     db_params = {
-        'dbname': open('../dbase_info/dbfname.txt','r').read(),
-        'user': 'postgres',   # Assuming this is the superuser
+        'dbname': data['dbname'],
+        'user': 'postgres,   # Assuming this is the superuser
         'password': input('Set superuser password: '),
         # 'password': pwinput.pwinput(prompt='Set superuser password: ', mask='*'),
-        'host': 'localhost',  # Change this if your PostgreSQL server is on a different host
-        'port': '5432'        # Default PostgreSQL port
+        'host': data['host'],  # Change this if your PostgreSQL server is on a different host
+        'port': data['port']        # Default PostgreSQL port
     }
 
     # Connect to the database
