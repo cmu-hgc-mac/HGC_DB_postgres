@@ -11,7 +11,7 @@
 
 5. [How to see the list of tables](#step5)
 
-6. [How to view data in tables] (#step6)
+6. [How to view data in tables](#step6)
 
 
 **Remark**:
