@@ -7,19 +7,42 @@ A whitelist of IP addresses of the other stations need to be added to ```pg_hba.
 - The database and station IP addresses needs to be static.
 - One entry into ```pg_hba.conf``` per station in the lab.
 
-# Find path to pg_hba.conf and edit
+# Find path to .conf files and edit
 1. In command prompt: `psql -U postgres -c 'SHOW config_file'` in Mac/Linux. For Windows, do the same in Powershell as Administrator.
 2. Enter postrges password when prompted.
-3. Note the global path to `postgresql.conf` file. The `pg_hba.conf` can be found in the same directory. 
-4. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
-(In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                                   
+3. Note the global path to `postgresql.conf` file. The `pg_hba.conf` can be found in the same directory.
 
+# Edit `postgresql.conf`
+4. `sudo nano /[global_path_to_conf]/postgresql.conf` to open and edit in Mac/Linux. <br />
+(In Windows, open as Administrator with `notepad /[global_path_to_conf]/postgresql.conf`)                                                                                                               
 **note**:
 In Mac/Linux, it is customary to find it under ```PostgreSQL/15/main/pg_hba.conf``` . In Windows, it is typically found under ```C:/Program Files/PostgreSQL/l5/data/pg_hba.conf```.
 
-5. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
+5. Under `Connections and Authentication`, change `listen_addresses` to `'*'` from `localhost`.
+6. Save and close `postgresql.conf`. ([Restart required](pg_hba_documentation.md#restart-postgresql)).
+
+```
+#------------------------------------------------------------------------------
+# CONNECTIONS AND AUTHENTICATION
+#------------------------------------------------------------------------------
+
+# - Connection Settings -
+
+listen_addresses = '*'          # what IP address(es) to listen on;
+                                        # comma-separated list of addresses;
+                                        # defaults to 'localhost'; use '*' for all
+                                        # (change requires restart)
+port = 5432                             # (change requires restart)
+```
+
+# Edit `pg_hba.conf`
+
+7. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
+(In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                
+8. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
  **```host  all  all  [station ip address or hostname] trust```**
-6. Save and close `pg_hba.conf`.
+9. Save and close `pg_hba.conf`.
+10. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
 
 ### Example
 ```
@@ -38,7 +61,10 @@ host    all             all             192.168.0.1/32              trust
 **note**:
 - For numerical IP addresses, **`/32` must be included after the address.**
 - Do **NOT** include `/32` for human-readable hostname.
-	
+
+# Restart postgreSQL
+Closing and opening pgAdmin4 should restart postgreSQL.
+ 
 # Test connection
 After adding the station hostname to the database, run the following in `python3` at that station with the appropriate **database hostname and password** for the default `postgres` user and database.
 <pre>
