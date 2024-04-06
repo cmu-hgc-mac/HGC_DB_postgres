@@ -1,5 +1,4 @@
-# Database Set-up Instruction
-
+# Database Documentation and Setup Instructions
 ## Contents
 1. [Database interconnection one-time setup](#step1)
 	1. [IP Addresses whitelist on database](#step1a)
