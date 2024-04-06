@@ -5,6 +5,7 @@
 	1. [IP Addresses whitelist on database](#step1a)
  	2. [Connection configuration at workstations](#step1b)
 2. [Table viewer with pgAdmin](#step2)
+3. User permissions at various workstations(#step3)
 
 ## 1. <a name="step1"></a>Database interconnection one-time setup
 Once the database has been set up, other workstations in the lab need to connect to the database to write data to it. 
