@@ -29,5 +29,5 @@ Each MAC requires the following to replicate this setup:
 3. Update the two config files to listen for the other computers in the lab.
 4. Decide superuser and other user passwords (doesn't have to be too complicated.)
 5. Follow [instructions](https://github.com/murthysindhu/HGC_DB_postgres/tree/main/documentation#1-database-interconnection-one-time-setup) to make interconnections.
-6. Follow [instructions](https://github.com/murthysindhu/HGC_DB_postgres/tree/main/documentation#2-view-tables-with-pgadmin4] to view tables.
+6. Follow [instructions](https://github.com/murthysindhu/HGC_DB_postgres/tree/main/documentation#2-view-tables-with-pgadmin4) to view tables.
 
