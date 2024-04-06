@@ -9,9 +9,9 @@
 	
 4.  [Refresh to see the new server.](#step4)
 
-5. [How to see the list of tables](#step5)
+5. [View the list of tables](#step5)
 
-6. [How to view data in tables](#step6)
+6. [View data in tables](#step6)
 
 
 **Remark**:
@@ -34,15 +34,17 @@ IP Adress whitelist needs to be set up on the database prior to this step. ([Ins
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/361fa679-a7c7-480b-8759-3c7b8c4118d4" width="70%">
 
 ### <a name="step4"></a>3. Refresh to see the new server.
+**Note:** The database on the database computer will be under the default `PostgreSQL` server.
 <!--![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/153edfff-ff50-468e-b53d-6668c1ec5115)-->
 
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/153edfff-ff50-468e-b53d-6668c1ec5115" width="70%">
 
-### <a name="step5"></a>4. How to see the list of tables
+### <a name="step5"></a>4. View the list of tables
+**Note:** The database on the database computer will be under the default `PostgreSQL` server.
 <!--![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/df494f82-b62e-4aac-8d64-96eb0ab700ce)-->
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/df494f82-b62e-4aac-8d64-96eb0ab700ce" height="70%">
 
-### <a name="step6"></a>5. How to view data in tables
+### <a name="step6"></a>5. View data in tables
 <!--![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/ee409bd4-bb05-4aed-ba64-efa33327157d)-->
 
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/ee409bd4-bb05-4aed-ba64-efa33327157d" width="70%">
