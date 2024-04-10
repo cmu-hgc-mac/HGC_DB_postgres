@@ -29,8 +29,9 @@ IP Adress whitelist needs to be set up on the database prior to this step. ([Ins
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/47753236-a575-4f51-8a73-16c6d6cb1596"  width="70%">
 
 
-### <a name="step3"></a>2. Under `Connection`, set the database hostname (or static IP address) under `host name`. Set username and password for the type of role as found in [tables.yaml](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml). Save.
-**Table view and write permissions will be apply here.**
+### <a name="step3"></a>2. Under `Connection`, set the database hostname (or static IP address) under `host name`. Set username and password for the type of role. Save.
+(The available roles are `ogp_user`, `gantry_user`, `viewer`, `teststand_user`, and `shipper` as found in [tables.yaml](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml)) **Table view and write permissions will be apply here.**
+
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/361fa679-a7c7-480b-8759-3c7b8c4118d4" width="70%">
 
 ### <a name="step4"></a>3. Refresh to see the new server.
