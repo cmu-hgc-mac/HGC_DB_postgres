@@ -1,4 +1,5 @@
 dbname: 'hgcdb'
+db_hostname: ''
 tables:
   - 
     fname: 'module_info.csv'
@@ -139,3 +140,29 @@ tables:
       'viewer': 'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT'
+
+users:
+  -
+    username: 'ogp_user'
+    description: 'OGP'
+    ip_address: ''
+
+  -
+    username: 'gantry_user'
+    description: 'Gantry LabVIEW user'
+    ip_address: ''
+  
+  -
+    username: 'viewer'
+    description: 'View tables'
+    ip_address: ''
+
+  -
+    username: 'teststand_user'
+    description: 'Electrical Test stand'
+    ip_address: ''
+
+  -
+    username: 'shipper'
+    description: 'Shipping and Receiving station'
+    ip_address: ''

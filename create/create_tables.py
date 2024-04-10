@@ -60,6 +60,11 @@ async def create_tables():
         await conn.execute(f"GRANT {permission} ON {table_name} TO {user};")
         print(f"Table '{table_name}' has {permission} access granted to {user}.")
 
+    async def allow_schema_perm(user):
+        await conn.execute(f"GRANT USAGE ON SCHEMA public TO {user};")
+        await conn.execute(f"GRANT SELECT ON information_schema.tables TO {user};")
+        print(f"Schema permission access granted to {user}.")
+
     # fname_list = ['module_info.csv',
     #               'module_assembly.csv', 
     #               'proto_assembly.csv', 
@@ -104,6 +109,13 @@ async def create_tables():
 
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
+
+            for i in data['users']:
+                username = f"{i['username']}"
+                await allow_schema_perm(username)
+
+            print('\n')
+
             for i in data['tables']:
                 fname = f"{(i['fname'])}"
                 print(f'Getting info from {fname}...')
