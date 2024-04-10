@@ -60,9 +60,13 @@ async def create_tables():
         await conn.execute(f"GRANT {permission} ON {table_name} TO {user};")
         print(f"Table '{table_name}' has {permission} access granted to {user}.")
 
+    async def allow_seq_perm(seq_name, user):
+        await conn.execute(f"GRANT USAGE ON {seq_name} TO {user};")
+        print(f"Sequence '{seq_name}' has USAGE granted to {user}.")
+
     async def allow_schema_perm(user):
-        await conn.execute(f"GRANT USAGE ON SCHEMA public TO {user};")
-        await conn.execute(f"GRANT SELECT ON information_schema.tables TO {user};")
+        #await conn.execute(f"GRANT USAGE ON SCHEMA public TO {user};")
+        #await conn.execute(f"GRANT SELECT ON information_schema.tables TO {user};")
         print(f"Schema permission access granted to {user}.")
 
     # fname_list = ['module_info.csv',
@@ -110,9 +114,9 @@ async def create_tables():
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
 
-            for i in data['users']:
-                username = f"{i['username']}"
-                await allow_schema_perm(username)
+            # for i in data['users']:
+            #     username = f"{i['username']}"
+            #     await allow_schema_perm(username)
 
             print('\n')
 
@@ -122,11 +126,14 @@ async def create_tables():
                 table_name, table_header, dat_type, fk_name, fk_ref, parent_table = get_table_info(loc, fname)
                 table_columns = get_column_names(table_header, dat_type, fk_name, fk_ref, parent_table)
                 await create_table(table_name, table_columns)
+                pk_seq = f'{table_name}_{table_header[0]}_seq'
                 try:
                     create_trigger_sql = create_trigger_sql_template.format(table_name=table_name)
                     await conn.execute(create_trigger_sql)
                     for k in i['permission'].keys():
                         await allow_perm(table_name, i['permission'][k], k)
+                        if 'INSERT' in i['permission'][k]:
+                            await allow_seq_perm(pk_seq, k)
                 except:
                     print('Either trigger or permissions already exist.')
                 print('\n')
