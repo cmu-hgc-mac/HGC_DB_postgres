@@ -64,6 +64,7 @@ host    all             all             192.168.0.1/32              trust
 
 # Restart postgreSQL
 Closing and opening pgAdmin4 should restart postgreSQL.
+
 For Linux computers, try
 ```sudo service postgresql restart```
  
