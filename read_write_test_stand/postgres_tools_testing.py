@@ -1,3 +1,70 @@
+from io import BytesIO
+from PIL import Image, ImageTk
+import asyncio, asyncpg
+
+def get_query_read(table_name, part_name = None):
+    if table_name == 'module_pedestal_test':
+        query = f"""SELECT module_name, rel_hum, temp_c, bias_vol, date_test, time_test, inspector, comment                                                                                                         
+            FROM {table_name}                                                                                                                                                                              
+            WHERE inspector = 'acrobert'                                                                                                                                                                           
+            ORDER BY date_test DESC, time_test DESC LIMIT 10;"""
+    elif table_name == 'hxb_pedestal_test':
+        query = f"""SELECT hxb_name, rel_hum, temp_c, date_test, time_test, inspector, comment                                                                                                                      
+            FROM {table_name}                                                                                                                                                                                 
+            WHERE inspector = 'acrobert'                                                                                                                                                                           
+            ORDER BY date_test DESC, time_test DESC LIMIT 10;"""
+    elif table_name == 'module_iv_test':
+        query = f"""SELECT module_name, rel_hum, prog_v, meas_v, meas_i, meas_r, date_test, time_test, inspector, comment                                                                                           
+            FROM {table_name}                                                                                                                                                                                    
+            WHERE inspector = 'acrobert'                                                                                                                                                                           
+            ORDER BY date_test DESC, time_test DESC LIMIT 10;"""
+    elif table_name == 'module_pedestal_plots' and part_name is not None:
+        query = f"""SELECT adc_mean_hexmap                                                                                           
+            FROM {table_name}   
+            WHERE module_name = '{part_name}';"""
+    elif table_name == 'module_pedestal_plots':
+        query = f"""SELECT adc_mean_hexmap                                                                                           
+            FROM {table_name}                                                                                                                                                                                
+            ORDER BY date_test DESC, time_test DESC LIMIT 10;"""
+    else:
+        query = None
+        print('Table not found. Check argument.')
+    return query
+
+
+async def fetch_PostgreSQL(table_name, part_name = None):
+    conn = await asyncpg.connect(
+        host='cmsmac04.phys.cmu.edu',
+        database='hgcdb',
+        user='teststand_user',
+        password='hgcal'
+    )
+    value = await conn.fetch(get_query_read(table_name, part_name))
+    await conn.close()
+    return value
+
+result = await fetch_PostgreSQL('baseplate')
+result = await fetch_PostgreSQL('module_pedestal_test')
+for r in result: print(r)
+
+
+table_name, part_name = '', ''
+im = asyncio.run(fetch_PostgreSQL(table_name, part_name))
+if im != []:
+    image = Image.open(BytesIO(im[0]['adc_mean_hexmap']))
+    image.show() ### to show
+    image.save("new_image.jpg") ### to save
+
+
+
+
+
+
+
+
+
+
+######################
 import asyncpg
 import asyncio
 
