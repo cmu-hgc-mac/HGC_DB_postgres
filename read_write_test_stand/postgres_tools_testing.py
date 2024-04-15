@@ -47,12 +47,12 @@ result = await fetch_PostgreSQL('module_pedestal_test')
 for r in result: print(r)
 
 
-table_name, part_name = '', ''
+table_name, part_name = 'module_pedestal_plots', None
 im = asyncio.run(fetch_PostgreSQL(table_name, part_name))
 if im != []:
     image = Image.open(BytesIO(im[0]['adc_mean_hexmap']))
     image.show() ### to show
-    image.save("new_image.jpg") ### to save
+    image.save("new_image.png") ### to save
 
 ######################################################################################
 
