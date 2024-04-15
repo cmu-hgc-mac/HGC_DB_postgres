@@ -43,7 +43,6 @@ async def fetch_PostgreSQL(table_name, part_name = None):
     await conn.close()
     return value
 
-result = await fetch_PostgreSQL('baseplate')
 result = await fetch_PostgreSQL('module_pedestal_test')
 for r in result: print(r)
 
@@ -55,7 +54,7 @@ if im != []:
     image.show() ### to show
     image.save("new_image.jpg") ### to save
 
-
+######################################################################################
 
 
 
