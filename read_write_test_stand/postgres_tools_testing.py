@@ -25,7 +25,7 @@ def get_query_read(table_name, part_name = None):
     elif table_name == 'module_pedestal_plots':
         query = f"""SELECT adc_mean_hexmap                                                                                           
             FROM {table_name}                                                                                                                                                                                
-            ORDER BY module_plottest_no DESC LIMIT 10;"""
+            ORDER BY mod_plottest_no DESC LIMIT 10;"""
     else:
         query = None
         print('Table not found. Check argument.')
