@@ -69,13 +69,13 @@ For Linux computers, try
 ```sudo service postgresql restart```
  
 # Test connection
-After adding the station hostname to the database, run the following in `python3` at that station with the appropriate **database hostname and password** for the default `postgres` user and database.
+After adding the station hostname to the database, run the following in `python3` at that station with the appropriate **database hostname and password** for the default `postgres` usertype and database. Try the same with other usertypes after the database has been created.
 <pre>
 import asyncpg, asyncio
 conn = asyncio.run(asyncpg.connect(
         host=<b>'db_hostname.phys.school.edu'</b>,
         password=<b>'db_password'</b>
         database='postgres',
-        user='postgres'))
+        user=<b>'postgres'</b>))
 print('Connection successful!')
 </pre>
