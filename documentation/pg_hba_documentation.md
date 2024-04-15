@@ -64,6 +64,8 @@ host    all             all             192.168.0.1/32              trust
 
 # Restart postgreSQL
 Closing and opening pgAdmin4 should restart postgreSQL.
+For Linux computers, try
+```sudo service postgresql restart```
  
 # Test connection
 After adding the station hostname to the database, run the following in `python3` at that station with the appropriate **database hostname and password** for the default `postgres` user and database.
