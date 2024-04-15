@@ -52,10 +52,10 @@ port = 5432                             # (change requires restart)
 local   all             all                                         scram-sha-256
 # IPv4 local connections:
 host    all             all             127.0.0.1/32                scram-sha-256
-host    all             all             mycomp1.phys.school.edu     trust
-host    all             all             mycomp2.phys.school.edu     trust
-host    all             all             mycomp3.phys.school.edu     trust
-host    all             all             192.168.0.1/32              trust
+host    all             all             mycomp1.phys.school.edu     trust ## OGP
+host    all             all             mycomp2.phys.school.edu     trust ## Gantry 
+host    all             all             mycomp3.phys.school.edu     trust ## Test stand
+host    all             all             192.168.0.1/32              trust ## Shipping
 ```
 
 **note**:
