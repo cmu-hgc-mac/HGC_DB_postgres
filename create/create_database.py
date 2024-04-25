@@ -10,8 +10,9 @@ import sshtunnel
 async def create_db():
     print("Creating a new database...")
     # Database connection parameters for new database
+    yaml_file = f'{loc}tables.yaml'
     db_params = {
-        'database': (open('../dbase_info/dbfname.txt','r').read()).split('\n')[0].split(' ')[0],
+        'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
         'user': 'postgres',   
         'password': input('Set superuser password: '),
         'host': 'localhost',  
