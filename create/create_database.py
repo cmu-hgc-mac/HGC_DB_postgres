@@ -3,9 +3,7 @@ SQL Tables should only have to be made once. After that any modifications to the
 Tables that we need based on the OGP measurements so far:
 '''
 
-import asyncio
-import asyncpg
-import sshtunnel
+import asyncio, asyncpg, sshtunnel, yaml
 
 async def create_db():
     print("Creating a new database...")
