@@ -8,7 +8,7 @@ print('Creating tables in the database...')
 loc = '../dbase_info/'
 yaml_file = f'{loc}tables.yaml'
 db_params = {
-    'database': yaml.safe_load(open(yaml_file, 'r'))['dbname']
+    'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
     'user': 'postgres',
     'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
     'host': 'localhost',
