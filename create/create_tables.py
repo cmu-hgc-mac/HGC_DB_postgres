@@ -5,8 +5,10 @@ import pwinput
 
 print('Creating tables in the database...')
 # Database connection parameters
+loc = '../dbase_info/'
+yaml_file = f'{loc}tables.yaml'
 db_params = {
-    'database': (open('../dbase_info/dbfname.txt', 'r').read()).split('\n')[0].split(' ')[0],
+    'database': yaml.safe_load(open(yaml_file, 'r'))['dbname']
     'user': 'postgres',
     'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
     'host': 'localhost',
@@ -108,9 +110,6 @@ async def create_tables():
             await conn.execute(create_function_sql)
 
         ## Define the table name and schema
-        loc = '../dbase_info/'
-        yaml_file = f'{loc}tables.yaml'
-
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
 
