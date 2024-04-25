@@ -9,7 +9,8 @@ import sshtunnel
 
 async def create_db():
     print("Creating a new database...")
-    # Database connection parameters for new database
+    ## Database connection parameters for new database
+    loc = '../dbase_info/'
     yaml_file = f'{loc}tables.yaml'
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
