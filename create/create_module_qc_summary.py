@@ -17,25 +17,32 @@ db_params = {
     'port': '5432'
 }
 
-
 def parse_csv_schema(csv_file):
     columns = []
     with open(csv_file, newline='') as file:
         reader = csv.reader(file)
         for row in reader:
             column_name, data_type, key, source_table = row[:4]
-            # Determine the original table and column name
-            if 'proto_' in column_name:
-                source_table = 'proto_inspect'
-            elif 'module_' in column_name:
-                source_table = 'module_inspect'
-            elif 'hxb_' in column_name:
-                source_table = 'hxb_pedestal_test'
-            elif 'iv_' in column_name:
-                source_table = 'module_iv_test'
+            if column_name == 'mod_qc_no':
+                # Handling the primary key which doesn't import from any table
+                columns.append((column_name, data_type, key, None, None))
+            elif column_name == 'module_no':
+                # Handling a foreign key that references another table
+                original_column = 'module_no'
+                columns.append((column_name, data_type, key, source_table, original_column))
+            else:
+                # Regular column processing based on prefix
+                if 'proto_' in column_name:
+                    source_table = 'proto_inspect'
+                elif 'module_' in column_name:
+                    source_table = 'module_inspect'
+                elif 'hxb_' in column_name:
+                    source_table = 'hxb_pedestal_test'
+                elif 'iv_' in column_name:
+                    source_table = 'module_iv_test'
 
-            original_column = column_name.split('_', 1)[1]  # Remove prefix
-            columns.append((column_name, data_type, key, source_table, original_column))
+                original_column = column_name.split('_', 1)[1]  # Remove prefix
+                columns.append((column_name, data_type, key, source_table, original_column))
     return columns
 
 columns = parse_csv_schema(loc + 'module_qc_summary.csv')
@@ -44,7 +51,14 @@ async def create_module_qc_summary_table(conn, columns):
     sql_parts = []
     for col in columns:
         column_name, data_type, key, source_table, original_column = col
-        sql_part = f"{source_table}.{original_column} AS {column_name}"
+        if source_table is None:
+            sql_part = f"{column_name} {data_type}"  # Handle special cases like primary key
+        else:
+            sql_part = f"{source_table}.{original_column} AS {column_name}"
+
+        if key == 'PRIMARY KEY':
+            sql_part += f" {key}"
+
         sql_parts.append(sql_part)
 
     select_clause = ', '.join(sql_parts)
