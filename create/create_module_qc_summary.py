@@ -49,6 +49,7 @@ columns = parse_csv_schema(loc + 'module_qc_summary.csv')
 
 async def create_module_qc_summary_table(conn, columns):
     sql_parts = []
+    primary_keys = []
     for col in columns:
         column_name, data_type, key, source_table, original_column = col
         if source_table is None:
@@ -57,7 +58,7 @@ async def create_module_qc_summary_table(conn, columns):
             sql_part = f"{source_table}.{original_column} AS {column_name}"
 
         if key == 'PRIMARY KEY':
-            sql_part += f" {key}"
+            primary_keys.append(column_name)
 
         sql_parts.append(sql_part)
 
@@ -67,7 +68,15 @@ async def create_module_qc_summary_table(conn, columns):
     SELECT {select_clause}
     FROM proto_inspect, module_inspect, hxb_pedestal_test, module_iv_test;  -- Adjust JOINs as needed
     """
+    
+    print(sql)
     await conn.execute(sql)
+    
+    # Adding primary key constraint
+    if primary_keys:
+        sql_alter = f"ALTER TABLE module_qc_summary ADD PRIMARY KEY ({', '.join(primary_keys)});"
+        await conn.execute(sql_alter)
+        
     
 async def main():
     conn = await asyncpg.connect(**db_params)
