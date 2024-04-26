@@ -77,15 +77,11 @@ async def create_module_qc_summary_table(conn, columns):
 
     # Insert data into the table
     sql_insert = f"""
-    INSERT INTO module_qc_summary ({', '.join([col[0] for col in columns if col[3]])})
+    INSERT INTO {table_name} ({', '.join([col[0] for col in columns if col[3]])})
     SELECT {select_clause}
-    FROM proto_inspect, module_inspect, hxb_pedestal_test, module_iv_test;  # Adjust JOINs as needed
+    FROM proto_inspect, module_inspect, hxb_pedestal_test, module_iv_test;
     """
 
-    print(f'sql_create \n{sql_create}')
-    
-    print(f'sql_insert \n{sql_insert}')
-    
     await conn.execute(sql_create)
     await conn.execute(sql_insert)
     print("Table created and data inserted successfully.")
@@ -93,18 +89,18 @@ async def create_module_qc_summary_table(conn, columns):
 async def main():
     conn = await asyncpg.connect(**db_params)
     try:
-        await create_module_qc_summary_table(conn, columns)
-    finally:
-        await conn.close()
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
-
+        schema_name = 'public'
+        table_name = 'module_qc_summary'
         
-    
-async def main():
-    conn = await asyncpg.connect(**db_params)
-    try:
+        ## check if the module_qc_summary exists
+        table_exists_query = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2);"
+        table_exists = await conn.fetchval(table_exists_query, schema_name, table_name)
+        
+        if table_exists:
+            print(f"Table {table_name} already exists.")
+            # Here you can decide to return, or maybe alter the table, or perform other actions
+            return
+        ## if the table has not existed, then create it. 
         await create_module_qc_summary_table(conn, columns)
     finally:
         await conn.close()
