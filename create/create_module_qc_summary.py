@@ -8,6 +8,7 @@ import csv
 print('Creating module_qc_summary tables in the database...')
 # Database connection parameters
 loc = '../dbase_info/'
+yaml_file = f'{loc}tables.yaml'
 db_params = {
     'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
     'user': 'postgres',
