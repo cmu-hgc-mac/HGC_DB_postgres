@@ -48,34 +48,58 @@ def parse_csv_schema(csv_file):
 columns = parse_csv_schema(loc + 'module_qc_summary.csv')
 
 async def create_module_qc_summary_table(conn, columns):
-    sql_parts = []
-    primary_keys = []
+    # Start with the primary key defined explicitly using SERIAL
+    primary_key_sql = "mod_qc_no SERIAL PRIMARY KEY"
+    sql_column_definitions = [primary_key_sql]  # Start with primary key in definition
+
+    # Generate column definitions for other columns from CSV (skipping the primary key column)
     for col in columns:
         column_name, data_type, key, source_table, original_column = col
-        if source_table is None:
-            sql_part = f"{column_name} {data_type}"  # Handle special cases like primary key
-        else:
-            sql_part = f"{source_table}.{original_column} AS {column_name}"
+        if source_table:  # Only handling columns that are actually derived from other tables
+            sql_part = f"{column_name} {data_type}"
+            sql_column_definitions.append(sql_part)
 
-        if key == 'PRIMARY KEY':
-            primary_keys.append(column_name)
-
-        sql_parts.append(sql_part)
-
-    select_clause = ', '.join(sql_parts)
-    sql = f"""
-    CREATE TABLE module_qc_summary AS
-    SELECT {select_clause}
-    FROM proto_inspect, module_inspect, hxb_pedestal_test, module_iv_test;  -- Adjust JOINs as needed
+    sql_create = f"""
+    CREATE TABLE module_qc_summary (
+        {', '.join(sql_column_definitions)}
+    );
     """
+
+    # Prepare the SELECT clause for the INSERT statement
+    sql_select_parts = []
+    for col in columns:
+        if col[3]:  # Check if there's a source table
+            column_name, data_type, key, source_table, original_column = col
+            sql_part = f"{source_table}.{original_column} AS {column_name}"
+            sql_select_parts.append(sql_part)
+
+    select_clause = ', '.join(sql_select_parts)
+
+    # Insert data into the table
+    sql_insert = f"""
+    INSERT INTO module_qc_summary ({', '.join([col[0] for col in columns if col[3]])})
+    SELECT {select_clause}
+    FROM proto_inspect, module_inspect, hxb_pedestal_test, module_iv_test;  # Adjust JOINs as needed
+    """
+
+    print(f'sql_create \n{sql_create}')
     
-    print(sql)
-    await conn.execute(sql)
+    print(f'sql_insert \n{sql_insert}')
     
-    # Adding primary key constraint
-    if primary_keys:
-        sql_alter = f"ALTER TABLE module_qc_summary ADD PRIMARY KEY ({', '.join(primary_keys)});"
-        await conn.execute(sql_alter)
+    await conn.execute(sql_create)
+    await conn.execute(sql_insert)
+    print("Table created and data inserted successfully.")
+
+async def main():
+    conn = await asyncpg.connect(**db_params)
+    try:
+        await create_module_qc_summary_table(conn, columns)
+    finally:
+        await conn.close()
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+
         
     
 async def main():
