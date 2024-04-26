@@ -141,6 +141,16 @@ tables:
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT'
 
+  - 
+    fname: 'module_qc_summary.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
 users:
   -
     username: 'ogp_user'
