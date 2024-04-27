@@ -1,4 +1,5 @@
 mod_qc_no,serial PRIMARY KEY,,
+module_no,INT,fk_mod_qc,module_info
 module_name,TEXT,,
 final_grade,TEXT,,
 comments_all,TEXT,,
@@ -25,4 +26,3 @@ count_dead_chan,SMALLINT,,
 list_dead_pad,SMALLINT[],,
 list_ground_pad,SMALLINT[],,
 iv_grade,TEXT,,
-module_no,INT,fk_mod_qc,module_info
