@@ -54,13 +54,13 @@ async def create_db():
         except asyncpg.exceptions.InsufficientPrivilegeError:
             print(f"Permissions for '{role_name}' already exist.\n")
 
-    role_names_list = ['ogp_user', 'gantry_user', 'viewer', 'teststand_user', 'shipper']
-    role_types_list = ['OGP computer user', 'Gantry computer user', 'table viewer', 'Test-stand user', 'Shipping user']
-    for role_name, role_type in zip(role_names_list, role_types_list):
-        await create_role(role_name, role_type)
+    # Define user types
+    with open(yaml_file, 'r') as file:
+        data = yaml.safe_load(file)
+        for u in data['users']:
+            await create_role(u['username'], u['description'])
 
     await conn.close()
-
     print("Database creation successful!!!\n")
 
 # if __name__ == "__main__":
