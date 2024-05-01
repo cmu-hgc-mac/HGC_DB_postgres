@@ -49,3 +49,6 @@ print('Connection successful!')
 # Debugging
 - Run `Database Entry.lvclass:Initiate Assembly.vi` with `Database Entry.lvclass:Write to DB.vi` open. The error will be displayed in `error out py` in the latter's front panel.
 - Additional debugging tools present for tables in `Main VIs/python_db/upload_data_db.vi`.
+
+# Developer notes
+[Developer notes here](https://docs.google.com/presentation/d/1HBvVTkyuiU_mZnNuGw4U_Wn2-F3KMbM-lAi5Qyut9t0/edit#slide=id.p)
