@@ -73,20 +73,38 @@ for i in range(len(filenames)):
            title = modtitle, savename = f"{comp_type}\{filesuffix}_heights", value = 1,details=1, day_count = None, mod_flat = mod_flats[i], show_plot = False)
     
     print(float(mod_flats[0]))
+    db_upload = {
+        'flatness': mod_flats[i], 
+        'thickness': np.mean(sensor_Heights[i][2]), 
+        'x_points':(sensor_Heights[i][0]).tolist(), 
+        'y_points':(sensor_Heights[i][1]).tolist(), 
+        'z_points':(sensor_Heights[i][2]).tolist(), 
+        'date_inspect':date_inspect, 
+        'time_inspect': time_inspect, 
+        'hexplot':im_bytes, 
+        'inspector':inspector, 
+        'comment':comment}
     if comp_type == 'baseplates':
         material = 'cf'
-        db_upload = [modtitle, mod_flats[i], np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment] 
+        db_upload.update({'bp_name': modtitle})
     elif comp_type == 'hexaboards':
-        db_upload = [modtitle, mod_flats[i], np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), date_inspect, time_inspect, im_bytes, inspector, comment]
+        db_upload.update({'hxb_name':modtitle})
+    elif comp_type == 'protomodules':
+        if check(Tray1file) & check(Tray2file):
+            Traysheets = loadsheet([Tray1file,Tray2file])
+        XOffset, YOffset, AngleOff = get_offsets([GantryTrayFile, OGPSurveyfile], Traysheets)
+        db_upload.update({'proto_name': modtitle, 'x_offset':XOffset, 'y_offset':YOffset, 'ang_offset':AngleOff})
     else:
         if check(Tray1file) & check(Tray2file):
             Traysheets = loadsheet([Tray1file,Tray2file])
         XOffset, YOffset, AngleOff = get_offsets([GantryTrayFile, OGPSurveyfile], Traysheets)
-        db_upload = [modtitle, mod_flats[i], np.mean(sensor_Heights[i][2]), (sensor_Heights[i][0]).tolist(), (sensor_Heights[i][1]).tolist(), (sensor_Heights[i][2]).tolist(), XOffset, YOffset, AngleOff, date_inspect, time_inspect, im_bytes, inspector, comment]
-    
-    asyncio.run(upload_PostgreSQL(db_table_name, db_upload))
-    print(db_upload[0:6])
-    print('Done')
+        db_upload.update({'module_name': modtitle, 'x_offset':XOffset, 'y_offset':YOffset, 'ang_offset':AngleOff})
+
+    try:
+        return asyncio.run(upload_PostgreSQL(db_table_name, db_upload)) ## python 3.7
+    except:
+        return (asyncio.get_event_loop()).run_until_complete(upload_PostgreSQL(db_table_name, db_upload)) ## python 3.6
+    print(modtitle, 'uploaded!')
     if trash_file:
         send2trash.send2trash(OGPSurveyfile)
         print(f'Moved {OGPSurveyfile} to recycle bin.')
