@@ -101,9 +101,9 @@ for i in range(len(filenames)):
         db_upload.update({'module_name': modtitle, 'x_offset':XOffset, 'y_offset':YOffset, 'ang_offset':AngleOff})
 
     try:
-        return asyncio.run(upload_PostgreSQL(db_table_name, db_upload)) ## python 3.7
+        asyncio.run(upload_PostgreSQL(db_table_name, db_upload)) ## python 3.7
     except:
-        return (asyncio.get_event_loop()).run_until_complete(upload_PostgreSQL(db_table_name, db_upload)) ## python 3.6
+        (asyncio.get_event_loop()).run_until_complete(upload_PostgreSQL(db_table_name, db_upload)) ## python 3.6
     print(modtitle, 'uploaded!')
     if trash_file:
         send2trash.send2trash(OGPSurveyfile)
