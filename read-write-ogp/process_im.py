@@ -74,8 +74,8 @@ for i in range(len(filenames)):
     
     print(float(mod_flats[0]))
     db_upload = {
-        'flatness': mod_flats[i], 
-        'thickness': np.mean(sensor_Heights[i][2]), 
+        'flatness': np.round(mod_flats[i],3), 
+        'thickness': np.round(np.mean(sensor_Heights[i][2]),3), 
         'x_points':(sensor_Heights[i][0]).tolist(), 
         'y_points':(sensor_Heights[i][1]).tolist(), 
         'z_points':(sensor_Heights[i][2]).tolist(), 
@@ -93,12 +93,12 @@ for i in range(len(filenames)):
         if check(Tray1file) & check(Tray2file):
             Traysheets = loadsheet([Tray1file,Tray2file])
         XOffset, YOffset, AngleOff = get_offsets([GantryTrayFile, OGPSurveyfile], Traysheets)
-        db_upload.update({'proto_name': modtitle, 'x_offset':XOffset, 'y_offset':YOffset, 'ang_offset':AngleOff})
+        db_upload.update({'proto_name': modtitle, 'x_offset_mu':np.round(XOffset*1000), 'y_offset_mu':np.round(YOffset*1000), 'ang_offset_deg':np.round(AngleOff,3)})
     else:
         if check(Tray1file) & check(Tray2file):
             Traysheets = loadsheet([Tray1file,Tray2file])
         XOffset, YOffset, AngleOff = get_offsets([GantryTrayFile, OGPSurveyfile], Traysheets)
-        db_upload.update({'module_name': modtitle, 'x_offset':XOffset, 'y_offset':YOffset, 'ang_offset':AngleOff})
+        db_upload.update({'module_name': modtitle, 'x_offset_mu':np.round(XOffset*1000), 'y_offset_mu':np.round(YOffset*1000), 'ang_offset_deg':np.round(AngleOff,3)})
 
     try:
         asyncio.run(upload_PostgreSQL(db_table_name, db_upload)) ## python 3.7
