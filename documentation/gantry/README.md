@@ -27,12 +27,12 @@ user_password
 
 # Using the database
 - Open the project
-- Under `Main VIs`, open `Manual Assmebly DB.vi`.
+- Under `Main VIs`, open `Manual Assembly DB.vi`.
 
 # Documentation
 - Database queries are in `UCSB-Gantry-HEP-main/Main VIs/python_db/postgres_tools.py`.
 - Protomodules and modules are declared with `Stack.lvclass` and database entries are tracked with `Database Entry.lvclass`.
-- [Developer notes here](https://docs.google.com/presentation/d/1HBvVTkyuiU_mZnNuGw4U_Wn2-F3KMbM-lAi5Qyut9t0/edit#slide=id.p)
+- [Developer notes here - Google Slides](https://docs.google.com/presentation/d/1HBvVTkyuiU_mZnNuGw4U_Wn2-F3KMbM-lAi5Qyut9t0/edit#slide=id.p)
 
 # Test connection
 - **Test connection**: Run the following in `python3` on the gantry python installation with the appropriate **database hostname and password**.
