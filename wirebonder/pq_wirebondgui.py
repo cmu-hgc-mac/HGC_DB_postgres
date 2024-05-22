@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         # s = 6
         # positions = np.array([[r*np.cos(2*np.pi*i/s),r*np.sin(2*np.pi*i/s)] for i in range(s) for r in [0.15, 0.28,0.35]])#,0.43,0.6,0.8,1]])
 
-        fname = '/Users/sindhu/Documents/GitHub/HGC_DB_postgres/wirebonder/V3-LD-Hexaboard-V1.3.csv'
+        fname = 'V3-LD-Hexaboard-V1.3.csv'
         with open(fname, 'r') as file:
             csvf = csv.DictReader(file)
             filerows = np.array([[row['Center X'],row['Center Y (flipped)'],row['direction']] for row in csvf])
