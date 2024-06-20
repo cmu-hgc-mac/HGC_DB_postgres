@@ -24,7 +24,7 @@ python3 create_tables.py
 ```
 
 Each MAC requires the following to replicate this setup:
-1. A database computer with a static IP address or host name with postgreSQL-15 with pgAdmin4 installed.
+1. A database computer with a static IP address or host name with postgreSQL-15 with pgAdmin4 installed. Ensure ```port``` in [tables.yaml](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml#L2) matches with the port for postgreSQL installed on your computer.
 2. The computers at the other stations need to have static IPs as well.
 3. Update the two config files to listen for the other computers in the lab.
 4. Decide superuser and other user passwords (doesn't have to be too complicated.)
