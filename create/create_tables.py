@@ -11,8 +11,8 @@ db_params = {
     'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
     'user': 'postgres',
     'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
-    'host': 'localhost',
-    'port': '5432'
+    'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname'],
+    'port': yaml.safe_load(open(yaml_file, 'r'))['port']
 }
 
 async def create_tables():
