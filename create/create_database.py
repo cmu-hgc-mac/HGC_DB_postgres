@@ -14,12 +14,12 @@ async def create_db():
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
         'user': 'postgres',   
         'password': input('Set superuser password: '),
-        'host': 'localhost',  
+        'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname'],  
         'port': yaml.safe_load(open(yaml_file, 'r'))['port']        
     }
 
     # Connect to the default PostgreSQL database
-    default_conn = await asyncpg.connect(user='postgres', password='hgcal', host='localhost', port=yaml.safe_load(open(yaml_file, 'r'))['port'])
+    default_conn = await asyncpg.connect(user='postgres', password='hgcal', host=yaml.safe_load(open(yaml_file, 'r'))['db_hostname'], port=yaml.safe_load(open(yaml_file, 'r'))['port'])
 
     # Create a new database
     db_name = db_params['database']
