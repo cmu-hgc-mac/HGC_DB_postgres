@@ -1,156 +1,6 @@
 dbname: 'hgcdb'
 port: '5432'
 db_hostname: 'localhost'
-tables:
-  - 
-    fname: 'module_info.csv'
-    description: 'Tracks all steps in module assembly'
-    permission:
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'INSERT, SELECT'
-      'shipper':  'INSERT, SELECT'
-
-  - 
-    fname: 'module_assembly.csv'
-    description: ''
-    permission:
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'proto_assembly.csv' 
-    description: ''
-    permission:
-      'ogp_user': 'SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'baseplate.csv' 
-    description: ''
-    permission: 
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'sensor.csv'
-    description: ''
-    permission: 
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'hexaboard.csv'
-    description: ''
-    permission:
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'bp_inspect.csv' 
-    description: ''
-    permission:
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'hxb_inspect.csv' 
-    description: ''
-    permission:
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'hxb_pedestal_test.csv'
-    description: ''
-    permission:
-      'ogp_user': 'SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'proto_inspect.csv' 
-    description: ''
-    permission:
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'module_inspect.csv' 
-    description: ''
-    permission:
-      'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'module_iv_test.csv' 
-    description: ''
-    permission:
-      'ogp_user': 'SELECT'
-      'gantry_user':  'SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'module_pedestal_test.csv' 
-    description: ''
-    permission:
-      'ogp_user': 'SELECT'
-      'gantry_user':  'SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'module_pedestal_plots.csv'
-    description: ''
-    permission:
-      'ogp_user': 'SELECT'
-      'gantry_user':  'SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
-
-  - 
-    fname: 'module_qc_summary.csv'
-    description: ''
-    permission:
-      'ogp_user': 'SELECT'
-      'gantry_user':  'SELECT'
-      'viewer': 'SELECT'
-      'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
 
 users:
   -
@@ -174,6 +24,258 @@ users:
     ip_address: ''
 
   -
+    username: 'wirebond_user'
+    description: 'Wirebonder'
+    ip_address: ''
+
+  -
+    username: 'encap_user'
+    description: 'Encapsulation'
+    ip_address: ''
+
+  -
     username: 'shipper'
     description: 'Shipping and Receiving station'
     ip_address: ''
+
+tables:
+  - 
+    fname: 'module_info.csv'
+    description: 'Tracks all steps in module assembly'
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'INSERT, SELECT'
+
+  - 
+    fname: 'module_assembly.csv'
+    description: ''
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'module_inspect.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'module_iv_test.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'module_pedestal_test.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'module_pedestal_plots.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'module_qc_summary.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'back_wirebond.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'INSERT, SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'back_encap.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'INSERT, SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'front_wirebond.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'INSERT, SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'front_encap.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'INSERT, SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'bond_pull_test.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'INSERT, SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'proto_assembly.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'proto_inspect.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'baseplate.csv' 
+    description: ''
+    permission: 
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'bp_inspect.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'sensor.csv'
+    description: ''
+    permission: 
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'hexaboard.csv'
+    description: ''
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'hxb_inspect.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
+
+  - 
+    fname: 'hxb_pedestal_test.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
