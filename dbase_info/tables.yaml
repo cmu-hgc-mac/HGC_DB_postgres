@@ -132,7 +132,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'INSERT, SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'SELECT'
       'shipper':  'SELECT'
 
   - 
@@ -144,7 +144,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'INSERT, SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'SELECT'
       'shipper':  'SELECT'
 
   - 
@@ -156,7 +156,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'INSERT, SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'SELECT'
       'shipper':  'SELECT'
 
   - 
@@ -168,7 +168,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'INSERT, SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'SELECT'
       'shipper':  'SELECT'
 
   - 
@@ -180,7 +180,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'INSERT, SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'SELECT'
       'shipper':  'SELECT'
 
   - 
