@@ -1,4 +1,4 @@
-module_no,serial PRIMARY KEY,,
+pulltest_no,serial PRIMARY KEY,,
 module_name,TEXT,,
 avg_pull_strg_g,REAL,,
 std_pull_strg_g,REAL,,
@@ -10,3 +10,4 @@ date_bond,DATE,,
 time_bond,TIME,,
 technician,TEXT,,
 comment,TEXT,,
+module_no,INT,fk_mod_pulltest,module_info
