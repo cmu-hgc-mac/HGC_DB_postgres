@@ -1,5 +1,6 @@
 dbname: 'hgcdb'
-db_hostname: ''
+port: '5432'
+db_hostname: 'localhost'
 tables:
   - 
     fname: 'module_info.csv'
