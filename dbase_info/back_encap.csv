@@ -1,0 +1,11 @@
+bkencap_no,serial PRIMARY KEY,,
+module_name,TEXT,,
+cure_temp_c,REAL,,
+cure_duration,INTERVAL,,
+epoxy_batch,TEXT,,
+rel_hum,TEXT,,
+date_encap,DATE,,		
+time_encap,TIME,,
+technician,TEXT,,
+comment,TEXT,,
+module_no,INT,fk_mod_backencap,module_info
