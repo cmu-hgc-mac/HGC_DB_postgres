@@ -23,7 +23,7 @@ def connect_db():
         
     db_params = {
         'dbname': data['dbname'],
-        'user': 'postgres,   # Assuming this is the superuser
+        'user': 'postgres',   # Assuming this is the superuser
         'password': input('Set superuser password: '),
         # 'password': pwinput.pwinput(prompt='Set superuser password: ', mask='*'),
         'host': data['host'],  # Change this if your PostgreSQL server is on a different host
