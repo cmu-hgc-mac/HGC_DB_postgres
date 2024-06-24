@@ -8,7 +8,7 @@ modname = '320-ML-F2CX-CM-0002'
 read_query = f"""SELECT hexaboard.list_dead_cell_init, hexaboard.list_noisy_cell_init
             FROM module_info
             JOIN hexaboard ON module_info.module_no = hexaboard.module_no
-            WHERE module_info.module_name = '{modname}' DESC LIMIT 1;"""
+            WHERE module_info.module_name = '{modname}' LIMIT 1;"""
 
 
 res = dict(asyncio.run(fetch_PostgreSQL(read_query))[0])
