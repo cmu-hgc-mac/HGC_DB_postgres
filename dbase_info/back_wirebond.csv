@@ -1,6 +1,8 @@
 bkwirebond_no,serial PRIMARY KEY,,
 module_name,TEXT,,
 bond_count,SMALLINT,,
+mbite_no,SMALLINT[],,
+bond_count_for_mbite,SMALLINT[],,
 wedge_id,TEXT,,
 spool_batch,TEXT,,
 temp_c,TEXT,,
