@@ -2,8 +2,10 @@ import csv
 import os
 import asyncio
 import asyncpg
+import yaml
+import sys
 sys.path.append('../')
-from HGC_DB_postgres.src.utils import connect_db
+from src.utils import connect_db
 
 '''
 logic:
@@ -16,19 +18,21 @@ logic:
 # 1. extract the existing table schema
 async def get_existing_table_schema(conn, table_name: str):
     query = f"""
-    SELECT column_name, data_type
+    SELECT column_name, data_type, ordinal_position
     FROM information_schema.columns
-    WHERE table_name = '{table_name}';
+    WHERE table_name = $1
+    ORDER BY ordinal_position;
     """
-    rows = await conn.fetch(query)
+    rows = await conn.fetch(query, table_name)
     existing_schema = {row['column_name']: row['data_type'] for row in rows}
     return existing_schema
+
 
 # 2. read the updated schema from csv File
 def get_desired_table_schema_from_csv(csv_file_path: str):
     desired_schema = {}
     with open(csv_file_path, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
+        reader = csv.reader(csvfile, delimiter=',')
         for row in reader:
             column_name = row[0]
             data_type = row[1]
@@ -51,14 +55,18 @@ def compare_schemas(existing_schema: dict, desired_schema: dict):
                 desired_columns.remove(desired_col)
                 break
     
+    print(f'renamed_columns -- {renamed_columns}')
     for old_col, new_col in renamed_columns:
         changes.append(('rename_column', old_col, new_col))
 
     for column, new_type in desired_schema.items():
         if column in existing_schema:
             old_type = existing_schema[column]
-            if old_type != new_type:
-                changes.append(('datatype', column, old_type, new_type))
+            
+            if ((new_type != 'serial PRIMARY KEY') & (old_type != new_type.lower())):## ignore primary key as we assume it will not be modified
+                if (old_type, new_type) != ('integer', 'INT'):
+                    changes.append(('datatype', column, old_type, new_type))
+            
         else:
             changes.append(('new_column', column, None, new_type))
     
@@ -108,18 +116,43 @@ async def apply_changes(conn, table_name: str, changes):
             await change_column_name(conn, table_name, old_col_name, new_col_name)
 
 async def main():
-    conn = connect_db()
-    
-    csv_directory = 'HGC_DB_postgres/dbase_info/'
-    for filename in os.listdir(csv_directory):
-        if filename.endswith('.csv'):
-            csv_file_path = os.path.join(csv_directory, filename)
-            table_name = os.path.splitext(filename)[0]  # Assuming table name is the same as CSV file name
-            existing_schema = await get_existing_table_schema(conn, table_name)
-            desired_schema = get_desired_table_schema_from_csv(csv_file_path)
-            changes = compare_schemas(existing_schema, desired_schema)
-            await apply_changes(conn, table_name, changes)
-    
-    await conn.close()
+    ## Database connection parameters for new database
+    loc = '../dbase_info/'
+    yaml_file = f'{loc}tables.yaml'
+    db_params = {
+        'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
+        'user': 'postgres',   
+        # 'password': input('Set superuser password: '),
+        'password': 'hgcal',
+        'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname'],  
+        'port': yaml.safe_load(open(yaml_file, 'r'))['port']        
+    }
 
+    # establish a connection with database
+    conn = await asyncpg.connect(user=db_params['user'], 
+                                password=db_params['password'], 
+                                host=db_params['host'], 
+                                database=db_params['database'],
+                                port=db_params['port'])
+
+    # retrieve all table names from csv files
+    all_table_names = []
+    for filename in os.listdir(loc):
+        if filename.endswith('.csv'):
+            csv_file_path = os.path.join(loc, filename)
+            all_table_names.append(os.path.splitext(filename)[0])  # Assuming table name is the same as CSV file name
+    
+    table_name = input('Enter the table name you want to apply a change(s). -- ')
+    assert table_name not in all_table_names, "Table was not found in the database."
+
+    
+    existing_schema = await get_existing_table_schema(conn, table_name)
+    csv_file_path = os.path.join(loc, table_name) + '.csv'
+    desired_schema = get_desired_table_schema_from_csv(csv_file_path)
+    changes = compare_schemas(existing_schema, desired_schema)
+
+    await apply_changes(conn, table_name, changes)
+    await conn.close()
 asyncio.run(main())
+
+    
