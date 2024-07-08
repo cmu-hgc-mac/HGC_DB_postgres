@@ -143,7 +143,8 @@ async def main():
             all_table_names.append(os.path.splitext(filename)[0])  # Assuming table name is the same as CSV file name
     
     table_name = input('Enter the table name you want to apply a change(s). -- ')
-    assert table_name not in all_table_names, "Table was not found in the database."
+    print(all_table_names)
+    assert table_name in all_table_names, "Table was not found in the database."
 
     
     existing_schema = await get_existing_table_schema(conn, table_name)
