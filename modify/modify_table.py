@@ -143,7 +143,7 @@ async def main():
             all_table_names.append(os.path.splitext(filename)[0])  # Assuming table name is the same as CSV file name
     
     table_name = input('Enter the table name you want to apply a change(s). -- ')
-    print(all_table_names)
+    
     assert table_name in all_table_names, "Table was not found in the database."
 
     
