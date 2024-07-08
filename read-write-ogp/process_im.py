@@ -108,51 +108,7 @@ for i in range(len(filenames)):
     if trash_file:
         send2trash.send2trash(OGPSurveyfile)
         print(f'Moved {OGPSurveyfile} to recycle bin.')
-##### Upload to Postgres ##########
-####### sensor_Heights x,y,z
-####### mod_flats
-####### np.mean(zheight)
-    
 
-
-
-
-'''inspector = 'cmu_person'
-resolution = 'LD'
-geometry = 'full'
-material = 'cf'
-comments = ''
-inspectDate, inspectTime = 0,0
-np.savetxt('sensor_Heights.txt',sensor_Heights[0])'''
-
-
-'''for i in range(len(filenames)):
-    uploadPostgres('test_upload_proto',   #f"{sheetnames[i]}",
-                   material,
-                   geometry,
-                   resolution,
-                   np.mean(sensor_Heights[i][2]),
-                    sensor_Heights[i][0], 
-                   sensor_Heights[i][1], 
-                   sensor_Heights[i][2], 
-                   mod_flats[i],
-                   inspectDate,
-                   inspectTime,
-                   comments)
-
-    def uploadPostgres(title,
-                       material,
-                       geometry,
-                       resolution,
-                       thickness,
-                       actual_X,
-                       actual_Y,
-                       actual_Z,
-                       flatness,
-                       inspectDate,
-                       inspectTime,
-                       comments):
-        return None'''
 
 
 
