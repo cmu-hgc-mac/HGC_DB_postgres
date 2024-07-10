@@ -1,0 +1,13 @@
+mod_other_test_no,serial PRIMARY KEY,,
+module_no,INT,fk_mod_other_test,module_info
+module_name,TEXT,,
+bias_vol,REAL,,
+trim_bias_vol,REAL,,
+comment,TEXT,,
+rel_hum,TEXT,,
+temp_c,TEXT,,
+date_test,DATE,,
+time_test,TIME,,
+inspector,TEXT,,
+other_test_name,TEXT,,
+other_test_output,BYTEA,,
