@@ -279,3 +279,15 @@ tables:
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT'
 
+  -
+    fname: 'mod_hxb_other_test.csv'
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT'
+      'shipper':  'SELECT'
+
