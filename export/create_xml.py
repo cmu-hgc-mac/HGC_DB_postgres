@@ -135,8 +135,7 @@ async def insert_values_into_xml(xml_file, mapping, conn, name_column, id_column
     print(f'Successfully created {output_file}')
 
 async def main():
-    # id_table = input(f'Choose one from proto_assembly/baseplate/module_assembly -- ')
-    id_table = 'module_assembly'
+    id_table = input(f'Choose one from proto_assembly/baseplate/module_assembly -- ')
     
     if id_table == 'proto_assembly':
         ## test protomodule/cond_upload.xml
