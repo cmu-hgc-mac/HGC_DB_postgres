@@ -28,7 +28,11 @@ In Mac/Linux, it is customary to find it under ```PostgreSQL/15/main/pg_hba.conf
 
 # - Connection Settings -
 
-listen_addresses = '*'          # what IP address(es) to listen on;
+listen_addresses = 'localhost,
+                    mycomp1.phys.school.edu,
+                    mycomp2.phys.school.edu,
+                    mycomp3.phys.school.edu,
+                    192.168.0.1/32'     # what IP address(es) to listen on;
                                         # comma-separated list of addresses;
                                         # defaults to 'localhost'; use '*' for all
                                         # (change requires restart)
