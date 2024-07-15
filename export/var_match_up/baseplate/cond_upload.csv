@@ -1,0 +1,11 @@
+﻿RUN_BEGIN_TIMESTAMP_,"['date_inspect','time_inspect']",bp_inspect
+RUN_END_TIMESTAMP_,,
+INITIATED_BY_USER,inspector,bp_inspect
+LOCATION,institution,module_info
+ID,bp_name,baseplate
+KIND_OF_PART,"['resolution','geometry']",baseplate
+FLATNESS,flatness,bp_inspect
+THICKNESS,thickness,bp_inspect
+WEIGHT,,
+GRADE,grade,bp_inspect
+COMMENTS_UPLOAD,comment,bp_inspect
