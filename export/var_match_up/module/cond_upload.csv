@@ -1,0 +1,11 @@
+RUN_BEGIN_TIMESTAMP_,"['ass_run_date','ass_time_begin']",module_assembly
+RUN_END_TIMESTAMP_,"['ass_run_date','ass_time_end']",module_assembly
+INITIATED_BY_USER,operator,module_assembly
+LOCATION,institution,module_info
+KIND_OF_PART,"['sen_thickness','resolution','geometry']",module_info
+ID,module_name,module_assembly
+CURING_TIME_HRS,,
+CURE_BEGIN_TIMESTAMP_,"['ass_run_date','ass_time_begin']",module_assembly
+CURE_END_TIMESTAMP_,"['cure_date_end','cure_time_end']",module_assembly
+TEMP_DEGC,temp_c,module_assembly
+HUMIDITY_PRCNT,rel_hum,module_assembly
