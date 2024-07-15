@@ -40,7 +40,7 @@ user_password
 import asyncpg, asyncio
 conn = asyncio.run(asyncpg.connect(
         host=<b>'db_hostname.phys.school.edu'</b>,
-        password=<b>'gantry_user_password'</b>
+        password=<b>'gantry_user_password'</b>,
         database='hgcdb',
         user='gantry_user'))
 print('Connection successful!')
