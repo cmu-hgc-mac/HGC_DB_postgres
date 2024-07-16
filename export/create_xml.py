@@ -82,17 +82,17 @@ async def insert_values_into_xml(xml_file, mapping, conn, name_column, id_column
         table = info[1]
 
         if xml_tag not in placeholders:
-            if len(columns) != 2 and xml_tag in ['RUN_BEGIN_TIMESTAMP_', 'KIND_OF_PART', 'CURE_BEGIN_TIMESTAMP_', 'CURE_END_TIMESTAMP_']:
+            if len(columns) > 1 and xml_tag in ['RUN_BEGIN_TIMESTAMP_', 'RUN_END_TIMESTAMP_', 'KIND_OF_PART', 'CURE_BEGIN_TIMESTAMP_', 'CURE_END_TIMESTAMP_']:
                 # Special handling for combined columns
                 value = await fetch_value(conn, table, columns)
-                if xml_tag == 'RUN_BEGIN_TIMESTAMP_':
+                if xml_tag == 'RUN_BEGIN_TIMESTAMP_' or 'RUN_END_TIMESTAMP_':
                     placeholders[xml_tag] = f"{value[columns[0]]}T{value[columns[1]]}"
                 elif xml_tag == 'KIND_OF_PART':
                     if id_table == 'module_assembly':
                         placeholders[xml_tag] = f"{value[columns[0]]} Si Module {value[columns[1]]} {value[columns[2]]}"
                     else:    
                         placeholders[xml_tag] = f"{value[columns[0]]}_{value[columns[1]]}"
-                
+    
                 elif xml_tag == 'CURE_BEGIN_TIMESTAMP_':
                     placeholders[xml_tag] = f"{value[columns[0]]}T{value[columns[1]]}"
                 elif xml_tag == 'CURE_END_TIMESTAMP_':
@@ -136,30 +136,33 @@ async def insert_values_into_xml(xml_file, mapping, conn, name_column, id_column
 
 async def main():
     id_table = input(f'Choose one from proto_assembly/baseplate/module_assembly -- ')
-    
+    xml_type = ['build_upload', 'cond_upload', 'assembly_upload']
+    _xml_type = input(f'Choose one from {xml_type} -- ')
+    assert _xml_type in xml_type, 'Invalid xml type.'
+
     if id_table == 'proto_assembly':
         ## test protomodule/cond_upload.xml
         params = {'id_table': 'proto_assembly', 
                 'id_column': 'proto_name',
                 'name_column': 'proto_name',
-                'csv_path': 'protomodule/cond_upload.csv',
-                'xml_temp_path': 'protomodule/cond_upload.xml',
+                'csv_path': f'protomodule/{_xml_type}.csv',
+                'xml_temp_path': f'protomodule/{_xml_type}.xml',
                 'xml_output_path': 'protomodule'}
     elif id_table == 'baseplate':
         ## test baseplate/cond_upload.xml
         params = {'id_table': 'baseplate', 
                 'id_column': 'bp_no',
                 'name_column': 'bp_name',
-                'xml_temp_path': 'baseplates/cond_upload.xml',
-                'csv_path': 'baseplate/cond_upload.csv',
+                'xml_temp_path': f'baseplates/{_xml_type}.xml',
+                'csv_path': f'baseplate/{_xml_type}.csv',
                 'xml_output_path': 'baseplate'}
     elif id_table == 'module_assembly':
         ## test module/cond_upload.xml
         params = {'id_table': 'module_assembly', 
                 'id_column': 'module_name',
                 'name_column': 'module_name',
-                'csv_path': 'module/cond_upload.csv',
-                'xml_temp_path': 'module/cond_upload.xml',
+                'csv_path': f'module/{_xml_type}.csv',
+                'xml_temp_path': f'module/{_xml_type}.xml',
                 'xml_output_path': 'module'}
 
     # Load mapping
