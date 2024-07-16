@@ -25,7 +25,6 @@ async def load_mapping_from_csv(csv_file):
 
 async def fetch_val(conn, column, table):
     query = f"SELECT {column} FROM {table}"
-    print(query)
     result = await conn.fetchval(query)
     return result
 
@@ -132,7 +131,8 @@ async def insert_values_into_xml(xml_file, mapping, conn, name_column, id_column
 
     # Save the updated XML to the directory
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, os.path.basename(xml_file))
+    output_xml_filename = name_val + '_' + xml_file.split('/')[-1]## generated xml file = id + xml filename
+    output_file = os.path.join(output_dir, os.path.basename(output_xml_filename))
     tree.write(output_file)
     print(f'Successfully created {output_file}')
 
