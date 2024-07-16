@@ -25,11 +25,12 @@ async def load_mapping_from_csv(csv_file):
 
 async def fetch_val(conn, column, table):
     query = f"SELECT {column} FROM {table}"
+    print(query)
     result = await conn.fetchval(query)
     return result
 
 async def fetch_institution(conn, id_column, id_table, name_column, name_val):
-    if id_table == 'baseplate':
+    if id_table in ['baseplate', 'sensor']:
         query = f"""
             SELECT mi.institution
             FROM {id_table}
@@ -37,8 +38,8 @@ async def fetch_institution(conn, id_column, id_table, name_column, name_val):
             JOIN module_info mi ON pa.module_no = mi.module_no
             WHERE {id_table}.{name_column} = $1
         """
-    
-    elif id_table in ['proto_assembly', 'module_assembly']:
+
+    elif id_table in ['proto_assembly', 'module_assembly', 'hexaboard']:
         query = f"""
             SELECT institution
             FROM module_info
@@ -46,6 +47,7 @@ async def fetch_institution(conn, id_column, id_table, name_column, name_val):
             ON {id_table}.module_no = module_info.module_no
             WHERE {id_table}.{id_column} = $1
             """
+    
     result = await conn.fetchval(query, name_val)
     return result
 
@@ -75,7 +77,7 @@ async def insert_values_into_xml(xml_file, mapping, conn, name_column, id_column
     institution = await fetch_institution(conn, id_column, id_table, name_column, name_val)
     
     # Placeholder values to replace
-    placeholders = {'ID': id, 'LOCATION': institution}
+    placeholders = {'ID': name_val, 'LOCATION': institution}
 
     for xml_tag, info in mapping.items():
         columns = info[0]
@@ -135,7 +137,7 @@ async def insert_values_into_xml(xml_file, mapping, conn, name_column, id_column
     print(f'Successfully created {output_file}')
 
 async def main():
-    id_table = input(f'Choose one from proto_assembly/baseplate/module_assembly -- ')
+    id_table = input(f'Choose one from proto_assembly/baseplate/module_assembly/sensor/hxb -- ')
     xml_type = ['build_upload', 'cond_upload', 'assembly_upload']
     _xml_type = input(f'Choose one from {xml_type} -- ')
     assert _xml_type in xml_type, 'Invalid xml type.'
@@ -153,7 +155,7 @@ async def main():
         params = {'id_table': 'baseplate', 
                 'id_column': 'bp_no',
                 'name_column': 'bp_name',
-                'xml_temp_path': f'baseplates/{_xml_type}.xml',
+                'xml_temp_path': f'baseplate/{_xml_type}.xml',
                 'csv_path': f'baseplate/{_xml_type}.csv',
                 'xml_output_path': 'baseplate'}
     elif id_table == 'module_assembly':
@@ -164,6 +166,22 @@ async def main():
                 'csv_path': f'module/{_xml_type}.csv',
                 'xml_temp_path': f'module/{_xml_type}.xml',
                 'xml_output_path': 'module'}
+    elif id_table == 'sensor':
+        ## test module/cond_upload.xml
+        params = {'id_table': 'sensor', 
+                'id_column': 'sen_no',
+                'name_column': 'sen_name',
+                'csv_path': f'sensor/{_xml_type}.csv',
+                'xml_temp_path': f'sensor/{_xml_type}.xml',
+                'xml_output_path': 'sensor'}
+    elif id_table == 'hxb':
+        ## test module/cond_upload.xml
+        params = {'id_table': 'hexaboard', 
+                'id_column': 'hxb_no',
+                'name_column': 'hxb_name',
+                'csv_path': f'hxb/{_xml_type}.csv',
+                'xml_temp_path': f'hxb/{_xml_type}.xml',
+                'xml_output_path': 'hxb'}
 
     # Load mapping
     mapping = await load_mapping_from_csv(f"../export/var_match_up/{params['csv_path']}")## worked. 
