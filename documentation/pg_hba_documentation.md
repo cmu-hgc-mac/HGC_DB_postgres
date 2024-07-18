@@ -18,7 +18,7 @@ A whitelist of IP addresses of the other stations need to be added to ```pg_hba.
 **note**:
 In Mac/Linux, it is customary to find it under ```PostgreSQL/15/main/pg_hba.conf``` . In Windows, it is typically found under ```C:/Program Files/PostgreSQL/l5/data/pg_hba.conf```.
 
-5. Under `Connections and Authentication`, list static IPs or hostnames of other stations under `listen_addresses` along with `localhost`.
+5. Under `Connections and Authentication`, list static IPs or hostnames of other stations under `listen_addresses` along with `localhost`. Note: if IP addresses are not known, it can be configured to listen on all addresses with `listen_addresses = '*'`. This is not secure and hence not recommended during production.
 6. Save and close `postgresql.conf`. ([Restart required](pg_hba_documentation.md#restart-postgresql)).
 
 ```
@@ -44,7 +44,7 @@ port = 5432                             # (change requires restart)
 7. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                
 8. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
- **```host  all  all  [station ip address or hostname] trust```**
+ **```host  all  all  [station ip address or hostname] md5```**  Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0 md5```. This is not secure and hence not recommended during production.
 9. Save and close `pg_hba.conf`.
 10. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
 
@@ -56,10 +56,10 @@ port = 5432                             # (change requires restart)
 local   all             all                                         scram-sha-256
 # IPv4 local connections:
 host    all             all             127.0.0.1/32                scram-sha-256
-host    all             all             mycomp1.phys.school.edu     trust ## OGP
-host    all             all             mycomp2.phys.school.edu     trust ## Gantry 
-host    all             all             mycomp3.phys.school.edu     trust ## Test stand
-host    all             all             192.168.0.1/32              trust ## Shipping
+host    all             all             mycomp1.phys.school.edu     md5 ## OGP
+host    all             all             mycomp2.phys.school.edu     md5 ## Gantry 
+host    all             all             mycomp3.phys.school.edu     md5 ## Test stand
+host    all             all             192.168.0.1/32              md5 ## Shipping
 ```
 
 **note**:
@@ -67,9 +67,9 @@ host    all             all             192.168.0.1/32              trust ## Shi
 - Do **NOT** include `/32` for human-readable hostname.
 
 # Restart postgreSQL
-Closing and opening pgAdmin4 should restart postgreSQL.
+This can be done on pgAdmin. Connect to the server and database on pgAdmin. Open the Query Tool (first Icon in Object Explorer in top left corner) and run: ```SELECT pg_reload_conf();```
 
-For Linux computers, try
+Postgres can also be restarted in the command line. For Linux computers, try in command line
 ```sudo service postgresql restart```
  
 # Test connection
