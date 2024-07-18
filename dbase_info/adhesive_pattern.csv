@@ -1,0 +1,7 @@
+adhesive_no,serial PRIMARY KEY,,
+adhesive_type,TEXT,,
+date,DATE,,
+pattern_version,INT,,
+blob,BYTEA,,
+stack_type,TEXT,,
+module_no,INT,fk_mod_pm,module_info
