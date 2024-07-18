@@ -291,3 +291,14 @@ tables:
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT'
 
+  - 
+    fname: 'adhesive_pattern.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
