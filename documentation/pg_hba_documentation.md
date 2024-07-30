@@ -67,7 +67,7 @@ host    all             all             192.168.0.1/32              md5 ## Shipp
 - Do **NOT** include `/32` for human-readable hostname.
 
 # Restart postgreSQL
-This can be done on pgAdmin. Connect to the server and database on pgAdmin. Open the Query Tool (first Icon in Object Explorer in top left corner) and run: ```SELECT pg_reload_conf();```
+This can be done on pgAdmin. Connect to the server and database on pgAdmin. Open the PSQL Tool (last Icon in Object Explorer in top left corner) and run: ```SELECT pg_reload_conf();```
 
 Postgres can also be restarted in the command line. For Linux computers, try in command line
 ```sudo service postgresql restart```
