@@ -1,6 +1,0 @@
-host = 'localhost'
-database='hgcdb'
-user='ogp_user'
-password='hgcalpass'
-inst_code = 'CM'
-institution_name = 'Carnegie Mellon University'
