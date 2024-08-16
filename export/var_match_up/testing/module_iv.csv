@@ -1,0 +1,13 @@
+INITIATED_BY_USER,inspector,module_iv_test
+LOCATION,institution,module_info
+ID,module_name,module_iv_test
+KIND_OF_PART,,
+RATIO_IV,,
+TEMP_C,temp_c,module_iv_test
+STATUS,status,module_iv_test
+STATUS_DESC,status_desc,module_iv_test
+GRADE,grade,module_iv_test
+PROG_V,program_v,module_iv_test
+MEAS_V,meas_v,module_iv_test
+MEAS_I,meas_i,module_iv_test
+MEAS_R,meas_r,module_iv_test
