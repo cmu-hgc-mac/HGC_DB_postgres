@@ -38,7 +38,7 @@ async def fetch_institution(conn, id_column, id_table, name_column, name_val):
             WHERE {id_table}.{name_column} = $1
         """
 
-    elif id_table in ['proto_assembly', 'module_assembly', 'hexaboard']:
+    elif id_table in ['proto_assembly', 'module_assembly', 'hexaboard', 'module_iv_test']:
         query = f"""
             SELECT institution
             FROM module_info
@@ -137,8 +137,8 @@ async def insert_values_into_xml(xml_file, mapping, conn, name_column, id_column
     print(f'Successfully created {output_file}')
 
 async def main():
-    id_table = input(f'Choose one from proto_assembly/baseplate/module_assembly/sensor/hxb -- ')
-    xml_type = ['build_upload', 'cond_upload', 'assembly_upload']
+    id_table = input(f'Choose one from proto_assembly/baseplate/module_assembly/sensor/hxb/module_iv_test -- ')
+    xml_type = ['build_upload', 'cond_upload', 'assembly_upload', 'module_iv']
     _xml_type = input(f'Choose one from {xml_type} -- ')
     assert _xml_type in xml_type, 'Invalid xml type.'
 
@@ -182,6 +182,14 @@ async def main():
                 'csv_path': f'hxb/{_xml_type}.csv',
                 'xml_temp_path': f'hxb/{_xml_type}.xml',
                 'xml_output_path': 'hxb'}
+    elif id_table == 'module_iv_test':
+        ## test protomodule/cond_upload.xml
+        params = {'id_table': 'module_iv_test', 
+                'id_column': 'module_no',
+                'name_column': 'module_name',
+                'csv_path': f'testing/{_xml_type}.csv',
+                'xml_temp_path': f'testing/{_xml_type}.xml',
+                'xml_output_path': 'testing'}
 
     # Load mapping
     mapping = await load_mapping_from_csv(f"../export/var_match_up/{params['csv_path']}")## worked. 
