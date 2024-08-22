@@ -1,6 +1,8 @@
 mod_pedtest_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_pedtest,module_info
 module_name,TEXT,,
+status,INT,,
+status_desc,TEXT,,
 bias_vol,REAL,,
 count_bad_cells,SMALLINT,,
 list_dead_cells,SMALLINT[],,
