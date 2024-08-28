@@ -1,4 +1,4 @@
-After getting the latest pull, verify that the relevant columns in the `.csv` files in `db_info` have been modified.
+After getting the latest pull, verify that the relevant columns in the `.csv` files in `db_info` have been modified. Then do:
 
 ```
 cd modify
