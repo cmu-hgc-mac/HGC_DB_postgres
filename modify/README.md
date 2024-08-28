@@ -1,4 +1,5 @@
-After updating the relevant columns in the `.csv` files in `db_info`:
+After getting the latest pull, verify that the relevant columns in the `.csv` files in `db_info` have been modified.
+
 ```
 cd modify
 python3 modify_table.py
