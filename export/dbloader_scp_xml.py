@@ -1,10 +1,6 @@
-import platform, os, datetime, pwinput
+import platform, os, datetime, paramiko, pwinput
+from scp import SCPClient
 import numpy as np
-if platform.system() == 'Windows':
-    import wexpect as pexpect
-else:
-    import pexpect
-
 
 def find_files_by_date(directory, target_date):
     target_date = datetime.datetime.strptime(target_date, '%Y-%m-%d').date()
@@ -33,40 +29,36 @@ def get_build_files(files_list):
 
 
 def scp_to_dbloader(dbl_username, dbl_password, fname):
-    scp_command = f'scp -o ProxyJump={dbl_username}@lxplus.cern.ch {fname} {dbl_username}@dbloader-hgcal:/home/dbspool/spool/hgc/int2r/'
-    child = pexpect.spawn(scp_command)
-    logfile = open('scp_output.log', 'wb')  
-    child.logfile = logfile  
-    index = child.expect(['Password: ', pexpect.EOF, pexpect.TIMEOUT])
-    if index == 0:
-        child.sendline(dbl_password)
-        index = child.expect(['Password: ', pexpect.EOF, pexpect.TIMEOUT])
-        if index == 0:
-            child.sendline(dbl_password)
-            index = child.expect([pexpect.EOF, pexpect.TIMEOUT])
-            if index == 0:
-                print(child.before.decode('utf-8'))    
-    if index != 0:
-        print('\n')
-        print("Upload Unsuccessful :( ")
-        print("Troubleshooting tips --")
-        print("(1) Check username and password.")
-        print("(2) Check if SSH key is in known_hosts. If not, add with")
-        print("\t'ssh-keyscan lxplus.cern.ch >> ~/.ssh/known_hosts' in local terminal")
-        print("\t'ssh-keyscan dbloader-hgcal >> ~/.ssh/known_hosts' in lxplus")
-        print("(3) Check SCP command and output:")
-        print(f"\t'{scp_command}'\n")
-        print('WARNING!!! YOUR PASSWORD WILL BE VISIBLE!!! in the terminal output log.')
-        see_log = input('Do you want to see the terminal output log (yes/no)? ')
-        if 'y' in see_log.lower():
-            print('\n')
-            print('******** scp output log ********')
-            with open('scp_output.log', 'r') as log:
-                print(log.read())
-        else:
-            print("Try the above command in a terminal to see output.")
+    ssh_server1 = paramiko.SSHClient()
+    ssh_server1.load_system_host_keys()
+    ssh_server1.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+    try:
+        ssh_server1.connect(hostname='lxplus.cern.ch', username=dbl_username, password=dbl_password)
+        transport = ssh_server1.get_transport()
+        dest_addr = ('dbloader-hgcal', 22)  
+        local_addr = ('127.0.0.1', 22) # localhost
+        channel = transport.open_channel("direct-tcpip", dest_addr, local_addr)
+        ssh_server2 = paramiko.SSHClient()
+        ssh_server2.load_system_host_keys()
+        ssh_server2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_server2.connect(hostname='dbloader-hgcal', username=dbl_username, password=dbl_password, sock=channel)
 
+        with SCPClient(ssh_server2.get_transport()) as scp:
+            scp.put(fname, '/home/dbspool/spool/hgc/int2r/')
+
+        scp.close()
+        ssh_server2.close()
+        ssh_server1.close()    
+        
+    except paramiko.AuthenticationException:
+        print("Authentication failed, please verify your credentials.")
+    except paramiko.SSHException as e:
+        print(f"SSH exception occurred: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        
+        
 def main():
     directory_to_search = '.'
     search_date = input("Input date in YYYY-MM-DD: ")
