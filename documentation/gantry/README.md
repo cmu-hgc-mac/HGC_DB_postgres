@@ -1,4 +1,4 @@
-This project has been forked from [Jessica Parshook's UCSB-Gantry-HEP-Main GitHub Repository](https://github.com/jparshook/UCSB-Gantry-master-main) (to be updated).
+This documentation pertains to this project: https://github.com/kai-ucsb/Gantry
 
 # Getting started
 1. Under `UCSB-Gantry-HEP-main/Assembly Data/Database Config/type_at_institutions`, verify that the correct types of modules are present for you institution.
