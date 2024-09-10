@@ -29,7 +29,13 @@ user_password
 - Open the project
 - Under `Main VIs`, open `Manual Assembly DB.vi`.
 
-# Documentation
+![image](https://github.com/user-attachments/assets/ecb34a19-4e8a-4fb5-a8d2-d61a54c10104)
+
+![image](https://github.com/user-attachments/assets/7cf8146d-eb93-4480-a4f5-45348839fc6d)
+
+![image](https://github.com/user-attachments/assets/143eae7c-d0d5-4435-97d6-c84926c5100c)
+
+# More Documentation
 - Database queries are in `UCSB-Gantry-HEP-main/Main VIs/python_db/postgres_tools.py`.
 - Protomodules and modules are declared with `Stack.lvclass` and database entries are tracked with `Database Entry.lvclass`.
 - [Developer notes here - Google Slides](https://docs.google.com/presentation/d/1HBvVTkyuiU_mZnNuGw4U_Wn2-F3KMbM-lAi5Qyut9t0/edit#slide=id.p)
