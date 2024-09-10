@@ -33,7 +33,7 @@ user_password
 ![image](https://github.com/user-attachments/assets/ecb34a19-4e8a-4fb5-a8d2-d61a54c10104)
 
 ![image](https://github.com/user-attachments/assets/7cf8146d-eb93-4480-a4f5-45348839fc6d)
-
+Submitting the tile selections at `Initiate Assembly.vi` writes to the local database. The user can then select the routine they want to run. If the program is aborted at this stage, there will still be an entry in the database. If you don't want to keep those entries, please delete them with pgAdmin.
 ![image](https://github.com/user-attachments/assets/143eae7c-d0d5-4435-97d6-c84926c5100c)
 
 # Automatic Protomodule Naming
