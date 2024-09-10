@@ -39,6 +39,8 @@ user_password
 # Automatic Protomodule Naming
 The program automatically figures our the serial number for an assembled protomodule. It does so by incrementing the serial number of last assembled protomodule of that by 1. The first time you run this program, it will save a protomodule with serial number 1 for that type, i.e. `320-PX-XXXX-XX-0001`. However, at the time this code is being deployed, we assume MACs have already assembled multiple protomodules and would like to ensure we have the right serial number sequence. We recommend opening the `proto_assembly` table in pgAdmin and editing that entry to reflect the correct protomodule name. Please do not change the naming convention, i.e. prefixes and dashes. The next time you assemble a protomodule of that type, it should have the correct and desired name. To find the table in pgAdmin: `hgcdb` -> `Schemas` -> `Tables` -> `proto_assembly`. Right-click and select `View/Edit Data`.
 
+![image](https://github.com/user-attachments/assets/0e86ef37-8087-46fd-a3ab-8047269b9300)
+
 ![image](https://github.com/user-attachments/assets/7540e9c2-5339-43e7-a84d-7cd251f331eb)
 
 ![image](https://github.com/user-attachments/assets/0d2896db-1d70-4e43-ad5a-88607c2c7da8)
