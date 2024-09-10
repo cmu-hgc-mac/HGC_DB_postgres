@@ -1,6 +1,6 @@
 This documentation pertains to this project: https://github.com/kai-ucsb/Gantry
 
-# Getting started
+# Getting started: Connecting to the local DB
 1. Under `UCSB-Gantry-HEP-main/Assembly Data/Database Config/type_at_institutions`, verify that the correct types of modules are present for you institution.
 2. Under `UCSB-Gantry-HEP-main/Assembly Data/Database Config/`, open `conn.txt` preferably in Excel or VS Code. Set database connection info in the following order while carefully avoiding trailing spaces.
      1. database IP address
