@@ -37,6 +37,7 @@ user_password
 ![image](https://github.com/user-attachments/assets/143eae7c-d0d5-4435-97d6-c84926c5100c)
 
 # Automatic Protomodule Naming
+The program automatically figures our the serial number for an assembled protomodule. It does so by incrementing the serial number of last assembled protomodule of that by 1. The first time you run this program, it will save a protomodule with serial number 1 for that type, i.e. `320-PX-XXXX-XX-0001`. However, at the time this code is being deployed, we assume MACs have already assembled multiple protomodules and would like to ensure we have the right serial number sequence. We recommend opening the `proto_assembly` table in pgAdmin and editing that entry to reflect the correct protomodule name. Please do not change the naming convention, i.e. prefixes and dashes. The next time you assemble a protomodule of that type, it should have the correct and desired name.
 
 # More Documentation
 - Database queries are in `UCSB-Gantry-HEP-main/Main VIs/python_db/postgres_tools.py`.
