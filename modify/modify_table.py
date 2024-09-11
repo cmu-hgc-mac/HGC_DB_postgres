@@ -18,15 +18,14 @@ logic:
 # 1. extract the existing table schema
 async def get_existing_table_schema(conn, table_name: str):
     query = f"""
-    SELECT column_name, data_type, ordinal_position
+    SELECT column_name, data_type, ordinal_position, column_default
     FROM information_schema.columns
     WHERE table_name = $1
     ORDER BY ordinal_position;
     """
     rows = await conn.fetch(query, table_name)
-    existing_schema = {row['column_name']: row['data_type'] for row in rows}
+    existing_schema = {row['column_name']: {'data_type': row['data_type'], 'default': row['column_default']} for row in rows}
     return existing_schema
-
 
 # 2. read the updated schema from csv File
 def get_desired_table_schema_from_csv(csv_file_path: str):
@@ -77,14 +76,49 @@ def compare_schemas(existing_schema: dict, desired_schema: dict):
     return changes
 
 # 4. Apply the changes - datatype
-async def change_column_datatype(conn, table_name: str, column_name: str, old_datatype: str, new_datatype: str):
-    alter_query = f"""
-    ALTER TABLE {table_name}
-    ALTER COLUMN {column_name} TYPE {new_datatype}
-    USING {column_name}::{new_datatype};
-    """
-    await conn.execute(alter_query)
-    print(f"Column {column_name} in table {table_name} changed from {old_datatype} to {new_datatype}.")
+async def change_column_datatype(conn, table_name: str, column_name: str, old_datatype: str, new_datatype: str, default_value: str):
+    # Step 1: Change the data type (without DEFAULT)
+    if (old_datatype != new_datatype) and (len(new_datatype.split()) == 1):
+        alter_query = f"ALTER TABLE {table_name} ALTER COLUMN {column_name} TYPE {new_datatype};"
+        print(f"Executing: {alter_query}")
+        try:
+            await conn.execute(alter_query)
+        except Exception as e:
+            print(f"Failed to change data type for {column_name}: {e}")
+            return  # Stop further processing for this column if type change fails
+    
+    # Step 2: Set the DEFAULT value separately
+    if len(new_datatype.split()) > 1:
+        set_default_query = f"ALTER TABLE {table_name} ALTER COLUMN {column_name} SET DEFAULT {default_value};"
+        print(f"Executing: {set_default_query}")
+        try:
+            await conn.execute(set_default_query)
+        except Exception as e:
+            print(f"Failed to set DEFAULT for {column_name}: {e}")
+    
+    print(f"Column {column_name} in table {table_name} processed.")
+
+# 4. Apply the changes - drop a column if no data exists
+async def remove_empty_column(conn, table_name, column_name):
+    try:
+        # Step 1: Count the non-NULL entries in the column
+        query = f"""
+            SELECT COUNT(*) FROM {table_name} WHERE {column_name} IS NOT NULL;
+        """
+        non_null_count = await conn.fetchval(query)
+
+        # Step 2: If the count is 0, drop the column
+        if non_null_count == 0:
+            drop_query = f"""
+                ALTER TABLE {table_name} DROP COLUMN {column_name};
+            """
+            await conn.execute(drop_query)
+            print(f"Column '{column_name}' was successfully removed from table '{table_name}'.")
+        else:
+            print(f"Column '{column_name}' in table '{table_name}' contains data and was not removed.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 # 4. Apply the changes - rename column
 async def change_column_name(conn, table_name: str, old_col_name: str, new_col_name: str):
@@ -96,11 +130,15 @@ async def change_column_name(conn, table_name: str, old_col_name: str, new_col_n
     print(f"Column {old_col_name} in table {table_name} renamed to {new_col_name}.")
 
 # 4. Apply the changes
-async def apply_changes(conn, table_name: str, changes):
+async def apply_changes(conn, table_name: str, changes, existing_schema):
     for change in changes:
+        # if change[0] == 'datatype':
+        #     _, column, old_type, new_type = change
+        #     await change_column_datatype(conn, table_name, column, old_type, new_type)
         if change[0] == 'datatype':
             _, column, old_type, new_type = change
-            await change_column_datatype(conn, table_name, column, old_type, new_type)
+            default_value = existing_schema[column].get('default')
+            await change_column_datatype(conn, table_name, column, old_type, new_type, default_value)
         elif change[0] == 'new_column':
             _, column, _, new_type = change
             alter_query = f"ALTER TABLE {table_name} ADD COLUMN {column} {new_type};"
@@ -108,9 +146,7 @@ async def apply_changes(conn, table_name: str, changes):
             print(f"Column {column} added to table {table_name}.")
         elif change[0] == 'remove_column':
             _, column, _, _ = change
-            alter_query = f"ALTER TABLE {table_name} DROP COLUMN {column};"
-            await conn.execute(alter_query)
-            print(f"Column {column} removed from table {table_name}.")
+            await remove_empty_column(conn, table_name, column)
         elif change[0] == 'rename_column':
             _, old_col_name, new_col_name = change
             await change_column_name(conn, table_name, old_col_name, new_col_name)
@@ -152,8 +188,6 @@ async def main():
     desired_schema = get_desired_table_schema_from_csv(csv_file_path)
     changes = compare_schemas(existing_schema, desired_schema)
 
-    await apply_changes(conn, table_name, changes)
+    await apply_changes(conn, table_name, changes, existing_schema)
     await conn.close()
 asyncio.run(main())
-
-    
