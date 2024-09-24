@@ -18,8 +18,7 @@ local_db_hrchy = {
         'proto_assembly': {
             'proto_inspect': None,
             'sensor': None,
-            'baseplate': 'bp_inspect'
-        },
+            'baseplate': {'bp_inspect': None}},
         'mod_hxb_other_test': None
     }
-}
+    }
