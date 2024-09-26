@@ -1,0 +1,247 @@
+## example
+
+protomodule:
+  -
+    fname: build_upload.xml
+    KIND_OF_PART:
+    ID: proto_name
+    BARCODE:
+    LOCATION: institution
+    INSTITUTION: institution
+    MANUFACTURER:
+    KIND_OF_PART_BASEPLATE:
+    BASEPLATE: bp_name
+    KIND_OF_PART_SENSOR:
+    SENSOR: sen_name
+
+  -
+    fname: assembly_upload.xml
+    RUN_BEGIN_TIMESTAMP_: ass_run_date, ass_time_begin
+    RUN_END_TIMESTAMP_: ass_run_date, ass_time_end
+    INITIATED_BY_USER: operator
+    LOCATION: institution
+    KIND_OF_PART:
+    ID: proto_name
+    ASMBL_TRAY_NAME: ass_tray_id
+    BASEPLATE: bp_name
+    ASM_ROW:
+    ASM_COL:
+    FLATNESS: flatness
+    THICKNESS: thickness
+    COMP_TRAY_NAM:
+    SENSOR: sen_name
+    ASM_ROW:
+    ASM_COL: 
+    SNSR_X_OFFST: x_offset_mu
+    SNSR_Y_OFFST: y_offset_mu
+    SNSR_ANG_OFFST: ang_offset_deg
+    SNSR_TOOL_NAME:
+    SNSR_TOOL_HT_SET:
+    SNSR_TOOL_HT_CHK:
+    ADHESIVE_TYPE: adhesive
+    GRADE: grade
+    SNSR_TOOL_FEET_CHK:
+    STEP_SENSOR:
+
+  - 
+    fname: cond_upload.xml
+    RUN_BEGIN_TIMESTAMP_: date_inspect, time_inspect
+    RUN_END_TIMESTAMP_: cure_date_end, cure_time_end
+    INITIATED_BY_USER: operator
+    LOCATION: institution
+    ID: proto_name
+    KIND_OF_PART: 
+    CURING_TIME_HRS:
+    CURE_BEGIN_TIMESTAMP_: date_inspect, time_inspect
+    CURE_END_TIMESTAMP_: cure_date_end, cure_time_end
+    TEMP_DEGC: temp_c
+    HUMIDITY_PRCNT: rel_hum
+  -
+baseplate:
+  -
+    fname: cond_upload.xml
+    RUN_BEGIN_TIMESTAMP_: date_inspect, time_inspect
+    RUN_END_TIMESTAMP_:
+    INITIATED_BY_USER: inspector
+    LOCATION: institution
+    ID: bp_name
+    KIND_OF_PART: baseplate.resolution, baseplate.geometry
+    FLATNESS: flatness
+    THICKNESS: thickness
+    WEIGHT:
+    GRADE: grade
+    COMMENTS_UPLOAD: comment
+
+  -
+    fname: build_upload.xml
+    KIND_OF_PART:
+    ID: bp_name
+    LOCATION:
+    INSTITUTION: institution
+  
+  -
+hexaboard: 
+  -
+    fname: build_upload.xml
+    KIND_OF_PART:
+    ID: hxb_name
+    LOCATION:
+    INSTITUTION: institution
+  
+  -
+    fname: cond_upload.xml
+    RUN_BEGIN_TIMESTAMP_: date_inspect, time_inspect
+    RUN_END_TIMESTAMP_:
+    INITIATED_BY_USER: inspector
+    LOCATION: institution
+    ID: hxb_name
+    KIND_OF_PART:
+    RECORD_INSERTION_USER:
+    RUN_BEGIN_DATE_:
+    TEST_FILES:
+    FLATNESS: flatness
+    THICKNESS: thickness
+    GRADE: grade
+    COMMENTS_UPLOAD: comment
+
+  -
+module:
+  -
+    fname: build_upload.xml
+    KIND_OF_PART:
+    ID: module_name
+    BARCODE:
+    LOCATION:
+    INSTITUTION: institution
+    MANUFACTURER:
+    KIND_OF_PART_PROTOMODULE:
+    PROTOMODULE: proto_name
+    KIND_OF_PART_PCB:
+    PCB:
+  -
+    fname: assembly_upload.xml
+    STEP_PCB_NUM:
+    RUN_BEGIN_TIMESTAMP_: ass_run_date, ass_time_begin
+    RUN_END_TIMESTAMP_: ass_run_date, ass_time_end
+    INITIATED_BY_USER: operator
+    LOCATION: institution
+    KIND_OF_PART:
+    ID: module_name
+    ASMBL_TRAY_NAME: ass_tray_id
+    PROTOMODULE: proto_name
+    ASM_ROW:
+    ASM_COL:
+    COMP_TRAY_NAME:
+    PCB: hxb_name
+    PCB_THICKNESS: thickness
+    ASM_ROW:
+    ASM_COL:
+    PCB_TOOL_NAME:
+    PCB_TOOL_FEET_CHK_STR:
+    ADHESIVE_TYPE: adhesive
+    GRADE:
+    STEP_PCB:
+    PCB_PLCMENT_X_OFFSET:
+    PCB_PLCMENT_Y_OFFSET:
+    PCB_PLCMENT_ANG_OFFSET:
+    FLATNESS: flatness
+    THICKNESS: thickness
+    MAX_THICKNESS:
+  -
+    fname: cond_upload.xml
+    RUN_BEGIN_TIMESTAMP_: ass_run_date, ass_time_begin
+    RUN_END_TIMESTAMP_: ass_run_date, ass_time_end
+    INITIATED_BY_USER: operator
+    LOCATION: institution
+    KIND_OF_PART:
+    ID: module_name
+    CURING_TIME_HRS:
+    CURE_BEGIN_TIMESTAMP_: ass_run_date, ass_time_begin
+    CURE_END_TIMESTAMP_: cure_date_end, cure_time_end
+    TEMP_DEGC: temp_c
+    HUMIDITY_PRCNT: rel_hum
+  -
+    fname: wirebond_upload.xml
+    RUN_NAME_TIME_STAMP: date_bond + time_bond
+    BACK_BONDS_DATE: date_bond
+    FRONT_BONDS_DATE: date_bond
+    BOND_PULL_USER: technician
+    LOCATION: institution
+    KIND_OF_PART:
+    ID: module_name
+    BOND_WIRE_BATCH_NUM: spool_batch
+    PRE_INSPECTION:
+    SYLGARD_BATCH:
+    WEDGE_BATCH: wedge_id
+    BACK_BONDS:
+    BACK_BONDS_DATE: date_bond
+    BACK_BONDS_USER: technician
+    BACK_UNBONDED:
+    BACK_BOND_INSPXN: wb_bk_marked_done
+    BACK_REPAIR_USER: 
+    FRONT_BONDS: 
+    FRONT_BONDS_DATE: date_bond
+    FRONT_BONDS_USER: technician
+    FRONT_SKIP:
+    FRONT_UNBONDED:
+    FRONT_BOND_INSPXN: wb_fr_marked_done
+    FRONT_REPAIR_USER:
+    BACK_ENCAP:
+    BACK_ENCAP_USER: technician
+    BACK_ENCAP_CURE_START:
+    BACK_ENCAP_CURE_STOP:
+    BACK_ENCAP_INSPXN:
+    FRONT_ENCAP:
+    FRONT_ENCAP_USER: technician
+    FRONT_ENCAP_CURE_START:
+    FRONT_ENCAP_CURE_STOP:
+    FRONT_ENCAP_INSPXN:
+    IS_TEST_BOND_MODULE:
+    BOND_PULL_USER: technician
+    BOND_PULL_AVG: avg_pull_strg_g
+    BOND_PULL_STDDEV: std_pull_strg_g
+    FINAL_INSPXN_USER:
+    FINAL_INSPXN_OK:
+    WIREBOND_COMMENTS_CONCAT:
+  
+  -
+sensor:
+  -
+    fname: build_upload.xml
+    KIND_OF_PART:
+    ID: sen_name
+    LOCATION:
+    INSTITUTION: institution
+  -
+    fname: cond_upload.xml
+    RUN_BEGIN_TIMESTAMP_: ass_run_date, ass_time_begin
+    RUN_END_TIMESTAMP_: ass_run_date, ass_time_end
+    INITIATED_BY_USER: operator
+    LOCATION: institution
+    ID: sen_name
+    KIND_OF_PART:
+    RECORD_INSERTION_USER:
+    RUN_BEGIN_DATE_:
+    VISUAL_INSPECTION:
+    FLATNESS:
+    THICKNESS: thickness
+    GRADE: grade
+    COMMENTS_UPLOAD: comment
+  -
+testing: 
+  -
+    fname: module_iv.xml
+    LOCATION: institution
+    ID: module_name
+    KIND_OF_PART:
+    RATIO_IV:
+    TEMP_C: temp_c
+    STATUS: status
+    STATUS_DESC: status_desc
+    GRADE: grade
+    PROG_V: program_v
+    MEAS_V: meas_v
+    MEAS_I: meas_i
+    MEAS_R: meas_r
+  -
+  
