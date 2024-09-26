@@ -26,3 +26,5 @@ inspected,DATE,,
 rel_hum,TEXT,,
 temp_c,TEXT,,
 module_no,INT,fk_mod_pm,module_info
+pos_row,INT,,
+pos_col,INT,,
