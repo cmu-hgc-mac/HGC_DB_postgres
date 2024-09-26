@@ -1,0 +1,4 @@
+dbname: 'hgcdb'
+port: '5432'
+db_hostname: 'localhost'
+institution_abbr: 'CMU'
