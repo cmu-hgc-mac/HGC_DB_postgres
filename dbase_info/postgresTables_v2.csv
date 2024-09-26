@@ -1,2 +1,0 @@
-backside_baseplate,ogp,gantry, db,"feature_type, feature_name, value, actual, nominal, deviation, neg_tolerance, pos_tolerance, out_of_tolerance, comment, id_baseplate, number, date, time","text, text, text, text, text, text, text, text, text, text, text, integer, date, time"
-frontside_baseplate,ogp,gantry, db,"feature_type, feature_name, value, actual, nominal, deviation, neg_tolerance, pos_tolerance, out_of_tolerance, comment, id_module, number, date, time","text, text, text, text, text, text, text, text, text, text, text, serial PRIMARY KEY, date, time"
