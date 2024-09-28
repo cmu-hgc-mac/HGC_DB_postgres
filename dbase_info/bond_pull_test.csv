@@ -11,3 +11,4 @@ time_bond,TIME,,
 technician,TEXT,,
 comment,TEXT,,
 module_no,INT,fk_mod_pulltest,module_info
+run_no,INT,,
