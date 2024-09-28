@@ -5,7 +5,7 @@ sys.path.append('../')
 from src.utils import connect_db
 
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
-parser.add_argument('-t', '--tablename', required=True, help="Name of table to modify.")
+parser.add_argument('-t', '--tablename',default='all', required=True, help="Name of table to modify.")
 args = parser.parse_args()
 
 '''
@@ -152,6 +152,13 @@ async def apply_changes(conn, table_name: str, changes, existing_schema):
             _, old_col_name, new_col_name = change
             await change_column_name(conn, table_name, old_col_name, new_col_name)
 
+async def table_modify_seq(conn, table_name, loc):
+    existing_schema = await get_existing_table_schema(conn, table_name)
+    csv_file_path = os.path.join(loc, table_name) + '.csv'
+    desired_schema = get_desired_table_schema_from_csv(csv_file_path)
+    changes = compare_schemas(existing_schema, desired_schema)
+    await apply_changes(conn, table_name, changes, existing_schema)
+
 async def main():
     ## Database connection parameters for new database
     loc = '../dbase_info/'
@@ -180,16 +187,15 @@ async def main():
             all_table_names.append(os.path.splitext(filename)[0])  # Assuming table name is the same as CSV file name
     
     ## table_name = input('Enter the table name you want to apply a change(s). -- ')
-    table_name = ((args.tablename).split('.csv')[0]).lower()
-    
-    assert table_name in all_table_names, "Table was not found in the database."
+    tablename_arg = ((args.tablename).split('.csv')[0]).lower()
 
-    
-    existing_schema = await get_existing_table_schema(conn, table_name)
-    csv_file_path = os.path.join(loc, table_name) + '.csv'
-    desired_schema = get_desired_table_schema_from_csv(csv_file_path)
-    changes = compare_schemas(existing_schema, desired_schema)
-
-    await apply_changes(conn, table_name, changes, existing_schema)
+    if tablename_arg == 'all':
+        for table_name in all_table_names:
+            await table_modify_seq(conn, table_name, loc)
+    else:
+        assert table_name in all_table_names, "Table was not found in the database."
+        await table_modify_seq(conn, table_name, loc)
+        
     await conn.close()
+
 asyncio.run(main())
