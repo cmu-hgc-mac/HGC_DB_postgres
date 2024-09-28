@@ -189,30 +189,20 @@ async def main():
     ## table_name = input('Enter the table name you want to apply a change(s). -- ')
     tablename_arg = ((args.tablename).split('.csv')[0]).lower()
 
-    if tablename_arg == 'all':
-        for table_name in all_table_names:
-            try:
-                await table_modify_seq(conn, table_name, loc)
-            except Exception as e:
-                print('\n')
-                print('##############################')
-                print('########### ERROR! ###########')
-                print(f'For table {table_name}:')
-                print(e)
-                print('##############################')
-                print('\n')
-    else:
-        assert tablename_arg in all_table_names, "Table was not found in the database."
+    table_name_list = all_table_names if tablename_arg == 'all' else [tablename_arg]
+
+    for table_name in table_name_list:
         try:
-            await table_modify_seq(conn, tablename_arg, loc)
+            assert table_name in all_table_names, "Table was not found in the csv list."
+            await table_modify_seq(conn, table_name, loc)
         except Exception as e:
-                print('\n')
-                print('##############################')
-                print('########### ERROR! ###########')
-                print(f'For table {table_name}:')
-                print(e)
-                print('##############################')
-                print('\n')
+            print('\n')
+            print('##############################')
+            print('########### ERROR! ###########')
+            print(f'For table {table_name}:')
+            print(e)
+            print('##############################')
+            print('\n')
         
     await conn.close()
 
