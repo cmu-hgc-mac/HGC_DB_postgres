@@ -193,8 +193,8 @@ async def main():
         for table_name in all_table_names:
             await table_modify_seq(conn, table_name, loc)
     else:
-        assert table_name in all_table_names, "Table was not found in the database."
-        await table_modify_seq(conn, table_name, loc)
+        assert tablename_arg in all_table_names, "Table was not found in the database."
+        await table_modify_seq(conn, tablename_arg, loc)
         
     await conn.close()
 
