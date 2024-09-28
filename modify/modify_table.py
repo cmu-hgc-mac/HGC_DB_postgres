@@ -200,7 +200,13 @@ async def main():
         try:
             await table_modify_seq(conn, tablename_arg, loc)
         except Exception as e:
+                print('/n')
+                print('##############################')
+                print('########### ERROR! ###########')
+                print(f'For table {table_name}:')
                 print(e)
+                print('##############################')
+                print('/n')
         
     await conn.close()
 
