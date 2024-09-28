@@ -15,3 +15,4 @@ time_bond,TIME,,
 technician,TEXT,,
 comment,TEXT,,
 module_no,INT,fk_mod_frontwire,module_info
+run_no,INT,,
