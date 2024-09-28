@@ -11,6 +11,3 @@ python3 modify_table.py -t all
 cd modify
 python3 modify_table.py -t table_name
 ```
-
-**Note:**
-Removing a column from a `.csv` file and running the modify script will delete the column regardless of whether it has data or not. Use with caution. TBD: add a check for this.
