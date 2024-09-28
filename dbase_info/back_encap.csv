@@ -11,3 +11,4 @@ time_encap,TIME,,
 technician,TEXT,,
 comment,TEXT,,
 module_no,INT,fk_mod_backencap,module_info
+run_no,INT,,
