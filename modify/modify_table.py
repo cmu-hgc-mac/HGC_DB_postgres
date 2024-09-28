@@ -1,11 +1,12 @@
-import csv
-import os
-import asyncio
-import asyncpg
-import yaml
-import sys
+import os, sys, argparse
+import asyncio, asyncpg
+import yaml, csv
 sys.path.append('../')
 from src.utils import connect_db
+
+parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
+parser.add_argument('-t', '--tablename', required=True, help="Name of table to modify.")
+args = parser.parse_args()
 
 '''
 logic:
@@ -178,7 +179,8 @@ async def main():
             csv_file_path = os.path.join(loc, filename)
             all_table_names.append(os.path.splitext(filename)[0])  # Assuming table name is the same as CSV file name
     
-    table_name = input('Enter the table name you want to apply a change(s). -- ')
+    ## table_name = input('Enter the table name you want to apply a change(s). -- ')
+    table_name = ((args.tablename).split('.csv')[0]).lower()
     
     assert table_name in all_table_names, "Table was not found in the database."
 
