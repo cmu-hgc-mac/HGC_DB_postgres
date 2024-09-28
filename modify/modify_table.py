@@ -194,25 +194,25 @@ async def main():
             try:
                 await table_modify_seq(conn, table_name, loc)
             except Exception as e:
-                print('/n')
+                print('\n')
                 print('##############################')
                 print('########### ERROR! ###########')
                 print(f'For table {table_name}:')
                 print(e)
                 print('##############################')
-                print('/n')
+                print('\n')
     else:
         assert tablename_arg in all_table_names, "Table was not found in the database."
         try:
             await table_modify_seq(conn, tablename_arg, loc)
         except Exception as e:
-                print('/n')
+                print('\n')
                 print('##############################')
                 print('########### ERROR! ###########')
                 print(f'For table {table_name}:')
                 print(e)
                 print('##############################')
-                print('/n')
+                print('\n')
         
     await conn.close()
 
