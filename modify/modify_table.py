@@ -97,7 +97,7 @@ async def change_column_datatype(conn, table_name: str, column_name: str, old_da
         except Exception as e:
             print(f"Failed to set DEFAULT for {column_name}: {e}")
     
-    print(f"Column {column_name} in table {table_name} processed.")
+    # print(f"Column {column_name} in table {table_name} processed.")
 
 # 4. Apply the changes - drop a column if no data exists
 async def remove_empty_column(conn, table_name, column_name):
