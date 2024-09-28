@@ -16,3 +16,5 @@ hxb_passed,BOOLEAN,,
 module_no,INT,fk_mod_hxb,module_info
 comment,TEXT,,
 run_no,INT,,
+xml_gen_datetime,TIMESTAMP,,
+xml_upload_success,BOOLEAN,,

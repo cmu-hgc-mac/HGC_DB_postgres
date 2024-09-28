@@ -13,3 +13,5 @@ grade,TEXT,,
 comment,TEXT,,
 proto_no,INT,fk_pm_si,proto_assembly
 run_no,INT,,
+xml_gen_datetime,TIMESTAMP,,
+xml_upload_success,BOOLEAN,,

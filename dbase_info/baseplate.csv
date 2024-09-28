@@ -12,3 +12,5 @@ bp_passed,boolean,,
 proto_no,INT,fk_pm_bp,proto_assembly
 comment,TEXT,,
 run_no,INT,,
+xml_gen_datetime,TIMESTAMP,,
+xml_upload_success,BOOLEAN,,

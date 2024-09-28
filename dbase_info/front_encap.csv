@@ -12,3 +12,5 @@ technician,TEXT,,
 comment,TEXT,,
 module_no,INT,fk_mod_frontencap,module_info
 run_no,INT,,
+xml_gen_datetime,TIMESTAMP,,
+xml_upload_success,BOOLEAN,,
