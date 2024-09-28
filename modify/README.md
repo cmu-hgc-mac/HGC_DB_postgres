@@ -4,7 +4,7 @@ After getting the latest pull, verify that the relevant columns in the `.csv` fi
 ### To modify all tables
 ```
 cd modify
-python3 modify_table.py -t all
+python3 modify_table.py
 ```
 ### To modify select table with name `table_name`
 ```
