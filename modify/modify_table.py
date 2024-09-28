@@ -5,7 +5,7 @@ sys.path.append('../')
 from src.utils import connect_db
 
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
-parser.add_argument('-t', '--tablename',default='all', required=True, help="Name of table to modify.")
+parser.add_argument('-t', '--tablename', default='all', required=True, help="Name of table to modify.")
 args = parser.parse_args()
 
 '''
@@ -191,10 +191,16 @@ async def main():
 
     if tablename_arg == 'all':
         for table_name in all_table_names:
-            await table_modify_seq(conn, table_name, loc)
+            try:
+                await table_modify_seq(conn, table_name, loc)
+            except Exception as e:
+                print(e)
     else:
         assert tablename_arg in all_table_names, "Table was not found in the database."
-        await table_modify_seq(conn, tablename_arg, loc)
+        try:
+            await table_modify_seq(conn, tablename_arg, loc)
+        except Exception as e:
+                print(e)
         
     await conn.close()
 
