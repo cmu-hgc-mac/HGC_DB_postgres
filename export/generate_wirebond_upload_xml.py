@@ -150,9 +150,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         AND xml_gen_datetime IS NULL
                         ORDER BY date_bond DESC, time_bond DESC LIMIT 1;
                         """
-                print(f'Executing the query \n\t{query}')
+
                 results = await fetch_from_db(query, conn)  # Use conn directly
-                # print(f'results -- {results}\n')
+
                 if results:
                     if xml_var == "RUN_BEGIN_TIMESTAMP_":
                         # Fetching both ass_run_date and ass_time_begin
@@ -173,11 +173,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         db_values[xml_var] = f"{bk_comment}-{fr_comment}"
                     else:
                         db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-        print(f'Retreived data -- \n{db_values}')
+
         output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)
         await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-                # await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
 
 async def main():
     # Configuration
