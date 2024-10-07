@@ -3,23 +3,24 @@ SQL Tables should only have to be made once. After that any modifications to the
 Tables that we need based on the OGP measurements so far:
 '''
 
-import asyncio, asyncpg, yaml
+import asyncio, asyncpg, yaml, os
 
 async def create_db():
     print("Creating a new database...")
     ## Database connection parameters for new database
-    loc = '../dbase_info/'
-    yaml_file = f'{loc}tables.yaml'
+    loc = 'dbase_info'
+    table_yaml_file = os.path.join(loc, 'conn.yaml')
+    conn_yaml_file = os.path.join(loc, 'tables.yaml')
     db_params = {
-        'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
+        'database': yaml.safe_load(open(conn_yaml_file, 'r'))['dbname'],
         'user': 'postgres',   
         'password': input('Set superuser password: '),
-        'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname'],  
-        'port': yaml.safe_load(open(yaml_file, 'r'))['port']        
+        'host': yaml.safe_load(open(conn_yaml_file, 'r'))['db_hostname'],  
+        'port': yaml.safe_load(open(conn_yaml_file, 'r'))['port']        
     }
 
     # Connect to the default PostgreSQL database
-    default_conn = await asyncpg.connect(user='postgres', password='hgcal', host=yaml.safe_load(open(yaml_file, 'r'))['db_hostname'], port=yaml.safe_load(open(yaml_file, 'r'))['port'])
+    default_conn = await asyncpg.connect(user='postgres', password='hgcal', host=yaml.safe_load(open(conn_yaml_file, 'r'))['db_hostname'], port=yaml.safe_load(open(conn_yaml_file, 'r'))['port'])
 
     # Create a new database
     db_name = db_params['database']
@@ -55,7 +56,7 @@ async def create_db():
             print(f"Permissions for '{role_name}' already exist.\n")
 
     # Define user types
-    with open(yaml_file, 'r') as file:
+    with open(table_yaml_file, 'r') as file:
         data = yaml.safe_load(file)
         for u in data['users']:
             await create_role(u['username'], u['description'])

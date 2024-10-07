@@ -1,4 +1,4 @@
 dbname: 'hgcdb'
 port: '5432'
-db_hostname: 'localhost' 
+db_hostname: 'm' 
 institution_abbr: 'CMU' ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB

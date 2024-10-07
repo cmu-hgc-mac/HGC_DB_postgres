@@ -83,7 +83,7 @@ def main():
     if files_found:
         print("Files found: ")
         for file in files_found: print(file)
-        
+
         print('\n')
         dbl_username = input('LXPLUS Username: ')
         dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')

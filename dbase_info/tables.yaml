@@ -1,6 +1,6 @@
 dbname: 'hgcdb'
 port: '5432'
-db_hostname: 'localhost'
+db_hostname: 'cmsmac04.phys.cmu.edu'
 
 users:
   -
