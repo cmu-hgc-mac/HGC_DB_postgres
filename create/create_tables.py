@@ -1,7 +1,11 @@
 import asyncio, asyncpg
-import glob, os, csv, yaml
+import glob, os, csv, yaml, argparse
 import numpy as np
 import pwinput
+
+parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
+parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
+args = parser.parse_args()
 
 print('Creating tables in the database...')
 # Database connection parameters
@@ -9,10 +13,15 @@ loc = 'dbase_info'
 tables_subdir = 'postgres_tables'
 table_yaml_file = os.path.join(loc, 'tables.yaml')
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
+
+dbpassword = str(args.password).replace(" ", "")
+if dbpassword is None:
+    dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+
 db_params = {
     'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
     'user': 'postgres',
-    'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
+    'password': dbpassword,
     'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),
     'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),
 }

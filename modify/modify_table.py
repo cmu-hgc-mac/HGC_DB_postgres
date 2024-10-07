@@ -7,6 +7,7 @@ from src.utils import connect_db
 
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
 parser.add_argument('-t', '--tablename', default='all', required=False, help="Name of table to modify.")
+parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
 args = parser.parse_args()
 
 '''
@@ -162,6 +163,9 @@ async def table_modify_seq(conn, table_name, loc, tables_subdir):
 
 async def main():
     ## Database connection parameters for new database
+    dbpassword = str(args.password).replace(" ", "")
+    if dbpassword is None:
+        dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
     loc = 'dbase_info'
     tables_subdir = 'postgres_tables'
     table_yaml_file = os.path.join(loc, 'tables.yaml')
@@ -169,8 +173,7 @@ async def main():
     db_params = {
         'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
         'user': 'postgres',   
-        # 'password': input('Set superuser password: '),
-        'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
+        'password': dbpassword,
         'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),  
         'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port')        
     }

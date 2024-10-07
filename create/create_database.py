@@ -3,7 +3,15 @@ SQL Tables should only have to be made once. After that any modifications to the
 Tables that we need based on the OGP measurements so far:
 '''
 
-import asyncio, asyncpg, yaml, os
+import asyncio, asyncpg, yaml, os, argparse
+
+parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
+parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
+args = parser.parse_args()
+
+dbpassword = str(args.password).replace(" ", "")
+if dbpassword is None:
+    dbpassword = input('Set superuser password: ')
 
 async def create_db():
     print("Creating a new database...")
@@ -14,13 +22,13 @@ async def create_db():
     db_params = {
         'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
         'user': 'postgres',   
-        'password': input('Set superuser password: '),
+        'password': dbpassword,
         'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),  
         'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),        
     }
 
     # Connect to the default PostgreSQL database
-    default_conn = await asyncpg.connect(user='postgres', password='hgcal', host=yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'), port=yaml.safe_load(open(conn_yaml_file, 'r')).get('port'))
+    default_conn = await asyncpg.connect(user='postgres', password=dbpassword, host=yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'), port=yaml.safe_load(open(conn_yaml_file, 'r')).get('port'))
 
     # Create a new database
     db_name = db_params['database']
@@ -42,7 +50,7 @@ async def create_db():
     async def create_role(role_name, user_type):
         # Create the new role (user) if it doesn't exist
         try:
-            user_password = input('Set {} password: '.format(user_type))
+            user_password = dbpassword #input('Set {} password: '.format(user_type))
             create_role_query = f"CREATE ROLE {role_name} LOGIN PASSWORD '{user_password}';"
             await conn.execute(create_role_query)
             print(f"Role '{role_name}' for '{user_type}' created.")

@@ -1,113 +1,121 @@
-import tkinter as tk
-from tkinter import messagebox
-from PIL import Image, ImageTk
-import os
-import asyncio
+import sys
 import threading
+import time
+import os, yaml
+import subprocess, webbrowser
+from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, StringVar, Label as TLabel
 
-# Functions for each button
-async def refresh_action():
-    await asyncio.sleep(1)  # Simulate a long-running operation
-    messagebox.showinfo("Action", "Refreshing...")
+loc = 'dbase_info'
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+dbase_name  = yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname')
 
-async def create_action():
-    await asyncio.sleep(1)  # Simulate a long-running operation
-    messagebox.showinfo("Action", "Creating...")
+# Synchronous functions for button actions
+def refresh_action():
+    show_message("Refreshing...")
 
-async def upload_action():
-    await asyncio.sleep(1)  # Simulate a long-running operation
-    messagebox.showinfo("Action", "Uploading...")
+def upload_action():
+    show_message("Uploading...")
 
-async def check_config_action():
-    await asyncio.sleep(1)  # Simulate a long-running operation
-    messagebox.showinfo("Action", "Checking Config...")
+def check_config_action():
+    show_message('Database configuration variables in "HGC_DB_postgres/dbase_info/conn.yaml".')
 
-async def print_action():
-    await asyncio.sleep(1)  # Simulate a long-running operation
-    messagebox.showinfo("Action", "Printing...")
+def print_action():
+    time.sleep(1)  # Simulate a time-consuming task
+    show_message("Printing...")
 
-# Function to run the asynchronous function in a thread
-def run_async(coroutine):
-    asyncio.run_coroutine_threadsafe(coroutine(), asyncio.get_event_loop())
+def show_message(message):
+    messagebox.showinfo("Action", message)
 
-# Create the main window
-root = tk.Tk()
-root.title("Local DB Dashboard - CMS HGC MAC")
+# Function to exit the application
+def exit_application():
+    root.quit()  # Exit the application
 
-# Hide the default window close button
-root.overrideredirect(True)  # Remove title bar
-
-# Ensure window size is appropriate for displaying the content
-root.geometry("300x400")
-
-# Load image without resizing
+# Load image
 def load_image(image_path):
     if os.path.exists(image_path):
-        img = Image.open(image_path)
-        return ImageTk.PhotoImage(img)
+        from PIL import Image, ImageTk  # Import here to avoid error if Pillow is not installed
+        image = Image.open(image_path)
+        return ImageTk.PhotoImage(image)
     else:
         print(f"Logo not found: {image_path}")
         return None
 
-# Path to the image file
-image_path = "documentation/images/logo_small_75.png"  # Replace with the correct path to your image file
+def create_database():
+    input_window = Toplevel(root)
+    input_window.title("Input Required")
 
-# Load and display the image in the top-left corner
-logo = load_image(image_path)
+    TLabel(input_window, text="Enter database password:").pack(pady=10)
+    password_var = StringVar()
+    entry = Entry(input_window, textvariable=password_var, show='*', width=30)
+    entry.pack(pady=10)
 
-if logo:
-    logo_label = tk.Label(root, image=logo)
-    logo_label.grid(row=0, column=0, padx=10, pady=10, sticky="nw")
+    def submit():
+        db_pass = password_var.get()
+        if db_pass.strip():
+            input_window.destroy()  # Close the input window
+            # Run the subprocess command
+            subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass])
+            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass])
+            show_message(f"PostgreSQL database '{dbase_name}' and tables created.")
+        else:
+            if messagebox.askyesno("Input Error", "Database password cannot be empty. Do you want to cancel?"):
+                input_window.destroy()  
+
+    submit_button = Button(input_window, text="Submit", command=submit)
+    submit_button.pack(pady=10)
+
+# Create a helper function to handle button clicks
+def handle_button_click(action):
+    threading.Thread(target=action).start()
+
+# Initialize the application
+root = Tk()
+root.title("Local DB Dashboard - CMS HGC MAC")
+root.geometry("300x400")
+
+# Load logo image
+image_path = "documentation/images/logo_small_75.png"  # Update with your image path
+logo_image = load_image(image_path)
+
+# Create a frame for the layout
+frame = Frame(root)
+frame.pack(pady=10, fill='both', expand=True)
+
+# Add logo or fallback label
+if logo_image:
+    logo_label = Label(frame, image=logo_image)
+    logo_label.pack()
 else:
-    # Show a default message if the image is not found
-    logo_label = tk.Label(root, text="Carnegie Mellon University")
-    logo_label.grid(row=0, column=0, padx=10, pady=10, sticky="nw")
+    logo_label = Label(frame, text="Carnegie Mellon University")
+    logo_label.pack()
 
-# Create buttons and place them in the grid layout
-button_refresh = tk.Button(root, text="Refresh", width=15, command=lambda: run_async(refresh_action))
-button_refresh.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+# Create buttons with larger size
+button_refresh = Button(frame, text="Refresh", command=lambda: handle_button_click(refresh_action), width=15, height=2)
+button_refresh.pack(pady=5)
 
-button_create = tk.Button(root, text="Create", width=15, command=lambda: run_async(create_action))
-button_create.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+button_create = Button(frame, text="Create", command=create_database, width=15, height=2)
+button_create.pack(pady=5)
 
-button_upload = tk.Button(root, text="Upload", width=15, command=lambda: run_async(upload_action))
-button_upload.grid(row=3, column=0, padx=10, pady=5, sticky="w")
+button_upload = Button(frame, text="Upload", command=lambda: handle_button_click(upload_action), width=15, height=2)
+button_upload.pack(pady=5)
 
-button_check_config = tk.Button(root, text="Check Config", width=15, command=lambda: run_async(check_config_action))
-button_check_config.grid(row=4, column=0, padx=10, pady=5, sticky="w")
+button_check_config = Button(frame, text="Check Config", command=lambda: handle_button_click(check_config_action), width=15, height=2)
+button_check_config.pack(pady=5)
 
-button_print = tk.Button(root, text="Print", width=15, command=lambda: run_async(print_action))
-button_print.grid(row=5, column=0, padx=10, pady=5, sticky="w")
+button_print = Button(frame, text="Print", command=lambda: handle_button_click(print_action), width=15, height=2)
+button_print.pack(pady=5)
 
-# Add an Exit button to terminate the program
-button_exit = tk.Button(root, text="Exit", width=15, command=root.quit)
-button_exit.grid(row=6, column=0, padx=10, pady=5, sticky="w")
+# Documentation link at the bottom
+def open_documentation():
+    webbrowser.open("https://github.com/cmu-hgc-mac/")  # Replace with your actual documentation URL
 
-# Start the event loop for asyncio in a separate thread
-def start_asyncio_loop(stop_event):
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    while not stop_event.is_set():
-        asyncio.get_event_loop().run_forever()
+doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
+doc_label.pack(side='bottom', pady=5)
+doc_label.bind("<Button-1>", lambda e: open_documentation())  # Bind click event to the label
 
-# Create a stop event for the asyncio loop
-stop_event = threading.Event()
 
-# Start the asyncio event loop in a separate thread
-asyncio_thread = threading.Thread(target=start_asyncio_loop, args=(stop_event,))
-asyncio_thread.start()
+# Bind the close event to exit cleanly
+root.protocol("WM_DELETE_WINDOW", exit_application)
 
-# Function to handle window closing
-def on_closing():
-    stop_event.set()  # Signal the asyncio loop to stop
-    root.destroy()  # Close the Tkinter window
-
-# Bind the window closing event to the on_closing function
-root.protocol("WM_DELETE_WINDOW", on_closing)
-
-# Start the GUI event loop
+# Show the window and start the application
 root.mainloop()
-
-# Wait for the asyncio thread to finish
-asyncio_thread.join()
-
-print("Application has been closed successfully.")
