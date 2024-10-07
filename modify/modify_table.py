@@ -164,15 +164,15 @@ async def main():
     ## Database connection parameters for new database
     loc = 'dbase_info'
     tables_subdir = 'postgres_tables'
-    table_yaml_file = os.path.join(loc, 'conn.yaml')
-    conn_yaml_file = os.path.join(loc, 'tables.yaml')
+    table_yaml_file = os.path.join(loc, 'tables.yaml')
+    conn_yaml_file = os.path.join(loc, 'conn.yaml')
     db_params = {
-        'database': yaml.safe_load(open(conn_yaml_file, 'r'))['dbname'],
+        'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
         'user': 'postgres',   
         # 'password': input('Set superuser password: '),
         'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
-        'host': yaml.safe_load(open(conn_yaml_file, 'r'))['db_hostname'],  
-        'port': yaml.safe_load(open(conn_yaml_file, 'r'))['port']        
+        'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),  
+        'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port')        
     }
 
     # establish a connection with database
