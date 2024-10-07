@@ -9,18 +9,18 @@ async def create_db():
     print("Creating a new database...")
     ## Database connection parameters for new database
     loc = 'dbase_info'
-    table_yaml_file = os.path.join(loc, 'conn.yaml')
-    conn_yaml_file = os.path.join(loc, 'tables.yaml')
+    table_yaml_file = os.path.join(loc, 'tables.yaml')
+    conn_yaml_file = os.path.join(loc, 'conn.yaml')
     db_params = {
-        'database': yaml.safe_load(open(conn_yaml_file, 'r'))['dbname'],
+        'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
         'user': 'postgres',   
         'password': input('Set superuser password: '),
-        'host': yaml.safe_load(open(conn_yaml_file, 'r'))['db_hostname'],  
-        'port': yaml.safe_load(open(conn_yaml_file, 'r'))['port']        
+        'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),  
+        'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),        
     }
 
     # Connect to the default PostgreSQL database
-    default_conn = await asyncpg.connect(user='postgres', password='hgcal', host=yaml.safe_load(open(conn_yaml_file, 'r'))['db_hostname'], port=yaml.safe_load(open(conn_yaml_file, 'r'))['port'])
+    default_conn = await asyncpg.connect(user='postgres', password='hgcal', host=yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'), port=yaml.safe_load(open(conn_yaml_file, 'r')).get('port'))
 
     # Create a new database
     db_name = db_params['database']
@@ -58,7 +58,7 @@ async def create_db():
     # Define user types
     with open(table_yaml_file, 'r') as file:
         data = yaml.safe_load(file)
-        for u in data['users']:
+        for u in data.get('users'):
             await create_role(u['username'], u['description'])
 
     await conn.close()

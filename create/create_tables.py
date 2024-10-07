@@ -7,14 +7,14 @@ print('Creating tables in the database...')
 # Database connection parameters
 loc = 'dbase_info'
 tables_subdir = 'postgres_tables'
-table_yaml_file = os.path.join(loc, 'conn.yaml')
-conn_yaml_file = os.path.join(loc, 'tables.yaml')
+table_yaml_file = os.path.join(loc, 'tables.yaml')
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
 db_params = {
-    'database': yaml.safe_load(open(conn_yaml_file, 'r'))['dbname'],
+    'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
     'user': 'postgres',
     'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
-    'host': yaml.safe_load(open(conn_yaml_file, 'r'))['db_hostname'],
-    'port': yaml.safe_load(open(conn_yaml_file, 'r'))['port']
+    'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),
+    'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),
 }
 
 async def create_tables():
@@ -73,21 +73,6 @@ async def create_tables():
         #await conn.execute(f"GRANT SELECT ON information_schema.tables TO {user};")
         print(f"Schema permission access granted to {user}.")
 
-    # fname_list = ['module_info.csv',
-    #               'module_assembly.csv', 
-    #               'proto_assembly.csv', 
-    #               'baseplate.csv', 
-    #               'sensor.csv', 
-    #               'hexaboard.csv', 
-    #               'bp_inspect.csv', 
-    #               'hxb_inspect.csv', 
-    #               'hxb_pedestal_test.csv', 
-    #               'proto_inspect.csv', 
-    #               'module_inspect.csv', 
-    #               'module_iv_test.csv', 
-    #               'module_pedestal_test.csv', 
-    #               'module_pedestal_plots.csv']   
-
     # Function creation SQL
     create_function_sql = """
         CREATE OR REPLACE FUNCTION notify_insert()
@@ -121,7 +106,7 @@ async def create_tables():
 
             print('\n')
 
-            for i in data['tables']:
+            for i in data.get('tables'):
                 fname = f"{(i['fname'])}"
                 print(f'Getting info from {fname}...')
                 table_name, table_header, dat_type, fk_name, fk_ref, parent_table = get_table_info(loc, tables_subdir, fname)
