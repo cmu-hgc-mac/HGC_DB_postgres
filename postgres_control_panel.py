@@ -90,20 +90,23 @@ else:
     logo_label.pack()
 
 # Create buttons with larger size
-button_refresh = Button(frame, text="Refresh", command=lambda: handle_button_click(refresh_action), width=15, height=2)
-button_refresh.pack(pady=5)
 
-button_create = Button(frame, text="Create", command=create_database, width=15, height=2)
+button_create = Button(frame, text="Create Database", command=create_database, width=15, height=2)
 button_create.pack(pady=5)
-
-button_upload = Button(frame, text="Upload", command=lambda: handle_button_click(upload_action), width=15, height=2)
-button_upload.pack(pady=5)
 
 button_check_config = Button(frame, text="Check Config", command=lambda: handle_button_click(check_config_action), width=15, height=2)
 button_check_config.pack(pady=5)
 
-button_print = Button(frame, text="Print", command=lambda: handle_button_click(print_action), width=15, height=2)
-button_print.pack(pady=5)
+button_refresh = Button(frame, text="Refresh Local", command=lambda: handle_button_click(refresh_action), width=15, height=2)
+button_refresh.pack(pady=5)
+
+button_upload = Button(frame, text="Upload to DBLoader", command=lambda: handle_button_click(upload_action), width=15, height=2)
+button_upload.pack(pady=5)
+
+
+
+# button_print = Button(frame, text="Print", command=lambda: handle_button_click(print_action), width=15, height=2)
+# button_print.pack(pady=5)
 
 # Documentation link at the bottom
 def open_documentation():
