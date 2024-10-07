@@ -40,23 +40,39 @@ def load_image(image_path):
         print(f"Logo not found: {image_path}")
         return None
 
+
 def create_database():
     input_window = Toplevel(root)
     input_window.title("Input Required")
 
-    TLabel(input_window, text="Enter database password:").pack(pady=10)
+    # Field 1: Database Name
+    TLabel(input_window, text="Set initial: viewer password (only read):").pack(pady=5)
+    viewer_var = StringVar()
+    viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30)
+    viewer_var_entry.pack(pady=5)
+
+    # Field 2: Username
+    TLabel(input_window, text="Set initial: user password (write access):").pack(pady=5)
+    user_var = StringVar()
+    user_var_entry = Entry(input_window, textvariable=user_var, width=30)
+    user_var_entry.pack(pady=5)
+
+    # Field 3: Password (hidden input)
+    TLabel(input_window, text="**Enter master password:**").pack(pady=5)
     password_var = StringVar()
-    entry = Entry(input_window, textvariable=password_var, show='*', width=30)
-    entry.pack(pady=10)
+    password_entry = Entry(input_window, textvariable=password_var, show='*', width=30)
+    password_entry.pack(pady=5)
 
     def submit():
+        viewer_pass = viewer_var .get()
+        user_pass = user_var.get()
         db_pass = password_var.get()
         if db_pass.strip():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
-            subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass])
+            subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass])
             subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass])
-            show_message(f"PostgreSQL database '{dbase_name}' and tables created.")
+            show_message(f"PostgreSQL database '{dbase_name}' tables created.")
         else:
             if messagebox.askyesno("Input Error", "Database password cannot be empty. Do you want to cancel?"):
                 input_window.destroy()  
@@ -68,7 +84,7 @@ def modify_tables():
     input_window = Toplevel(root)
     input_window.title("Input Required")
 
-    TLabel(input_window, text="Enter database password:").pack(pady=10)
+    TLabel(input_window, text="Enter master password:").pack(pady=10)
     password_var = StringVar()
     entry = Entry(input_window, textvariable=password_var, show='*', width=30)
     entry.pack(pady=10)
@@ -115,7 +131,7 @@ else:
 
 # Create buttons with larger size
 
-button_create = Button(frame, text="Create Database", command=create_database, width=15, height=2)
+button_create = Button(frame, text="Create DBase Tables", command=create_database, width=15, height=2)
 button_create.pack(pady=5)
 
 button_create = Button(frame, text="Modify Tables", command=modify_tables, width=15, height=2)

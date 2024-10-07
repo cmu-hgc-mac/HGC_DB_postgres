@@ -7,11 +7,21 @@ import asyncio, asyncpg, yaml, os, argparse
 
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
 parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
+parser.add_argument('-up', '--userpass', default=None, required=False, help="Password to write to database.")
+parser.add_argument('-vp', '--viewerpass', default=None, required=False, help="Password to view database.")
 args = parser.parse_args()
 
 dbpassword = str(args.password).replace(" ", "")
 if dbpassword is None:
     dbpassword = input('Set superuser password: ')
+
+user_password = str(args.userpass).replace(" ", "")
+if user_password is None:
+    user_password = input('Set user password: ')
+
+viewer_password = str(args.viewerpass).replace(" ", "")
+if viewer_password is None:
+    viewer_password = input('Set viewer password: ')
 
 async def create_db():
     print("Creating a new database...")
@@ -50,8 +60,10 @@ async def create_db():
     async def create_role(role_name, user_type):
         # Create the new role (user) if it doesn't exist
         try:
-            user_password = dbpassword #input('Set {} password: '.format(user_type))
-            create_role_query = f"CREATE ROLE {role_name} LOGIN PASSWORD '{user_password}';"
+            if role_name.lower() == 'viewer':
+                create_role_query = f"CREATE ROLE {role_name} LOGIN PASSWORD '{viewer_password}';"
+            else:
+                create_role_query = f"CREATE ROLE {role_name} LOGIN PASSWORD '{user_password}';"
             await conn.execute(create_role_query)
             print(f"Role '{role_name}' for '{user_type}' created.")
         except asyncpg.exceptions.DuplicateObjectError:
