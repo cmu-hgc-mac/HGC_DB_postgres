@@ -3,7 +3,6 @@ import asyncio, asyncpg
 import yaml, csv
 sys.path.append('../')
 import pwinput
-from src.utils import connect_db
 
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
 parser.add_argument('-t', '--tablename', default='all', required=False, help="Name of table to modify.")

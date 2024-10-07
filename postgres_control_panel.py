@@ -64,6 +64,30 @@ def create_database():
     submit_button = Button(input_window, text="Submit", command=submit)
     submit_button.pack(pady=10)
 
+def modify_tables():
+    input_window = Toplevel(root)
+    input_window.title("Input Required")
+
+    TLabel(input_window, text="Enter database password:").pack(pady=10)
+    password_var = StringVar()
+    entry = Entry(input_window, textvariable=password_var, show='*', width=30)
+    entry.pack(pady=10)
+
+    def submit():
+        db_pass = password_var.get()
+        if db_pass.strip():
+            input_window.destroy()  # Close the input window
+            # Run the subprocess command
+            subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass])
+            show_message(f"PostgreSQL tables modified. Refresh database.")
+        else:
+            if messagebox.askyesno("Input Error", "Database password cannot be empty. Do you want to cancel?"):
+                input_window.destroy()  
+
+    submit_button = Button(input_window, text="Submit", command=submit)
+    submit_button.pack(pady=10)
+
+
 # Create a helper function to handle button clicks
 def handle_button_click(action):
     threading.Thread(target=action).start()
@@ -92,6 +116,9 @@ else:
 # Create buttons with larger size
 
 button_create = Button(frame, text="Create Database", command=create_database, width=15, height=2)
+button_create.pack(pady=5)
+
+button_create = Button(frame, text="Modify Tables", command=modify_tables, width=15, height=2)
 button_create.pack(pady=5)
 
 button_check_config = Button(frame, text="Check Config", command=lambda: handle_button_click(check_config_action), width=15, height=2)
