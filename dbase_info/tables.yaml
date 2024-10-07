@@ -1,7 +1,3 @@
-dbname: 'hgcdb'
-port: '5432'
-db_hostname: 'cmsmac04.phys.cmu.edu'
-
 users:
   -
     username: 'ogp_user'
