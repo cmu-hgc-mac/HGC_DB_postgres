@@ -1,6 +1,4 @@
-## example
-
-module:
+module_assembly:
   - xml_temp_val: STEP_PCB_NUM
     dbase_col: null
     dbase_table: null
@@ -275,3 +273,462 @@ wirebond:
     dbase_col: comment
     dbase_table: front_wirebond
     nested_query: (SELECT comment AS back_encap_comment FROM back_encap WHERE module_name = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_encap_comment FROM front_encap WHERE module_name = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1);"
+
+module_build:
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: module_name
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: BARCODE
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: INSTITUTION
+    default_value: CMU
+  - xml_temp_val: MANUFACTURER
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: KIND_OF_PART_PROTOMODULE
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: PROTOMODULE
+    dbase_col: proto_name
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: KIND_OF_PART_PCB
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: PCB
+    dbase_col: hxb_name
+    dbase_table: module_assembly
+    nested_query: null
+
+module_cond:
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    dbase_col: ass_run_date, ass_time_begin
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    dbase_col: ass_run_date, ass_time_end
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: INITIATED_BY_USER
+    dbase_col: operator
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: sen_thickness, resolution, geometry
+    dbase_table: module_info
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: module_name
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: CURING_TIME_HRS
+    dbase_col:  (cure_date_end + cure_time_end::time) - (ass_run_date + ass_time_begin::time)
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: CURE_BEGIN_TIMESTAMP_
+    dbase_col: ass_run_date, ass_time_begin
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: CURE_END_TIMESTAMP_
+    dbase_col: cure_date_end, cure_time_end
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: TEMP_DEGC
+    dbase_col: temp_c
+    dbase_table: module_assembly
+    nested_query: null
+  - xml_temp_val: HUMIDITY_PRCNT
+    dbase_col: rel_hum
+    dbase_table: module_assembly
+    nested_query: null
+
+bp_build:
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: bp_name
+    dbase_table: baseplate
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: INSTITUTION
+    default_value: CMU
+
+bp_cond:
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    dbase_col: date_inspect, time_inspect
+    dbase_table: bp_inspect
+    nested_query: 
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: INITIATED_BY_USER
+    dbase_col: inspector
+    dbase_table: bp_inspect
+    nested_query: 
+  - xml_temp_val: LOCATION
+    default_value: CMU
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: bp_name
+    dbase_table: baseplate
+    nested_query: 
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: resolution, geometry
+    dbase_table: baseplate
+    nested_query: 
+  - xml_temp_val: FLATNESS
+    dbase_col: flatness
+    dbase_table: bp_inspect
+    nested_query: 
+  - xml_temp_val: THICKNESS
+    dbase_col: thickness
+    dbase_table: bp_inspect
+    nested_query: 
+  - xml_temp_val: WEIGHT
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: GRADE
+    dbase_col: grade
+    dbase_table: bp_inspect
+    nested_query: 
+  - xml_temp_val: COMMENTS_UPLOAD
+    dbase_col: comment
+    dbase_table: bp_inspect
+    nested_query: 
+
+hxb_build:
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: hxb_name
+    dbase_table: hexaboard
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: INSTITUTION
+    default_value: CMU
+
+hxb_cond:
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    dbase_col: date_inspect, time_inspect
+    dbase_table: hxb_inspect
+    nested_query: null
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: INITIATED_BY_USER
+    dbase_col: inspector
+    dbase_table: hxb_inspect
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: ID
+    dbase_col: hxb_name
+    dbase_table: hexaboard
+    nested_query: null
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: RECORD_INSERTION_USER
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: RUN_BEGIN_DATE_
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: TEST_FILES
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: FLATNESS
+    dbase_col: flatness
+    dbase_table: hxb_inspect
+    nested_query: null
+  - xml_temp_val: THICKNESS
+    dbase_col: thickness
+    dbase_table: hxb_inspect
+    nested_query: null
+  - xml_temp_val: GRADE
+    dbase_col: grade
+    dbase_table: hxb_inspect
+    nested_query: null
+  - xml_temp_val: COMMENTS_UPLOAD
+    dbase_col: comment
+    dbase_table: hxb_inspect
+    nested_query: null
+
+proto_assembly:
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    dbase_col: ass_run_date, ass_time_begin
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    dbase_col: ass_run_date, ass_time_end
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: INITIATED_BY_USER
+    dbase_col: operator
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: proto_name
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: ASMBL_TRAY_NAME
+    dbase_col: ass_tray_id
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: BASEPLATE
+    dbase_col: bp_name
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: ASM_ROW
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ASM_COL
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: FLATNESS
+    dbase_col: flatness
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: THICKNESS
+    dbase_col: thickness
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: COMP_TRAY_NAME
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: SENSOR
+    dbase_col: sen_name
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: ASM_ROW
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ASM_COL
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: SNSR_X_OFFST
+    dbase_col: x_offset_mu
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: SNSR_Y_OFFST
+    dbase_col: y_offset_mu
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: SNSR_ANG_OFFST
+    dbase_col: ang_offset_deg
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: SNSR_TOOL_NAME
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: SNSR_TOOL_HT_SET
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: SNSR_TOOL_HT_CHK
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ADHESIVE_TYPE
+    dbase_col: adhesive
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: GRADE
+    dbase_col: grade
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: SNSR_TOOL_FEET_CHK
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: STEP_SENSOR
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+
+proto_build:
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: proto_name
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: BARCODE
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: INSTITUTION
+    default_value: CMU
+  - xml_temp_val: MANUFACTURER
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: KIND_OF_PART_BASEPLATE
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: BASEPLATE
+    dbase_col: bp_name
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: KIND_OF_PART_SENSOR
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: SENSOR
+    dbase_col: sen_name
+    dbase_table: proto_assembly
+    nested_query: null
+
+proto_cond:
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    dbase_col: date_inspect, time_inspect
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    dbase_col: cure_date_end, cure_time_end
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: INITIATED_BY_USER
+    dbase_col: operator
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: ID
+    dbase_col: proto_name
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: CURING_TIME_HRS
+    dbase_col: (ass_run_date + ass_time_end::time) - (cure_date_end + cure_time_end::time)
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: CURE_BEGIN_TIMESTAMP_
+    dbase_col: date_inspect, time_inspect
+    dbase_table: proto_inspect
+    nested_query: null
+  - xml_temp_val: CURE_END_TIMESTAMP_
+    dbase_col: cure_date_end, cure_time_end
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: TEMP_DEGC
+    dbase_col: temp_c
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: HUMIDITY_PRCNT
+    dbase_col: rel_hum
+    dbase_table: proto_assembly
+    nested_query: null
+
+sensor_build:
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: ID
+    dbase_col: sen_name
+    dbase_table: sensor
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: INSTITUTION
+    default_value: CMU
+
+sensor_cond:
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    dbase_col: ass_run_date, ass_time_begin
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    dbase_col: ass_run_date, ass_time_end
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: INITIATED_BY_USER
+    dbase_col: operator
+    dbase_table: proto_assembly
+    nested_query: null
+  - xml_temp_val: LOCATION
+    default_value: CMU
+  - xml_temp_val: ID
+    dbase_col: sen_name
+    dbase_table: sensor
+    nested_query: null
+  - xml_temp_val: KIND_OF_PART
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: RECORD_INSERTION_USER
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: RUN_BEGIN_DATE_
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: VISUAL_INSPECTION
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: FLATNESS
+    dbase_col: null
+    dbase_table: null
+    nested_query: null
+  - xml_temp_val: THICKNESS
+    dbase_col: thickness
+    dbase_table: sensor
+    nested_query: null
+  - xml_temp_val: GRADE
+    dbase_col: grade
+    dbase_table: sensor
+    nested_query: null
+  - xml_temp_val: COMMENTS_UPLOAD
+    dbase_col: comment
+    dbase_table: sensor
+    nested_query: null
