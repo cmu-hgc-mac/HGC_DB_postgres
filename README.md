@@ -13,7 +13,7 @@ Each MAC requires the following to replicate this setup:
 ```
 pip install asyncpg tk matplotlib pwinput
 ```
-7. To create database and tables: Then create tables with appropriate passwords provided.
+7. Create database and tables with appropriate passwords:
 ```
 python3 postgres_control_panel.py
 ```
