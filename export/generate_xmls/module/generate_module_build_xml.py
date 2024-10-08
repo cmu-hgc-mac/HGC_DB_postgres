@@ -14,7 +14,7 @@ async def get_conn():
     Return: connection
     '''
 
-    loc = '../dbase_info/'
+    loc = '../../../dbase_info/'
     yaml_file = f'{loc}tables.yaml'
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
@@ -66,9 +66,26 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
                     id_value = ""
                 element.text = element.text.replace("{{ ID }}", str(id_value))
 
-    # Save the updated XML to the output directory
-    tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
-    print(f"XML file updated and saved to: {output_file_path}")
+    # Check if the directory to store outputted xml file exists
+    output_dir_path = os.path.dirname(output_file_path)
+    if not os.path.exists(output_dir_path):
+        os.makedirs(output_dir_path)
+    
+    # save the file to the directory
+    if not os.path.isdir(output_file_path):
+        tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
+        print(f"XML file updated and saved to: {output_file_path}")
+    else:
+        print(f"Error: {output_file_path} is a directory, not a file.")
+
+async def get_parts_name(name, table, conn):
+    ##  returns part name in a specific table
+    ##  i.e., baseplate-> get bp_name
+    query = f"SELECT DISTINCT {name} FROM {table};"
+    print(query)
+    fetched_query = await conn.fetch(query)
+    name_list = [record[name] for record in fetched_query]
+    return name_list
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -82,11 +99,15 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         print("No wirebond data found in YAML file")
         return
 
-    # Construct the output file path
-    # output_file_path = os.path.join(output_dir, os.path.basename(xml_file_path))
-    module_names_query = "SELECT DISTINCT module_name FROM module_assembly;"
-    modules = await conn.fetch(module_names_query)
-    module_list = [record['module_name'] for record in modules]
+    module_ass_table = await get_parts_name('module_name', 'module_assembly', conn)
+    module_hxb_table = await get_parts_name('module_name', 'mod_hxb_other_test', conn)
+    module_info_table = await get_parts_name('module_name', 'module_info', conn)
+    module_inspect_table = await get_parts_name('module_name', 'module_inspect', conn)
+    module_ivtest_table = await get_parts_name('module_name', 'module_iv_test', conn)
+    module_pedestal_test_table = await get_parts_name('module_name', 'module_pedestal_test', conn)
+    module_pedestal_plot_table = await get_parts_name('module_name', 'module_pedestal_plots', conn)
+    module_qc_summ_table = await get_parts_name('module_name', 'module_qc_summary', conn)
+    module_list = list(set(module_ass_table) | set(module_hxb_table) | set(module_info_table) | set(module_inspect_table) | set(module_ivtest_table) | set(module_pedestal_test_table) | set(module_pedestal_plot_table) | set(module_qc_summ_table))
 
     for module in module_list:
         # Fetch database values for the XML template variables
@@ -184,9 +205,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
 async def main():
     # Configuration
-    yaml_file = '../export/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = '../export/template_examples/module/build_upload.xml'# XML template file path
-    output_dir = '../export/generated_xml'  # Directory to save the updated XML
+    yaml_file = '../../../export/table_to_xml_var.yaml'  # Path to YAML file
+    xml_file_path = '../../../export/template_examples/module/build_upload.xml'# XML template file path
+    output_dir = '../../../export/generated_xml'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool
     conn = await get_conn()

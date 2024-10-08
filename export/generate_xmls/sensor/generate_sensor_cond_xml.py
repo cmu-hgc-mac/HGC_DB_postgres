@@ -9,7 +9,7 @@ import os
 import pwinput
 
 async def get_conn():
-    loc = '../dbase_info/'
+    loc = '../../../dbase_info/'
     yaml_file = f'{loc}tables.yaml'
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
@@ -57,9 +57,26 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
                     id_value = ""
                 element.text = element.text.replace("{{ ID }}", str(id_value))
 
-    # Save the updated XML to the output directory
-    tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
-    print(f"--- XML file updated and saved to: {output_file_path}")
+    # Check if the directory to store outputted xml file exists
+    output_dir_path = os.path.dirname(output_file_path)
+    if not os.path.exists(output_dir_path):
+        os.makedirs(output_dir_path)
+    
+    # save the file to the directory
+    if not os.path.isdir(output_file_path):
+        tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
+        print(f"XML file updated and saved to: {output_file_path}")
+    else:
+        print(f"Error: {output_file_path} is a directory, not a file.")
+
+async def get_parts_name(name, table, conn):
+    ##  returns part name in a specific table
+    ##  i.e., baseplate-> get bp_name
+    query = f"SELECT DISTINCT {name} FROM {table};"
+    print(query)
+    fetched_query = await conn.fetch(query)
+    name_list = [record[name] for record in fetched_query]
+    return name_list
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -73,13 +90,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     if not module_data:
         print("No 'module' data found in YAML file")
         return
-
-    # Construct the output file path
-    # output_file_path = os.path.join(output_dir, os.path.basename(xml_file_path))
     
-    sensor_names_query = "SELECT DISTINCT sen_name FROM sensor;"
-    sensors = await conn.fetch(sensor_names_query)
-    sensor_list = [record['sen_name'] for record in sensors]
+    sensor_table = await get_parts_name('sen_name', 'sensor', conn)
+    sensor_list = sensor_table
 
     # Fetch database values for the XML template variables
     for sen_name in sensor_list:
@@ -128,9 +141,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
 async def main():
     # Configuration
-    yaml_file = '../export/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = '../export/template_examples/sensor/cond_upload.xml'# XML template file path
-    output_dir = '../export/generated_xml/sensor'  # Directory to save the updated XML
+    yaml_file = '../../../export/table_to_xml_var.yaml'  # Path to YAML file
+    xml_file_path = '../../../export/template_examples/sensor/cond_upload.xml'# XML template file path
+    output_dir = '../../../export/generated_xml/sensor'  # Directory to save the updated XML
 
     # Create PostgreSQL connection
     conn = await get_conn()
