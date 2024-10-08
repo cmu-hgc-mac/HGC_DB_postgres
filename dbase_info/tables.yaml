@@ -242,6 +242,18 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT'
+  
+  - 
+    fname: 'sen_iv_data.csv'
+    description: ''
+    permission: 
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'SELECT'
 
   - 
     fname: 'hexaboard.csv'
