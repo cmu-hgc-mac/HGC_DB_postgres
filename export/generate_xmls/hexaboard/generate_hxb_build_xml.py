@@ -14,7 +14,7 @@ async def get_conn():
     Return: connection
     '''
 
-    loc = '../dbase_info/'
+    loc = '../../../dbase_info/'
     yaml_file = f'{loc}tables.yaml'
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
@@ -66,9 +66,26 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
                     id_value = ""
                 element.text = element.text.replace("{{ ID }}", str(id_value))
 
+    # Check if the directory to store outputted xml file exists
+    output_dir_path = os.path.dirname(output_file_path)
+    if not os.path.exists(output_dir_path):
+        os.makedirs(output_dir_path)
+        
     # Save the updated XML to the output directory
-    tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
-    print(f"XML file updated and saved to: {output_file_path}")
+    if not os.path.isdir(output_file_path):
+        tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
+        print(f"XML file updated and saved to: {output_file_path}")
+    else:
+        print(f"Error: {output_file_path} is a directory, not a file.")
+
+async def get_parts_name(name, table, conn):
+    ##  returns part name in a specific table
+    ##  i.e., baseplate-> get bp_name
+    query = f"SELECT DISTINCT {name} FROM {table};"
+    print(query)
+    fetched_query = await conn.fetch(query)
+    name_list = [record[name] for record in fetched_query]
+    return name_list
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -82,11 +99,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         print("No wirebond data found in YAML file")
         return
 
-    # Construct the output file path
-    # output_file_path = os.path.join(output_dir, os.path.basename(xml_file_path))
-    hxb_names_query = "SELECT DISTINCT hxb_name FROM hexaboard;"
-    hxb = await conn.fetch(hxb_names_query)
-    hxb_list = [record['hxb_name'] for record in hxb]
+    hxb_table = await get_parts_name('hxb_name', 'hexaboard', conn)
+    hxb_inspect_table = await get_parts_name('hxb_name', 'hxb_inspect', conn)
+    hxb_pedestal_test_table = await get_parts_name('hxb_name', 'hxb_pedestal_test', conn)
+    hxb_list = list(set(hxb_table) | set(hxb_inspect_table) | set(hxb_pedestal_test_table))
 
     for hxb_name in hxb_list:
         # Fetch database values for the XML template variables
@@ -162,9 +178,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
 async def main():
     # Configuration
-    yaml_file = '../export/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = '../export/template_examples/hexaboard/build_upload.xml'# XML template file path
-    output_dir = '../export/generated_xml/hexaboard'  # Directory to save the updated XML
+    yaml_file = '../../../export/table_to_xml_var.yaml'  # Path to YAML file
+    xml_file_path = '../../../export/template_examples/hexaboard/build_upload.xml'# XML template file path
+    output_dir = '../../../export/generated_xml/hexaboard'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool
     conn = await get_conn()
