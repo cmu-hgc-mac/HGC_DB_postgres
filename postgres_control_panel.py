@@ -3,7 +3,7 @@ import threading
 import time
 import os, yaml
 import subprocess, webbrowser
-from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, StringVar, Label as TLabel
+from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, StringVar, Text, END, DISABLED, Label as TLabel
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -16,8 +16,12 @@ def refresh_action():
 def upload_action():
     show_message("Uploading...")
 
-def check_config_action():
-    show_message('Database configuration variables in "HGC_DB_postgres/dbase_info/conn.yaml".')
+def check_config_action():  
+    with open(conn_yaml_file, 'r') as file:
+        config_data = yaml.safe_load(file)
+    message = 'Database configuration variables in "HGC_DB_postgres/dbase_info/conn.yaml".\n\n'
+    message += "\n".join(f"{key}: {value}" for key, value in config_data.items())
+    show_message(message)
 
 def print_action():
     time.sleep(1)  # Simulate a time-consuming task
@@ -95,7 +99,7 @@ def modify_tables():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
             subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass])
-            show_message(f"PostgreSQL tables modified. Refresh database.")
+            show_message(f"PostgreSQL tables modified. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Database password cannot be empty. Do you want to cancel?"):
                 input_window.destroy()  
