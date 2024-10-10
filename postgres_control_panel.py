@@ -3,6 +3,7 @@ import threading
 import time
 import os, yaml
 import subprocess, webbrowser
+import tkinter
 from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, StringVar, Text, END, DISABLED, Label as TLabel
 
 loc = 'dbase_info'
@@ -16,12 +17,21 @@ def refresh_action():
 def upload_action():
     show_message("Uploading...")
 
+def show_message_textbox(message):
+    window = Toplevel()
+    window.title("Configuration Details")
+    from tkinter import scrolledtext
+    text_area = scrolledtext.ScrolledText(window, wrap=tkinter.WORD, width=80, height=20)
+    text_area.pack(padx=10, pady=10, fill=tkinter.BOTH, expand=True)
+    text_area.insert(END, message)
+    text_area.config(state=DISABLED)
+
 def check_config_action():  
     with open(conn_yaml_file, 'r') as file:
         config_data = yaml.safe_load(file)
     message = 'Database configuration variables in "HGC_DB_postgres/dbase_info/conn.yaml".\n\n'
     message += "\n".join(f"{key}: {value}" for key, value in config_data.items())
-    show_message(message)
+    show_message_textbox(message)
 
 def print_action():
     time.sleep(1)  # Simulate a time-consuming task
@@ -52,19 +62,19 @@ def create_database():
     # Field 1: Database Name
     TLabel(input_window, text="Set initial: viewer password (only read):").pack(pady=5)
     viewer_var = StringVar()
-    viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30)
+    viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     viewer_var_entry.pack(pady=5)
 
     # Field 2: Username
     TLabel(input_window, text="Set initial: user password (write access):").pack(pady=5)
     user_var = StringVar()
-    user_var_entry = Entry(input_window, textvariable=user_var, width=30)
+    user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     user_var_entry.pack(pady=5)
 
     # Field 3: Password (hidden input)
     TLabel(input_window, text="**Enter master password:**").pack(pady=5)
     password_var = StringVar()
-    password_entry = Entry(input_window, textvariable=password_var, show='*', width=30)
+    password_entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     password_entry.pack(pady=5)
 
     def submit():
@@ -78,7 +88,7 @@ def create_database():
             subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass])
             show_message(f"PostgreSQL database '{dbase_name}' tables created.")
         else:
-            if messagebox.askyesno("Input Error", "Database password cannot be empty. Do you want to cancel?"):
+            if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
                 input_window.destroy()  
 
     submit_button = Button(input_window, text="Submit", command=submit)
@@ -90,7 +100,7 @@ def modify_tables():
 
     TLabel(input_window, text="Enter master password:").pack(pady=10)
     password_var = StringVar()
-    entry = Entry(input_window, textvariable=password_var, show='*', width=30)
+    entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     entry.pack(pady=10)
 
     def submit():
@@ -101,7 +111,7 @@ def modify_tables():
             subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass])
             show_message(f"PostgreSQL tables modified. Refresh pgAdmin4.")
         else:
-            if messagebox.askyesno("Input Error", "Database password cannot be empty. Do you want to cancel?"):
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
 
     submit_button = Button(input_window, text="Submit", command=submit)
@@ -141,7 +151,7 @@ button_create.pack(pady=5)
 button_create = Button(frame, text="Modify Tables", command=modify_tables, width=15, height=2)
 button_create.pack(pady=5)
 
-button_check_config = Button(frame, text="Check Config", command=lambda: handle_button_click(check_config_action), width=15, height=2)
+button_check_config = Button(frame, text="Check Config", command=check_config_action, width=15, height=2)
 button_check_config.pack(pady=5)
 
 button_refresh = Button(frame, text="Refresh Local", command=lambda: handle_button_click(refresh_action), width=15, height=2)
