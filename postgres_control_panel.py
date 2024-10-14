@@ -154,7 +154,7 @@ button_create.pack(pady=5)
 button_check_config = Button(frame, text="Check Config", command=check_config_action, width=15, height=2)
 button_check_config.pack(pady=5)
 
-button_refresh = Button(frame, text="Refresh Local", command=lambda: handle_button_click(refresh_action), width=15, height=2)
+button_refresh = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(refresh_action), width=15, height=2)
 button_refresh.pack(pady=5)
 
 button_upload = Button(frame, text="Upload XMLs to DBLoader", command=lambda: handle_button_click(upload_action), width=15, height=2)
