@@ -12,7 +12,7 @@ Each MAC requires the following to replicate this setup:
 6. Follow [instructions](https://github.com/murthysindhu/HGC_DB_postgres/tree/main/documentation#1-database-interconnection-one-time-setup) to update the two config files to listen for the other computers in the lab and make interconnections.
 7. In Python 3.6 or greater:
 ```
-pip install asyncpg tk matplotlib pwinput pillow
+pip install asyncpg tk matplotlib pwinput pillow pyyaml
 ```
 8. Create database and tables with appropriate passwords:
 ```
