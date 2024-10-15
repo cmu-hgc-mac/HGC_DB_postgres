@@ -28,6 +28,6 @@ temp_c,TEXT,,
 module_no,INT,fk_mod_pm,module_info
 pos_row,INT,,
 pos_col,INT,,
-run_no,INT,,
 xml_gen_datetime,TIMESTAMP,,
 xml_upload_success,BOOLEAN,,
+batch_no,INT,,
