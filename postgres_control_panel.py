@@ -143,7 +143,7 @@ else:
     logo_label = Label(frame, text="Carnegie Mellon University")
     logo_label.pack()
 
-button_width, button_height = 18, 3
+button_width, button_height = 20, 3
 # Create buttons with large size
 button_create = Button(frame, text="Create DBase Tables", command=create_database, width = button_width, height = button_height)
 button_create.pack(pady=5)
