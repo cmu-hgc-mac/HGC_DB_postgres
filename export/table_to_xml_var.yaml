@@ -16,7 +16,6 @@ module_assembly:
     dbase_table: module_assembly
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: KIND_OF_PART
     dbase_col: null
     dbase_table: null
@@ -124,7 +123,6 @@ wirebond:
     dbase_table: bond_pull_test
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: KIND_OF_PART
     dbase_col: null
     dbase_table: null
@@ -288,9 +286,7 @@ module_build:
     dbase_table: null
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: INSTITUTION
-    default_value: CMU
   - xml_temp_val: MANUFACTURER
     dbase_col: null
     dbase_table: null
@@ -326,7 +322,6 @@ module_cond:
     dbase_table: module_assembly
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: KIND_OF_PART
     dbase_col: sen_thickness, resolution, geometry
     dbase_table: module_info
@@ -366,9 +361,7 @@ bp_build:
     dbase_table: baseplate
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: INSTITUTION
-    default_value: CMU
 
 bp_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
@@ -384,7 +377,6 @@ bp_cond:
     dbase_table: bp_inspect
     nested_query: 
   - xml_temp_val: LOCATION
-    default_value: CMU
     nested_query: null
   - xml_temp_val: ID
     dbase_col: bp_name
@@ -425,9 +417,7 @@ hxb_build:
     dbase_table: hexaboard
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: INSTITUTION
-    default_value: CMU
 
 hxb_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
@@ -443,7 +433,6 @@ hxb_cond:
     dbase_table: hxb_inspect
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: ID
     dbase_col: hxb_name
     dbase_table: hexaboard
@@ -495,7 +484,6 @@ proto_assembly:
     dbase_table: proto_assembly
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: KIND_OF_PART
     dbase_col: null
     dbase_table: null
@@ -599,9 +587,7 @@ proto_build:
     dbase_table: null
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: INSTITUTION
-    default_value: CMU
   - xml_temp_val: MANUFACTURER
     dbase_col: null
     dbase_table: null
@@ -637,7 +623,6 @@ proto_cond:
     dbase_table: proto_assembly
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: ID
     dbase_col: proto_name
     dbase_table: proto_assembly
@@ -677,9 +662,7 @@ sensor_build:
     dbase_table: sensor
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: INSTITUTION
-    default_value: CMU
 
 sensor_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
@@ -695,7 +678,6 @@ sensor_cond:
     dbase_table: proto_assembly
     nested_query: null
   - xml_temp_val: LOCATION
-    default_value: CMU
   - xml_temp_val: ID
     dbase_col: sen_name
     dbase_table: sensor

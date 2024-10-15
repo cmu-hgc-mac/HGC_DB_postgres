@@ -6,8 +6,10 @@ from lxml import etree
 import yaml
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
-
+from HGC_DB_postgres.export.define_global_var import LOCATION
+          
 async def get_conn():
     loc = '../../../dbase_info/'
     yaml_file = f'{loc}tables.yaml'
@@ -73,7 +75,6 @@ async def get_parts_name(name, table, conn):
     ##  returns part name in a specific table
     ##  i.e., baseplate-> get bp_name
     query = f"SELECT DISTINCT {name} FROM {table};"
-    print(query)
     fetched_query = await conn.fetch(query)
     name_list = [record[name] for record in fetched_query]
     return name_list
@@ -91,6 +92,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         print("No 'module' data found in YAML file")
         return
 
+    # get the unique module_name among all tables that contain module_name by taking the union of the tables
     module_ass_table = await get_parts_name('module_name', 'module_assembly', conn)
     module_hxb_table = await get_parts_name('module_name', 'mod_hxb_other_test', conn)
     module_info_table = await get_parts_name('module_name', 'module_info', conn)
@@ -109,8 +111,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         for entry in module_data:
             xml_var = entry['xml_temp_val']
 
-            if 'default_value' in entry:
-                db_values[xml_var] = entry['default_value']
+            if xml_var in ['LOCATION', 'INSTITUTION']:
+                db_values[xml_var] = LOCATION
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
