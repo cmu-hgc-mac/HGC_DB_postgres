@@ -6,7 +6,9 @@ from lxml import etree
 import yaml
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
+from HGC_DB_postgres.export.define_global_var import LOCATION
 
 async def get_conn():
     '''
@@ -117,8 +119,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         for entry in wb_data:
             xml_var = entry['xml_temp_val']
 
-            if 'default_value' in entry:
-                db_values[xml_var] = entry['default_value']
+            if xml_var in ['LOCATION', 'INSTITUTION']:
+                db_values[xml_var] = LOCATION
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
@@ -164,6 +166,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         ORDER BY date_encap DESC, time_encap DESC
                         LIMIT 1;
                         """
+                    elif dbase_table == 'module_info':
+                        query = f"""
+                        SELECT {dbase_col} FROM {dbase_table}
+                        WHERE module_name = '{module}'
+                        AND xml_gen_datetime IS NULL;
+                        """
                     else:
                         query = f"""
                         SELECT {dbase_col} FROM {dbase_table} 
@@ -171,7 +179,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         AND xml_gen_datetime IS NULL
                         ORDER BY date_bond DESC, time_bond DESC LIMIT 1;
                         """
-
+                print(f'Executing query -- \n\t{query}')
                 results = await fetch_from_db(query, conn)  # Use conn directly
 
                 if results:
@@ -184,6 +192,20 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         run_date = results.get("date_bond", "")
                         time_end = results.get("time_bond", "")
                         db_values[xml_var] = f"{run_date}T{time_end}"
+                    elif xml_var == "KIND_OF_PART":
+                        sen_thickness = results.get("sen_thickness", "")
+                        resolution = results.get("resolution", "")
+                        geometry = results.get("geometry", "")
+                        bp_material = results.get("bp_material", "") 
+                        if bp_material == 'CuW':
+                            proto_type = 'EM'
+                        elif bp_material == 'PCB':
+                            proto_type = 'HAD'
+                        elif bp_material == 'CF' or 'Carbon fiber':
+                            proto_type = 'HAD'
+                        else:
+                            proto_type = ''
+                        db_values[xml_var] = f"{proto_type} {sen_thickness}um Si Module {resolution} {geometry}"
                     elif xml_var == "WIREBOND_COMMENTS_CONCAT":
                         bk_comment = results.get("back_wirebond_comment", "")
                         fr_comment = results.get("front_wirebond_comment", "")
@@ -203,7 +225,7 @@ async def main():
     # Configuration
     yaml_file = '../../../export/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = '../../../export/template_examples/module/wirebond_upload.xml'# XML template file path
-    output_dir = '../../../export/generated_xml'  # Directory to save the updated XML
+    output_dir = '../../../export/generated_xml/module'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool
     conn = await get_conn()

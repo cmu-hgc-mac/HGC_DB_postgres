@@ -6,14 +6,15 @@ from lxml import etree
 import yaml
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
+from HGC_DB_postgres.export.define_global_var import LOCATION
 
 async def get_conn():
     '''
     Does: get connection to database
     Return: connection
     '''
-
     loc = '../../../dbase_info/'
     yaml_file = f'{loc}tables.yaml'
     db_params = {
@@ -117,8 +118,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         for entry in wb_data:
             xml_var = entry['xml_temp_val']
 
-            if 'default_value' in entry:
-                db_values[xml_var] = entry['default_value']
+            if xml_var in ['LOCATION', 'INSTITUTION']:
+                db_values[xml_var] = LOCATION
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
@@ -170,7 +171,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         AND xml_gen_datetime IS NULL
                         ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1;
                         """
-                print(f'Executing query -- \n\t{query}')
                 results = await fetch_from_db(query, conn)  # Use conn directly
 
                 if results:
@@ -187,7 +187,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         sen_thickness = results.get("sen_thickness", "")
                         resolution = results.get("resolution", "")
                         geometry = results.get("geometry", "")
-                        db_values[xml_var] = f"{sen_thickness}_{resolution}_{geometry}"
+                        db_values[xml_var] = f"{sen_thickness}um Si Module {resolution} {geometry}"
                     elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                         run_date = results.get("ass_run_date", "")
                         time_end = results.get("ass_time_begin", "")
@@ -207,7 +207,7 @@ async def main():
     # Configuration
     yaml_file = '../../../export/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = '../../../export/template_examples/module/cond_upload.xml'# XML template file path
-    output_dir = '../../../export/generated_xml'  # Directory to save the updated XML
+    output_dir = '../../../export/generated_xml/module'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool
     conn = await get_conn()
