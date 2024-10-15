@@ -68,7 +68,7 @@ def scp_to_dbloader(dbl_username, dbl_password, fname):
         
         
 def main():
-    default_dir = os.path.abspath(os.path.join(os.getcwd(), ".." ,"/xmls_for_dbloader_upload")) ### XMLs are save outside this project
+    default_dir = os.path.abspath(os.path.join(os.getcwd(), "../../xmls_for_dbloader_upload"))
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     parser = argparse.ArgumentParser(description="Script to process files in a directory.")
     parser.add_argument('-dir','--directory', type=valid_directory, default=default_dir, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
@@ -83,7 +83,7 @@ def main():
     if files_found:
         print("Files found: ")
         for file in files_found: print(file)
-
+        
         print('\n')
         dbl_username = input('LXPLUS Username: ')
         dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')

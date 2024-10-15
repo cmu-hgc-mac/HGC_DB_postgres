@@ -31,7 +31,14 @@ def get_url(partID = None, macID = None, partType = None):
             return f'https://hgcapi.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]}?page=0&limit=100&location={macID}'
         return f'https://hgcapi.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]}?page=0&limit=100'
     return
-    
+
+def process_part_id(partID = None, partType = None):
+    part_id = ((str(partID).replace("-","")).replace("320","")).replace("_0","")
+    pos_list = {'bp': [2, 5, 7], 'sen': [2, 5, 7], 'hxb': [2, 5, 7]}
+    parts = [part_id[i:j] for i, j in zip([0] + pos_list[partType], pos_list[partType] + [None])]
+    output_string = f'320-{"-".join(parts)}'
+    return output_string
+
 def read_from_cern_db(partID = None, macID = None, partType = None ):
     headers = {'Accept': 'application/json'}
     response = requests.get(get_url(partID = partID, macID = macID, partType = partType), headers=headers)
@@ -42,11 +49,12 @@ def read_from_cern_db(partID = None, macID = None, partType = None ):
     else:
         print(f'Error: {response.status_code}')
 
-for pt in ['bp','sen','hxb']:
+for pt in ['bp','hxb','sen']:
     data_mod = read_from_cern_db(macID = inst_code.upper(), partType = pt)
     temp = data_mod['parts']
     for t in temp:
-        print(t["barcode"],t['serial_number'],t['kind'])
+        print(process_part_id(t["barcode"],pt), t['serial_number'],t['kind'])
+        # print(process_part_id(t["barcode"],pt), process_part_id(t['serial_number'],pt),t['kind'])
 
 # print(json.dumps(data_mod['parts'], indent=2))
 
