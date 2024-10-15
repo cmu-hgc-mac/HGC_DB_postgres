@@ -6,7 +6,9 @@ from lxml import etree
 import yaml
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
+from HGC_DB_postgres.export.define_global_var import LOCATION
 
 async def get_conn():
     '''
@@ -112,8 +114,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         for entry in wb_data:
             xml_var = entry['xml_temp_val']
 
-            if 'default_value' in entry:
-                db_values[xml_var] = entry['default_value']
+            if xml_var in ['LOCATION', 'INSTITUTION']:
+                db_values[xml_var] = LOCATION
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
@@ -144,7 +146,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         AND xml_gen_datetime IS NULL
                         ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
                         """
-                print(f'Executing query -- \n\t{query}')
                 results = await fetch_from_db(query, conn)  # Use conn directly
 
                 if results:
@@ -160,7 +161,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                     elif xml_var == "KIND_OF_PART":
                         resolution = results.get("resolution", "")
                         geometry = results.get("geometry", "")
-                        db_values[xml_var] = f"{resolution}_{geometry}"
+                        db_values[xml_var] = f"Hexaboard {resolution} {geometry}"
                     elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                         run_date = results.get("ass_run_date", "")
                         time_end = results.get("ass_time_begin", "")

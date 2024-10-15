@@ -6,7 +6,9 @@ from lxml import etree
 import yaml
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
+from HGC_DB_postgres.export.define_global_var import LOCATION
 
 async def get_conn():
     loc = '../../../dbase_info/'
@@ -78,6 +80,19 @@ async def get_parts_name(name, table, conn):
     name_list = [record[name] for record in fetched_query]
     return name_list
 
+async def get_kind_of_part(sen_name):
+    ## get sen_name -> proto_name
+    ######### this function needs to be updated #########
+    sen_thickness = {'1': '120', '2': '200', '3': '300'}
+    bp_material = {'C': 'CF', 'T': 'Ti', 'P': 'PCB', 'W': 'CuW'}
+    resolution = {'F': 'Full'}
+    geometry = {'Full'}
+    proto_name = "320-PL-F3CX-CM-0008"
+    sen_thickness = proto_name.split('-')[2]
+
+    kind_of_part = f'{bp_material} {sen_thickness} Si Sensor {resolution} {geometry}'
+
+
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
@@ -101,8 +116,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         for entry in module_data:
             xml_var = entry['xml_temp_val']
 
-            if 'default_value' in entry:
-                db_values[xml_var] = entry['default_value']
+            if xml_var in ['LOCATION', 'INSTITUTION']:
+                db_values[xml_var] = LOCATION
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
@@ -118,21 +133,26 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                 else:
                     # Modify the query to get the latest entry
                     query = f"SELECT {dbase_col} FROM {dbase_table} WHERE sen_name = '{sen_name}' ORDER BY sen_received DESC, sen_received DESC LIMIT 1"
-                result = await fetch_from_db(query, conn)  # Use conn directly
+                results = await fetch_from_db(query, conn)  # Use conn directly
                 
-                if result:
+                if results:
                     if xml_var == "RUN_BEGIN_TIMESTAMP_":
                         # Fetching both ass_run_date and ass_time_begin
-                        run_date = result.get("ass_run_date", "")
-                        time_begin = result.get("ass_time_begin", "")
+                        run_date = results.get("ass_run_date", "")
+                        time_begin = results.get("ass_time_begin", "")
                         db_values[xml_var] = f"{run_date}T{time_begin}"
                     elif xml_var == "RUN_END_TIMESTAMP_":
                         # Fetching both ass_run_date and ass_time_end
-                        run_date = result.get("ass_run_date", "")
-                        time_end = result.get("ass_time_end", "")
+                        run_date = results.get("ass_run_date", "")
+                        time_end = results.get("ass_time_end", "")
                         db_values[xml_var] = f"{run_date}T{time_end}"
+                    elif xml_var == "KIND_OF_PART":
+                        sen_thickness = results.get("thickness", "")
+                        resolution = results.get("resolution", "")
+                        geometry = results.get("geometry", "")
+                        db_values[xml_var] = f"{sen_thickness}um Si Sensor {resolution} {geometry}"
                     else:
-                        db_values[xml_var] = result.get(dbase_col, '') if not entry['nested_query'] else list(result.values())[0]
+                        db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
         # Update the XML with the database values
         output_file_name = f'{sen_name}_{os.path.basename(xml_file_path)}'
