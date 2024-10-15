@@ -7,8 +7,8 @@ async def get_conn_pool():
     yaml_file = f'{loc}tables.yaml'
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
-        'user': 'postgres',
-        'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
+        'user': 'shipper',
+        'password': pwinput.pwinput(prompt='Enter user password: ', mask='*'),
         'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
     pool = await asyncpg.create_pool(**db_params)
     return pool

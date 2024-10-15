@@ -1,7 +1,3 @@
-dbname: 'hgcdb'
-port: '5432'
-db_hostname: 'localhost'
-
 users:
   -
     username: 'ogp_user'
@@ -61,7 +57,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'module_inspect.csv' 
@@ -73,7 +69,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'module_iv_test.csv' 
@@ -85,7 +81,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'module_pedestal_test.csv' 
@@ -97,7 +93,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'module_pedestal_plots.csv'
@@ -109,7 +105,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'module_qc_summary.csv'
@@ -121,7 +117,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'back_wirebond.csv'
@@ -130,10 +126,10 @@ tables:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
       'viewer': 'SELECT'
-      'wirebond_user':  'INSERT, SELECT'
-      'encap_user':  'SELECT'
+      'wirebond_user':  'INSERT, SELECT, UPDATE'
+      'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'back_encap.csv'
@@ -142,10 +138,10 @@ tables:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
       'viewer': 'SELECT'
-      'wirebond_user':  'SELECT'
-      'encap_user':  'INSERT, SELECT'
+      'wirebond_user':  'INSERT, SELECT, UPDATE'
+      'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'front_wirebond.csv'
@@ -154,10 +150,10 @@ tables:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
       'viewer': 'SELECT'
-      'wirebond_user':  'INSERT, SELECT'
-      'encap_user':  'SELECT'
+      'wirebond_user':  'INSERT, SELECT, UPDATE'
+      'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'front_encap.csv'
@@ -166,10 +162,10 @@ tables:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
       'viewer': 'SELECT'
-      'wirebond_user':  'SELECT'
-      'encap_user':  'INSERT, SELECT'
+      'wirebond_user':  'INSERT, SELECT, UPDATE'
+      'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'bond_pull_test.csv'
@@ -178,10 +174,10 @@ tables:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
       'viewer': 'SELECT'
-      'wirebond_user':  'INSERT, SELECT'
-      'encap_user':  'SELECT'
+      'wirebond_user':  'INSERT, SELECT, UPDATE'
+      'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'proto_assembly.csv' 
@@ -193,7 +189,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'proto_inspect.csv' 
@@ -205,7 +201,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'baseplate.csv' 
@@ -217,7 +213,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'bp_inspect.csv' 
@@ -229,7 +225,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'sensor.csv'
@@ -241,7 +237,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
   
   - 
     fname: 'sen_iv_data.csv'
@@ -253,7 +249,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'INSERT, SELECT'
 
   - 
     fname: 'hexaboard.csv'
@@ -265,7 +261,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'hxb_inspect.csv' 
@@ -277,7 +273,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'hxb_pedestal_test.csv'
@@ -289,7 +285,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   -
     fname: 'mod_hxb_other_test.csv'
@@ -301,7 +297,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'
 
   - 
     fname: 'adhesive_pattern.csv' 
@@ -313,4 +309,4 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'SELECT'
+      'shipper':  'SELECT, UPDATE'

@@ -1,18 +1,29 @@
 import asyncio, asyncpg
-import glob, os, csv, yaml
+import glob, os, csv, yaml, argparse
 import numpy as np
 import pwinput
 
+parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
+parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
+args = parser.parse_args()
+
 print('Creating tables in the database...')
 # Database connection parameters
-loc = '../dbase_info/'
-yaml_file = f'{loc}tables.yaml'
+loc = 'dbase_info'
+tables_subdir = 'postgres_tables'
+table_yaml_file = os.path.join(loc, 'tables.yaml')
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+
+dbpassword = str(args.password).replace(" ", "")
+if dbpassword is None:
+    dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+
 db_params = {
-    'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
+    'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
     'user': 'postgres',
-    'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
-    'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname'],
-    'port': yaml.safe_load(open(yaml_file, 'r'))['port']
+    'password': dbpassword,
+    'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),
+    'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),
 }
 
 async def create_tables():
@@ -26,8 +37,8 @@ async def create_tables():
         fnameLs = glob.glob("*.csv")
         return fnameLs
 
-    def get_table_info(loc, fname):
-        with open(loc + fname, mode='r') as file:
+    def get_table_info(loc, tables_subdir, fname):
+        with open(os.path.join(loc, tables_subdir, fname) , mode='r') as file:
             csvFile = csv.reader(file)
             rows = []
             for row in csvFile:
@@ -71,21 +82,6 @@ async def create_tables():
         #await conn.execute(f"GRANT SELECT ON information_schema.tables TO {user};")
         print(f"Schema permission access granted to {user}.")
 
-    # fname_list = ['module_info.csv',
-    #               'module_assembly.csv', 
-    #               'proto_assembly.csv', 
-    #               'baseplate.csv', 
-    #               'sensor.csv', 
-    #               'hexaboard.csv', 
-    #               'bp_inspect.csv', 
-    #               'hxb_inspect.csv', 
-    #               'hxb_pedestal_test.csv', 
-    #               'proto_inspect.csv', 
-    #               'module_inspect.csv', 
-    #               'module_iv_test.csv', 
-    #               'module_pedestal_test.csv', 
-    #               'module_pedestal_plots.csv']   
-
     # Function creation SQL
     create_function_sql = """
         CREATE OR REPLACE FUNCTION notify_insert()
@@ -110,7 +106,7 @@ async def create_tables():
             await conn.execute(create_function_sql)
 
         ## Define the table name and schema
-        with open(yaml_file, 'r') as file:
+        with open(table_yaml_file, 'r') as file:
             data = yaml.safe_load(file)
 
             # for i in data['users']:
@@ -119,10 +115,10 @@ async def create_tables():
 
             print('\n')
 
-            for i in data['tables']:
+            for i in data.get('tables'):
                 fname = f"{(i['fname'])}"
                 print(f'Getting info from {fname}...')
-                table_name, table_header, dat_type, fk_name, fk_ref, parent_table = get_table_info(loc, fname)
+                table_name, table_header, dat_type, fk_name, fk_ref, parent_table = get_table_info(loc, tables_subdir, fname)
                 table_columns = get_column_names(table_header, dat_type, fk_name, fk_ref, parent_table)
                 await create_table(table_name, table_columns)
                 pk_seq = f'{table_name}_{table_header[0]}_seq'

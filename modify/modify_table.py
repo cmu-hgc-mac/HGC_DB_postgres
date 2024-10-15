@@ -2,10 +2,11 @@ import os, sys, argparse
 import asyncio, asyncpg
 import yaml, csv
 sys.path.append('../')
-from src.utils import connect_db
+import pwinput
 
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
 parser.add_argument('-t', '--tablename', default='all', required=False, help="Name of table to modify.")
+parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
 args = parser.parse_args()
 
 '''
@@ -152,24 +153,28 @@ async def apply_changes(conn, table_name: str, changes, existing_schema):
             _, old_col_name, new_col_name = change
             await change_column_name(conn, table_name, old_col_name, new_col_name)
 
-async def table_modify_seq(conn, table_name, loc):
+async def table_modify_seq(conn, table_name, loc, tables_subdir):
     existing_schema = await get_existing_table_schema(conn, table_name)
-    csv_file_path = os.path.join(loc, table_name) + '.csv'
+    csv_file_path = os.path.join(loc, tables_subdir, table_name) + '.csv'
     desired_schema = get_desired_table_schema_from_csv(csv_file_path)
     changes = compare_schemas(existing_schema, desired_schema)
     await apply_changes(conn, table_name, changes, existing_schema)
 
 async def main():
     ## Database connection parameters for new database
-    loc = '../dbase_info/'
-    yaml_file = f'{loc}tables.yaml'
+    dbpassword = str(args.password).replace(" ", "")
+    if dbpassword is None:
+        dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+    loc = 'dbase_info'
+    tables_subdir = 'postgres_tables'
+    table_yaml_file = os.path.join(loc, 'tables.yaml')
+    conn_yaml_file = os.path.join(loc, 'conn.yaml')
     db_params = {
-        'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
+        'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
         'user': 'postgres',   
-        # 'password': input('Set superuser password: '),
-        'password': 'hgcal',
-        'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname'],  
-        'port': yaml.safe_load(open(yaml_file, 'r'))['port']        
+        'password': dbpassword,
+        'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),  
+        'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port')        
     }
 
     # establish a connection with database
@@ -181,9 +186,9 @@ async def main():
 
     # retrieve all table names from csv files
     all_table_names = []
-    for filename in os.listdir(loc):
+    for filename in os.listdir(os.path.join(loc, tables_subdir)):
         if filename.endswith('.csv'):
-            csv_file_path = os.path.join(loc, filename)
+            csv_file_path = os.path.join(loc, tables_subdir, filename)
             all_table_names.append(os.path.splitext(filename)[0])  # Assuming table name is the same as CSV file name
     
     ## table_name = input('Enter the table name you want to apply a change(s). -- ')
@@ -194,7 +199,7 @@ async def main():
     for table_name in table_name_list:
         try:
             assert table_name in all_table_names, "Table was not found in the csv list."
-            await table_modify_seq(conn, table_name, loc)
+            await table_modify_seq(conn, table_name, loc, tables_subdir)
         except Exception as e:
             print('\n')
             print('##############################')
