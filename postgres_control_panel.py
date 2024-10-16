@@ -8,7 +8,9 @@ from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, Strin
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
-dbase_name  = yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname')
+config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
+dbase_name = config_data.get('dbname')
+cern_dbase = config_data.get('cern_db')
 
 # Synchronous functions for button actions
 def import_action():
@@ -27,9 +29,7 @@ def show_message_textbox(message):
     text_area.config(state=DISABLED)
 
 def check_config_action():  
-    with open(conn_yaml_file, 'r') as file:
-        config_data = yaml.safe_load(file)
-    message = 'Database configuration variables in "HGC_DB_postgres/dbase_info/conn.yaml".\n\n'
+    message = f'Database configuration variables in "{os.path.join("HGC_DB_postgres",conn_yaml_file)}".\n\n'
     message += "\n".join(f"{key}: {value}" for key, value in config_data.items())
     show_message_textbox(message)
 
@@ -125,7 +125,7 @@ def handle_button_click(action):
 # Initialize the application
 root = Tk()
 root.title("Local DB Dashboard - CMS HGC MAC")
-root.geometry("400x500")
+root.geometry("400x550")
 
 # Load logo image
 image_path = "documentation/images/logo_small_75.png"  # Update with your image path
@@ -169,8 +169,13 @@ button_upload.pack(pady=5)
 def open_documentation():
     webbrowser.open("https://github.com/cmu-hgc-mac/")  
 
+cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
+dbtype_label = Label(root, text=f'Writing to CERN {cerndb_types[cern_dbase]["dbtype"]} Database: {cerndb_types[cern_dbase]["dbname"]}', fg="black")
+dbtype_label.pack(pady=2)
+
 doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
-doc_label.pack(side='bottom', pady=5)
+doc_label.pack(pady=5)
+# doc_label.pack(side='bottom', pady=5)
 doc_label.bind("<Button-1>", lambda e: open_documentation())  # Bind click event to the label
 
 

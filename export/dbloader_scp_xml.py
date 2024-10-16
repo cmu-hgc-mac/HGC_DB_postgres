@@ -1,8 +1,13 @@
 import platform, os, argparse, paramiko, pwinput
 from scp import SCPClient
 import numpy as np
-import datetime
+import datetime, yaml
 
+loc = 'dbase_info'
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
+cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
+cern_dbname = (cerndb_types[cern_dbase]['dbname']).lower()
 
 def valid_directory(path):
     if os.path.isdir(path):
@@ -53,7 +58,7 @@ def scp_to_dbloader(dbl_username, dbl_password, fname):
         ssh_server2.connect(hostname='dbloader-hgcal', username=dbl_username, password=dbl_password, sock=channel)
 
         with SCPClient(ssh_server2.get_transport()) as scp:
-            scp.put(fname, '/home/dbspool/spool/hgc/int2r/')
+            scp.put(fname, f'/home/dbspool/spool/hgc/{cern_dbname}/')
 
         scp.close()
         ssh_server2.close()
