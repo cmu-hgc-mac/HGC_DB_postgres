@@ -18,4 +18,11 @@ pip install asyncpg tk matplotlib pwinput pillow pyyaml
 ```
 python3 postgres_control_panel.py
 ```
-9. Follow [instructions](https://github.com/murthysindhu/HGC_DB_postgres/tree/main/documentation#2-view-tables-with-pgadmin4) to view tables.
+<img src="https://raw.githubusercontent.com/cmu-hgc-mac/HGC_DB_postgres/main/documentation/images/postgres_control_panel.png" alt="Postgres Control Panel" width="30%">
+
+9. Follow [instructions](https://github.com/murthysindhu/HGC_DB_postgres/tree/main/documentation#2-view-tables-with-pgadmin4) to view tables in pgAdmin4 tool.
+<img src="https://raw.githubusercontent.com/cmu-hgc-mac/HGC_DB_postgres/main/documentation/images/table_example.png" alt="Postgres Control Panel" width="95%">
+
+
+
+
