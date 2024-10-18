@@ -12,6 +12,10 @@ config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 dbase_name = config_data.get('dbname')
 cern_dbase = config_data.get('cern_db')
 
+def bind_button_keys(button):
+    button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
+    button.bind("<space>", lambda event: button.invoke())   # Bind Space key
+
 # Synchronous functions for button actions
 def import_action():
     show_message("Currently under development...")
@@ -77,7 +81,7 @@ def create_database():
     password_entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     password_entry.pack(pady=5)
 
-    def submit():
+    def submit_create():
         viewer_pass = viewer_var .get()
         user_pass = user_var.get()
         db_pass = password_var.get()
@@ -91,8 +95,9 @@ def create_database():
             if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
                 input_window.destroy()  
 
-    submit_button = Button(input_window, text="Submit", command=submit)
-    submit_button.pack(pady=10)
+    submit_create_button = Button(input_window, text="Submit", command=submit_create)
+    submit_create_button.pack(pady=10)
+    bind_button_keys(submit_create_button)
 
 def modify_tables():
     input_window = Toplevel(root)
@@ -103,7 +108,7 @@ def modify_tables():
     entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     entry.pack(pady=10)
 
-    def submit():
+    def submit_modify():
         db_pass = password_var.get()
         if db_pass.strip():
             input_window.destroy()  # Close the input window
@@ -114,9 +119,9 @@ def modify_tables():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
 
-    submit_button = Button(input_window, text="Submit", command=submit)
-    submit_button.pack(pady=10)
-
+    submit_modify_button = Button(input_window, text="Submit", command=submit_modify)
+    submit_modify_button.pack(pady=10)
+    bind_button_keys(submit_modify_button)
 
 # Create a helper function to handle button clicks
 def handle_button_click(action):
@@ -144,26 +149,31 @@ else:
     logo_label.pack()
 
 button_width, button_height = 20, 3
+
+def bind_button_keys(button):
+    button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
+    button.bind("<space>", lambda event: button.invoke())   # Bind Space key
+
 # Create buttons with large size
 button_create = Button(frame, text="Create DBase Tables", command=create_database, width = button_width, height = button_height)
 button_create.pack(pady=5)
+bind_button_keys(button_create)
 
-button_create = Button(frame, text="Modify Tables", command=modify_tables, width = button_width, height = button_height)
-button_create.pack(pady=5)
+button_modify = Button(frame, text="Modify Existing Tables", command=modify_tables, width = button_width, height = button_height)
+button_modify.pack(pady=5)
+bind_button_keys(button_modify)
 
 button_check_config = Button(frame, text="Check Config", command=check_config_action, width = button_width, height = button_height)
 button_check_config.pack(pady=5)
+bind_button_keys(button_check_config)
 
-button_refresh = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(import_action), width = button_width, height = button_height)
-button_refresh.pack(pady=5)
+button_download = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(import_action), width = button_width, height = button_height)
+button_download.pack(pady=5)
+bind_button_keys(button_download)
 
 button_upload = Button(frame, text="Upload XMLs to DBLoader", command=lambda: handle_button_click(upload_action), width = button_width, height = button_height)
 button_upload.pack(pady=5)
-
-
-
-# button_print = Button(frame, text="Print", command=lambda: handle_button_click(print_action), width = button_width, height = button_height)
-# button_print.pack(pady=5)
+bind_button_keys(button_upload)
 
 # Documentation link at the bottom
 def open_documentation():

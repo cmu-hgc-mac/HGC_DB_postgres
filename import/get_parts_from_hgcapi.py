@@ -53,7 +53,8 @@ for pt in ['bp','hxb','sen']:
     data_mod = read_from_cern_db(macID = inst_code.upper(), partType = pt)
     temp = data_mod['parts']
     for t in temp:
-        print(process_part_id(t["barcode"],pt), t['serial_number'],t['kind'])
+        print(t)
+        # print(process_part_id(t["barcode"],pt), t['serial_number'],t['kind'])
         # print(process_part_id(t["barcode"],pt), process_part_id(t['serial_number'],pt),t['kind'])
 
 # print(json.dumps(data_mod['parts'], indent=2))
