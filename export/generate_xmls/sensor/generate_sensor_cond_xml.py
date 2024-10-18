@@ -9,20 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name
-
-async def get_kind_of_part(sen_name):
-    ## get sen_name -> proto_name
-    ######### this function needs to be updated #########
-    sen_thickness = {'1': '120', '2': '200', '3': '300'}
-    bp_material = {'C': 'CF', 'T': 'Ti', 'P': 'PCB', 'W': 'CuW'}
-    resolution = {'F': 'Full'}
-    geometry = {'Full'}
-    proto_name = "320-PL-F3CX-CM-0008"
-    sen_thickness = proto_name.split('-')[2]
-
-    kind_of_part = f'{bp_material} {sen_thickness} Si Sensor {resolution} {geometry}'
-
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -49,6 +36,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
             if xml_var in ['LOCATION', 'INSTITUTION']:
                 db_values[xml_var] = LOCATION
+            elif xml_var == 'KIND_OF_PART':
+                db_values[xml_var] = get_kind_of_part(sen_name)
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
@@ -77,11 +66,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         run_date = results.get("ass_run_date", "")
                         time_end = results.get("ass_time_end", "")
                         db_values[xml_var] = f"{run_date}T{time_end}"
-                    elif xml_var == "KIND_OF_PART":
-                        sen_thickness = results.get("thickness", "")
-                        resolution = results.get("resolution", "")
-                        geometry = results.get("geometry", "")
-                        db_values[xml_var] = f"{sen_thickness}um Si Sensor {resolution} {geometry}"
                     else:
                         db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 

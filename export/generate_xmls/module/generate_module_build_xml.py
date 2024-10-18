@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -43,6 +43,21 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
             if xml_var in ['LOCATION', 'INSTITUTION']:
                 db_values[xml_var] = LOCATION
+            elif xml_var in ['KIND_OF_PART', 'KIND_OF_PART_PROTOMODULE', 'KIND_OF_PART_PCB']:
+                if xml_var == 'KIND_OF_PART':
+                    db_values[xml_var] = get_kind_of_part(module)
+                elif xml_var == 'KIND_OF_PART_PROTOMODULE':
+                    _query = f"SELECT proto_name FROM module_assembly WHERE module_name = '{module}';"
+                    _proto_name = await conn.fetch(_query)
+                    proto_name = _proto_name[0]['proto_name']
+                    print(f'proto_name -- {proto_name}')
+                    db_values[xml_var] = get_kind_of_part(proto_name)
+                else:
+                    _query = f"SELECT hxb_name FROM module_assembly WHERE module_name = '{module}';"
+                    _hxb_name = await conn.fetch(_query)
+                    hxb_name = _hxb_name[0]['hxb_name']
+                    print(f'hxb_name -- {hxb_name}')
+                    db_values[xml_var] = get_kind_of_part(hxb_name)
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
@@ -110,30 +125,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         run_date = results.get("ass_run_date", "")
                         time_end = results.get("ass_time_end", "")
                         db_values[xml_var] = f"{run_date}T{time_end}"
-                    elif xml_var == "KIND_OF_PART":
-                        sen_thickness = results.get("sen_thickness", "")
-                        resolution = results.get("resolution", "")
-                        geometry = results.get("geometry", "")
-                        module_type = 'HAD'## change here
-                        db_values[xml_var] = f"{module_type} {sen_thickness}um Si Module {resolution} {geometry}"
-                    elif xml_var == "KIND_OF_PART_PROTOMODULE":
-                        sen_thickness = results.get("sen_thickness", "")
-                        resolution = results.get("resolution", "")
-                        geometry = results.get("geometry", "")
-                        bp_material = results.get("bp_material", "") 
-                        if bp_material == 'CuW':
-                            proto_type = 'EM'
-                        elif bp_material == 'PCB':
-                            proto_type = 'HAD'
-                        elif bp_material == 'CF' or 'Carbon fiber':
-                            proto_type = 'HAD'
-                        else:
-                            proto_type = ''
-                        db_values[xml_var] = f"{proto_type} {sen_thickness}um Si Module {resolution} {geometry}"
-                    elif xml_var == "KIND_OF_PART_PCB":
-                        resolution = results.get("resolution", "")
-                        geometry = results.get("geometry", "")
-                        db_values[xml_var] = f"Hexaboard {resolution} {geometry}"
                     else:
                         db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 

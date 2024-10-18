@@ -85,7 +85,68 @@ async def get_parts_name(name, table, conn):
     ##  returns part name in a specific table
     ##  i.e., baseplate-> get bp_name
     query = f"SELECT DISTINCT {name} FROM {table};"
-    print(query)
     fetched_query = await conn.fetch(query)
     name_list = [record[name] for record in fetched_query]
     return name_list
+
+def get_kind_of_part(part_name):
+    ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
+    part_id = ((str(part_name).replace("-","")).replace("320","")).replace("_0","")## remove "-" 
+    
+    part_type_dict = {'P': 'ProtoModule', 'M':'Module', 'S': 'Sensor', 'B': 'Baseplate', 'X':'Hexaboard'}
+    resolution_dict = {'L': 'LD', 'H': 'HD'}
+    geometry_dict = {'F': 'Full', 'T': 'Top', 'B': 'Bottom', 'L':'Left', 'R':'Right', '5': 'Five', 
+                     'S': 'Whole', 'M': 'Half-moons'}
+    thickness_dict = {'1': '120', '2': '200', '3': '300'}
+    material_dict = {'W': 'CuW', 'T': 'Ti', 'C': 'CF', 'P': 'PCB', 'X':''}
+    sen_structure_dict = {'XX': 'Whole', 
+                          'TP': 'Top-Half-Moon', 
+                          'BT': 'Bottom-Half-Moon', 
+                          'TL': 'Top-Left Half-Moon',
+                          'TR': 'Top-Right Half-Moon',
+                          'BL': 'Bottom-Left Half-Moon',
+                          'BR': 'Bottom-Right Half-Moon'}
+    
+    # Extract the information
+    part_type = part_type_dict[part_id[0]]
+    if part_type == 'Hexaboard':## Fill out here once it's finalized. 
+        kind_of_part = ''
+
+    elif part_type == 'Baseplate':
+        ## 320-BA-TTT-VB-NNNN
+        ### TTT: [geometry][resolution][bp_material]
+        kind_of_part = ''
+        ## below is updated version (rev.4.0)
+        # geometry = geometry_dict[part_id[2]]
+        # resolution = resolution_dict[part_id[3]]
+        # bp_material = material_dict[part_id[4]]
+        # module_type = ''
+        # if bp_material == 'CuW':
+        #     module_type = 'EM'
+        # elif bp_material in ['Ti', 'CF']:
+        #     module_type = 'HAD'
+        # kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
+
+    elif part_type == 'Sensor':
+        ## 320-ST-TTT-NNNNNN
+        ### T-TTT: [resolution]-[sen_thickness][geometry][sensor structure]
+        resolution = resolution_dict[part_id[1]]
+        sen_thickness = thickness_dict[part_id[2]]
+        geometry = geometry_dict[part_id[3]]
+        # sen_structure = sen_structure_dict[part_id[4:6]]
+        kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {geometry}'  
+
+    else:
+        resolution = resolution_dict[part_id[1]]
+        geometry = geometry_dict[part_id[2]]
+        sen_thickness = thickness_dict[part_id[3]]
+        bp_material = material_dict[part_id[4]]
+        module_type = ''
+        if bp_material == 'CuW':
+            module_type = 'EM'
+        elif bp_material in ['Ti', 'CF']:
+            module_type = 'HAD'
+
+        kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
+
+    return kind_of_part

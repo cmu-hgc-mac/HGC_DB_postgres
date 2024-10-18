@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -39,6 +39,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
             if xml_var in ['LOCATION', 'INSTITUTION']:
                 db_values[xml_var] = LOCATION
+            elif xml_var == 'KIND_OF_PART':
+                db_values[xml_var] = get_kind_of_part(bp_name)
             else:
                 dbase_col = entry['dbase_col']
                 dbase_table = entry['dbase_table']
@@ -81,14 +83,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         run_date = results.get("ass_run_date", "")
                         time_end = results.get("ass_time_end", "")
                         db_values[xml_var] = f"{run_date}T{time_end}"
-                    elif xml_var == "KIND_OF_PART":## for CF/Kapton FULL, resolution is null, so skip it.  
-                        material = results.get("bp_material", "")
-                        resolution = results.get("resolution", "")
-                        geometry = results.get("geometry", "")
-                        if material == 'CF':
-                            db_values[xml_var] = f"Baseplate {resolution} {geometry}"
-                        else:
-                            db_values[xml_var] = f"{material} Baseplate {resolution} {geometry}"
                     elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                         run_date = results.get("ass_run_date", "")
                         time_end = results.get("ass_time_begin", "")
