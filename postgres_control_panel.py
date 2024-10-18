@@ -8,14 +8,16 @@ from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, Strin
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
-dbase_name  = yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname')
+config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
+dbase_name = config_data.get('dbname')
+cern_dbase = config_data.get('cern_db')
 
 # Synchronous functions for button actions
-def refresh_action():
-    show_message("Refreshing...")
+def import_action():
+    show_message("Currently under development...")
 
 def upload_action():
-    show_message("Uploading...")
+    show_message("Currently under development...")
 
 def show_message_textbox(message):
     window = Toplevel()
@@ -27,9 +29,7 @@ def show_message_textbox(message):
     text_area.config(state=DISABLED)
 
 def check_config_action():  
-    with open(conn_yaml_file, 'r') as file:
-        config_data = yaml.safe_load(file)
-    message = 'Database configuration variables in "HGC_DB_postgres/dbase_info/conn.yaml".\n\n'
+    message = f'Database configuration variables in "{os.path.join("HGC_DB_postgres",conn_yaml_file)}".\n\n'
     message += "\n".join(f"{key}: {value}" for key, value in config_data.items())
     show_message_textbox(message)
 
@@ -125,7 +125,7 @@ def handle_button_click(action):
 # Initialize the application
 root = Tk()
 root.title("Local DB Dashboard - CMS HGC MAC")
-root.geometry("300x400")
+root.geometry("400x550")
 
 # Load logo image
 image_path = "documentation/images/logo_small_75.png"  # Update with your image path
@@ -143,34 +143,39 @@ else:
     logo_label = Label(frame, text="Carnegie Mellon University")
     logo_label.pack()
 
-# Create buttons with larger size
-
-button_create = Button(frame, text="Create DBase Tables", command=create_database, width=15, height=2)
+button_width, button_height = 20, 3
+# Create buttons with large size
+button_create = Button(frame, text="Create DBase Tables", command=create_database, width = button_width, height = button_height)
 button_create.pack(pady=5)
 
-button_create = Button(frame, text="Modify Tables", command=modify_tables, width=15, height=2)
+button_create = Button(frame, text="Modify Tables", command=modify_tables, width = button_width, height = button_height)
 button_create.pack(pady=5)
 
-button_check_config = Button(frame, text="Check Config", command=check_config_action, width=15, height=2)
+button_check_config = Button(frame, text="Check Config", command=check_config_action, width = button_width, height = button_height)
 button_check_config.pack(pady=5)
 
-button_refresh = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(refresh_action), width=15, height=2)
+button_refresh = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(import_action), width = button_width, height = button_height)
 button_refresh.pack(pady=5)
 
-button_upload = Button(frame, text="Upload XMLs to DBLoader", command=lambda: handle_button_click(upload_action), width=15, height=2)
+button_upload = Button(frame, text="Upload XMLs to DBLoader", command=lambda: handle_button_click(upload_action), width = button_width, height = button_height)
 button_upload.pack(pady=5)
 
 
 
-# button_print = Button(frame, text="Print", command=lambda: handle_button_click(print_action), width=15, height=2)
+# button_print = Button(frame, text="Print", command=lambda: handle_button_click(print_action), width = button_width, height = button_height)
 # button_print.pack(pady=5)
 
 # Documentation link at the bottom
 def open_documentation():
-    webbrowser.open("https://github.com/cmu-hgc-mac/")  # Replace with your actual documentation URL
+    webbrowser.open("https://github.com/cmu-hgc-mac/")  
+
+cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
+dbtype_label = Label(root, text=f'Writing to CERN {cerndb_types[cern_dbase]["dbtype"]} Database: {cerndb_types[cern_dbase]["dbname"]}', fg="black")
+dbtype_label.pack(pady=2)
 
 doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
-doc_label.pack(side='bottom', pady=5)
+doc_label.pack(pady=5)
+# doc_label.pack(side='bottom', pady=5)
 doc_label.bind("<Button-1>", lambda e: open_documentation())  # Bind click event to the label
 
 
