@@ -3,6 +3,7 @@ hxb_no,INT,fk_hxb_ped,hexaboard
 hxb_name,TEXT,,
 status,INT,,
 status_desc,TEXT,,
+trim_bias_voltage,REAL,,
 count_bad_cells,SMALLINT,,
 list_dead_cells,SMALLINT[],,
 list_noisy_cells,SMALLINT[],,
