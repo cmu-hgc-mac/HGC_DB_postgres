@@ -3,6 +3,7 @@ module_no,INT,fk_mod_pedplot,module_info
 module_name,TEXT,,
 status,INT,,
 status_desc,TEXT,,
+trim_bias_voltage,REAL,,
 adc_mean_hexmap,BYTEA,,
 adc_std_hexmap,BYTEA,,
 noise_channel_chip,BYTEA[],,
