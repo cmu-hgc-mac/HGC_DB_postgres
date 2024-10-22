@@ -133,9 +133,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
 async def main():
     # Configuration
-    yaml_file = '../../../export/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = '../../../export/template_examples/module/wirebond_upload.xml'# XML template file path
-    output_dir = '../../../export/generated_xml/module'  # Directory to save the updated XML
+    yaml_file = 'table_to_xml_var.yaml'  # Path to YAML file
+    xml_file_path = 'template_examples/module/wirebond_upload.xml'# XML template file path
+    output_dir = 'generated_xml/module'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool
     conn = await get_conn()
