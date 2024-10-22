@@ -7,8 +7,8 @@ Each MAC requires the following to replicate this setup:
 1. A database computer with a static IP address or host name with postgreSQL-15 with pgAdmin4 installed. 
 2. Ensure ```port``` in [conn.yaml](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/conn.yaml#L2) matches with the port for postgreSQL installed on your computer. Update insitution abbreviation. (Change `db_hostname` only if database is hosted on a different computer.) Verify the CERN database location.
 3. In the long run, it is preferred that the computers at the other stations have static IPs as well for security reasons.
-4. Decide a superuser postgres password (keep safe), a user password (with write access), and a viewer password (with only read permission; doesn't have to be too complicated.)
-5. Install [postgreSQL-15 with pgAdmin4](https://www.pgadmin.org/download/) on your computers. Make sure you add ```psql``` to your path. Use the superuser postgres password with pgAdmin4.
+4. Decide a postgres master password (keep safe), a user password (with write access), and a viewer password (with only read permission; doesn't have to be too complicated.)
+5. Install [postgreSQL-15 with pgAdmin4](https://www.pgadmin.org/download/) on your computers. Make sure you add ```psql``` to your path. Use the postgres master password with pgAdmin4.
 6. Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pg_hba_documentation.md) to update the two config files to listen for the other computers in the lab and make interconnections.
 7. In Python 3.6 or greater:
 ```
