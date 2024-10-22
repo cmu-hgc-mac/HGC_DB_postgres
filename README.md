@@ -18,9 +18,10 @@ pip install asyncpg tk matplotlib pwinput pillow pyyaml
 ```
 python3 postgres_control_panel.py
 ```
-<img src="https://raw.githubusercontent.com/cmu-hgc-mac/HGC_DB_postgres/main/documentation/images/postgres_control_panel.png" alt="Postgres Control Panel" width="30%">
+<img src="https://raw.githubusercontent.com/cmu-hgc-mac/HGC_DB_postgres/main/documentation/images/postgres_control_panel.png" alt="Postgres Control Panel" width="25%">
 
-9. Follow [instructions](https://github.com/murthysindhu/HGC_DB_postgres/tree/main/documentation#2-view-tables-with-pgadmin4) to view tables in pgAdmin4 tool.
+9. Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pgAdmin_instructions.md#4-view-the-list-of-tables) to view tables in pgAdmin4 tool on the database computer. The tables are found under `hgcdb -> Schemas -> public -> Tables`. Right-click on a selected table to `view/edit data` for the `Last 100 Rows`.
+10. Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pgAdmin_instructions.md) to view tables in pgAdmin4 tool on the other stations.
 <img src="https://raw.githubusercontent.com/cmu-hgc-mac/HGC_DB_postgres/main/documentation/images/table_example.png" alt="Postgres Control Panel" width="95%">
 
 
