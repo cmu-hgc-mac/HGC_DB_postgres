@@ -49,14 +49,18 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                 elif xml_var == 'KIND_OF_PART_PROTOMODULE':
                     _query = f"SELECT proto_name FROM module_assembly WHERE module_name = '{module}';"
                     _proto_name = await conn.fetch(_query)
-                    proto_name = _proto_name[0]['proto_name']
-                    print(f'proto_name -- {proto_name}')
+                    if _proto_name:
+                        proto_name = _proto_name[0]['proto_name']
+                    else:
+                        proto_name = ''
                     db_values[xml_var] = get_kind_of_part(proto_name)
                 else:
                     _query = f"SELECT hxb_name FROM module_assembly WHERE module_name = '{module}';"
                     _hxb_name = await conn.fetch(_query)
-                    hxb_name = _hxb_name[0]['hxb_name']
-                    print(f'hxb_name -- {hxb_name}')
+                    if _hxb_name:
+                        hxb_name = _hxb_name[0]['hxb_name']
+                    else:
+                        hxb_name = ''
                     db_values[xml_var] = get_kind_of_part(hxb_name)
             else:
                 dbase_col = entry['dbase_col']
