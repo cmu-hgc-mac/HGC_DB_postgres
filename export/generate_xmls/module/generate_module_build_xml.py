@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -22,16 +22,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     if not wb_data:
         print("No wirebond data found in YAML file")
         return
-
-    module_ass_table = await get_parts_name('module_name', 'module_assembly', conn)
-    module_hxb_table = await get_parts_name('module_name', 'mod_hxb_other_test', conn)
-    module_info_table = await get_parts_name('module_name', 'module_info', conn)
-    module_inspect_table = await get_parts_name('module_name', 'module_inspect', conn)
-    module_ivtest_table = await get_parts_name('module_name', 'module_iv_test', conn)
-    module_pedestal_test_table = await get_parts_name('module_name', 'module_pedestal_test', conn)
-    module_pedestal_plot_table = await get_parts_name('module_name', 'module_pedestal_plots', conn)
-    module_qc_summ_table = await get_parts_name('module_name', 'module_qc_summary', conn)
-    module_list = list(set(module_ass_table) | set(module_hxb_table) | set(module_info_table) | set(module_inspect_table) | set(module_ivtest_table) | set(module_pedestal_test_table) | set(module_pedestal_plot_table) | set(module_qc_summ_table))
+    db_tables = ['module_assembly']
+    module_tables = ['module_assembly', 'mod_hxb_other_test', 'module_info', 'module_inspect', 'module_iv_test', 
+                     'module_pedestal_test', 'module_pedestal_plots', 'module_qc_summary']
+    _module_list = []
+    for module_table in module_tables:
+        _module_list.extend(await get_parts_name('module_name', module_table, conn))
+    module_list = list(set(_module_list))
 
     for module in module_list:
         # Fetch database values for the XML template variables
@@ -135,7 +132,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)
         await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-
+        await update_timestamp_col(conn,
+                                   update_flag=True,
+                                   table_list=db_tables,
+                                   column_name='xml_gen_datetime',
+                                   part='module',
+                                   part_name=module)
 async def main():
     # Configuration
     yaml_file = 'table_to_xml_var.yaml'  # Path to YAML file

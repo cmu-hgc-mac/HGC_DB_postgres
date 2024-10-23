@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
@@ -24,9 +24,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     if not module_data:
         print("No 'module' data found in YAML file")
         return
-    
-    sensor_table = await get_parts_name('sen_name', 'sensor', conn)
-    sensor_list = sensor_table
+    db_tables = ['sensor']
+    sensor_tables = ['sensor']
+    _sensor_list = []
+    for sensor_table in sensor_tables:
+        _sensor_list.extend(await get_parts_name('sen_name', sensor_table, conn))
+    sensor_list = list(set(_sensor_list))
 
     # Fetch database values for the XML template variables
     for sen_name in sensor_list:
@@ -74,7 +77,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         output_file_name = f'{sen_name}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)
         await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-
+        await update_timestamp_col(conn,
+                                   update_flag=True,
+                                   table_list=db_tables,
+                                   column_name='xml_gen_datetime',
+                                   part='sensor',
+                                   part_name=sen_name)
 async def main():
     # Configuration
     yaml_file = 'table_to_xml_var.yaml'  # Path to YAML file

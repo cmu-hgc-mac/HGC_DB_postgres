@@ -8,6 +8,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
+from datetime import datetime
 
 async def get_conn():
     '''
@@ -88,6 +89,38 @@ async def get_parts_name(name, table, conn):
     fetched_query = await conn.fetch(query)
     name_list = [record[name] for record in fetched_query]
     return name_list
+
+# def get_xmlrelated_dbase_tables(yaml_file):
+#     dbase_tables = set()
+#     for entry in yaml_file:
+#         dbase_table = entry.get('dbase_table')
+#         if dbase_table and dbase_table != 'null':
+#             dbase_tables.add(dbase_table)
+#     return list(dbase_tables)
+
+async def update_timestamp_col(conn, update_flag: bool, table_list: list, column_name: str,  part: str, part_name: str):
+    if not update_flag:
+        print("Update flag is False. No update performed.")
+        return
+    try:
+        _part_name_col = {'module':'module_name', 
+                          'hexaboard':'hxb_name', 
+                          'protomodule':'proto_name', 
+                          'sensor': 'sen_name',
+                          'baseplate':'bp_name'}
+        part_name_col = _part_name_col[part]
+
+        # Generate the current timestamp
+        current_timestamp = datetime.now()
+        for table in table_list:
+            query = f"""
+            UPDATE {table}
+            SET {column_name} = $1
+            WHERE {part_name_col} = $2;
+            """
+            await conn.execute(query, current_timestamp, part_name)
+    except Exception as e:
+        print(f"Error updating {column_name}: {e}")
 
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 

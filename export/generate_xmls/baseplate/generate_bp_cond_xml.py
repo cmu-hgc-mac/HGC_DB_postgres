@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -23,11 +23,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         print("No wirebond data found in YAML file")
         return
 
+    # get the unique database tables that are directly associated with the xml creation for updating timestamp cols
+    db_tables = ['baseplate', 'bp_inspect']
+
     # Construct the output file path
     # output_file_path = os.path.join(output_dir, os.path.basename(xml_file_path))
-    bp_table = await get_parts_name('bp_name', 'baseplate', conn)
-    bp_inspect_table = await get_parts_name('bp_name', 'bp_inspect', conn)
-    bp_list = list(set(bp_table) | set(bp_inspect_table))
+    bp_tables = ['baseplate', 'bp_inspect']
+    _bp_list = []
+    for bp_table in bp_tables:
+        _bp_list.extend(await get_parts_name('bp_name', bp_table, conn))
+    bp_list = list(set(_bp_list))
 
     for bp_name in bp_list:
         # Fetch database values for the XML template variables
@@ -97,6 +102,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         output_file_name = f'{bp_name}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)
         await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+        await update_timestamp_col(conn,
+                                   update_flag=True,
+                                   table_list=db_tables,
+                                   column_name='xml_gen_datetime',
+                                   part='baseplate',
+                                   part_name=bp_name)
 
 async def main():
     # Configuration

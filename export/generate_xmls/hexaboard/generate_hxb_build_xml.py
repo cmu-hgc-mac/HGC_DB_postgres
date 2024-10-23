@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Load the YAML file
@@ -22,11 +22,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     if not wb_data:
         print("No wirebond data found in YAML file")
         return
+    db_tables = ['hexaboard']
 
-    hxb_table = await get_parts_name('hxb_name', 'hexaboard', conn)
-    hxb_inspect_table = await get_parts_name('hxb_name', 'hxb_inspect', conn)
-    hxb_pedestal_test_table = await get_parts_name('hxb_name', 'hxb_pedestal_test', conn)
-    hxb_list = list(set(hxb_table) | set(hxb_inspect_table) | set(hxb_pedestal_test_table))
+    hxb_tables = ['hexaboard', 'hxb_inspect', 'hxb_pedestal_test']
+    _hxb_list = []
+    for hxb_table in hxb_tables:
+        _hxb_list.extend(await get_parts_name('hxb_name', hxb_table, conn))
+    hxb_list = list(set(_hxb_list))
 
     for hxb_name in hxb_list:
         # Fetch database values for the XML template variables
@@ -96,7 +98,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         output_file_name = f'{hxb_name}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)
         await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-
+        await update_timestamp_col(conn,
+                                   update_flag=True,
+                                   table_list=db_tables,
+                                   column_name='xml_gen_datetime',
+                                   part='hexaboard',
+                                   part_name=hxb_name)
 async def main():
     # Configuration
     yaml_file = 'table_to_xml_var.yaml'  # Path to YAML file
