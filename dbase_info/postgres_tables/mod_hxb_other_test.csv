@@ -3,6 +3,7 @@ module_no,INT,fk_mod_other_test,module_info
 module_name,TEXT,,
 bias_vol,REAL,,
 trim_bias_vol,REAL,,
+meas_leakage_current,REAL,,
 comment,TEXT,,
 rel_hum,TEXT,,
 temp_c,TEXT,,
