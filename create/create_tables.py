@@ -125,12 +125,16 @@ async def create_tables():
                 try:
                     create_trigger_sql = create_trigger_sql_template.format(table_name=table_name)
                     await conn.execute(create_trigger_sql)
-                    for k in i['permission'].keys():
+                except:
+                    print('Trigger already exists..')
+                for k in i['permission'].keys():
+                    try:
                         await allow_perm(table_name, i['permission'][k], k)
                         if 'INSERT' in i['permission'][k]:
                             await allow_seq_perm(pk_seq, k)
-                except:
-                    print('Either trigger or permissions already exist.')
+                    except:
+                        print(f'Permission {k} already exist.')
+                
                 print('\n')
     
     except asyncpg.PostgresError as e:
