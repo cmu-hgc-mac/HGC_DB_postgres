@@ -2,11 +2,14 @@ import platform, os, argparse, paramiko, pwinput
 from scp import SCPClient
 import numpy as np
 import datetime, yaml
+from tqdm import tqdm
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
-cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
-cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
+# cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
+cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
+cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
+                "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
 cern_dbname = (cerndb_types[cern_dbase]['dbname']).lower()
 
 def valid_directory(path):
@@ -18,6 +21,13 @@ def valid_directory(path):
 def find_files_by_date(directory, target_date):
     # target_date = datetime.datetime.strptime(target_date, '%Y-%m-%d').date()
     matched_files = []
+    print(target_date, type(target_date), os.walk(directory))
+    # Check if the directory exists
+    if not os.path.exists(directory):
+        print(f"Directory does not exist: {directory}")
+        return matched_files
+
+    print(f'target_date -- {target_date}')
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.lower().endswith('.xml'):
@@ -94,9 +104,9 @@ def main():
         dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')
         
         build_files, other_files = get_build_files(files_found)
-        for fname in build_files:
+        for fname in tqdm(build_files):
             scp_to_dbloader(dbl_username, dbl_password, fname)
-        for fname in other_files:
+        for fname in tqdm(other_files):
             scp_to_dbloader(dbl_username, dbl_password, fname)
     else:
         print("No files found for the given date.")

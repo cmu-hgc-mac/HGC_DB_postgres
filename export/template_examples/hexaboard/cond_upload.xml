@@ -20,6 +20,7 @@
         <COMMENT_DESCRIPTION>Upload flatness/thickness data</COMMENT_DESCRIPTION>
         <VERSION>1</VERSION>
         <PART mode="auto">
+        <!-- ID = hxb_name (assembled hexaboards) check if the prefix of 320 will be presented -->
             <SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
             <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
         </PART>

@@ -21,7 +21,7 @@ async def get_conn():
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
         'user': 'postgres',
-        'password': pwinput.pwinput(prompt='Enter superuser password: ', mask='*'),
+        'password': 'hgcal',
         'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
     conn = await asyncpg.connect(**db_params)
     return conn
@@ -78,7 +78,7 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
     # save the file to the directory
     if not os.path.isdir(output_file_path):
         tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
-        print(f"XML file updated and saved to: {output_file_path}")
+        # print(f"XML file updated and saved to: {output_file_path}")
     else:
         print(f"Error: {output_file_path} is a directory, not a file.")
 
@@ -141,7 +141,8 @@ def get_kind_of_part(part_name):
     
     # Extract the information
     if part_name != '':
-        part_id = ((str(part_name).replace("-","")).replace("320","")).replace("_0","")## remove "-" 
+        part_id = ((str(part_name).replace("-","")).replace("320",""))## remove "-", keep '_0' since it's crutial for sen_name(geometry info)
+        # part_id = ((str(part_name).replace("-","")).replace("320","")).replace("_0","")## remove "-" 
         part_type = part_type_dict[part_id[0]]
         if part_type == 'Hexaboard':## Fill out here once it's finalized. 
             kind_of_part = ''
