@@ -129,8 +129,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
 async def main(output_dir):
     # Configuration
-    yaml_file = 'table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = 'template_examples/module/cond_upload.xml'# XML template file path
+    yaml_file = 'export/table_to_xml_var.yaml'  # Path to YAML file
+    xml_file_path = 'export/template_examples/module/cond_upload.xml'# XML template file path
     xml_output_dir = output_dir + '/module'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool

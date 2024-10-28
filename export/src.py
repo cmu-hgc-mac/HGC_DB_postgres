@@ -16,7 +16,7 @@ async def get_conn():
     Return: connection
     '''
 
-    loc = '../dbase_info/'
+    loc = 'dbase_info/'
     yaml_file = f'{loc}conn.yaml'
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],

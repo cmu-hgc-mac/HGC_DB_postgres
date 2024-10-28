@@ -10,8 +10,8 @@ import os, sys
 import subprocess
 import shutil
 
-XML_GENERATOR_DIR = 'generate_xmls_utils'## directory for py scripts to generate xmls
-GENERATED_XMLS_DIR = 'xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
+XML_GENERATOR_DIR = 'export/generate_xmls_utils'## directory for py scripts to generate xmls
+GENERATED_XMLS_DIR = 'export/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
 
 # Ensure the generated XML directory exists
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
@@ -56,12 +56,13 @@ def generate_xmls():
         print(f'Executed -- {script_path}.')
         print(f"Progress: {completed_scripts}/{total_scripts} scripts completed")
         print('-'*10)
+        break
 
 def scp_files():
     """Call the scp script to transfer files."""
     try:
-        scp_command = ['python3', 'dbloader_scp_xml.py', '--dir', GENERATED_XMLS_DIR]
-        process = subprocess.run([sys.executable,'dbloader_scp_xml.py', '--dir', GENERATED_XMLS_DIR])
+        scp_command = ['python3', 'export/dbloader_scp_xml.py', '--dir', GENERATED_XMLS_DIR]
+        process = subprocess.run([sys.executable,'export/dbloader_scp_xml.py', '--dir', GENERATED_XMLS_DIR])
 
         # Continuously capture and print the output
         while True:
