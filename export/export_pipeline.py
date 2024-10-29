@@ -39,9 +39,9 @@ def generate_xmls():
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
                 elif subdir_path.split('/')[-1] not in ['protomodule', 'module']:
-                        if file.endswith('build_xml.py') == False:
-                            script_path = os.path.join(subdir_path, file)
-                            scripts_to_run.append(script_path)
+                    if file.endswith('build_xml.py') == False:
+                        script_path = os.path.join(subdir_path, file)
+                        scripts_to_run.append(script_path)
                 # if file.endswith('.py'):
                 #     script_path = os.path.join(subdir_path, file)
                 #     scripts_to_run.append(script_path)
@@ -64,21 +64,6 @@ def scp_files():
         scp_command = ['python3', 'export/dbloader_scp_xml.py', '--dir', GENERATED_XMLS_DIR]
         process = subprocess.run([sys.executable,'export/dbloader_scp_xml.py', '--dir', GENERATED_XMLS_DIR])
 
-        # Continuously capture and print the output
-        while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            if output:
-                print(output.strip())  # Print the output from the subprocess in real-time
-
-        # Check for errors
-        stderr_output = process.stderr.read()
-        if stderr_output:
-            print(f"Error from dbloader_scp_xml.py: {stderr_output}")
-            return False
-
-        return process.returncode == 0
     except Exception as e:
         print(f"Error during SCP: {e}")
         return False

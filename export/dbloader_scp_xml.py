@@ -104,9 +104,12 @@ def main():
         dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')
         
         build_files, other_files = get_build_files(files_found)
-        for fname in tqdm(build_files):
+        print("Uploading build files ...")
+        for fname in tqdm(build_files[0:3]):
             scp_to_dbloader(dbl_username, dbl_password, fname)
-        for fname in tqdm(other_files):
+
+        print("Uploading other files ...")
+        for fname in tqdm(other_files[0:3]):
             scp_to_dbloader(dbl_username, dbl_password, fname)
     else:
         print("No files found for the given date.")

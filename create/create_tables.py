@@ -43,11 +43,11 @@ async def create_tables():
             rows = []
             for row in csvFile:
                 rows.append(row)
-            temp = np.array(rows).T
-            fk = temp[0][(np.where(temp[-1] != ''))]
-            fk_ref = temp[-2][(np.where(temp[-1] != ''))]
-            fk_tab = temp[-1][(np.where(temp[-1] != ''))]
-            return fname.split('.csv')[0], temp[0], temp[1], fk, fk_ref, fk_tab  ### fk, fk_tab are returned as lists
+            columns = np.array(rows).T
+            fk = columns[0][(np.where(columns[-1] != ''))]
+            fk_ref = columns[-2][(np.where(columns[-1] != ''))]
+            fk_tab = columns[-1][(np.where(columns[-1] != ''))]
+            return fname.split('.csv')[0], columns[0], columns[1], fk, fk_ref, fk_tab  ### fk, fk_tab are returned as lists
 
     def get_column_names(col1_list, col2_list, fk_name, fk_ref, parent_table):
         combined_list = []
