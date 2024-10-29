@@ -12,7 +12,7 @@ Each MAC requires the following to replicate this setup:
 6. Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pg_hba_documentation.md) to update the two config files to listen for the other computers in the lab and make interconnections.
 7. In Python 3.6 or greater:
 ```
-pip install asyncpg tk matplotlib pwinput pillow pyyaml
+pip install asyncpg tk matplotlib pwinput pillow pyyaml paramiko
 ```
 8. Create database and tables with appropriate passwords:
 ```
