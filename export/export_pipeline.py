@@ -42,9 +42,6 @@ def generate_xmls():
                     if file.endswith('build_xml.py') == False:
                         script_path = os.path.join(subdir_path, file)
                         scripts_to_run.append(script_path)
-                # if file.endswith('.py'):
-                #     script_path = os.path.join(subdir_path, file)
-                #     scripts_to_run.append(script_path)
     
     # Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
@@ -56,7 +53,6 @@ def generate_xmls():
         print(f'Executed -- {script_path}.')
         print(f"Progress: {completed_scripts}/{total_scripts} scripts completed")
         print('-'*10)
-        break
 
 def scp_files():
     """Call the scp script to transfer files."""
