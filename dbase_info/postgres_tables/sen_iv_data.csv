@@ -1,6 +1,6 @@
 sen_iv_no,serial PRIMARY KEY,,
 sen_no,INT,fk_sen_iv,sensor
-sen_name,TEXT,,
+sen_name,TEXT,fk_identifier,
 sensor_id,TEXT,,
 scratchpad_id,TEXT,,
 sensor_pass,TEXT,,

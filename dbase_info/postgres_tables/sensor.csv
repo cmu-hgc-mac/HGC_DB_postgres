@@ -1,5 +1,5 @@
 sen_no,serial PRIMARY KEY,,
-sen_name,TEXT,,
+sen_name,TEXT,fk_identifier,
 geometry,TEXT,,
 resolution,TEXT,,
 thickness,DOUBLE PRECISION,,

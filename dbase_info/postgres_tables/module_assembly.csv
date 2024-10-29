@@ -1,5 +1,5 @@
 module_ass,serial PRIMARY KEY,,
-module_name,TEXT,,
+module_name,TEXT,fk_identifier,
 geometry,TEXT,,
 resolution,TEXT,,
 proto_name,TEXT,,

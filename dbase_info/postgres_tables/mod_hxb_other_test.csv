@@ -1,6 +1,6 @@
 mod_other_test_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_other_test,module_info
-module_name,TEXT,,
+module_name,TEXT,fk_identifier,
 bias_vol,REAL,,
 trim_bias_vol,REAL,,
 meas_leakage_current,REAL,,

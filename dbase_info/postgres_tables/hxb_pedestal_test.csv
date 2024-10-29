@@ -1,6 +1,6 @@
 hxb_pedtest_no,serial PRIMARY KEY,,
 hxb_no,INT,fk_hxb_ped,hexaboard
-hxb_name,TEXT,,
+hxb_name,TEXT,fk_identifier,
 status,INT,,
 status_desc,TEXT,,
 trim_bias_voltage,REAL,,

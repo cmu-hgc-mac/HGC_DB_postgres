@@ -1,6 +1,6 @@
 proto_row_no,serial PRIMARY KEY,,
 proto_no,INT,fk_pm_insp,proto_assembly
-proto_name,TEXT,,
+proto_name,TEXT,fk_identifier,
 grade,TEXT,,
 flatness,REAL,,
 thickness,REAL,,

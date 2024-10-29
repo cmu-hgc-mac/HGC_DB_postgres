@@ -1,6 +1,6 @@
 bp_row_no,serial PRIMARY KEY,,
 bp_no,INT,fk_bp_insp,baseplate
-bp_name,TEXT,,
+bp_name,TEXT,fk_identifier,
 grade,TEXT,,
 flatness,REAL,,
 thickness,REAL,,

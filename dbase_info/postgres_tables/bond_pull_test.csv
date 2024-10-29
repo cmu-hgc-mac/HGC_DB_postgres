@@ -1,5 +1,5 @@
 pulltest_no,serial PRIMARY KEY,,
-module_name,TEXT,,
+module_name,TEXT,fk_identifier,
 avg_pull_strg_g,REAL,,
 std_pull_strg_g,REAL,,
 wedge_id,TEXT,,

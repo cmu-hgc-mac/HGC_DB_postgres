@@ -1,5 +1,5 @@
 hxb_no,serial PRIMARY KEY,,
-hxb_name,TEXT,,
+hxb_name,TEXT,fk_identifier,
 geometry,TEXT,,
 resolution,TEXT,,
 flatness_init,REAL,,

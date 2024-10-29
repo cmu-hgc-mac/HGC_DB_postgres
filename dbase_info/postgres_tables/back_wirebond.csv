@@ -1,5 +1,5 @@
 bkwirebond_no,serial PRIMARY KEY,,
-module_name,TEXT,,
+module_name,TEXT,fk_identifier,
 bond_count,SMALLINT,,
 mbite_no,SMALLINT[],,
 bond_count_for_mbite,SMALLINT[],,

@@ -1,6 +1,6 @@
 hxb_row_no,serial PRIMARY KEY,,
 hxb_no,INT,fk_hxb_insp,hexaboard
-hxb_name,TEXT,,
+hxb_name,TEXT,fk_identifier,
 grade,TEXT,,
 flatness,REAL,,
 thickness,REAL,,

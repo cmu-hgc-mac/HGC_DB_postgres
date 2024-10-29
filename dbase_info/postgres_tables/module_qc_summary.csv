@@ -1,6 +1,6 @@
 mod_qc_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_qc,module_info
-module_name,TEXT,,
+module_name,TEXT,fk_identifier,
 final_grade,TEXT,,
 comments_all,TEXT,,
 proto_flatness,REAL,,

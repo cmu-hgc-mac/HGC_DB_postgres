@@ -1,5 +1,5 @@
 bkencap_no,serial PRIMARY KEY,,
-module_name,TEXT,,
+module_name,TEXT,fk_identifier,
 cure_temp_c,REAL,,
 cure_start,TIMESTAMP WITHOUT TIME ZONE,,
 cure_end,TIMESTAMP WITHOUT TIME ZONE,,
