@@ -45,7 +45,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
-      'shipper':  'INSERT, SELECT'
+      'shipper':  'INSERT, SELECT, UPDATE'
 
   - 
     fname: 'module_assembly.csv'
@@ -249,7 +249,7 @@ tables:
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
-      'shipper':  'INSERT, SELECT'
+      'shipper':  'INSERT, SELECT, UPDATE'
 
   - 
     fname: 'hexaboard.csv'
