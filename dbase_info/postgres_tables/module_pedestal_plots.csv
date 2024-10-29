@@ -1,6 +1,6 @@
 mod_plottest_no,serial PRIMARY KEY,,
 module_no,INT,fk_mod_pedplot,module_info
-module_name,TEXTfk_identifier,
+module_name,TEXT,,
 status,INT,,
 status_desc,TEXT,,
 trim_bias_voltage,REAL,,
