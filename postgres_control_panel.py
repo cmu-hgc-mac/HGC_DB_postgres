@@ -82,7 +82,7 @@ def create_database():
     password_entry.pack(pady=5)
 
     def submit_create():
-        viewer_pass = viewer_var .get()
+        viewer_pass = viewer_var.get()
         user_pass = user_var.get()
         db_pass = password_var.get()
         if db_pass.strip():
@@ -122,6 +122,102 @@ def modify_tables():
     submit_modify_button = Button(input_window, text="Submit", command=submit_modify)
     submit_modify_button.pack(pady=10)
     bind_button_keys(submit_modify_button)
+
+def import_data():
+    input_window = Toplevel(root)
+    input_window.title("Input Required")
+
+    TLabel(input_window, text="Enter local db user password:").pack(pady=5)
+    shipper_var = StringVar()
+    shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    shipper_var_entry.pack(pady=5)
+
+    TLabel(input_window, text="Enter lxplus username:").pack(pady=5)
+    lxuser_var = StringVar()
+    lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    lxuser_var_entry.pack(pady=5)
+
+    TLabel(input_window, text="Enter lxplus password:").pack(pady=5)
+    lxpassword_var = StringVar()
+    lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    lxpassword_entry.pack(pady=5)
+
+    def submit_import():
+        dbshipper_pass = shipper_var.get()
+        lxuser_pass = lxuser_var.get()
+        lxpassword_pass = lxpassword_var.get()
+
+        if dbshipper_pass.strip() and lxuser_pass.strip() and lxpassword_pass.strip():
+            input_window.destroy()  
+            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
+            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
+            show_message(f"PostgreSQL tables keys updated. Refresh pgAdmin4.")
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+                input_window.destroy()  
+
+    submit_import_button = Button(input_window, text="Submit", command=submit_import)
+    submit_import_button.pack(pady=10)
+    bind_button_keys(submit_import_button)
+
+def export_data():
+    input_window = Toplevel(root)
+    input_window.title("Input Required")
+
+    TLabel(input_window, text="Enter local db user password:").pack(pady=5)
+    shipper_var = StringVar()
+    shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    shipper_var_entry.pack(pady=5)
+
+    TLabel(input_window, text="Enter lxplus username:").pack(pady=5)
+    lxuser_var = StringVar()
+    lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    lxuser_var_entry.pack(pady=5)
+
+    TLabel(input_window, text="Enter lxplus password:").pack(pady=5)
+    lxpassword_var = StringVar()
+    lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    lxpassword_entry.pack(pady=5)
+
+    def submit_export():
+        dbshipper_pass = shipper_var.get()
+        lxuser_pass = lxuser_var.get()
+        lxpassword_pass = lxpassword_var.get()
+
+        if dbshipper_pass.strip() and lxuser_pass.strip() and lxpassword_pass.strip():
+            input_window.destroy()  
+            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
+            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
+            show_message(f"PostgreSQL tables keys updated. Refresh pgAdmin4.")
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+                input_window.destroy()  
+
+def refresh_data():
+    input_window = Toplevel(root)
+    input_window.title("Input Required")
+
+    TLabel(input_window, text="Enter local db user password:").pack(pady=5)
+    shipper_var = StringVar()
+    shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    shipper_var_entry.pack(pady=5)
+
+    def submit_export():
+        dbshipper_pass = shipper_var.get()
+    
+        if dbshipper_pass.strip():
+            input_window.destroy()  
+            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
+            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
+            print("******** Database refreshed ********")
+            show_message(f"PostgreSQL tables keys updated. Refresh pgAdmin4.")
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+                input_window.destroy()  
+
+    submit_export_button = Button(input_window, text="Submit", command=submit_export)
+    submit_export_button.pack(pady=10)
+    bind_button_keys(submit_export_button)
 
 # Create a helper function to handle button clicks
 def handle_button_click(action):
@@ -167,11 +263,15 @@ button_check_config = Button(frame, text="Check Config", command=check_config_ac
 button_check_config.pack(pady=5)
 bind_button_keys(button_check_config)
 
-button_download = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(import_action), width = button_width, height = button_height)
+button_download = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(upload_action), width = button_width, height = button_height)
 button_download.pack(pady=5)
 bind_button_keys(button_download)
 
 button_upload = Button(frame, text="Upload XMLs to DBLoader", command=lambda: handle_button_click(upload_action), width = button_width, height = button_height)
+button_upload.pack(pady=5)
+bind_button_keys(button_upload)
+
+button_upload = Button(frame, text="Refresh local database", command=refresh_data, width = button_width, height = button_height)
 button_upload.pack(pady=5)
 bind_button_keys(button_upload)
 
