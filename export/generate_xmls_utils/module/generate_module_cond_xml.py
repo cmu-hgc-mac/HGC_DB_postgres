@@ -127,14 +127,15 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                                    part='module',
                                    part_name=module)
 
-async def main(output_dir):
+async def main(dbpassword, output_dir):
     # Configuration
     yaml_file = 'export/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export/template_examples/module/cond_upload.xml'# XML template file path
     xml_output_dir = output_dir + '/module'  # Directory to save the updated XML
 
+
     # Create PostgreSQL connection pool
-    conn = await get_conn()
+    conn = await get_conn(dbpassword)
 
     try:
         await process_module(conn, yaml_file, xml_file_path, xml_output_dir)
@@ -143,9 +144,11 @@ async def main(output_dir):
 
 # Run the asyncio program
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: script_b.py <output_dir>")
+    
+    if len(sys.argv) != 3:
+        print("Usage: script_b.py <dbpassword> <output_dir>")
         sys.exit(1)
     
-    output_dir = sys.argv[1]
-    asyncio.run(main(output_dir))
+    dbpassword = sys.argv[1]
+    output_dir = sys.argv[2]
+    asyncio.run(main(dbpassword, output_dir))

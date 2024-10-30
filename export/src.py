@@ -4,13 +4,13 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
 import yaml
-import sys
+import sys, argparse
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 import pwinput
 from datetime import datetime
 
-async def get_conn():
+async def get_conn(dbpassword):
     '''
     Does: get connection to database
     Return: connection
@@ -20,8 +20,8 @@ async def get_conn():
     yaml_file = f'{loc}conn.yaml'
     db_params = {
         'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
-        'user': 'postgres',
-        'password': 'hgcal',
+        'user': 'shipper',
+        'password': dbpassword,
         'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
     conn = await asyncpg.connect(**db_params)
     return conn
@@ -89,14 +89,6 @@ async def get_parts_name(name, table, conn):
     fetched_query = await conn.fetch(query)
     name_list = [record[name] for record in fetched_query]
     return name_list
-
-# def get_xmlrelated_dbase_tables(yaml_file):
-#     dbase_tables = set()
-#     for entry in yaml_file:
-#         dbase_table = entry.get('dbase_table')
-#         if dbase_table and dbase_table != 'null':
-#             dbase_tables.add(dbase_table)
-#     return list(dbase_tables)
 
 async def update_timestamp_col(conn, update_flag: bool, table_list: list, column_name: str,  part: str, part_name: str):
     if not update_flag:
