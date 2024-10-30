@@ -1,6 +1,8 @@
 # HGC_DB_postgres
- Code to set up a local PostgreSQL database at an HGC MAC <br />
- ```git clone https://github.com/cmu-hgc-mac/HGC_DB_postgres.git```
+ Code to set up a local PostgreSQL database at an HGC MAC
+ ```
+ git clone https://github.com/cmu-hgc-mac/HGC_DB_postgres.git
+```
 
  ## Getting started
 
