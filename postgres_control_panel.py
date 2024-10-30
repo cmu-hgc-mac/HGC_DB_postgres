@@ -12,6 +12,13 @@ config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 dbase_name = config_data.get('dbname')
 cern_dbase = config_data.get('cern_db')
 
+def run_git_pull_seq():
+    result = subprocess.run(["git", "pull"], capture_output=True, text=True)
+    if result.returncode == 0:
+        print("Git pull successful ..."); print(result.stdout)
+    else:
+        print("Git pull failed ..."); print(result.stderr); exit()
+
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
     button.bind("<space>", lambda event: button.invoke())   # Bind Space key
@@ -58,23 +65,19 @@ def load_image(image_path):
         print(f"Logo not found: {image_path}")
         return None
 
-
 def create_database():
     input_window = Toplevel(root)
     input_window.title("Input Required")
-
     # Field 1: Database Name
     TLabel(input_window, text="Set initial: viewer password (only read):").pack(pady=5)
     viewer_var = StringVar()
     viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     viewer_var_entry.pack(pady=5)
-
     # Field 2: Username
     TLabel(input_window, text="Set initial: user password (write access):").pack(pady=5)
     user_var = StringVar()
     user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     user_var_entry.pack(pady=5)
-
     # Field 3: Password (hidden input)
     TLabel(input_window, text="**Enter master password:**").pack(pady=5)
     password_var = StringVar()
@@ -100,12 +103,7 @@ def create_database():
     bind_button_keys(submit_create_button)
 
 def modify_tables():
-    result = subprocess.run(["git", "pull"], capture_output=True, text=True)
-    if result.returncode == 0:
-        print("Git pull successful ..."); print(result.stdout)
-    else:
-        print("Git pull failed ..."); print(result.stderr); exit()
-    
+    run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
     TLabel(input_window, text="**Enter master password:**").pack(pady=10)
@@ -130,6 +128,7 @@ def modify_tables():
     bind_button_keys(submit_modify_button)
 
 def import_data():
+    run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
 
@@ -167,19 +166,17 @@ def import_data():
     bind_button_keys(submit_import_button)
 
 def export_data():
+    run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-
     TLabel(input_window, text="**Enter local db user password:**").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
-
     TLabel(input_window, text="**Enter lxplus username:**").pack(pady=5)
     lxuser_var = StringVar()
     lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxuser_var_entry.pack(pady=5)
-
     TLabel(input_window, text="**Enter lxplus password:**").pack(pady=5)
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
@@ -205,9 +202,9 @@ def export_data():
     bind_button_keys(submit_export_button)
 
 def refresh_data():
+    run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-
     TLabel(input_window, text="Enter local db user password:").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
