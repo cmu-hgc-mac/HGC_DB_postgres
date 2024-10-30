@@ -19,6 +19,8 @@ def run_git_pull_seq():
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
+run_git_pull_seq()
+
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
     button.bind("<space>", lambda event: button.invoke())   # Bind Space key
@@ -103,7 +105,7 @@ def create_database():
     bind_button_keys(submit_create_button)
 
 def modify_tables():
-    run_git_pull_seq()
+    # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
     TLabel(input_window, text="**Enter master password:**").pack(pady=10)
@@ -128,7 +130,7 @@ def modify_tables():
     bind_button_keys(submit_modify_button)
 
 def import_data():
-    run_git_pull_seq()
+    # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
 
@@ -166,7 +168,7 @@ def import_data():
     bind_button_keys(submit_import_button)
 
 def export_data():
-    run_git_pull_seq()
+    # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
     TLabel(input_window, text="**Enter local db user password:**").pack(pady=5)
@@ -202,7 +204,7 @@ def export_data():
     bind_button_keys(submit_export_button)
 
 def refresh_data():
-    run_git_pull_seq()
+    # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
     TLabel(input_window, text="Enter local db user password:").pack(pady=5)
