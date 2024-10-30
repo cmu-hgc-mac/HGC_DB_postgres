@@ -100,10 +100,15 @@ def create_database():
     bind_button_keys(submit_create_button)
 
 def modify_tables():
+    result = subprocess.run(["git", "pull"], capture_output=True, text=True)
+    if result.returncode == 0:
+        print("Git pull successful ..."); print(result.stdout)
+    else:
+        print("Git pull failed ..."); print(result.stderr); exit()
+    
     input_window = Toplevel(root)
     input_window.title("Input Required")
-
-    TLabel(input_window, text="Enter master password:").pack(pady=10)
+    TLabel(input_window, text="**Enter master password:**").pack(pady=10)
     password_var = StringVar()
     entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     entry.pack(pady=10)
@@ -114,6 +119,7 @@ def modify_tables():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
             subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass])
+            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass])
             show_message(f"PostgreSQL tables modified. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
@@ -127,7 +133,7 @@ def import_data():
     input_window = Toplevel(root)
     input_window.title("Input Required")
 
-    TLabel(input_window, text="Enter local db user password:").pack(pady=5)
+    TLabel(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
