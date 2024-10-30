@@ -164,17 +164,17 @@ def export_data():
     input_window = Toplevel(root)
     input_window.title("Input Required")
 
-    TLabel(input_window, text="Enter local db user password:").pack(pady=5)
+    TLabel(input_window, text="**Enter local db user password:**").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
 
-    TLabel(input_window, text="Enter lxplus username:").pack(pady=5)
+    TLabel(input_window, text="**Enter lxplus username:**").pack(pady=5)
     lxuser_var = StringVar()
     lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxuser_var_entry.pack(pady=5)
 
-    TLabel(input_window, text="Enter lxplus password:").pack(pady=5)
+    TLabel(input_window, text="**Enter lxplus password:**").pack(pady=5)
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxpassword_entry.pack(pady=5)
@@ -188,10 +188,15 @@ def export_data():
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
-            show_message(f"PostgreSQL tables keys updated. Refresh pgAdmin4.")
+            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxuser_pass, "-lxp", lxpassword_pass])
+            show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
+
+    submit_export_button = Button(input_window, text="Submit", command=submit_export)
+    submit_export_button.pack(pady=10)
+    bind_button_keys(submit_export_button)
 
 def refresh_data():
     input_window = Toplevel(root)
@@ -202,7 +207,7 @@ def refresh_data():
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
 
-    def submit_export():
+    def submit_refresh():
         dbshipper_pass = shipper_var.get()
     
         if dbshipper_pass.strip():
@@ -215,9 +220,9 @@ def refresh_data():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
 
-    submit_export_button = Button(input_window, text="Submit", command=submit_export)
-    submit_export_button.pack(pady=10)
-    bind_button_keys(submit_export_button)
+    submit_refresh_button = Button(input_window, text="Submit", command=submit_refresh)
+    submit_refresh_button.pack(pady=10)
+    bind_button_keys(submit_refresh_button)
 
 # Create a helper function to handle button clicks
 def handle_button_click(action):
@@ -267,7 +272,7 @@ button_download = Button(frame, text="Import Parts Data", command=lambda: handle
 button_download.pack(pady=5)
 bind_button_keys(button_download)
 
-button_upload = Button(frame, text="Upload XMLs to DBLoader", command=lambda: handle_button_click(upload_action), width = button_width, height = button_height)
+button_upload = Button(frame, text="Upload XMLs to DBLoader", command=export_data, width = button_width, height = button_height)
 button_upload.pack(pady=5)
 bind_button_keys(button_upload)
 
