@@ -116,65 +116,91 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
 
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
-        
     part_type_dict = {'P': 'ProtoModule', 'M':'Module', 'S': 'Sensor', 'B': 'Baseplate', 'X':'Hexaboard'}
     resolution_dict = {'L': 'LD', 'H': 'HD'}
     geometry_dict = {'F': 'Full', 'T': 'Top', 'B': 'Bottom', 'L':'Left', 'R':'Right', '5': 'Five', 
                      'S': 'Whole', 'M': 'Half-moons'}
     thickness_dict = {'1': '120', '2': '200', '3': '300'}
     material_dict = {'W': 'CuW', 'T': 'Ti', 'C': 'CF', 'P': 'PCB', 'X':''}
-    sen_structure_dict = {'XX': 'Whole', 
-                          'TP': 'Top-Half-Moon', 
-                          'BT': 'Bottom-Half-Moon', 
-                          'TL': 'Top-Left Half-Moon',
-                          'TR': 'Top-Right Half-Moon',
-                          'BL': 'Bottom-Left Half-Moon',
-                          'BR': 'Bottom-Right Half-Moon'}
+    sen_dict = {'1': ['300','LD', 'Wafer'],
+                '2':['200', 'LD', 'Wafer'],
+                '3': ['120','HD', 'Wafer'],
+                '25':['200', 'HD', 'Wafer'],
+                '4':['300', 'LD', 'Partial'],
+                '5': ['200', 'LD', 'Partial'],
+                '6': ['120', 'HD', 'Partial']}
+    sen_geo_dict = {'XX': 'Whole', 
+                    'TP': 'Top-Half-Moon', 
+                    'BT': 'Bottom-Half-Moon', 
+                    'TL': 'Top-Left Half-Moon',
+                    'TR': 'Top-Right Half-Moon',
+                    'BL': 'Bottom-Left Half-Moon',
+                    'BR': 'Bottom-Right Half-Moon',
+                    '0': 'Full',
+                    '1': 'Top',
+                    '2': 'Bottom',
+                    '3': 'Left',
+                    '4': 'Right', 
+                    '5': 'Five'}
     
     # Extract the information
     if part_name != '':
-        part_id = ((str(part_name).replace("-","")).replace("320",""))## remove "-", keep '_0' since it's crutial for sen_name(geometry info)
-        # part_id = ((str(part_name).replace("-","")).replace("320","")).replace("_0","")## remove "-" 
-        part_type = part_type_dict[part_id[0]]
-        if part_type == 'Hexaboard':## Fill out here once it's finalized. 
-            kind_of_part = ''
-
-        elif part_type == 'Baseplate':
-            ## 320-BA-TTT-VB-NNNN
-            ### TTT: [geometry][resolution][bp_material]
-            kind_of_part = ''
-            ## below is updated version (rev.4.0)
-            # geometry = geometry_dict[part_id[2]]
-            # resolution = resolution_dict[part_id[3]]
-            # bp_material = material_dict[part_id[4]]
-            # module_type = ''
-            # if bp_material == 'CuW':
-            #     module_type = 'EM'
-            # elif bp_material in ['Ti', 'CF']:
-            #     module_type = 'HAD'
-            # kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
-
-        elif part_type == 'Sensor':
-            ## 320-ST-TTT-NNNNNN
-            ### T-TTT: [resolution]-[sen_thickness][geometry][sensor structure]
-            resolution = resolution_dict[part_id[1]]
-            sen_thickness = thickness_dict[part_id[2]]
-            geometry = geometry_dict[part_id[3]]
-            # sen_structure = sen_structure_dict[part_id[4:6]]
-            kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {geometry}'  
+        if part_id.replace('_', '').isdigit() == True:
+            ## 2) convension v2
+            ## TXXXXX_N: [thickness / resolution]XXXXX_[geometry]
+            sen_thickness = sen_dict[part_id[0]][0]
+            resolution = sen_dict[part_id[0]][1]
+            sen_geometry = sen_geo_dict[part_id[-1]]
+            part_type = 'Sensor'
+            kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {sen_geometry}'  
 
         else:
-            resolution = resolution_dict[part_id[1]]
-            geometry = geometry_dict[part_id[2]]
-            sen_thickness = thickness_dict[part_id[3]]
-            bp_material = material_dict[part_id[4]]
-            module_type = ''
-            if bp_material == 'CuW':
-                module_type = 'EM'
-            elif bp_material in ['Ti', 'CF']:
-                module_type = 'HAD'
+            part_id = part_id[3:].replace("-", '')
+            part_type = part_type_dict[part_id[0]]
+            if part_type == 'Hexaboard':## Fill out here once it's finalized. 
+                kind_of_part = ''
 
-            kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
+            elif part_type == 'Baseplate':
+                ## 320-BA-TTT-VB-NNNN
+                ### TTT: [geometry][resolution][bp_material]
+                kind_of_part = ''
+                ## below is updated version (rev.4.0)
+                # geometry = geometry_dict[part_id[2]]
+                # resolution = resolution_dict[part_id[3]]
+                # bp_material = material_dict[part_id[4]]
+                # module_type = ''
+                # if bp_material == 'CuW':
+                #     module_type = 'EM'
+                # elif bp_material in ['Ti', 'CF']:
+                #     module_type = 'HAD'
+                # kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
+
+            elif part_type == 'Sensor':
+                '''
+                As soon as sensor id is updated to 6-digit, please comment out the following and uncomment the above. 
+                '''
+                ## 1) convension v1
+                ## 320-ST-TTT-NNNNNN
+                ### T-TTT: [resolution]-[sen_thickness][geometry][sensor structure]
+                resolution = resolution_dict[part_id[1]]
+                sen_thickness = thickness_dict[part_id[2]]
+                geometry = geometry_dict[part_id[3]]
+                # sen_structure = sen_structure_dict[part_id[4:6]]
+                kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {geometry}'  
+
+
+            else:
+                resolution = resolution_dict[part_id[1]]
+                geometry = geometry_dict[part_id[2]]
+                sen_thickness = thickness_dict[part_id[3]]
+                bp_material = material_dict[part_id[4]]
+                module_type = ''
+                if bp_material == 'CuW':
+                    module_type = 'EM'
+                elif bp_material in ['Ti', 'CF']:
+                    module_type = 'HAD'
+
+                kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
 
     else:
         kind_of_part = ''
