@@ -145,7 +145,7 @@ def get_kind_of_part(part_name):
     
     # Extract the information
     if part_name != '':
-        if part_id.replace('_', '').isdigit() == True:
+        if part_name.replace('_', '').isdigit() == True:
             ## 2) convension v2
             ## TXXXXX_N: [thickness / resolution]XXXXX_[geometry]
             sen_thickness = sen_dict[part_id[0]][0]
@@ -155,7 +155,7 @@ def get_kind_of_part(part_name):
             kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {sen_geometry}'  
 
         else:
-            part_id = part_id[3:].replace("-", '')
+            part_id = part_name[3:].replace("-", '')
             part_type = part_type_dict[part_id[0]]
             if part_type == 'Hexaboard':## Fill out here once it's finalized. 
                 kind_of_part = ''
