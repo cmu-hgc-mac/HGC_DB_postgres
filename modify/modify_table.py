@@ -162,7 +162,7 @@ async def table_modify_seq(conn, table_name, loc, tables_subdir):
 
 async def main():
     ## Database connection parameters for new database
-    dbpassword = str(args.password).replace(" ", "")
+    dbpassword = args.password
     if dbpassword is None:
         dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
     loc = 'dbase_info'

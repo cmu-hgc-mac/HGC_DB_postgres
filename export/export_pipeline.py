@@ -97,11 +97,11 @@ def main():
     parser.add_argument('-date', '--date', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     args = parser.parse_args()
 
-    dbpassword = str(args.dbpassword).replace(" ", "")
-    lxplus_username = str(args.dbl_username).replace(" ", "")
-    lxplus_password = str(args.dbl_password).replace(" ", "")
-    directory_to_search = str(args.directory).replace(" ", "")
-    search_date = str(args.date).replace(" ", "")
+    dbpassword = args.dbpassword
+    lxplus_username = args.dbl_username
+    lxplus_password = args.dbl_password
+    directory_to_search = args.directory
+    search_date = args.date
 
     if dbpassword is None:
         dbpassword = pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')

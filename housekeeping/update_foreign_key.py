@@ -14,7 +14,7 @@ tables_subdir = 'postgres_tables'
 table_yaml_file = os.path.join(loc, 'tables.yaml')
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 
-dbpassword = str(args.password).replace(" ", "")
+dbpassword = args.password
 if dbpassword is None:
     dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
 

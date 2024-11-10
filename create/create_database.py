@@ -11,15 +11,15 @@ parser.add_argument('-up', '--userpass', default=None, required=False, help="Pas
 parser.add_argument('-vp', '--viewerpass', default=None, required=False, help="Password to view database.")
 args = parser.parse_args()
 
-dbpassword = str(args.password).replace(" ", "")
+dbpassword = args.password
 if dbpassword is None:
     dbpassword = input('Set superuser password: ')
 
-user_password = str(args.userpass).replace(" ", "")
+user_password = args.userpass
 if user_password is None:
     user_password = input('Set user password: ')
 
-viewer_password = str(args.viewerpass).replace(" ", "")
+viewer_password = args.viewerpass
 if viewer_password is None:
     viewer_password = input('Set viewer password: ')
 
