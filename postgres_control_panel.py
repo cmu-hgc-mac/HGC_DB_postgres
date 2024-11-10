@@ -139,26 +139,27 @@ def import_data():
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
 
-    TLabel(input_window, text="Enter lxplus username:").pack(pady=5)
-    lxuser_var = StringVar()
-    lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    lxuser_var_entry.pack(pady=5)
+    # TLabel(input_window, text="Enter lxplus username:").pack(pady=5)
+    # lxuser_var = StringVar()
+    # lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    # lxuser_var_entry.pack(pady=5)
 
-    TLabel(input_window, text="Enter lxplus password:").pack(pady=5)
-    lxpassword_var = StringVar()
-    lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    lxpassword_entry.pack(pady=5)
+    # TLabel(input_window, text="Enter lxplus password:").pack(pady=5)
+    # lxpassword_var = StringVar()
+    # lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    # lxpassword_entry.pack(pady=5)
 
     def submit_import():
         dbshipper_pass = shipper_var.get()
-        lxuser_pass = lxuser_var.get()
-        lxpassword_pass = lxpassword_var.get()
+        # lxuser_pass = lxuser_var.get()
+        # lxpassword_pass = lxpassword_var.get()
 
-        if dbshipper_pass.strip() and lxuser_pass.strip() and lxpassword_pass.strip():
+        if dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
             input_window.destroy()  
+            subprocess.run([sys.executable, "import/get_parts_from_hgcapi.py", "-p", dbshipper_pass])
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
-            show_message(f"PostgreSQL tables keys updated. Refresh pgAdmin4.")
+            show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
@@ -273,7 +274,8 @@ button_check_config = Button(frame, text="Check Config", command=check_config_ac
 button_check_config.pack(pady=5)
 bind_button_keys(button_check_config)
 
-button_download = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(upload_action), width = button_width, height = button_height)
+# button_download = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(import_action), width = button_width, height = button_height)
+button_download = Button(frame, text="Import Parts Data", command=import_data, width = button_width, height = button_height)
 button_download.pack(pady=5)
 bind_button_keys(button_download)
 

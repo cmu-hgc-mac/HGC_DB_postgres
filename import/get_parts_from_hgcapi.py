@@ -78,6 +78,8 @@ def get_data_for_db(data_full, partType):
             datetime_object = datetime.datetime.fromisoformat(data_full["record_insertion_time"] )
         db_dict.update({'date_inspect': datetime_object.date()})
         db_dict.update({'time_inspect': datetime_object.time()})
+        db_dict.update({'xml_gen_datetime': datetime_object.date()})
+        db_dict.update({'xml_upload_success': True})
         qc_cols = partTrans[partType]["qc_cols"]
         if bool(data_full['qc']):
             if partType in ['bp','hxb','sen']:
