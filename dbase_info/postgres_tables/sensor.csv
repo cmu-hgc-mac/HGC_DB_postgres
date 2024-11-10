@@ -14,3 +14,5 @@ comment,TEXT,,
 proto_no,INT,fk_pm_si,proto_assembly
 xml_gen_datetime,TIMESTAMP,,
 xml_upload_success,BOOLEAN,,
+date_inspect,DATE,,
+time_inspect,TIME,,
