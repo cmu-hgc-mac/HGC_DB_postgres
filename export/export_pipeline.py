@@ -37,13 +37,14 @@ def generate_xmls(dbpassword):
             for file in os.listdir(subdir_path):
                 
                 ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules. 
-                if (subdir_path.split('/')[-1] in ['protomodule', 'module']) and (file.endswith('.py')):
+                if (subdir_path.split('/')[-1] in ['protomodule', 'module']) and (file.endswith('build_xml.py') == False):
+                    print(file)
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
+                    
                 elif subdir_path.split('/')[-1] not in ['protomodule', 'module']:
-                    if file.endswith('build_xml.py') == False:
-                        script_path = os.path.join(subdir_path, file)
-                        scripts_to_run.append(script_path)
+                    script_path = os.path.join(subdir_path, file)
+                    scripts_to_run.append(script_path)
     
     # Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
