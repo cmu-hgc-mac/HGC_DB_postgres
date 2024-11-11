@@ -38,15 +38,14 @@ def generate_xmls(dbpassword):
                 
                 ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules. 
                 if (subdir_path.split('/')[-1] in ['protomodule', 'module']) and (file.endswith('build_xml.py') == False):
-                    print(file)
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
                     
                 elif subdir_path.split('/')[-1] not in ['protomodule', 'module']:
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
-    
-    # Run all the scripts asynchronously
+
+    #Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
     for script_path in scripts_to_run:
@@ -115,9 +114,9 @@ def main():
     generate_xmls(dbpassword)
 
     # Step 2: SCP files to central DB
-    if scp_files(lxplus_username, lxplus_password, directory_to_search, search_date):
-        # Step 3: Delete generated XMLs on success
-        clean_generated_xmls()
+    # if scp_files(lxplus_username, lxplus_password, directory_to_search, search_date):
+    #     # Step 3: Delete generated XMLs on success
+    #     clean_generated_xmls()
 
 if __name__ == '__main__':
     main()

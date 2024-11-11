@@ -144,8 +144,9 @@ def get_kind_of_part(part_name):
                     '5': 'Five'}
     
     # Extract the information
-    if part_name != '':
+    if part_name != '' or None:
         if part_name.replace('_', '').isdigit() == True:
+            ## this is for sensor. 
             ## 2) convension v2
             ## TXXXXX_N: [thickness / resolution]XXXXX_[geometry]
             sen_thickness = sen_dict[part_id[0]][0]

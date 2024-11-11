@@ -18,9 +18,9 @@ module_assembly:
   - xml_temp_val: LOCATION
   - xml_temp_val: KIND_OF_PART ## [type i.e. HAD] [sensor thickness] Si Module [resolution] [geometry] 
   - xml_temp_val: ID
-    dbase_col: module_name
-    dbase_table: module_assembly
-    nested_query: null
+    # dbase_col: module_name
+    # dbase_table: module_assembly
+    # nested_query: null
   - xml_temp_val: ASMBL_TRAY_NAME
     dbase_col: ass_tray_id
     dbase_table: module_assembly
@@ -122,9 +122,9 @@ wirebond:
   - xml_temp_val: LOCATION
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-    dbase_col: module_name
-    dbase_table: back_wirebond
-    nested_query: null
+    # dbase_col: module_name
+    # dbase_table: back_wirebond
+    # nested_query: null
   - xml_temp_val: BOND_WIRE_BATCH_NUM
     dbase_col: spool_batch
     dbase_table: front_wirebond
@@ -269,9 +269,9 @@ wirebond:
 module_build:
   - xml_temp_val: KIND_OF_PART ## [type i.e. HAD] [sensor thickness] Si Module [resolution] [geometry]
   - xml_temp_val: ID
-    dbase_col: module_name
-    dbase_table: module_assembly
-    nested_query: null
+    # dbase_col: module_name
+    # dbase_table: module_assembly
+    # nested_query: null
   - xml_temp_val: BARCODE
     dbase_col: null
     dbase_table: null
@@ -315,9 +315,9 @@ module_cond:
   - xml_temp_val: LOCATION
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-    dbase_col: module_name
-    dbase_table: module_assembly
-    nested_query: null
+    # dbase_col: module_name
+    # dbase_table: module_assembly
+    # nested_query: null
   - xml_temp_val: CURING_TIME_HRS
     dbase_col:  (cure_date_end + cure_time_end::time) - (ass_run_date + ass_time_begin::time)
     dbase_table: module_assembly
@@ -342,9 +342,9 @@ module_cond:
 bp_build:
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-    dbase_col: bp_name
-    dbase_table: baseplate
-    nested_query: null
+    # dbase_col: bp_name
+    # dbase_table: baseplate
+    # nested_query: null
   - xml_temp_val: LOCATION
   - xml_temp_val: INSTITUTION
 
@@ -363,9 +363,9 @@ bp_cond:
     nested_query: 
   - xml_temp_val: LOCATION
   - xml_temp_val: ID
-    dbase_col: bp_name
-    dbase_table: baseplate
-    nested_query: 
+    # dbase_col: bp_name
+    # dbase_table: baseplate
+    # nested_query: 
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: FLATNESS
     dbase_col: flatness
@@ -391,9 +391,9 @@ bp_cond:
 hxb_build:
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-    dbase_col: hxb_name
-    dbase_table: hexaboard
-    nested_query: null
+    # dbase_col: hxb_name
+    # dbase_table: hexaboard
+    # nested_query: null
   - xml_temp_val: LOCATION
   - xml_temp_val: INSTITUTION
 
@@ -412,9 +412,9 @@ hxb_cond:
     nested_query: null
   - xml_temp_val: LOCATION
   - xml_temp_val: ID
-    dbase_col: hxb_name
-    dbase_table: hexaboard
-    nested_query: null
+    # dbase_col: hxb_name
+    # dbase_table: hexaboard
+    # nested_query: null
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: RECORD_INSERTION_USER
     dbase_col: inspector
@@ -461,9 +461,9 @@ proto_assembly:
   - xml_temp_val: LOCATION
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-    dbase_col: proto_name
-    dbase_table: proto_assembly
-    nested_query: null
+    # dbase_col: proto_name
+    # dbase_table: proto_assembly
+    # nested_query: null
   - xml_temp_val: ASMBL_TRAY_NAME
     dbase_col: ass_tray_id
     dbase_table: proto_assembly
@@ -548,9 +548,9 @@ proto_assembly:
 proto_build:
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-    dbase_col: proto_name
-    dbase_table: proto_assembly
-    nested_query: null
+    # dbase_col: proto_name
+    # dbase_table: proto_assembly
+    # nested_query: null
   - xml_temp_val: BARCODE
     dbase_col: null
     dbase_table: null
@@ -587,9 +587,9 @@ proto_cond:
     nested_query: null
   - xml_temp_val: LOCATION
   - xml_temp_val: ID
-    dbase_col: proto_name
-    dbase_table: proto_assembly
-    nested_query: null
+    # dbase_col: proto_name
+    # dbase_table: proto_assembly
+    # nested_query: null
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: CURING_TIME_HRS
     dbase_col: (ass_run_date + ass_time_end::time) - (cure_date_end + cure_time_end::time)
@@ -615,9 +615,9 @@ proto_cond:
 sensor_build:
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-    dbase_col: sen_name
-    dbase_table: sensor
-    nested_query: null
+    # dbase_col: sen_name
+    # dbase_table: sensor
+    # nested_query: null
   - xml_temp_val: LOCATION
   - xml_temp_val: INSTITUTION
 
@@ -636,9 +636,9 @@ sensor_cond:
     nested_query: null
   - xml_temp_val: LOCATION
   - xml_temp_val: ID
-    dbase_col: sen_name
-    dbase_table: sensor
-    nested_query: null
+    # dbase_col: sen_name
+    # dbase_table: sensor
+    # nested_query: null
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: RECORD_INSERTION_USER
     dbase_col: operator 
