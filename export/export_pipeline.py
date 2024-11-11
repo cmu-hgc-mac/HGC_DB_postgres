@@ -114,9 +114,9 @@ def main():
     generate_xmls(dbpassword)
 
     # Step 2: SCP files to central DB
-    # if scp_files(lxplus_username, lxplus_password, directory_to_search, search_date):
-    #     # Step 3: Delete generated XMLs on success
-    #     clean_generated_xmls()
+    if scp_files(lxplus_username, lxplus_password, directory_to_search, search_date):
+        # Step 3: Delete generated XMLs on success
+        clean_generated_xmls()
 
 if __name__ == '__main__':
     main()
