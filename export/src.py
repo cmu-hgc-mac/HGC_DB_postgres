@@ -149,6 +149,7 @@ def get_kind_of_part(part_name):
             ## this is for sensor. 
             ## 2) convension v2
             ## TXXXXX_N: [thickness / resolution]XXXXX_[geometry]
+            part_id = part_name
             sen_thickness = sen_dict[part_id[0]][0]
             resolution = sen_dict[part_id[0]][1]
             sen_geometry = sen_geo_dict[part_id[-1]]
