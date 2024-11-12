@@ -190,8 +190,10 @@ def export_data():
 
     def submit_export():
         lxp_username = lxuser_var.get()
-        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
-        lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        # dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        # lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        dbshipper_pass = shipper_var.get() ## Encrypt password and then convert to base64
+        lxp_password = lxpassword_var.get()
 
         if dbshipper_pass.strip() and lxp_username.strip() and lxp_password.strip():
             input_window.destroy()  
