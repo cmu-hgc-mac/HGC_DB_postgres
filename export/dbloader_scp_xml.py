@@ -1,8 +1,9 @@
-import platform, os, argparse, paramiko, pwinput, sys
+import platform, os, argparse, base64
 from scp import SCPClient
 import numpy as np
-import datetime, yaml
+import datetime, yaml, paramiko, pwinput, sys
 from tqdm import tqdm
+from cryptography.fernet import Fernet
 
 
 loc = 'dbase_info'
@@ -51,13 +52,18 @@ def get_build_files(files_list):
     return build_files, other_files
 
 
-def scp_to_dbloader(dbl_username, dbl_password, fname):
+def scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = None):
     ssh_server1 = paramiko.SSHClient()
     ssh_server1.load_system_host_keys()
     ssh_server1.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
-        ssh_server1.connect(hostname='lxplus.cern.ch', username=dbl_username, password=dbl_password)
+        if encryption_key is not None:
+            cipher_suite = Fernet(encryption_key.encode())  ## Decode base64 to get encrypted string and then decrypt
+            ssh_server1.connect(hostname='lxplus.cern.ch', username=dbl_username, password = cipher_suite.decrypt( base64.urlsafe_b64decode(dbl_password)).decode() )
+        else:
+            ssh_server1.connect(hostname='lxplus.cern.ch', username=dbl_username, password=dbl_password)
+
         transport = ssh_server1.get_transport()
         dest_addr = ('dbloader-hgcal', 22)  
         local_addr = ('127.0.0.1', 22) # localhost
@@ -65,7 +71,10 @@ def scp_to_dbloader(dbl_username, dbl_password, fname):
         ssh_server2 = paramiko.SSHClient()
         ssh_server2.load_system_host_keys()
         ssh_server2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_server2.connect(hostname='dbloader-hgcal', username=dbl_username, password=dbl_password, sock=channel)
+        if encryption_key is not None:
+            ssh_server2.connect(hostname='dbloader-hgcal', username=dbl_username, password = cipher_suite.decrypt( base64.urlsafe_b64decode(dbl_password)).decode() , sock=channel)
+        else:
+            ssh_server2.connect(hostname='dbloader-hgcal', username=dbl_username, password=dbl_password, sock=channel)
 
         with SCPClient(ssh_server2.get_transport()) as scp:
             scp.put(fname, f'/home/dbspool/spool/hgc/{cern_dbname}/')
@@ -82,7 +91,7 @@ def scp_to_dbloader(dbl_username, dbl_password, fname):
         print(f"An error occurred: {e}")
         
         
-def main(dbl_username, dbl_password, directory_to_search, search_date):
+def main(dbl_username, dbl_password, directory_to_search, search_date, encryption_key = None):
     # default_dir = os.path.abspath(os.path.join(os.getcwd(), "../../xmls_for_dbloader_upload"))
     # today = datetime.datetime.today().strftime('%Y-%m-%d')
     # parser = argparse.ArgumentParser(description="Script to process files in a directory.")
@@ -110,12 +119,12 @@ def main(dbl_username, dbl_password, directory_to_search, search_date):
         
         build_files, other_files = get_build_files(files_found)
         print("Uploading build files ...")
-        for fname in tqdm(build_files[0:3]):
-            scp_to_dbloader(dbl_username, dbl_password, fname)
+        for fname in tqdm(build_files):
+            scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = encryption_key)
 
         print("Uploading other files ...")
-        for fname in tqdm(other_files[0:3]):
-            scp_to_dbloader(dbl_username, dbl_password, fname)
+        for fname in tqdm(other_files):
+            scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = encryption_key)
     else:
         print("No files found for the given date.")
 
@@ -126,7 +135,11 @@ if __name__ == "__main__":
     lxplus_password = sys.argv[2]
     generated_xml_dir = sys.argv[3]
     search_date = sys.argv[4]
+    try:
+        encryption_key = sys.argv[5]
+    except:
+        encryption_key = None
 
     # Run the main process
-    main(lxplus_username, lxplus_password, generated_xml_dir, search_date)
+    main(lxplus_username, lxplus_password, generated_xml_dir, search_date, encryption_key = encryption_key)
 

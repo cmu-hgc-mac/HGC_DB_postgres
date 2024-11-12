@@ -6,16 +6,16 @@
 5. if sucess, delete the generated xmls
 '''
 
-import os, sys, argparse, pwinput, datetime
-import subprocess
-import shutil
+import os, sys, argparse, base64, subprocess
+import shutil, pwinput, datetime
+from cryptography.fernet import Fernet
 
 XML_GENERATOR_DIR = 'export/generate_xmls_utils'## directory for py scripts to generate xmls
 GENERATED_XMLS_DIR = 'export/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
 
 # Ensure the generated XML directory exists
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
-def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR):
+def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR, encryption_key = None):
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     try:
@@ -93,6 +93,7 @@ def main():
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-lxp', '--dbl_password', default=None, required=False, help="Password to access lxplus.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', type=valid_directory, default=GENERATED_XMLS_DIR, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-date', '--date', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     args = parser.parse_args()
@@ -102,6 +103,7 @@ def main():
     lxplus_password = args.dbl_password
     directory_to_search = args.directory
     search_date = args.date
+    
 
     if dbpassword is None:
         dbpassword = pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')

@@ -1,5 +1,6 @@
 import requests, json, yaml, os, argparse, datetime
-import pwinput, asyncio, asyncpg
+import pwinput, asyncio, asyncpg, base64
+from cryptography.fernet import Fernet
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -111,12 +112,17 @@ async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
     parser.add_argument('-pid', '--pardID', default=None, required=False, help="Part ID to query from HGC API.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     args = parser.parse_args()
 
-    dbpassword = args.password
-    if dbpassword is None:
-        dbpassword = (pwinput.pwinput(prompt='Enter ogp_user password: ', mask='*')).replace(" ", "")
-    db_params.update({'password': dbpassword})
+    if args.password is None:
+        dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+    else:
+        if args.encrypt_key is None:
+            print("Encryption key not provided. Exiting..."); exit()
+        cipher_suite = Fernet((args.encrypt_key).encode())
+        dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode() ## Decode base64 to get encrypted string and then decrypt
+        db_params.update({'password': dbpassword})
 
     pool = await asyncpg.create_pool(**db_params)
     for pt in ['bp','hxb','sen', 'pml', 'ml']:

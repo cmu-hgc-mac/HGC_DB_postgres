@@ -1,10 +1,13 @@
 import sys
 import threading
 import time
-import os, yaml
+import os, yaml, base64
+from cryptography.fernet import Fernet
 import subprocess, webbrowser
 import tkinter
 from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, StringVar, Text, END, DISABLED, Label as TLabel
+encryption_key = Fernet.generate_key()
+cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -89,12 +92,12 @@ def create_database():
     def submit_create():
         viewer_pass = viewer_var.get()
         user_pass = user_var.get()
-        db_pass = password_var.get()
+        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt((password_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
         if db_pass.strip():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
-            subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass])
-            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass])
+            subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"PostgreSQL database '{dbase_name}' tables created.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
@@ -114,12 +117,12 @@ def modify_tables():
     entry.pack(pady=10)
 
     def submit_modify():
-        db_pass = password_var.get()
+        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (password_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
         if db_pass.strip():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
-            subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass])
-            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass])
+            subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"PostgreSQL tables modified. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
@@ -150,15 +153,15 @@ def import_data():
     # lxpassword_entry.pack(pady=5)
 
     def submit_import():
-        dbshipper_pass = shipper_var.get()
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
         # lxuser_pass = lxuser_var.get()
         # lxpassword_pass = lxpassword_var.get()
 
         if dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
             input_window.destroy()  
-            subprocess.run([sys.executable, "import/get_parts_from_hgcapi.py", "-p", dbshipper_pass])
-            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
-            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
+            subprocess.run([sys.executable, "import/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
@@ -186,15 +189,15 @@ def export_data():
     lxpassword_entry.pack(pady=5)
 
     def submit_export():
-        dbshipper_pass = shipper_var.get()
-        lxuser_pass = lxuser_var.get()
-        lxpassword_pass = lxpassword_var.get()
+        lxp_username = lxuser_var.get()
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
 
-        if dbshipper_pass.strip() and lxuser_pass.strip() and lxpassword_pass.strip():
+        if dbshipper_pass.strip() and lxp_username.strip() and lxp_password.strip():
             input_window.destroy()  
-            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
-            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
-            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxuser_pass, "-lxp", lxpassword_pass])
+            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key])
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
@@ -214,12 +217,12 @@ def refresh_data():
     shipper_var_entry.pack(pady=5)
 
     def submit_refresh():
-        dbshipper_pass = shipper_var.get()
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
     
         if dbshipper_pass.strip():
             input_window.destroy()  
-            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])
-            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])
+            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             print("******** Database refreshed ********")
             show_message(f"PostgreSQL tables keys updated. Refresh pgAdmin4.")
         else:

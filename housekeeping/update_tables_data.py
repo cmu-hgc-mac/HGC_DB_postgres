@@ -1,10 +1,12 @@
 import asyncio, asyncpg
-import glob, os, csv, yaml, argparse
+import glob, os, csv, yaml, argparse, base64
 import numpy as np
 import pwinput
+from cryptography.fernet import Fernet
 
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
 parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
+parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
 args = parser.parse_args()
 
 # Database connection parameters
@@ -13,17 +15,21 @@ tables_subdir = 'postgres_tables'
 table_yaml_file = os.path.join(loc, 'tables.yaml')
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 
-dbpassword = args.password
-if dbpassword is None:
-    dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
-
 db_params = {
     'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
     'user': 'shipper',
-    'password': dbpassword,
     'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),
     'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),
 }
+
+if args.password is None:
+        dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+else:
+    if args.encrypt_key is None:
+        print("Encryption key not provided. Exiting..."); exit()
+    cipher_suite = Fernet((args.encrypt_key).encode())
+    dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode() ## Decode base64 to get encrypted string and then decrypt
+    db_params.update({'password': dbpassword})
 
 async def update_module_info():
     conn = await asyncpg.connect(**db_params)

@@ -3,17 +3,36 @@ SQL Tables should only have to be made once. After that any modifications to the
 Tables that we need based on the OGP measurements so far:
 '''
 
-import asyncio, asyncpg, yaml, os, argparse
+import asyncio, asyncpg, yaml, os, argparse, base64, pwinput
+from cryptography.fernet import Fernet
 
+## Database connection parameters for new database
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
 parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
 parser.add_argument('-up', '--userpass', default=None, required=False, help="Password to write to database.")
 parser.add_argument('-vp', '--viewerpass', default=None, required=False, help="Password to view database.")
+parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
 args = parser.parse_args()
 
-dbpassword = args.password
-if dbpassword is None:
-    dbpassword = input('Set superuser password: ')
+loc = 'dbase_info'
+tables_subdir = 'postgres_tables'
+table_yaml_file = os.path.join(loc, 'tables.yaml')
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
+db_params = {
+    'database': conn_info.get('dbname'),
+    'user': 'postgres',
+    'host': conn_info.get('db_hostname'),
+    'port': conn_info.get('port'),}
+
+if args.password is None:
+        dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+else:
+    if args.encrypt_key is None:
+        print("Encryption key not provided. Exiting..."); exit()
+    cipher_suite = Fernet((args.encrypt_key).encode())
+    dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode() ## Decode base64 to get encrypted string and then decrypt
+    db_params.update({'password': dbpassword})
 
 user_password = args.userpass
 if user_password is None:
@@ -25,20 +44,8 @@ if viewer_password is None:
 
 async def create_db():
     print("Creating a new database...")
-    ## Database connection parameters for new database
-    loc = 'dbase_info'
-    table_yaml_file = os.path.join(loc, 'tables.yaml')
-    conn_yaml_file = os.path.join(loc, 'conn.yaml')
-    db_params = {
-        'database': yaml.safe_load(open(conn_yaml_file, 'r')).get('dbname'),
-        'user': 'postgres',   
-        'password': dbpassword,
-        'host': yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'),  
-        'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),        
-    }
-
     # Connect to the default PostgreSQL database
-    default_conn = await asyncpg.connect(user='postgres', password=dbpassword, host=yaml.safe_load(open(conn_yaml_file, 'r')).get('db_hostname'), port=yaml.safe_load(open(conn_yaml_file, 'r')).get('port'))
+    default_conn = await asyncpg.connect(**db_params)
 
     # Create a new database
     db_name = db_params['database']
