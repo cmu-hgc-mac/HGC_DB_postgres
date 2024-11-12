@@ -157,7 +157,7 @@ def get_kind_of_part(part_name):
             kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {sen_geometry}'  
 
         else:
-            part_id = part_name[3:].replace("-", '')
+            part_id = (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
             part_type = part_type_dict[part_id[0]]
             if part_type == 'Hexaboard':## Fill out here once it's finalized. 
                 kind_of_part = ''

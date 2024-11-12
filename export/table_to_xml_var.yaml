@@ -94,12 +94,12 @@ module_assembly:
     dbase_table: module_inspect
     nested_query: SELECT flatness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: THICKNESS
-    dbase_col: thickness
+    dbase_col: ave_thickness
     dbase_table: module_inspect
     nested_query: SELECT thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: MAX_THICKNESS
-    dbase_col: null ## ask aleetha 
-    dbase_table: null
+    dbase_col: max_thickness
+    dbase_table: module_inspect
     nested_query: null
 
 wirebond:
