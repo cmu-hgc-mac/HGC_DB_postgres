@@ -22,7 +22,7 @@ def run_git_pull_seq():
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
-run_git_pull_seq()
+# run_git_pull_seq()
 
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
@@ -197,9 +197,9 @@ def export_data():
 
         if dbshipper_pass.strip() and lxp_username.strip() and lxp_password.strip():
             input_window.destroy()  
-            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key])
+            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass])#, "-k", encryption_key])
+            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass])#, "-k", encryption_key])
+            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password])#, "-k", encryption_key])
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
