@@ -2,14 +2,20 @@ import csv, os, glob, subprocess, random
 import asyncio, asyncpg, yaml, pwinput
 from datetime import datetime
 
+loc = 'dbase_info'
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
+inst_code  = conn_info.get('institution_abbr')
+db_params = {
+    'database': conn_info.get('dbname'),
+    'user': 'postgres',
+    'host': conn_info.get('db_hostname'),
+    'port': conn_info.get('port'),
+}
+
 async def get_conn_pool():
-    loc = '../dbase_info/'
-    yaml_file = f'{loc}tables.yaml'
-    db_params = {
-        'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
-        'user': 'shipper',
-        'password': pwinput.pwinput(prompt='Enter user password: ', mask='*'),
-        'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
+    dbpassword = (pwinput.pwinput(prompt='Enter user password: ', mask='*')).replace(" ", "")
+    db_params.update({'password': dbpassword})
     pool = await asyncpg.create_pool(**db_params)
     return pool
 
@@ -48,45 +54,53 @@ def get_sensor_iv_data(filename):
     
     cond_list = ['SENSOR_ID','SCRATCHPAD_ID','TEMP_DEGC','HUMIDITY_PRCNT']
     with open(filename, newline='') as csvfile:
-        reader = csv.reader(csvfile)
-        header = next(reader)
-        column_indices = {key: header.index(key.upper()) for key in data.keys()}
-        cell_nr_idx = header.index('CELL_NR')
+        try:
+            reader = csv.reader(csvfile)
+            header = next(reader)
+            column_indices = {key: header.index(key.upper()) for key in data.keys()}
+            cell_nr_idx = header.index('CELL_NR')
 
-        max_cell_nr = 0
-        for row in reader:
-            cell_nr = int(row[cell_nr_idx])
-            if cell_nr > max_cell_nr:
-                max_cell_nr = cell_nr
-        for key in data:
-            data[key] = [[] for _ in range(max_cell_nr)]
+            max_cell_nr = 0
+            for row in reader:
+                cell_nr = int(row[cell_nr_idx])
+                if cell_nr > max_cell_nr:
+                    max_cell_nr = cell_nr
+            for key in data:
+                data[key] = [[] for _ in range(max_cell_nr)]
+                
+            csvfile.seek(0); next(reader)  # Skip the header row
+
+            for row in reader:
+                cell_nr = int(row[cell_nr_idx]) - 1  
+                for key, idx in column_indices.items():
+                    data[key][cell_nr].append(float(row[idx]))
             
-        csvfile.seek(0); next(reader)  # Skip the header row
-
-        for row in reader:
-            cell_nr = int(row[cell_nr_idx]) - 1  
-            for key, idx in column_indices.items():
-                data[key][cell_nr].append(float(row[idx]))
-        
-        csvfile.seek(0)
-        header = next(reader)
-        column_indices = {key: header.index(key.upper()) for key in cond_list}
-        for row in reader:
-            data.update({key: str(row[idx]) for key, idx in column_indices.items()})
-            print(data['SCRATCHPAD_ID'])
-            return data
+            csvfile.seek(0)
+            header = next(reader)
+            column_indices = {key: header.index(key.upper()) for key in cond_list}
+            for row in reader:
+                data.update({key: str(row[idx]) for key, idx in column_indices.items()})
+                print('Sensor ID IV data:', data['SCRATCHPAD_ID'])
+                return data
+        except Exception as e:
+            print('Sensor ID IV data error:', e)
+            return {}
 
 def get_sensor_summary_data(filename):        
     with open(filename, mode='r') as file:
         csv_reader = csv.reader(file)
-        keys = next(csv_reader)   # First row for keys
-        values = next(csv_reader) # Second row for values
-        data_dict = dict(zip(keys, values))
-        data_dict['SENSOR_PASS'] = data_dict['PASS']
-        del data_dict['']
-        del data_dict['PASS']
-        print(data_dict['SCRATCHPAD_ID'])
-    return data_dict
+        try:
+            keys = next(csv_reader)   # First row for keys
+            values = next(csv_reader) # Second row for values
+            data_dict = dict(zip(keys, values))
+            data_dict['SENSOR_PASS'] = data_dict['PASS']
+            del data_dict['']
+            del data_dict['PASS']
+            print('Sensor ID summary data:', data_dict['SCRATCHPAD_ID'])
+            return data_dict
+        except Exception as e:
+            print('Sensor ID summary error:', e)
+            return {}
 
 def read_and_write_sensor_data(sensor_id, pascal_path = '/Users/sindhu/Downloads/pascal/'):
     output_dir = os.path.join(pascal_path, 'outputs')
@@ -131,9 +145,10 @@ def read_and_write_sensor_data(sensor_id, pascal_path = '/Users/sindhu/Downloads
 
 async def main():
     pool = await get_conn_pool()
-    pascal_path = '/Users/sindhu/Downloads/pascal/'
+    pascal_path = '../pascal/'
     sensor_local_list = ['100114', '200120', '200119', '200118', '200117', '200116', '100147', '100137', '100136', '100144', '100143', '100190', '200165', '100191', '200166']
     sensor_local_list = [110190, 200165, 100191, 200166, 100136, 100137]
+    sensor_local_list = [200145]
     for sensor_id in sensor_local_list:
         try:
             db_upload_dict = read_and_write_sensor_data(str(sensor_id), pascal_path)
