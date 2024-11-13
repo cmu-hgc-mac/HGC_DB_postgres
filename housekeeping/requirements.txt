@@ -6,4 +6,4 @@ pwinput==1.0.3
 Pillow==9.0.1
 PyYAML==6.0
 paramiko==3.2.0
-cryptography=3.4.8
+cryptography==3.4.8
