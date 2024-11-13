@@ -13,7 +13,7 @@ Each MAC requires the following to replicate this setup:
 4. Decide a postgres superuser password (keep safe), a user password (with write access), and a viewer password (with only read permission; doesn't have to be too complicated.)
 5. Install [postgreSQL-15 with pgAdmin4](https://www.pgadmin.org/download/) on your computers. Make sure you add ```psql``` to your path. Use the postgres superuser password with pgAdmin4.
 6. Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pg_hba_documentation.md) to update the two config files to listen for the other computers in the lab and make interconnections.
-7. In Python 3.6 or greater:
+7. In a Python virtual environment or Conda environment:
 <!-- ```
 pip install asyncpg tk matplotlib pwinput pillow pyyaml paramiko cryptography
 ``` -->
