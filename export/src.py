@@ -38,51 +38,57 @@ async def fetch_from_db(query, conn):
 
 
 async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
-    """Update XML template with values from the database."""
-    # Parse the XML file
-    tree = etree.parse(xml_file_path)
-    root = tree.getroot()
+    try:
+        """Update XML template with values from the database."""
+        # Parse the XML file
+        tree = etree.parse(xml_file_path)
+        root = tree.getroot()
 
-    # Convert db_values keys to lowercase for case-insensitive matching
-    db_values_lower = {k.lower(): v for k, v in db_values.items()}
+        # Convert db_values keys to lowercase for case-insensitive matching
+        db_values_lower = {k.lower(): v for k, v in db_values.items()}
 
-    # Iterate through the db_values and replace corresponding placeholders in XML
-    for xml_var, value in db_values_lower.items():
-        # XPath to find elements containing the placeholder (lowercase comparison)
-        elements = root.xpath(f".//*[contains(text(), '{{{{ {xml_var} }}}}')]")
+        # Iterate through the db_values and replace corresponding placeholders in XML
+        for xml_var, value in db_values_lower.items():
+            # XPath to find elements containing the placeholder (lowercase comparison)
+            elements = root.xpath(f".//*[contains(text(), '{{{{ {xml_var} }}}}')]")
 
-        if elements:
-            for element in elements:
-                # Replace the placeholder with the actual value, or empty string if None
-                if value is None:
-                    value = ""  # Default to an empty string for None values
+            if elements:
+                for element in elements:
+                    # Replace the placeholder with the actual value, or empty string if None
+                    if value is None:
+                        value = ""  # Default to an empty string for None values
 
-                # Replace the placeholder text
-                element.text = element.text.replace(f"{{{{ {xml_var} }}}}", str(value))
+                    # Replace the placeholder text
+                    element.text = element.text.replace(f"{{{{ {xml_var} }}}}", str(value))
 
-    # Handle the 'ID' placeholder separately (case-sensitive)
-    if 'ID' in db_values:
-        id_value = db_values['ID']
-        id_elements = root.xpath(".//*[contains(text(), '{{ ID }}')]")
-        if id_elements:
-            for element in id_elements:
-                if id_value is None:
-                    id_value = ""
-                element.text = element.text.replace("{{ ID }}", str(id_value))
+        # Handle the 'ID' placeholder separately (case-sensitive)
+        if 'ID' in db_values:
+            id_value = db_values['ID']
+            id_elements = root.xpath(".//*[contains(text(), '{{ ID }}')]")
+            if id_elements:
+                for element in id_elements:
+                    if id_value is None:
+                        id_value = ""
+                    element.text = element.text.replace("{{ ID }}", str(id_value))
 
-    # Save the updated XML to the output directory
+        # Save the updated XML to the output directory
 
-    # Check if the directory to store outputted xml file exists
-    output_dir_path = os.path.dirname(output_file_path)
-    if not os.path.exists(output_dir_path):
-        os.makedirs(output_dir_path)
-    
-    # save the file to the directory
-    if not os.path.isdir(output_file_path):
-        tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
-        # print(f"XML file updated and saved to: {output_file_path}")
-    else:
-        print(f"Error: {output_file_path} is a directory, not a file.")
+        # Check if the directory to store outputted xml file exists
+        output_dir_path = os.path.dirname(output_file_path)
+        if not os.path.exists(output_dir_path):
+            os.makedirs(output_dir_path)
+        
+        # save the file to the directory
+        if not os.path.isdir(output_file_path):
+            tree.write(output_file_path, pretty_print=True, xml_declaration=True, encoding='UTF-8')
+            # print(f"XML file updated and saved to: {output_file_path}")
+        else:
+            print(f"Error: {output_file_path} is a directory, not a file.")
+    except Exception as e:    
+        print('*'80)
+        print('update_xml_with_db_values', xml_file_path, output_file_path, db_values)        
+        print('****** ERROR:', e)
+        print('*'*80)
 
 async def get_parts_name(name, table, conn):
     ##  returns part name in a specific table
@@ -114,7 +120,9 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
             """
             await conn.execute(query, current_timestamp, part_name)
     except Exception as e:
-        print(f"Error updating {column_name}: {e}")
+        print('*'*80)
+        print(f"****** Error updating {column_name}: {e}")
+        print('*'*80)
 
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
@@ -144,69 +152,73 @@ def get_kind_of_part(part_name):
                     '3': 'Left',
                     '4': 'Right', 
                     '5': 'Five'}
-    
-    # Extract the information
-    if part_name != '' or None:
-        if part_name.replace('_', '').isdigit() == True:
-            ## this is for sensor. 
-            ## 2) convension v2
-            ## TXXXXX_N: [thickness / resolution]XXXXX_[geometry]
-            part_id = part_name
-            sen_thickness = sen_dict[part_id[0]][0]
-            resolution = sen_dict[part_id[0]][1]
-            sen_geometry = sen_geo_dict[part_id[-1]]
-            part_type = 'Sensor'
-            kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {sen_geometry}'  
-
-        else:
-            part_id = (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
-            part_type = part_type_dict[part_id[0]]
-            if part_type == 'Hexaboard':## Fill out here once it's finalized. 
-                kind_of_part = ''
-
-            elif part_type == 'Baseplate':
-                ## 320-BA-TTT-VB-NNNN
-                ### TTT: [geometry][resolution][bp_material]
-                kind_of_part = ''
-                ## below is updated version (rev.4.0)
-                # geometry = geometry_dict[part_id[2]]
-                # resolution = resolution_dict[part_id[3]]
-                # bp_material = material_dict[part_id[4]]
-                # module_type = ''
-                # if bp_material == 'CuW':
-                #     module_type = 'EM'
-                # elif bp_material in ['Ti', 'CF']:
-                #     module_type = 'HAD'
-                # kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
-
-            elif part_type == 'Sensor':
-                '''
-                As soon as sensor id is updated to 6-digit, please comment out the following and uncomment the above. 
-                '''
-                ## 1) convension v1
-                ## 320-ST-TTT-NNNNNN
-                ### T-TTT: [resolution]-[sen_thickness][geometry][sensor structure]
-                resolution = resolution_dict[part_id[1]]
-                sen_thickness = thickness_dict[part_id[2]]
-                geometry = geometry_dict[part_id[3]]
-                # sen_structure = sen_structure_dict[part_id[4:6]]
-                kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {geometry}'  
-
+    try:
+        # Extract the information
+        if part_name != '' or None:
+            if part_name.replace('_', '').isdigit() == True:
+                ## this is for sensor. 
+                ## 2) convension v2
+                ## TXXXXX_N: [thickness / resolution]XXXXX_[geometry]
+                part_id = part_name
+                sen_thickness = sen_dict[part_id[0]][0]
+                resolution = sen_dict[part_id[0]][1]
+                sen_geometry = sen_geo_dict[part_id[-1]]
+                part_type = 'Sensor'
+                kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {sen_geometry}'  
 
             else:
-                resolution = resolution_dict[part_id[1]]
-                geometry = geometry_dict[part_id[2]]
-                sen_thickness = thickness_dict[part_id[3]]
-                bp_material = material_dict[part_id[4]]
-                module_type = ''
-                if bp_material == 'CuW':
-                    module_type = 'EM'
-                elif bp_material in ['Ti', 'CF']:
-                    module_type = 'HAD'
+                part_id = (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
+                part_type = part_type_dict[part_id[0]]
+                if part_type == 'Hexaboard':## Fill out here once it's finalized. 
+                    kind_of_part = ''
 
-                kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
+                elif part_type == 'Baseplate':
+                    ## 320-BA-TTT-VB-NNNN
+                    ### TTT: [geometry][resolution][bp_material]
+                    kind_of_part = ''
+                    ## below is updated version (rev.4.0)
+                    # geometry = geometry_dict[part_id[2]]
+                    # resolution = resolution_dict[part_id[3]]
+                    # bp_material = material_dict[part_id[4]]
+                    # module_type = ''
+                    # if bp_material == 'CuW':
+                    #     module_type = 'EM'
+                    # elif bp_material in ['Ti', 'CF']:
+                    #     module_type = 'HAD'
+                    # kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
 
-    else:
-        kind_of_part = ''
-    return kind_of_part
-    
+                elif part_type == 'Sensor':
+                    '''
+                    As soon as sensor id is updated to 6-digit, please comment out the following and uncomment the above. 
+                    '''
+                    ## 1) convension v1
+                    ## 320-ST-TTT-NNNNNN
+                    ### T-TTT: [resolution]-[sen_thickness][geometry][sensor structure]
+                    resolution = resolution_dict[part_id[1]]
+                    sen_thickness = thickness_dict[part_id[2]]
+                    geometry = geometry_dict[part_id[3]]
+                    # sen_structure = sen_structure_dict[part_id[4:6]]
+                    kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {geometry}'  
+
+
+                else:
+                    resolution = resolution_dict[part_id[1]]
+                    geometry = geometry_dict[part_id[2]]
+                    sen_thickness = thickness_dict[part_id[3]]
+                    bp_material = material_dict[part_id[4]]
+                    module_type = ''
+                    if bp_material == 'CuW':
+                        module_type = 'EM'
+                    elif bp_material in ['Ti', 'CF']:
+                        module_type = 'HAD'
+
+                    kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
+
+        else:
+            kind_of_part = ''
+        return kind_of_part
+    except Exception as e:
+        print('*'*80)
+        print(f'******* ERROR in {part_name}:', e)
+        print('*'*80)
+        return None

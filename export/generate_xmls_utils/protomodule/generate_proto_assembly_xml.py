@@ -31,55 +31,58 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
         print(f'getting values for {proto_name}...')
-        db_values = {}
-        for entry in module_data:
-            xml_var = entry['xml_temp_val']
+        try:
+            db_values = {}
+            for entry in module_data:
+                xml_var = entry['xml_temp_val']
 
-            if xml_var in ['LOCATION', 'INSTITUTION']:
-                db_values[xml_var] = LOCATION
-            elif xml_var == 'ID':
-                db_values[xml_var] = proto_name
-            elif xml_var == 'KIND_OF_PART':
-                db_values[xml_var] = get_kind_of_part(proto_name)
-            else:
-                dbase_col = entry['dbase_col']
-                dbase_table = entry['dbase_table']
-
-                # Skip entries without a database column or table
-                if not dbase_col or not dbase_table:
-                    continue
-
-                # Ignore nested queries for now
-                if entry['nested_query']:
-                    query = entry['nested_query'] + f" WHERE proto_assembly.proto_name = '{proto_name}';"
-                    
+                if xml_var in ['LOCATION', 'INSTITUTION']:
+                    db_values[xml_var] = LOCATION
+                elif xml_var == 'ID':
+                    db_values[xml_var] = proto_name
+                elif xml_var == 'KIND_OF_PART':
+                    db_values[xml_var] = get_kind_of_part(proto_name)
                 else:
-                    # Modify the query to get the latest entry
-                    if dbase_table == 'proto_assembly':
-                        query = f"SELECT {dbase_col} FROM {dbase_table} WHERE proto_name = '{proto_name}' ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1"
-                    else:
-                        query = f"SELECT {dbase_col} FROM {dbase_table} WHERE proto_name = '{proto_name}' ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1"
-                
-                try:
-                    results = await fetch_from_db(query, conn)  # Use conn directly
-                except Exception as e:
-                    print('QUERY:', query)
-                    print('ERROR:', e)
-                
-                if results:
-                    if xml_var == "RUN_BEGIN_TIMESTAMP_":
-                        # Fetching both ass_run_date and ass_time_begin
-                        run_date = results.get("ass_run_date", "")
-                        time_begin = results.get("ass_time_begin", "")
-                        db_values[xml_var] = f"{run_date}T{time_begin}"
-                    elif xml_var == "RUN_END_TIMESTAMP_":
-                        # Fetching both ass_run_date and ass_time_end
-                        run_date = results.get("ass_run_date", "")
-                        time_end = results.get("ass_time_end", "")
-                        db_values[xml_var] = f"{run_date}T{time_end}"
-                    else:
-                        db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
+                    dbase_col = entry['dbase_col']
+                    dbase_table = entry['dbase_table']
 
+                    # Skip entries without a database column or table
+                    if not dbase_col or not dbase_table:
+                        continue
+
+                    # Ignore nested queries for now
+                    if entry['nested_query']:
+                        query = entry['nested_query'] + f" WHERE proto_assembly.proto_name = '{proto_name}';"
+                        
+                    else:
+                        # Modify the query to get the latest entry
+                        if dbase_table == 'proto_assembly':
+                            query = f"SELECT {dbase_col} FROM {dbase_table} WHERE proto_name = '{proto_name}' ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1"
+                        else:
+                            query = f"SELECT {dbase_col} FROM {dbase_table} WHERE proto_name = '{proto_name}' ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1"
+                    
+                    try:
+                        results = await fetch_from_db(query, conn)  # Use conn directly
+                    except Exception as e:
+                        print('QUERY:', query)
+                        print('ERROR:', e)
+                    
+                    if results:
+                        if xml_var == "RUN_BEGIN_TIMESTAMP_":
+                            # Fetching both ass_run_date and ass_time_begin
+                            run_date = results.get("ass_run_date", "")
+                            time_begin = results.get("ass_time_begin", "")
+                            db_values[xml_var] = f"{run_date}T{time_begin}"
+                        elif xml_var == "RUN_END_TIMESTAMP_":
+                            # Fetching both ass_run_date and ass_time_end
+                            run_date = results.get("ass_run_date", "")
+                            time_end = results.get("ass_time_end", "")
+                            db_values[xml_var] = f"{run_date}T{time_end}"
+                        else:
+                            db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
+        except Exception as e:
+            print('ERROR:', e)
+            
         # Update the XML with the database values
         output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)

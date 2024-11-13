@@ -34,74 +34,77 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     for bp_name in bp_list:
         # Fetch database values for the XML template variables
         print(f'getting values for {bp_name}...')
-        db_values = {}
+        try:
+            db_values = {}
 
-        for entry in wb_data:
-            xml_var = entry['xml_temp_val']
+            for entry in wb_data:
+                xml_var = entry['xml_temp_val']
 
-            if xml_var in ['LOCATION', 'INSTITUTION']:
-                db_values[xml_var] = LOCATION
-            elif xml_var == 'ID':
-                db_values[xml_var] = bp_name
-            elif xml_var == 'KIND_OF_PART':
-                db_values[xml_var] = get_kind_of_part(bp_name)
-            else:
-                dbase_col = entry['dbase_col']
-                dbase_table = entry['dbase_table']
-
-                # Skip entries without a database column or table
-                if not dbase_col and not dbase_table:
-                    continue
-
-                # Ignore nested queries for now
-                if entry['nested_query']:
-                    query = entry['nested_query'] + f" WHERE {dbase_table}.bp_name = '{bp_name}';"
-                    
-                    # print(f'Executing query: {query}')
-
+                if xml_var in ['LOCATION', 'INSTITUTION']:
+                    db_values[xml_var] = LOCATION
+                elif xml_var == 'ID':
+                    db_values[xml_var] = bp_name
+                elif xml_var == 'KIND_OF_PART':
+                    db_values[xml_var] = get_kind_of_part(bp_name)
                 else:
-                    # Modify the query to get the latest entry
-                    if dbase_table in ['baseplate']:
-                        query = f"""
-                        SELECT {dbase_col} FROM {dbase_table}
-                        WHERE bp_name = '{bp_name}'
-                        AND xml_gen_datetime IS NULL
-                        LIMIT 1;
-                        """
-                    else:
-                        query = f"""
-                        SELECT {dbase_col} FROM {dbase_table} 
-                        WHERE bp_name = '{bp_name}'
-                        AND xml_gen_datetime IS NULL
-                        ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
-                        """
-                try:
-                    results = await fetch_from_db(query, conn)  # Use conn directly
-                except Exception as e:
-                    print('QUERY:', query)
-                    print('ERROR:', e)
+                    dbase_col = entry['dbase_col']
+                    dbase_table = entry['dbase_table']
 
-                if results:
-                    if xml_var == "RUN_BEGIN_TIMESTAMP_":
-                        # Fetching both ass_run_date and ass_time_begin
-                        run_date = results.get("date_inspect", "")
-                        time_begin = results.get("time_inspect", "")
-                        db_values[xml_var] = f"{run_date}T{time_begin}"
-                    elif xml_var == "RUN_END_TIMESTAMP_":
-                        run_date = results.get("ass_run_date", "")
-                        time_end = results.get("ass_time_end", "")
-                        db_values[xml_var] = f"{run_date}T{time_end}"
-                    elif xml_var == "CURE_BEGIN_TIMESTAMP_":
-                        run_date = results.get("ass_run_date", "")
-                        time_end = results.get("ass_time_begin", "")
-                        db_values[xml_var] = f"{run_date}T{time_end}"
-                    elif xml_var == "CURE_END_TIMESTAMP_":
-                        run_date = results.get("cure_date_end", "")
-                        time_end = results.get("cure_time_end", "")
-                        db_values[xml_var] = f"{run_date}T{time_end}"
-                    else:
-                        db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
+                    # Skip entries without a database column or table
+                    if not dbase_col and not dbase_table:
+                        continue
 
+                    # Ignore nested queries for now
+                    if entry['nested_query']:
+                        query = entry['nested_query'] + f" WHERE {dbase_table}.bp_name = '{bp_name}';"
+                        
+                        # print(f'Executing query: {query}')
+
+                    else:
+                        # Modify the query to get the latest entry
+                        if dbase_table in ['baseplate']:
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table}
+                            WHERE bp_name = '{bp_name}'
+                            AND xml_gen_datetime IS NULL
+                            LIMIT 1;
+                            """
+                        else:
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE bp_name = '{bp_name}'
+                            AND xml_gen_datetime IS NULL
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
+                            """
+                    try:
+                        results = await fetch_from_db(query, conn)  # Use conn directly
+                    except Exception as e:
+                        print('QUERY:', query)
+                        print('ERROR:', e)
+
+                    if results:
+                        if xml_var == "RUN_BEGIN_TIMESTAMP_":
+                            # Fetching both ass_run_date and ass_time_begin
+                            run_date = results.get("date_inspect", "")
+                            time_begin = results.get("time_inspect", "")
+                            db_values[xml_var] = f"{run_date}T{time_begin}"
+                        elif xml_var == "RUN_END_TIMESTAMP_":
+                            run_date = results.get("ass_run_date", "")
+                            time_end = results.get("ass_time_end", "")
+                            db_values[xml_var] = f"{run_date}T{time_end}"
+                        elif xml_var == "CURE_BEGIN_TIMESTAMP_":
+                            run_date = results.get("ass_run_date", "")
+                            time_end = results.get("ass_time_begin", "")
+                            db_values[xml_var] = f"{run_date}T{time_end}"
+                        elif xml_var == "CURE_END_TIMESTAMP_":
+                            run_date = results.get("cure_date_end", "")
+                            time_end = results.get("cure_time_end", "")
+                            db_values[xml_var] = f"{run_date}T{time_end}"
+                        else:
+                            db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
+        except Exception as e:
+            print('ERROR:', e)
+            
         output_file_name = f'{bp_name}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)
         await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
