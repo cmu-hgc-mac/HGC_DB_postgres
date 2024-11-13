@@ -5,6 +5,7 @@
  	2. [Connection configuration at workstations](#step1b)
 2. [Table viewer with pgAdmin](#step2)
 3. User permissions at various workstations(#step3)
+4. [Password Guidelines](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pgAdmin_instructions.md#dbpassword)
 
 ## 1. <a name="step1"></a>Database interconnection one-time setup
 Once the database has been set up, other workstations in the lab need to connect to the database to write data to it. 
