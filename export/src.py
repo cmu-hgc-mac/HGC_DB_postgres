@@ -85,7 +85,7 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
         else:
             print(f"Error: {output_file_path} is a directory, not a file.")
     except Exception as e:    
-        print('*'80)
+        print('*'*80)
         print('update_xml_with_db_values', xml_file_path, output_file_path, db_values)        
         print('****** ERROR:', e)
         print('*'*80)
