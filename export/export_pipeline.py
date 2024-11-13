@@ -15,15 +15,20 @@ GENERATED_XMLS_DIR = 'export/xmls_for_upload'##  directory to store the generate
 
 # Ensure the generated XML directory exists
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
+
 def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR, encryption_key = None):
+    # print(type(dbpassword),dbpassword)
+    # print(type(output_dir),output_dir)
+    # print(type(encryption_key),encryption_key)
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     try:
-        process = subprocess.run([sys.executable, script_path, dbpassword, output_dir], check=True)
+        # process = subprocess.run([sys.executable, script_path, dbpassword, output_dir, encryption_key], check=True)
+        process = subprocess.run([sys.executable, script_path,'-dbp', dbpassword, '-dir', output_dir ,'-k', encryption_key], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while running the script: {e}")
 
-def generate_xmls(dbpassword):
+def generate_xmls(dbpassword, encryption_key = None):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
@@ -49,22 +54,24 @@ def generate_xmls(dbpassword):
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
     for script_path in scripts_to_run:
-        run_script(script_path, dbpassword)
+        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key)
         completed_scripts += 1
         print('-'*10)
         print(f'Executed -- {script_path}.')
         print(f"Progress: {completed_scripts}/{total_scripts} scripts completed")
         print('-'*10)
 
-def scp_files(lxplus_username, lxplus_password, directory, search_date):
+def scp_files(lxplus_username, lxplus_password, directory, search_date, encryption_key = None):
     """Call the scp script to transfer files."""
     try:
         scp_command = ['python3', 
                        'export/dbloader_scp_xml.py', 
-                       lxplus_username, 
-                       lxplus_password, 
-                       directory,
-                       search_date]
+                       '-lxu', lxplus_username, 
+                       '-lxp', lxplus_password, 
+                       '-dir', directory,
+                       '-date', str(search_date),
+                       '-k', encryption_key]
+    
         process = subprocess.run(scp_command, check=True)
 
     except Exception as e:
@@ -98,25 +105,18 @@ def main():
     parser.add_argument('-date', '--date', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     args = parser.parse_args()
 
-    dbpassword = args.dbpassword
-    lxplus_username = args.dbl_username
-    lxplus_password = args.dbl_password
+    dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
+    lxplus_username = args.dbl_username or pwinput.pwinput(prompt='Enter lxplus username: ', mask='*')
+    lxplus_password = args.dbl_password or pwinput.pwinput(prompt='Enter lxplus password: ', mask='*')
     directory_to_search = args.directory
     search_date = args.date
-    
-
-    if dbpassword is None:
-        dbpassword = pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
-    if lxplus_username is None:
-        lxplus_username = pwinput.pwinput(prompt='Enter lxplus username: ', mask='*')
-    if lxplus_password is None:
-        lxplus_password = pwinput.pwinput(prompt='Enter lxplus password: ', mask='*')
+    encryption_key = args.encrypt_key
 
     # Step 1: Generate XML files
-    generate_xmls(dbpassword)
+    generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key)
 
     # Step 2: SCP files to central DB
-    if scp_files(lxplus_username, lxplus_password, directory_to_search, search_date):
+    if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
         # Step 3: Delete generated XMLs on success
         clean_generated_xmls()
 

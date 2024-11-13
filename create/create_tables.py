@@ -28,8 +28,7 @@ else:
     if args.encrypt_key is None:
         print("Encryption key not provided. Exiting..."); exit()
     cipher_suite = Fernet((args.encrypt_key).encode())
-    dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode() ## Decode base64 to get encrypted string and then decrypt
-    db_params.update({'password': dbpassword})
+    db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode()}) ## Decode base64 to get encrypted string and then decrypt
 
 async def create_tables():
     # Connect to the database

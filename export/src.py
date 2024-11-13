@@ -1,28 +1,30 @@
-import asyncio
-import asyncpg
+import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml
-import sys, argparse
-import os
+import yaml, sys, argparse, base64, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
-import pwinput
 from datetime import datetime
+from cryptography.fernet import Fernet
 
-async def get_conn(dbpassword):
+async def get_conn(dbpassword, encryption_key = None):
     '''
     Does: get connection to database
     Return: connection
     '''
-
     loc = 'dbase_info/'
     yaml_file = f'{loc}conn.yaml'
     db_params = {
-        'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
-        'user': 'shipper',
-        'password': dbpassword,
-        'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
+            'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
+            'user': 'shipper',
+            'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
+    
+    if encryption_key is None:
+        db_params.update({'password': dbpassword})
+    else:
+        cipher_suite = Fernet((encryption_key).encode())
+        db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
+
     conn = await asyncpg.connect(**db_params)
     return conn
 

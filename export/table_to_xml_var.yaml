@@ -485,7 +485,7 @@ proto_assembly:
     dbase_table: proto_inspect
     nested_query: null
   - xml_temp_val: THICKNESS
-    dbase_col: thickness
+    dbase_col: ave_thickness
     dbase_table: proto_inspect
     nested_query: null
   - xml_temp_val: COMP_TRAY_NAME

@@ -1,13 +1,10 @@
-import asyncio
-import asyncpg
+import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml
-import sys
-import os
+import yaml, os, base64, sys, argparse
+from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
-import pwinput
 from HGC_DB_postgres.export.define_global_var import LOCATION
 from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
@@ -70,7 +67,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                 else:
                     # Modify the query to get the latest entry
                     query = f"SELECT {dbase_col} FROM {dbase_table} WHERE sen_name = '{sen_name}' ORDER BY sen_received DESC, sen_received DESC LIMIT 1"
-                results = await fetch_from_db(query, conn)  # Use conn directly
+                
+                try:
+                    results = await fetch_from_db(query, conn)  # Use conn directly
+                except Exception as e:
+                    print('QUERY:', query)
+                    print('ERROR:', e)
                 
                 if results:
                     if xml_var == "RUN_BEGIN_TIMESTAMP_":
@@ -97,15 +99,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                                    part='sensor',
                                    part_name=sen_name)
         
-async def main(dbpassword, output_dir):
+async def main(dbpassword, output_dir, encryption_key = None):
     # Configuration
     yaml_file = 'export/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export/template_examples/sensor/cond_upload.xml'# XML template file path
     xml_output_dir = output_dir + '/sensor'  # Directory to save the updated XML
 
-
     # Create PostgreSQL connection pool
-    conn = await get_conn(dbpassword)
+    conn = await get_conn(dbpassword, encryption_key)
 
     try:
         await process_module(conn, yaml_file, xml_file_path, xml_output_dir)
@@ -115,10 +116,15 @@ async def main(dbpassword, output_dir):
 # Run the asyncio program
 if __name__ == "__main__":
     
-    if len(sys.argv) != 3:
-        print("Usage: script_b.py <dbpassword> <output_dir>")
-        sys.exit(1)
-    
-    dbpassword = sys.argv[1]
-    output_dir = sys.argv[2]
-    asyncio.run(main(dbpassword, output_dir))
+    parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
+    parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
+    parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
+    args = parser.parse_args()   
+
+    dbpassword = args.dbpassword
+    output_dir = args.directory
+    encryption_key = args.encrypt_key
+
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key))
+

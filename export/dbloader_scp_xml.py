@@ -91,20 +91,22 @@ def scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = None):
         print(f"An error occurred: {e}")
         
         
-def main(dbl_username, dbl_password, directory_to_search, search_date, encryption_key = None):
-    # default_dir = os.path.abspath(os.path.join(os.getcwd(), "../../xmls_for_dbloader_upload"))
-    # today = datetime.datetime.today().strftime('%Y-%m-%d')
-    # parser = argparse.ArgumentParser(description="Script to process files in a directory.")
-    # parser.add_argument('-dir','--directory', type=valid_directory, default=default_dir, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
-    # parser.add_argument('-date', '--date', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-    # parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
-    # parser.add_argument('-lxp', '--dbl_password', default=None, required=False, help="Password to access lxplus.")
-    # args = parser.parse_args()
+def main(): #dbl_username, dbl_password, directory_to_search, search_date, encryption_key = None):
+    default_dir = os.path.abspath(os.path.join(os.getcwd(), "../../xmls_for_dbloader_upload"))
+    today = str(datetime.datetime.today().strftime('%Y-%m-%d'))
+    parser = argparse.ArgumentParser(description="Script to process files in a directory.")
+    parser.add_argument('-dir','--directory', type=valid_directory, default=default_dir, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
+    parser.add_argument('-date', '--date', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
+    parser.add_argument('-lxp', '--dbl_password', default=None, required=False, help="Password to access lxplus.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
+    args = parser.parse_args()
 
-    # dbl_username = args.dbl_username
-    # dbl_password = args.dbl_password
-    # directory_to_search = args.directory
-    # search_date = args.date
+    dbl_username = args.dbl_username
+    dbl_password = args.dbl_password
+    directory_to_search = args.directory
+    encryption_key = args.encrypt_key
+    search_date = args.date
 
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
     files_found = find_files_by_date(directory_to_search, search_date)
@@ -112,7 +114,6 @@ def main(dbl_username, dbl_password, directory_to_search, search_date, encryptio
     if files_found:
         print("Files found: ")
         for file in files_found: print(file)
-        
         print('\n')
         # dbl_username = input('LXPLUS Username: ')
         # dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')
@@ -120,26 +121,15 @@ def main(dbl_username, dbl_password, directory_to_search, search_date, encryptio
         build_files, other_files = get_build_files(files_found)
         print("Uploading build files ...")
         for fname in tqdm(build_files):
-            scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = encryption_key)
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key)
 
         print("Uploading other files ...")
         for fname in tqdm(other_files):
-            scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = encryption_key)
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key)
     else:
         print("No files found for the given date.")
 
 if __name__ == "__main__":
-    
-    # Get the LXPLUS username and password from command-line arguments
-    lxplus_username = sys.argv[1]
-    lxplus_password = sys.argv[2]
-    generated_xml_dir = sys.argv[3]
-    search_date = sys.argv[4]
-    try:
-        encryption_key = sys.argv[5]
-    except:
-        encryption_key = None
+    main()
 
-    # Run the main process
-    main(lxplus_username, lxplus_password, generated_xml_dir, search_date, encryption_key = encryption_key)
 
