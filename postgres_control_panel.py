@@ -123,7 +123,7 @@ def modify_tables():
             # Run the subprocess command
             subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass, "-k", encryption_key])
-            show_message(f"PostgreSQL tables modified. Refresh pgAdmin4.")
+            show_message(f"Check terminal for tables modified. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
@@ -224,7 +224,7 @@ def refresh_data():
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             print("******** Database refreshed ********")
-            show_message(f"PostgreSQL tables keys updated. Refresh pgAdmin4.")
+            show_message(f"Check terminal and refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
