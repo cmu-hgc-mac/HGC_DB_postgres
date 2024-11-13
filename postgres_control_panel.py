@@ -22,7 +22,7 @@ def run_git_pull_seq():
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
-# run_git_pull_seq()
+run_git_pull_seq()
 
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
