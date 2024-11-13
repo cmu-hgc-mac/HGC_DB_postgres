@@ -1,5 +1,5 @@
 import requests, json, yaml, os, argparse, datetime
-import pwinput, asyncio, asyncpg, base64
+import pwinput, asyncio, asyncpg, base64, traceback
 from cryptography.fernet import Fernet
 
 loc = 'dbase_info'
@@ -95,6 +95,7 @@ def get_data_for_db(data_full, partType):
         return db_dict
     except Exception as e:
         # print('*'*100)
+        traceback.print_exc()
         print(f'ERROR in acquiring data from API output for {data_full["serial_number"]}', e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
@@ -129,16 +130,20 @@ async def main():
         print(f'Reading {partTrans[pt]["apikey"]} from HGCAPI ...' )
         parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt))['parts']
         for p in parts:
-            data_full = read_from_cern_db(partID = p['serial_number'])
-            if data_full is not None:
-                db_dict = get_data_for_db(data_full, partType = pt)
-                if db_dict is not None:
-                    try:
-                        # print(db_dict)
-                        await write_to_db(pool, db_dict, partType = pt)
-                    except Exception as e:
-                        print(f'ERROR for single part upload for {data_full} {db_dict}', e)
-                        print('Dictionary:', (db_dict))
+            try:
+                data_full = read_from_cern_db(partID = p['serial_number'])
+                if data_full is not None:
+                    db_dict = get_data_for_db(data_full, partType = pt)
+                    if db_dict is not None:
+                        try:
+                            # print(db_dict)
+                            await write_to_db(pool, db_dict, partType = pt)
+                        except Exception as e:
+                            print(f'ERROR for single part upload for {data_full} {db_dict}', e)
+                            traceback.print_exc()
+                            print('Dictionary:', (db_dict))
+            except:
+                traceback.print_exc()
         print(f'Writing {partTrans[pt]["apikey"]} to postgres complete.')
         print('-'*40); print('\n')
     await pool.close()

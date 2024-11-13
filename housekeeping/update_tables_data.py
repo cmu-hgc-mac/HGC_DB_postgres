@@ -1,5 +1,5 @@
 import asyncio, asyncpg
-import glob, os, csv, yaml, argparse, base64
+import glob, os, csv, yaml, argparse, base64, traceback
 import numpy as np
 import pwinput
 from cryptography.fernet import Fernet
@@ -62,6 +62,7 @@ async def update_module_info():
 
     except Exception as e:
         print(f"An error occurred: {e}")
+        traceback.print_exc()
     
     await conn.close()
 

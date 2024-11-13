@@ -1,5 +1,5 @@
 import asyncio, asyncpg
-import glob, os, csv, yaml, argparse, base64
+import glob, os, csv, yaml, argparse, base64, traceback
 import numpy as np
 import pwinput
 from cryptography.fernet import Fernet
@@ -77,9 +77,11 @@ async def update_foreign_key():
                     except Exception as e:
                         print(f'Updating foreign key "{fk}" in {table_name} ...')
                         print(f"An error occurred: {e}")
+                        traceback.print_exc()
             
     except asyncpg.PostgresError as e:
         print("Error:", e)
+        traceback.print_exc()
     
     await conn.close()
     print('Foreign keys updated.')
