@@ -6,7 +6,7 @@
 5. if sucess, delete the generated xmls
 '''
 
-import os, sys, argparse, base64, subprocess
+import os, sys, argparse, base64, subprocess, traceback
 import shutil, pwinput, datetime
 from cryptography.fernet import Fernet
 
@@ -17,15 +17,12 @@ GENERATED_XMLS_DIR = 'export/xmls_for_upload'##  directory to store the generate
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
 
 def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR, encryption_key = None):
-    # print(type(dbpassword),dbpassword)
-    # print(type(output_dir),output_dir)
-    # print(type(encryption_key),encryption_key)
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     try:
-        # process = subprocess.run([sys.executable, script_path, dbpassword, output_dir, encryption_key], check=True)
         process = subprocess.run([sys.executable, script_path,'-dbp', dbpassword, '-dir', output_dir ,'-k', encryption_key], check=True)
     except subprocess.CalledProcessError as e:
+        traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
 def generate_xmls(dbpassword, encryption_key = None):
@@ -58,8 +55,8 @@ def generate_xmls(dbpassword, encryption_key = None):
         completed_scripts += 1
         print('-'*10)
         print(f'Executed -- {script_path}.')
-        print(f"Progress: {completed_scripts}/{total_scripts} scripts completed")
-        print('-'*10)
+        print(f"Progress: {completed_scripts}/{total_scripts} XML file types generated.")
+        print('-'*10); print('')
 
 def scp_files(lxplus_username, lxplus_password, directory, search_date, encryption_key = None):
     """Call the scp script to transfer files."""
@@ -75,6 +72,7 @@ def scp_files(lxplus_username, lxplus_password, directory, search_date, encrypti
         process = subprocess.run(scp_command, check=True)
 
     except Exception as e:
+        traceback.print_exc()
         print(f"Error during SCP: {e}")
         return False
 
@@ -84,6 +82,7 @@ def clean_generated_xmls():
         shutil.rmtree(GENERATED_XMLS_DIR)
         print(f"Deleted all files in {GENERATED_XMLS_DIR}.")
     except Exception as e:
+        traceback.print_exc()
         print(f"Error while deleting files: {e}")
 
 def valid_directory(path):
@@ -112,10 +111,10 @@ def main():
     search_date = args.date
     encryption_key = args.encrypt_key
 
-    # Step 1: Generate XML files
+    ## Step 1: Generate XML files
     generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key)
 
-    # Step 2: SCP files to central DB
+    ## Step 2: SCP files to central DB
     if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
         # Step 3: Delete generated XMLs on success
         clean_generated_xmls()

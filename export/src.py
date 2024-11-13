@@ -6,6 +6,7 @@ import yaml, sys, argparse, base64, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from datetime import datetime
 from cryptography.fernet import Fernet
+import traceback
 
 async def get_conn(dbpassword, encryption_key = None):
     '''
@@ -85,10 +86,12 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
         else:
             print(f"Error: {output_file_path} is a directory, not a file.")
     except Exception as e:    
-        print('*'*80)
+        # print('*'*80)
         print('update_xml_with_db_values', xml_file_path, output_file_path, db_values)        
-        print('****** ERROR:', e)
-        print('*'*80)
+        # print('************* ERROR:', e)
+        traceback.print_exc()
+        # print('*'*80)
+        raise
 
 async def get_parts_name(name, table, conn):
     ##  returns part name in a specific table
@@ -120,9 +123,10 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
             """
             await conn.execute(query, current_timestamp, part_name)
     except Exception as e:
-        print('*'*80)
-        print(f"****** Error updating {column_name}: {e}")
-        print('*'*80)
+        # print('*'*80)
+        traceback.print_exc()
+        print(f"***************** Error updating {column_name}: {e}")
+        # print('*'*80)
 
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
@@ -218,7 +222,9 @@ def get_kind_of_part(part_name):
             kind_of_part = ''
         return kind_of_part
     except Exception as e:
-        print('*'*80)
-        print(f'******* ERROR in {part_name}:', e)
-        print('*'*80)
-        return None
+        # print('*'*80)
+        # print(f'****************** ERROR in {part_name}:', e)
+        # traceback.print_exc()
+        # print('*'*80)
+        raise
+        # return None

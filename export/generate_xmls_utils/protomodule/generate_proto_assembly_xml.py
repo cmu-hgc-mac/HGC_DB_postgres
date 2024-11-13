@@ -2,7 +2,7 @@ import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, os, base64, sys, argparse
+import yaml, os, base64, sys, argparse, traceback
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from HGC_DB_postgres.export.define_global_var import LOCATION
@@ -30,7 +30,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
-        print(f'getting values for {proto_name}...')
+        print(f'--> {proto_name}...')
         try:
             db_values = {}
             for entry in module_data:
@@ -81,7 +81,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         except Exception as e:
-            print('ERROR:', e)
+            print('#'*30, f'ERROR','#'*30 ); traceback.print_exc(); print('')
             
         # Update the XML with the database values
         output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
