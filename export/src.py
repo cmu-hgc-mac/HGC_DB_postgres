@@ -86,11 +86,8 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
         else:
             print(f"Error: {output_file_path} is a directory, not a file.")
     except Exception as e:    
-        # print('*'*80)
         print('update_xml_with_db_values', xml_file_path, output_file_path, db_values)        
-        # print('************* ERROR:', e)
         traceback.print_exc()
-        # print('*'*80)
         raise
 
 async def get_parts_name(name, table, conn):
@@ -123,11 +120,9 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
             """
             await conn.execute(query, current_timestamp, part_name)
     except Exception as e:
-        # print('*'*80)
         traceback.print_exc()
-        print(f"***************** Error updating {column_name}: {e}")
-        # print('*'*80)
-
+        print(f"Error updating {column_name}: {e}")
+        
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
     part_type_dict = {'P': 'ProtoModule', 'M':'Module', 'S': 'Sensor', 'B': 'Baseplate', 'X':'Hexaboard'}
@@ -222,9 +217,4 @@ def get_kind_of_part(part_name):
             kind_of_part = ''
         return kind_of_part
     except Exception as e:
-        # print('*'*80)
-        # print(f'****************** ERROR in {part_name}:', e)
-        # traceback.print_exc()
-        # print('*'*80)
         raise
-        # return None
