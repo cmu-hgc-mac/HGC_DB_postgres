@@ -1,9 +1,10 @@
-python==3.9.12
 asyncpg==0.29.0
-tk==0.1.0
-matplotlib==3.5.1
-pwinput==1.0.3
-Pillow==9.0.1
-PyYAML==6.0
-paramiko==3.2.0
 cryptography==3.4.8
+matplotlib==3.5.1
+paramiko==3.2.0
+Pillow==9.0.1
+pwinput==1.0.3
+python==3.9.12
+PyYAML==6.0
+scp==0.15
+tk==0.1.0
