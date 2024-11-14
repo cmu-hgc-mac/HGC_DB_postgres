@@ -48,11 +48,11 @@ module_assembly:
     nested_query: SELECT thickness::text FROM hxb_inspect JOIN module_assembly ON module_assembly.hxb_name = hxb_inspect.hxb_name
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
-    dbase_table: module_inspect
+    dbase_table: module_assembly
     nested_query: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
-    dbase_table: module_inspect
+    dbase_table: module_assembly
     nested_query: null
   - xml_temp_val: PCB_TOOL_NAME
     dbase_col: null ## missing
@@ -135,7 +135,7 @@ wirebond:
     nested_query: null
   - xml_temp_val: WEDGE_BATCH
     dbase_col: wedge_id
-    dbase_table: back_encap
+    dbase_table: back_wirebond
     nested_query: null
   - xml_temp_val: BACK_BONDS
     dbase_col: wb_bk_marked_done
