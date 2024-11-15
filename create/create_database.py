@@ -20,7 +20,7 @@ table_yaml_file = os.path.join(loc, 'tables.yaml')
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_params = {
-    'database': conn_info.get('dbname'),
+    'database': 'postgres', ### default prior to creation of the database
     'user': 'postgres',
     'host': conn_info.get('db_hostname'),
     'port': conn_info.get('port'),}
@@ -48,7 +48,7 @@ async def create_db():
     default_conn = await asyncpg.connect(**db_params)
 
     # Create a new database
-    db_name = db_params['database']
+    db_name = conn_info.get('dbname')
     print(f'Database name: {db_name}')
     create_db_query = f"CREATE DATABASE {db_name};"
     try:
@@ -61,7 +61,8 @@ async def create_db():
 
     # Connect to the newly created database
     conn = await asyncpg.connect(**db_params)
-    print(f"Connected to database '{db_name}' successfully.\n")
+    db_params.update({'database': db_name})
+    print(f"Connected to database '{db_params['database']}' successfully.\n")
 
     # Create user roles and assign privileges
     async def create_role(role_name, user_type):
