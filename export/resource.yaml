@@ -1,0 +1,95 @@
+kind_of_part:
+  part_type:
+    'P': 'ProtoModule'
+    'M': 'Module'
+    'S': 'Sensor'
+    'B': 'Baseplate'
+    'X': 'Hexaboard'
+  resolution:
+    'L': 'LD'
+    'H': 'HD'
+  geometry:
+    'F': 'Full'
+    'T': 'Top' 
+    'B': 'Bottom'
+    'L': 'Left'
+    'R': 'Right'
+    '5': 'Five'
+    'S': 'Whole'
+    'M': 'Half-moons'
+  sensor_thickness:
+    '1': '120'
+    '2': '200' 
+    '3': '300'
+  material:
+    'W': 'CuW'
+    'T': 'Ti'
+    'C': 'CF'
+    'P': 'PCB'
+    'X': ''
+  sensor: ## thickness, resolution, shape
+    '1': ['300','LD', 'Wafer']
+    '2': ['200', 'LD', 'Wafer']
+    '3': ['120','HD', 'Wafer']
+    '25': ['200', 'HD', 'Wafer']
+    '4': ['300', 'LD', 'Partial']
+    '5': ['200', 'LD', 'Partial']
+    '6': ['120', 'HD', 'Partial']
+  sensor_geometry:
+    'XX': 'Whole'
+    'TP': 'Top-Half-Moon'
+    'BT': 'Bottom-Half-Moon'
+    'TL': 'Top-Left Half-Moon'
+    'TR': 'Top-Right Half-Moon'
+    'BL': 'Bottom-Left Half-Moon'
+    'BR': 'Bottom-Right Half-Moon'
+    '0': 'Full'
+    '1': 'Top'
+    '2': 'Bottom'
+    '3': 'Left'
+    '4': 'Right'
+    '5': 'Five'
+  
+shipping_location:
+  Alabama: 2401
+  Assembled: 8001
+  Baylor: 1201
+  Bogazici: 4101
+  Brown: 1101
+  CERN Electronics: 1002
+  CERN Hexa: 1001
+  CERN Mechanics: 1003
+  CERN P5: 1010
+  CERN Sensors: 1004
+  CERN SiPM: 1007
+  CIEMAT: 3101
+  CMU: 1301
+  DESY: 1401
+  FNAL: 1501
+  FNAL Lab 6: 1504
+  FNAL SiDet: 1503
+  FNAL Wilson Hall: 1502
+  FSU: 1601
+  GTU: 4001
+  HEPHY: 1701
+  HPK: 9101
+  IHEP: 1801
+  IIT-MADRAS: 4401
+  KIT Baseplate: 4302
+  KIT Electronics: 4301
+  KSU: 4201
+  LLR: 1904
+  LLR_Electronics: 1902
+  Maryland: 2001
+  NCU: 2501
+  NIU: 2201
+  NTU: 2601
+  OMEGA: 1901
+  Saclay: 2701
+  TIFR: 2801
+  TTU: 2901
+  UCSB: 3001
+  UMN: 2101
+  UND: 2301
+  admin CERN: 1006
+  admin0: 1005
