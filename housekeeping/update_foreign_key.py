@@ -57,7 +57,7 @@ async def update_foreign_key():
         SET {fk} = {fk_table}.{fk}
         FROM {fk_table} 
         WHERE {table_name}.{fk} IS NULL
-        AND {table_name}.{fk_identifier} = {fk_table}.{fk_identifier};
+        AND REPLACE({table_name}.{fk_identifier},'-','') = REPLACE({fk_table}.{fk_identifier},'-','');
         """
         return query
 

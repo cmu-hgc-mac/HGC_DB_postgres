@@ -39,19 +39,19 @@ async def update_module_info():
         update_query_mod = """
             UPDATE module_info
             SET 
-                proto_name = COALESCE(module_info.proto_name, module_assembly.proto_name),
-                hxb_name = COALESCE(module_info.hxb_name, module_assembly.hxb_name)
+                proto_name = REPLACE(COALESCE(module_info.proto_name, module_assembly.proto_name),'-',''),
+                hxb_name = REPLACE(COALESCE(module_info.hxb_name, module_assembly.hxb_name),'-','')
             FROM module_assembly
-            WHERE module_info.module_name = module_assembly.module_name
+            WHERE REPLACE(module_info.module_name,'-','') = REPLACE(module_assembly.module_name,'-','')
               AND (module_info.proto_name IS NULL OR module_info.hxb_name IS NULL);
         """
         update_query_proto = """
             UPDATE module_info
             SET 
-                bp_name = COALESCE(module_info.bp_name, proto_assembly.bp_name),
-                sen_name = COALESCE(module_info.sen_name, proto_assembly.sen_name)
+                bp_name = REPLACE(COALESCE(module_info.bp_name, proto_assembly.bp_name),'-',''),
+                sen_name = REPLACE(COALESCE(module_info.sen_name, proto_assembly.sen_name),'-','')
             FROM proto_assembly
-            WHERE module_info.proto_name = proto_assembly.proto_name
+            WHERE REPLACE(module_info.proto_name,'-','') = REPLACE(proto_assembly.proto_name,'-','')
               AND (module_info.bp_name IS NULL OR module_info.sen_name IS NULL);
         """
         
