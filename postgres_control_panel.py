@@ -5,7 +5,7 @@ import os, yaml, base64
 from cryptography.fernet import Fernet
 import subprocess, webbrowser
 import tkinter
-from tkinter import Tk, Button, Label, messagebox, Frame, Toplevel, Entry, StringVar, Text, END, DISABLED, Label as TLabel
+from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, StringVar, BooleanVar, Text, END, DISABLED, Label as TLabel
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
 
@@ -187,17 +187,29 @@ def export_data():
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxpassword_entry.pack(pady=5)
-
+    generate_var = BooleanVar(value=True)
+    generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
+    generate_var_entry.pack(pady=5)
+    upload_var = BooleanVar(value=True)
+    upload_var_entry = Checkbutton(input_window, text="Upload to DBLoader", variable=upload_var)
+    upload_var_entry.pack(pady=5)
+    deleteXML_var = BooleanVar(value=False)
+    deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
+    deleteXML_var_entry.pack(pady=5)
+    
     def submit_export():
         lxp_username = lxuser_var.get()
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
         lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        generate_stat = str(generate_var.get())
+        upload_stat = str(upload_var.get())
+        deleteXML_stat = str(deleteXML_var.get())
 
         if dbshipper_pass.strip() and lxp_username.strip() and lxp_password.strip():
             input_window.destroy()  
             # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key])
+            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", generate_stat, "-upl", upload_stat, "-delx", deleteXML_stat])
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):

@@ -16,6 +16,10 @@ GENERATED_XMLS_DIR = 'export/xmls_for_upload'##  directory to store the generate
 # Ensure the generated XML directory exists
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
 
+def str2bool(boolstr):
+    dictstr = {'True': True, 'False': False}
+    return dictstr[boolstr]
+
 def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR, encryption_key = None):
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
@@ -102,6 +106,9 @@ def main():
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', type=valid_directory, default=GENERATED_XMLS_DIR, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-date', '--date', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-gen', '--generate_stat', default='True', required=False, help="Generate XMLs.")
+    parser.add_argument('-upl', '--upload_stat', default='True', required=False, help="Upload to DBLoader without generate.")
+    parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")
     args = parser.parse_args()
 
     dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
@@ -112,12 +119,16 @@ def main():
     encryption_key = args.encrypt_key
 
     ## Step 1: Generate XML files
-    generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key)
+    if str2bool(args.generate_stat):
+        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key)
 
     ## Step 2: SCP files to central DB
-    if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
+
+    if str2bool(args.upload_stat):
+        if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
         # Step 3: Delete generated XMLs on success
-        clean_generated_xmls()
+            if str2bool(args.del_xml):
+                clean_generated_xmls()
 
 if __name__ == '__main__':
     main()
