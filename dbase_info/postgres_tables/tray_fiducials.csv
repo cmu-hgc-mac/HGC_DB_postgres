@@ -1,5 +1,5 @@
 tray_no,serial PRIMARY KEY,,
-tray_name,TEXT,fk_identifier,
+tray_name,TEXT,,
 tray_geoms,TEXT[],,
 tray_fiducial_xy,REAL[],,
 p1_center_pin_xy,REAL[],,
