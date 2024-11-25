@@ -8,6 +8,10 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import traceback
 
+resource_yaml = 'export/resource.yaml'
+with open(resource_yaml, 'r') as file:
+        kind_of_part_yaml = yaml.safe_load(file)['kind_of_part']
+
 async def get_conn(dbpassword, encryption_key = None):
     '''
     Does: get connection to database
@@ -125,35 +129,18 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
         
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
-    part_type_dict = {'P': 'ProtoModule', 'M':'Module', 'S': 'Sensor', 'B': 'Baseplate', 'X':'Hexaboard'}
-    resolution_dict = {'L': 'LD', 'H': 'HD'}
-    geometry_dict = {'F': 'Full', 'T': 'Top', 'B': 'Bottom', 'L':'Left', 'R':'Right', '5': 'Five', 
-                     'S': 'Whole', 'M': 'Half-moons'}
-    thickness_dict = {'1': '120', '2': '200', '3': '300'}
-    material_dict = {'W': 'CuW', 'T': 'Ti', 'C': 'CF', 'P': 'PCB', 'X':''}
-    sen_dict = {'1': ['300','LD', 'Wafer'],
-                '2':['200', 'LD', 'Wafer'],
-                '3': ['120','HD', 'Wafer'],
-                '25':['200', 'HD', 'Wafer'],
-                '4':['300', 'LD', 'Partial'],
-                '5': ['200', 'LD', 'Partial'],
-                '6': ['120', 'HD', 'Partial']}
-    sen_geo_dict = {'XX': 'Whole', 
-                    'TP': 'Top-Half-Moon', 
-                    'BT': 'Bottom-Half-Moon', 
-                    'TL': 'Top-Left Half-Moon',
-                    'TR': 'Top-Right Half-Moon',
-                    'BL': 'Bottom-Left Half-Moon',
-                    'BR': 'Bottom-Right Half-Moon',
-                    '0': 'Full',
-                    '1': 'Top',
-                    '2': 'Bottom',
-                    '3': 'Left',
-                    '4': 'Right', 
-                    '5': 'Five'}
+    
+    part_type_dict = kind_of_part_yaml['part_type']
+    resolution_dict = kind_of_part_yaml['resolution']
+    geometry_dict = kind_of_part_yaml['geometry']
+    thickness_dict = kind_of_part_yaml['sensor_thickness']
+    material_dict = kind_of_part_yaml['material']
+    sen_dict = kind_of_part_yaml['sensor']
+    sen_geo_dict = kind_of_part_yaml['sensor_geometry']
+
     try:
         # Extract the information
-        if part_name != '' or None:
+        if part_name != '' or part_name != 'NoneType':
             if part_name.replace('_', '').isdigit() == True:
                 ## this is for sensor. 
                 ## 2) convension v2
