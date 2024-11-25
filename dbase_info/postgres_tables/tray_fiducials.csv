@@ -1,6 +1,6 @@
 tray_no,serial PRIMARY KEY,,
 tray_name,TEXT,,
-tray_geoms,TEXT[],,
+module_geoms,TEXT[],,
 tray_fiducial_xy,REAL[],,
 p1_center_pin_xy,REAL[],,
 p1_offcenter_pin_left_xy,REAL[],,
