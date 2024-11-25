@@ -34,14 +34,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
             db_values = {}
             for entry in module_data:
                 xml_var = entry['xml_temp_val']
-                if xml_var in ['LOCATION', 'INSTITUTION']:
+                if xml_var in ['LOCATION', 'INSTITUTION', 'MANUFACTURER']:
                     db_values[xml_var] = LOCATION
-                elif xml_var == 'ID':
+                elif xml_var in ['ID', 'BARCODE']:
                     db_values[xml_var] = proto_name
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(proto_name)
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
-                    _query = f"SELECT bp_name FROM proto_assembly WHERE proto_name = '{proto_name}';"
+                    _query = f"SELECT bp_name FROM proto_assembly WHERE proto_name = '{proto_name}' AND xml_upload_success IS NULL;"
                     _bp_name = await conn.fetch(_query)
                     if _bp_name:
                         bp_name = _bp_name[0]['bp_name']
@@ -49,7 +49,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                         bp_name = ''
                     db_values[xml_var] = get_kind_of_part(bp_name)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
-                    _query = f"SELECT sen_name FROM proto_assembly WHERE proto_name = '{proto_name}';"
+                    _query = f"SELECT sen_name FROM proto_assembly WHERE proto_name = '{proto_name}' AND xml_upload_success IS NULL;"
                     _sen_name = await conn.fetch(_query)
                     if _sen_name:
                         sen_name = _sen_name[0]['sen_name']
@@ -66,15 +66,25 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE proto_assembly.proto_name = '{proto_name}';"
+                        query = entry['nested_query'] + f" WHERE proto_assembly.proto_name = '{proto_name}' AND xml_upload_success IS NULL;"
                         
                     else:
                         # Modify the query to get the latest entry
                         if dbase_table == 'proto_assembly':
-                            query = f"SELECT {dbase_col} FROM {dbase_table} WHERE proto_name = '{proto_name}' ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1"
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE proto_name = '{proto_name}' 
+                            AND xml_upload_success IS NULL
+                            ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
+                            """
                         else:
-                            query = f"SELECT {dbase_col} FROM {dbase_table} WHERE proto_name = '{proto_name}' ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1"
-                    
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE proto_name = '{proto_name}' 
+                            AND xml_upload_success IS NULL
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
+                            """
+
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:

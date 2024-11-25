@@ -13,11 +13,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
 
-    # Retrieve wirebond data from the YAML file
-    wb_data = yaml_data['module_cond']
+    # Retrieve data from the YAML file
+    xml_data = yaml_data['module_cond']
     
-    if not wb_data:
-        print("No wirebond data found in YAML file")
+    if not xml_data:
+        print("No data found in YAML file")
         return
     db_tables = ['module_assembly']
     
@@ -34,7 +34,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
             # Fetch database values for the XML template variables
             db_values = {}
 
-            for entry in wb_data:
+            for entry in xml_data:
                 xml_var = entry['xml_temp_val']
 
                 if xml_var in ['LOCATION', 'INSTITUTION']:
@@ -84,14 +84,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE module_name = '{module}'
-                            AND xml_gen_datetime IS NULL
+                            AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE module_name = '{module}'
-                            AND xml_gen_datetime IS NULL
+                            AND xml_upload_success IS NULL 
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1;
                             """
                     try:

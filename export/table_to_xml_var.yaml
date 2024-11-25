@@ -89,7 +89,8 @@ module_assembly:
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: module_inspect
-    nested_query: SELECT flatness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
+    nested_query: null
+    # nested_query: SELECT flatness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: THICKNESS
     dbase_col: ave_thickness
     dbase_table: module_inspect
@@ -265,16 +266,10 @@ wirebond:
 module_build:
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-  - xml_temp_val: BARCODE
-    dbase_col: null
-    dbase_table: null
-    nested_query: null
+  - xml_temp_val: BARCODE ## filled with module_name
   - xml_temp_val: LOCATION
   - xml_temp_val: INSTITUTION
   - xml_temp_val: MANUFACTURER
-    dbase_col: null
-    dbase_table: null
-    nested_query: null
   - xml_temp_val: KIND_OF_PART_PROTOMODULE
   - xml_temp_val: PROTOMODULE
     dbase_col: proto_name
@@ -517,10 +512,7 @@ proto_assembly:
 proto_build:
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
-  - xml_temp_val: BARCODE
-    dbase_col: null
-    dbase_table: null
-    nested_query: null
+  - xml_temp_val: BARCODE # filled with proto_name
   - xml_temp_val: LOCATION
   - xml_temp_val: INSTITUTION
   - xml_temp_val: MANUFACTURER
