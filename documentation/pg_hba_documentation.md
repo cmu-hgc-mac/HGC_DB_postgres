@@ -44,7 +44,7 @@ port = 5432                             # (change requires restart)
 7. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                
 8. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
- **```host  all  all  [station ip address or hostname] md5```**  Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0 md5```. This is not secure and hence not recommended during production.
+ **```host  all  all  [station ip address or hostname] md5```**  Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0  scram-sha-256```. This is not secure and hence not recommended during production.
 9. The `viewer` user can be set to be publicly accessible without password with ```host  all  viewer  0.0.0.0/0  trust```. A `viewer` may only read from the database and has no edit permissions. Various user permissions for the differernt tables are in [dbase_info/tables.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/dbase_info/tables.yaml#L37).
 11. Save and close `pg_hba.conf`.
 12. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
@@ -60,7 +60,7 @@ host    all             all             127.0.0.1/32                scram-sha-25
 host    all             all             mycomp1.phys.school.edu     md5 ## OGP
 host    all             gantry_user     mycomp2.phys.school.edu     md5 ## Gantry 
 host    all             all             mycomp3.phys.school.edu     md5 ## Test stand
-host    all             all             192.168.0.1/32              md5 ## Shipping
+host    all             all             192.168.0.1/32              scram-sha-256 ## Shipping
 host    all             viewer          0.0.0.0/0                   trust ## Viewer
 ```
 
@@ -68,6 +68,7 @@ How to read above example --
 - A user can connect to the database as `viewer` from any IP address and with no password required.
 - A user from the set Gantry IP address may connect to the database as `gantry_user` only and with password required.
 - A user from the set Test stand IP addresscan may connect to the database with any user type but with password required.
+- `scram-sha-256` and `md5` are password encrytion methods used by postgres to save passwords. The former is more secure.
 
 **note**:
 - For numerical IP addresses, **`/32` must be included after the address.**
