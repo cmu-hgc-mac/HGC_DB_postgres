@@ -51,7 +51,7 @@ port = 5432                             # (change requires restart)
 
 ### Example
 ```
-# TYPE  DATABASE        USER            ADDRESS                 METHOD
+# TYPE  DATABASE        USER            ADDRESS                     METHOD
 
 # "local" is for Unix domain socket connections only
 local   all             all                                         scram-sha-256
