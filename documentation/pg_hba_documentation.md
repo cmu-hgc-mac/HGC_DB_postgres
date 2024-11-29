@@ -61,7 +61,9 @@ host    all             all             mycomp1.phys.school.edu     md5         
 host    all             gantry_user     mycomp2.phys.school.edu     md5            ## Gantry 
 host    all             all             mycomp3.phys.school.edu     md5            ## Test stand
 host    all             all             192.168.0.1/32              scram-sha-256  ## Shipping
-host    all             viewer          0.0.0.0/0                   trust          ## Viewer
+host    all             viewer          0.0.0.0/0                   trust          ## Viewer w/ no password
+
+host    all             viewer          0.0.0.0/0                   scram-sha-25   ## Anyone can connect from anywhere w/ password
 ```
 
 How to read above example --
