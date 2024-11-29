@@ -45,7 +45,7 @@ tables:
     description: 'Tracks all steps in module assembly'
     permission:
       'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT, UPDATE'
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
@@ -57,7 +57,7 @@ tables:
     fname: 'module_assembly.csv'
     description: ''
     permission:
-      'ogp_user': 'INSERT, SELECT'
+      'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT'
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
@@ -71,7 +71,7 @@ tables:
     description: ''
     permission:
       'ogp_user': 'INSERT, SELECT'
-      'gantry_user':  'INSERT, SELECT'
+      'gantry_user':  'INSERT, SELECT, UPDATE'
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
