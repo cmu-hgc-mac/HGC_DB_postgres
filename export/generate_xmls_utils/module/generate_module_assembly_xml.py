@@ -54,14 +54,24 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}';"
+                        query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}' AND module_assembly.xml_upload_success IS NULL;"
                         
                     else:
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':
-                            query = f"SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module}' ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1"
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE module_name = '{module}' 
+                            AND xml_upload_success IS NULL 
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
+                            """
                         else:
-                            query = f"SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module}' ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1"
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE module_name = '{module}' 
+                            AND xml_upload_success IS NULL 
+                            ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
+                            """
                     
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly

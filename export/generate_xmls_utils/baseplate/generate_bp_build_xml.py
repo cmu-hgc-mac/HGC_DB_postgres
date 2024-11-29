@@ -58,7 +58,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                                 SELECT comment AS back_wirebond_comment
                                 FROM back_wirebond
                                 WHERE module_name = '{bp_name}'
-                                AND xml_gen_datetime IS NULL
+                                AND xml_upload_success IS NULL
                                 ORDER BY bp_received DESC
                                 LIMIT 1
                             )
@@ -67,13 +67,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                                 SELECT comment AS front_wirebond_comment
                                 FROM front_wirebond
                                 WHERE module_name = '{bp_name}'
-                                AND xml_gen_datetime IS NULL
+                                AND xml_upload_success IS NULL
                                 ORDER BY bp_received DESC
                                 LIMIT 1
                             );
                             """
                         else:
-                            query = entry['nested_query'] + f" WHERE {dbase_table}.bp_name = '{bp_name}';"
+                            query = entry['nested_query'] + f" WHERE {dbase_table}.bp_name = '{bp_name}' AND xml_upload_success IS NULL;"
                         
                         # print(f'Executing query: {query}')
 

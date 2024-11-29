@@ -13,11 +13,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
 
-    # Retrieve wirebond data from the YAML file
-    wb_data = yaml_data['module_build']
+    # Retrieve data from the YAML file
+    xml_data = yaml_data['module_build']
     
-    if not wb_data:
-        print("No wirebond data found in YAML file")
+    if not xml_data:
+        print("No data found in YAML file")
         return
     db_tables = ['module_assembly']
     module_tables = ['module_assembly', 'mod_hxb_other_test', 'module_info', 'module_inspect', 'module_iv_test', 
@@ -33,12 +33,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
         try:
             db_values = {}
 
-            for entry in wb_data:
+            for entry in xml_data:
                 xml_var = entry['xml_temp_val']
 
-                if xml_var in ['LOCATION', 'INSTITUTION']:
+                if xml_var in ['LOCATION', 'INSTITUTION', 'MANUFACTURER']:
                     db_values[xml_var] = LOCATION
-                elif xml_var == 'ID':
+                elif xml_var in ['ID', 'BARCODE']:
                     db_values[xml_var] = module
                 elif xml_var in ['KIND_OF_PART', 'KIND_OF_PART_PROTOMODULE', 'KIND_OF_PART_PCB']:
                     if xml_var == 'KIND_OF_PART':
@@ -90,7 +90,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                             );
                             """
                         else:
-                            query = entry['nested_query'] + f" WHERE {dbase_table}.module_name = '{module}';"
+                            query = entry['nested_query'] + f" WHERE {dbase_table}.module_name = '{module}' AND xml_upload_success IS NULL;"
                         
                         # print(f'Executing query: {query}')
 
@@ -100,7 +100,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE module_name = '{module}'
-                            AND xml_gen_datetime IS NULL
+                            AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
                         elif dbase_table in ['hexaboard']:
@@ -111,7 +111,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE module_name = '{module}'
-                            AND xml_gen_datetime IS NULL
+                            AND xml_upload_success IS NULL
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1;
                             """
                     try:

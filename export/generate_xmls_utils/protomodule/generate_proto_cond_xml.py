@@ -51,7 +51,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE {dbase_table}.proto_name = '{proto_name}';"
+                        query = entry['nested_query'] + f" WHERE {dbase_table}.proto_name = '{proto_name}' AND xml_upload_success IS NULL;"
 
                     else:
                         # Modify the query to get the latest entry
@@ -59,14 +59,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE proto_name = '{proto_name}'
-                            AND xml_gen_datetime IS NULL
+                            AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE proto_name = '{proto_name}'
-                            AND xml_gen_datetime IS NULL
+                            AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
                             """
                     # print(f'Executing query -- \n\t{query}')
