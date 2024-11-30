@@ -45,7 +45,7 @@ port = 5432                             # (change requires restart)
 8. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                
 9. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
- **```host  all  all  [station ip address or hostname] md5```**  Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0  scram-sha-256```. This is not secure and hence not recommended during production.
+ **```host  all  all  [station ip address or hostname]  scram-sha-256```**  Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0  scram-sha-256```. This is not secure and hence not recommended during production.
 10. The `viewer` user can be set to be publicly accessible without password with ```host  all  viewer  0.0.0.0/0  trust```. A `viewer` may only read from the database and has no edit permissions. Various user permissions for the differernt tables are in [dbase_info/tables.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/dbase_info/tables.yaml#L37).
 11. Save and close `pg_hba.conf`.
 12. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
