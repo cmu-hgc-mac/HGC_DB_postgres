@@ -35,7 +35,7 @@ users:
     ip_address: ''
 
   -
-    username: 'writer'
+    username: 'editor'
     description: 'Global write permissons'
     ip_address: ''
 
@@ -51,7 +51,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT, UPDATE'
       'shipper':  'INSERT, SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'module_assembly.csv'
@@ -64,7 +64,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'module_inspect.csv' 
@@ -77,7 +77,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'module_iv_test.csv' 
@@ -90,7 +90,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'module_pedestal_test.csv' 
@@ -103,7 +103,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'module_pedestal_plots.csv'
@@ -116,7 +116,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'module_qc_summary.csv'
@@ -129,7 +129,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'back_wirebond.csv'
@@ -142,7 +142,7 @@ tables:
       'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'back_encap.csv'
@@ -155,7 +155,7 @@ tables:
       'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'front_wirebond.csv'
@@ -168,7 +168,7 @@ tables:
       'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'front_encap.csv'
@@ -181,7 +181,7 @@ tables:
       'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'bond_pull_test.csv'
@@ -194,7 +194,7 @@ tables:
       'encap_user':  'INSERT, SELECT, UPDATE'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'proto_assembly.csv' 
@@ -207,7 +207,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'proto_inspect.csv' 
@@ -220,7 +220,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'baseplate.csv' 
@@ -233,7 +233,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'bp_inspect.csv' 
@@ -246,7 +246,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'sensor.csv'
@@ -259,7 +259,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
   
   - 
     fname: 'sen_iv_data.csv'
@@ -272,7 +272,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'INSERT, SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'hexaboard.csv'
@@ -285,7 +285,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'hxb_inspect.csv' 
@@ -298,7 +298,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'hxb_pedestal_test.csv'
@@ -311,7 +311,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   -
     fname: 'mod_hxb_other_test.csv'
@@ -324,7 +324,7 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'INSERT, SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
     fname: 'adhesive_pattern.csv' 
@@ -337,4 +337,4 @@ tables:
       'encap_user':  'SELECT'
       'teststand_user':  'SELECT'
       'shipper':  'SELECT, UPDATE'
-      'writer': 'INSERT, UPDATE, DELETE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
