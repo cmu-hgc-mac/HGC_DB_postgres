@@ -69,6 +69,7 @@ To list users in the `hgcdb` database, in the PSQL terminal type
 ```
 \du
 ```
+In short, have a secure password for `postgres`, and a relativly lax password for all `editor`-type users and a simple one for `viewer`.
 To change password, for example, to change `shipper` password:
 
 ```
