@@ -18,8 +18,9 @@ A whitelist of IP addresses of the other stations need to be added to ```pg_hba.
 **note**:
 In Mac/Linux, it is customary to find it under ```PostgreSQL/15/main/pg_hba.conf``` . In Windows, it is typically found under ```C:/Program Files/PostgreSQL/l5/data/pg_hba.conf```.
 
-5. Under `Connections and Authentication`, list static IPs or hostnames of other stations under `listen_addresses` along with `localhost`. Note: if IP addresses are not known, it can be configured to listen on all addresses with `listen_addresses = '*'`. (This is not secure and hence not recommended during production but is necessary to make the database publicly accessible.)
-6. Save and close `postgresql.conf`. ([Restart required](pg_hba_documentation.md#restart-postgresql)).
+5. Set `max_connections = 500` and verify that `port = 5432` is available.
+6. Under `Connections and Authentication`, list static IPs or hostnames of other stations under `listen_addresses` along with `localhost`. Note: if IP addresses are not known, it can be configured to listen on all addresses with `listen_addresses = '*'`. (This is not secure and hence not recommended during production but is necessary to make the database publicly accessible.)
+7. Save and close `postgresql.conf`. ([Restart required](pg_hba_documentation.md#restart-postgresql)).
 
 ```
 #------------------------------------------------------------------------------
@@ -41,11 +42,11 @@ port = 5432                             # (change requires restart)
 
 # Edit `pg_hba.conf`
 
-7. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
+8. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                
-8. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
+9. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
  **```host  all  all  [station ip address or hostname] md5```**  Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0  scram-sha-256```. This is not secure and hence not recommended during production.
-9. The `viewer` user can be set to be publicly accessible without password with ```host  all  viewer  0.0.0.0/0  trust```. A `viewer` may only read from the database and has no edit permissions. Various user permissions for the differernt tables are in [dbase_info/tables.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/dbase_info/tables.yaml#L37).
+10. The `viewer` user can be set to be publicly accessible without password with ```host  all  viewer  0.0.0.0/0  trust```. A `viewer` may only read from the database and has no edit permissions. Various user permissions for the differernt tables are in [dbase_info/tables.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/dbase_info/tables.yaml#L37).
 11. Save and close `pg_hba.conf`.
 12. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
 
