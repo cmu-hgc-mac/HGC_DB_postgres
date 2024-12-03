@@ -29,7 +29,13 @@ def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR, encryptio
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
+<<<<<<< HEAD
 def generate_xmls(dbpassword, encryption_key = None, datestart = None, dateend = None):
+||||||| parent of a973faa (Added a function to specify date for xml generation)
+def generate_xmls(dbpassword, encryption_key = None):
+=======
+def generate_xmls(dbpassword, encryption_key = None, specific_date=None):
+>>>>>>> a973faa (Added a function to specify date for xml generation)
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
@@ -50,7 +56,7 @@ def generate_xmls(dbpassword, encryption_key = None, datestart = None, dateend =
                 elif subdir_path.split('/')[-1] not in ['protomodule', 'module']:
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
-
+    
     #Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
@@ -61,6 +67,13 @@ def generate_xmls(dbpassword, encryption_key = None, datestart = None, dateend =
         print(f'Executed -- {script_path}.')
         print(f"Progress: {completed_scripts}/{total_scripts} XML file types generated.")
         print('-'*10); print('')
+
+    if specific_date:
+        os.environ["SPECIFIC_DATE"] = specific_date.isoformat()
+        print(f"Generating XMLs for the date: {specific_date}")
+    else:
+        os.environ["SPECIFIC_DATE"] = "ALL"
+        print("Generating XMLs for all dates.")
 
 def scp_files(lxplus_username, lxplus_password, directory, search_date, encryption_key = None):
     """Call the scp script to transfer files."""
@@ -122,15 +135,21 @@ def main():
 
     ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
+<<<<<<< HEAD
         generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, datestart = args.date_start, dateend = args.date_end)
+||||||| parent of a973faa (Added a function to specify date for xml generation)
+        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key)
+=======
+        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, specific_date=search_date)
+>>>>>>> a973faa (Added a function to specify date for xml generation)
 
     ## Step 2: SCP files to central DB
 
-    if str2bool(args.upload_stat):
-        if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
-        # Step 3: Delete generated XMLs on success
-            if str2bool(args.del_xml):
-                clean_generated_xmls()
+    # if str2bool(args.upload_stat):
+    #     if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
+    #     # Step 3: Delete generated XMLs on success
+    #         if str2bool(args.del_xml):
+    #             clean_generated_xmls()
 
 if __name__ == '__main__':
     main()
