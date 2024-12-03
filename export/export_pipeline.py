@@ -106,6 +106,8 @@ def main():
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', type=valid_directory, default=GENERATED_XMLS_DIR, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-date', '--date', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-gen', '--generate_stat', default='True', required=False, help="Generate XMLs.")
     parser.add_argument('-upl', '--upload_stat', default='True', required=False, help="Upload to DBLoader without generate.")
     parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")

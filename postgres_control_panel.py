@@ -6,6 +6,8 @@ from cryptography.fernet import Fernet
 import subprocess, webbrowser
 import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, StringVar, BooleanVar, Text, END, DISABLED, Label as TLabel
+from datetime import datetime
+
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
 
@@ -187,6 +189,17 @@ def export_data():
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxpassword_entry.pack(pady=5)
+
+    today_date = datetime.now()
+    TLabel(input_window, text="Start date").pack(pady=5)
+    startdate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
+    startdate_var_entry = Entry(input_window, textvariable=startdate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    startdate_var_entry.pack(pady=5)
+    TLabel(input_window, text="End date").pack(pady=5)
+    enddate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
+    enddate_var_entry = Entry(input_window, textvariable=enddate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    enddate_var_entry.pack(pady=5)
+
     generate_var = BooleanVar(value=True)
     generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
     generate_var_entry.pack(pady=5)
@@ -209,7 +222,7 @@ def export_data():
             input_window.destroy()  
             # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", generate_stat, "-upl", upload_stat, "-delx", deleteXML_stat])
+            subprocess.run([sys.executable, "export/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", generate_stat, "-upl", upload_stat, "-delx", deleteXML_stat, "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())])
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
