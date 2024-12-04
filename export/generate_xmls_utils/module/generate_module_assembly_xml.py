@@ -8,7 +8,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from HGC_DB_postgres.export.define_global_var import LOCATION
 from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
+    # specific_date = os.getenv("SPECIFIC_DATE")
+
+    specific_date_filter = f"AND ass_run_date BETWEEN '{date_start}' AND '{date_end}"
+    specific_date_filter_inspect = f"AND date_inspect BETWEEN '{date_start}' AND '{date_end}"
+    print(f"Filtering XML generation for date: BETWEEN '{date_start}' AND '{date_end}")
+
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -54,7 +60,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}' AND module_assembly.xml_upload_success IS NULL;"
+                        query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}' 
+                        AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end} AND module_assembly.xml_upload_success IS NULL;"
                         
                     else:
                         # Modify the query to get the latest entry
@@ -62,6 +69,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE module_name = '{module}' 
+                            {specific_date_filter_inspect}
                             AND xml_upload_success IS NULL 
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
@@ -69,10 +77,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE module_name = '{module}' 
+                            {specific_date_filter}
                             AND xml_upload_success IS NULL 
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
-                    
+                    print(query)
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:
@@ -106,7 +115,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                                    part='module',
                                    part_name=module)
 
-async def main(dbpassword, output_dir, encryption_key = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
     # Configuration
     yaml_file = 'export/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export/template_examples/module/assembly_upload.xml'# XML template file path
@@ -116,24 +125,27 @@ async def main(dbpassword, output_dir, encryption_key = None):
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end)
     finally:
         await conn.close()
 
 # Run the asyncio program
 if __name__ == "__main__":
     today = datetime.datetime.today().strftime('%Y-%m-%d')
+
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+
     args = parser.parse_args()   
 
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
-    startdate = datetime.datetime.strptime(args.date_start, '%Y-%m-%d').date()
-    enddate = datetime.datetime.strptime(args.date_start, '%Y-%m-%d').date()
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key))
+    date_start = args.datestart
+    date_end = args.dateend
+
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
