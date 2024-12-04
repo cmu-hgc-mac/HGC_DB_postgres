@@ -11,9 +11,9 @@ from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # specific_date = os.getenv("SPECIFIC_DATE")
 
-    specific_date_filter = f"AND ass_run_date BETWEEN '{date_start}' AND '{date_end}"
-    specific_date_filter_inspect = f"AND date_inspect BETWEEN '{date_start}' AND '{date_end}"
-    print(f"Filtering XML generation for date: BETWEEN '{date_start}' AND '{date_end}")
+    specific_date_filter = f"AND ass_run_date BETWEEN '{date_start}' AND '{date_end}'"
+    specific_date_filter_inspect = f"AND date_inspect BETWEEN '{date_start}' AND '{date_end}'"
+    print(f"Filtering XML generation for date: BETWEEN '{date_start}' AND '{date_end}'")
 
     # Load the YAML file
     with open(yaml_file, 'r') as file:
@@ -31,10 +31,31 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     # get the unique module_name among all tables that contain module_name by taking the union of the tables
     module_tables = ['module_assembly', 'mod_hxb_other_test', 'module_info', 'module_inspect', 
                      'module_iv_test', 'module_pedestal_test', 'module_pedestal_plots', 'module_qc_summary']
-    _module_list = []
-    for module_table in module_tables:
-        _module_list.extend(await get_parts_name('module_name', module_table, conn))
-    module_list = list(set(_module_list))
+    
+    module_list = set()
+    # Get the unique module names for the specified date
+    for dbase_table in dbase_tables:
+        if dbase_table.endswith('_inspect'):
+            module_query = f"""
+            SELECT DISTINCT module_name
+            FROM {dbase_table}
+            WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' 
+            """
+        elif dbase_table.endswith('_test'):
+            module_query = f"""
+            SELECT DISTINCT module_name
+            FROM {dbase_table}
+            WHERE date_test BETWEEN '{date_start}' AND '{date_end}' 
+            """
+        elif dbase_table.endswith('_assembly'):
+            module_query = f"""
+            SELECT DISTINCT module_name
+            FROM {dbase_table}
+            WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
+            """
+
+        results = await conn.fetch(module_query)
+        module_list.update(row['module_name'] for row in results if 'module_name' in row)
 
     # Fetch database values for the XML template variables
     for module in module_list:
@@ -60,8 +81,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}' 
-                        AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end} AND module_assembly.xml_upload_success IS NULL;"
+                        query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}' AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end}' AND module_assembly.xml_upload_success IS NULL;"
                         
                     else:
                         # Modify the query to get the latest entry
@@ -69,19 +89,17 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE module_name = '{module}' 
-                            {specific_date_filter_inspect}
                             AND xml_upload_success IS NULL 
-                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
+                            # ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE module_name = '{module}' 
-                            {specific_date_filter}
                             AND xml_upload_success IS NULL 
-                            ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
-                    print(query)
+                            # ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
+
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:
@@ -145,7 +163,7 @@ if __name__ == "__main__":
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
-    date_start = args.datestart
-    date_end = args.dateend
+    date_start = args.date_start
+    date_end = args.date_end
 
     asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
