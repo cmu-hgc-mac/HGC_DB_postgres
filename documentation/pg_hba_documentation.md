@@ -58,13 +58,12 @@ port = 5432                             # (change requires restart)
 local   all             all                                         scram-sha-256
 # IPv4 local connections:
 host    all             all             127.0.0.1/32                scram-sha-256
+host    all             viewer          0.0.0.0/0                   trust          ## Viewer w/o password
 host    all             all             mycomp1.phys.school.edu     md5            ## OGP
 host    all             gantry_user     mycomp2.phys.school.edu     md5            ## Gantry 
 host    all             all             mycomp3.phys.school.edu     md5            ## Test stand
 host    all             all             192.168.0.1/32              scram-sha-256  ## Shipping
-host    all             viewer          0.0.0.0/0                   scram-sha-256  ## Viewer w/ password
-
-host    all             viewer          0.0.0.0/0                   trust          ## Viewer w/o password
+host    all             all             0.0.0.0/0                   scram-sha-256  ## From anywhere w/ password
 ```
 
 How to read above example --
