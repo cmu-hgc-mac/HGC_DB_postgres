@@ -11,9 +11,10 @@ query_dict = {
     # "mod_sum_query": mod_sum_query,
 }
 
+
 parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
 parser.add_argument('--debug', action='store_true', help="Print errors and list available queries.")
-parser.add_argument('-q', '--query', default="mod_simple_query", required=False, help="Query to run. See queries.py.")
+parser.add_argument('-q', '--query', default="mod_simple_query", required=False, help="Query to run. See mac_public/queries.py.")
 parser.add_argument('-of', '--output_format', default="csv", required=False, help="Outfile format: csv, pkl, json in mac_public/output")
 args = parser.parse_args()
 
