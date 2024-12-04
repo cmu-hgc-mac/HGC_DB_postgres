@@ -18,6 +18,6 @@ Alternatively, you can also import `get_macs_data()` and pass your own query.
 ```
 from HGC_DB_postgres.mac_public.get_macs_data import get_macs_data
 
-my_query = """SELECT module_name FROM module_info"""
+my_query = """SELECT module_name, hxb_name FROM module_info"""
 data_list = get_macs_data(query = my_query, macs_conn_file = 'macs_db_conn.yaml')
 ```
