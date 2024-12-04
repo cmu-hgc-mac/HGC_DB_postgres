@@ -1,3 +1,4 @@
+
 mod_simple_query = f"""SELECT DISTINCT ON (REPLACE(mpt.module_name,'-','')) 
     REPLACE(mpt.module_name,'-','') AS module_name, 
     mpt.status,
