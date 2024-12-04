@@ -135,5 +135,5 @@ if __name__ == "__main__":
     output_dir = args.directory
     encryption_key = args.encrypt_key
     startdate = datetime.datetime.strptime(args.date_start, '%Y-%m-%d').date()
-    enddate = datetime.datetime.strptime(args.date_end, '%Y-%m-%d').date()
+    enddate = datetime.datetime.strptime(args.date_start, '%Y-%m-%d').date()
     asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key))
