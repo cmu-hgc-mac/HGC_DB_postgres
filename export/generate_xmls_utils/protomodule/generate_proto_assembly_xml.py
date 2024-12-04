@@ -2,13 +2,13 @@ import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, os, base64, sys, argparse, traceback
+import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from HGC_DB_postgres.export.define_global_var import LOCATION
 from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -23,10 +23,31 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
     db_tables = ['proto_assembly', 'proto_inspect']
     
     proto_tables = ['proto_assembly', 'proto_inspect']
-    _proto_list = []
-    for proto_table in proto_tables:
-        _proto_list.extend(await get_parts_name('proto_name', proto_table, conn))
-    proto_list = list(set(_proto_list))
+    
+    proto_list = set()
+    # Get the unique module names for the specified date
+    for dbase_table in db_tables:
+        if dbase_table.endswith('_inspect'):
+            module_query = f"""
+            SELECT DISTINCT proto_name
+            FROM {dbase_table}
+            WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' 
+            """
+        elif dbase_table.endswith('_test'):
+            module_query = f"""
+            SELECT DISTINCT proto_name
+            FROM {dbase_table}
+            WHERE date_test BETWEEN '{date_start}' AND '{date_end}' 
+            """
+        elif dbase_table.endswith('_assembly'):
+            module_query = f"""
+            SELECT DISTINCT proto_name
+            FROM {dbase_table}
+            WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
+            """
+
+        results = await conn.fetch(module_query)
+        proto_list.update(row['proto_name'] for row in results if 'proto_name' in row)
     
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
@@ -104,7 +125,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir):
                                    part='protomodule',
                                    part_name=proto_name)
 
-async def main(dbpassword, output_dir, encryption_key = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
     # Configuration
     yaml_file = 'export/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export/template_examples/protomodule/assembly_upload.xml'# XML template file path
@@ -115,22 +136,27 @@ async def main(dbpassword, output_dir, encryption_key = None):
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end)
     finally:
         await conn.close()
 
 # Run the asyncio program
 if __name__ == "__main__":
-    
+    today = datetime.datetime.today().strftime('%Y-%m-%d')
+
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
+    parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+
     args = parser.parse_args()   
 
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
+    date_start = args.date_start
+    date_end = args.date_end
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key))
-
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
