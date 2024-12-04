@@ -9,5 +9,5 @@ python mac_public/get_macs_data.py -q mod_simple_query -of csv
 
 Run for options
 ```
-python mac_public/get_macs_data.py --helo
+python mac_public/get_macs_data.py --help
 ```
