@@ -1,6 +1,7 @@
 # Access data from other MACs
 
 IP adrresses of the six MACs are in [mac_public/macs_db_conn.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/mac_public/macs_db_conn.yaml).
+
 Sample queries can be found in [mac_public/queries.py](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/mac_public/queries.py).
 
 From the main directory, run
