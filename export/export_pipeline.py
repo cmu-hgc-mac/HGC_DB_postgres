@@ -20,16 +20,16 @@ def str2bool(boolstr):
     dictstr = {'True': True, 'False': False}
     return dictstr[boolstr]
 
-def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR, encryption_key = None):
+def run_script(script_path, dbpassword, output_dir=GENERATED_XMLS_DIR, encryption_key = None, datestart = None, dateend = None):
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     try:
-        process = subprocess.run([sys.executable, script_path,'-dbp', dbpassword, '-dir', output_dir ,'-k', encryption_key], check=True)
+        process = subprocess.run([sys.executable, script_path,'-dbp', dbpassword, '-dir', output_dir ,'-k', encryption_key, "-datestart", datestart, "-dateend", dateend], check=True)
     except subprocess.CalledProcessError as e:
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
-def generate_xmls(dbpassword, encryption_key = None):
+def generate_xmls(dbpassword, encryption_key = None, datestart = None, dateend = None):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
@@ -55,7 +55,7 @@ def generate_xmls(dbpassword, encryption_key = None):
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
     for script_path in scripts_to_run:
-        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key)
+        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key, datestart=datestart, dateend=dateend)
         completed_scripts += 1
         print('-'*10)
         print(f'Executed -- {script_path}.')
@@ -122,7 +122,7 @@ def main():
 
     ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
-        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key)
+        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, datestart = args.date_start, dateend = args.date_end)
 
     ## Step 2: SCP files to central DB
 
