@@ -38,12 +38,6 @@ def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERAT
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
-    # try:
-    #     process = subprocess.run([sys.executable, script_path,'-dbp', dbpassword, '-dir', output_dir ,'-k', encryption_key], check=True)
-    # except subprocess.CalledProcessError as e:
-    #     traceback.print_exc()
-    #     print(f"Error occurred while running the script: {e}")
-
 def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
@@ -51,22 +45,21 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
     subdirs = ['baseplate', 'hexaboard', 'module', 'protomodule', 'sensor', 'testing']
     scripts_to_run = []
 
-    # for subdir in subdirs:
-    #     subdir_path = os.path.join(XML_GENERATOR_DIR, subdir)
+    for subdir in subdirs:
+        subdir_path = os.path.join(XML_GENERATOR_DIR, subdir)
         
-    #     if os.path.exists(subdir_path):
-    #         for file in os.listdir(subdir_path):
+        if os.path.exists(subdir_path):
+            for file in os.listdir(subdir_path):
                 
-    #             ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules. 
-    #             if (subdir_path.split('/')[-1] in ['protomodule', 'module']) and (file.endswith('build_xml.py') == False):
-    #                 script_path = os.path.join(subdir_path, file)
-    #                 scripts_to_run.append(script_path)
+                ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules. 
+                if (subdir_path.split('/')[-1] in ['protomodule', 'module']) and (file.endswith('build_xml.py') == False):
+                    script_path = os.path.join(subdir_path, file)
+                    scripts_to_run.append(script_path)
                     
-    #             elif subdir_path.split('/')[-1] not in ['protomodule', 'module']:
-    #                 script_path = os.path.join(subdir_path, file)
-    #                 scripts_to_run.append(script_path)
+                elif subdir_path.split('/')[-1] not in ['protomodule', 'module']:
+                    script_path = os.path.join(subdir_path, file)
+                    scripts_to_run.append(script_path)
     
-    scripts_to_run = ['export/generate_xmls_utils/module/generate_module_assembly_xml.py']
     #Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
@@ -133,8 +126,8 @@ def main():
     lxplus_username = args.dbl_username or pwinput.pwinput(prompt='Enter lxplus username: ', mask='*')
     lxplus_password = args.dbl_password or pwinput.pwinput(prompt='Enter lxplus password: ', mask='*')
     directory_to_search = args.directory
-    date_start = args.datestart
-    date_end = args.dateend
+    date_start = args.date_start
+    date_end = args.date_end
     encryption_key = args.encrypt_key
 
     ## Step 1: Generate XML files
@@ -143,11 +136,11 @@ def main():
 
     ## Step 2: SCP files to central DB
 
-    # if str2bool(args.upload_stat):
-    #     if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
-    #     # Step 3: Delete generated XMLs on success
-    #         if str2bool(args.del_xml):
-    #             clean_generated_xmls()
+    if str2bool(args.upload_stat):
+        if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
+        # Step 3: Delete generated XMLs on success
+            if str2bool(args.del_xml):
+                clean_generated_xmls()
 
 if __name__ == '__main__':
     main()
