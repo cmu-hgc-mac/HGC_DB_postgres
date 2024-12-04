@@ -1,0 +1,42 @@
+macs:
+  -
+    mac_id: 'CMU'
+    hostname: 'cmsmac04.phys.cmu.edu'
+    password: '' ## not required
+    port: '5432'
+    db_name: 'hgcdb'
+
+  -
+    mac_id: 'IHEP'
+    hostname: '' 
+    password: ''  ## not required
+    port: '5432'
+    db_name: 'hgcdb'
+  
+  -
+    mac_id: 'NTU'
+    hostname: ''
+    password: ''  ## not required
+    port: '5432'
+    db_name: 'hgcdb'
+
+  -
+    mac_id: 'TIFR'
+    hostname: ''
+    password: ''  ## not required
+    port: '5432'
+    db_name: 'hgcdb'
+
+  -
+    mac_id: 'TTU'
+    hostname: ''
+    password: ''  ## not required
+    port: '5432'
+    db_name: 'hgcdb'
+
+  -
+    mac_id: 'UCSB'
+    hostname: ''
+    password: ''  ## not required
+    port: '5432'
+    db_name: 'hgcdb'
