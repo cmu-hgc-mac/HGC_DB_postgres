@@ -155,23 +155,26 @@ def get_kind_of_part(part_name):
             else:
                 part_id = (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
                 part_type = part_type_dict[part_id[0]]
-                if part_type == 'Hexaboard':## Fill out here once it's finalized. 
-                    kind_of_part = ''
+                if part_type == 'Hexaboard':
+                    ## below is updated version (rev.4.0)
+                    ## eg. 320-XL-F03-PN-00063
+                    resolution = resolution_dict[part_id[1]]
+                    geometry = geometry_dict[part_id[2]]
+                    kind_of_part = f'Hexaboard {resolution} {geometry}'  
 
                 elif part_type == 'Baseplate':
                     ## 320-BA-TTT-VB-NNNN
                     ### TTT: [geometry][resolution][bp_material]
-                    kind_of_part = ''
                     ## below is updated version (rev.4.0)
-                    # geometry = geometry_dict[part_id[2]]
-                    # resolution = resolution_dict[part_id[3]]
-                    # bp_material = material_dict[part_id[4]]
-                    # module_type = ''
-                    # if bp_material == 'CuW':
-                    #     module_type = 'EM'
-                    # elif bp_material in ['Ti', 'CF']:
-                    #     module_type = 'HAD'
-                    # kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
+                    geometry = geometry_dict[part_id[2]]
+                    resolution = resolution_dict[part_id[3]]
+                    bp_material = material_dict[part_id[4]]
+                    module_type = ''
+                    if bp_material == 'CuW':
+                        module_type = 'EM'
+                    elif bp_material in ['Ti', 'CF']:
+                        module_type = 'HAD'
+                    kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
 
                 elif part_type == 'Sensor':
                     '''
