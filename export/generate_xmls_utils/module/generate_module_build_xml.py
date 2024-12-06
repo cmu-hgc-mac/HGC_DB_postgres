@@ -60,14 +60,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     else:
                         _query = f"SELECT hxb_name FROM module_assembly WHERE module_name = '{module}';"
                         _hxb_name = await conn.fetch(_query)
-                        print(_query)
-                        print(_hxb_name)
 
                         if _hxb_name:
                             hxb_name = _hxb_name[0]['hxb_name']
                         else:
                             hxb_name = ''
-                        print(get_kind_of_part(hxb_name))
                         db_values[xml_var] = get_kind_of_part(hxb_name)
                 else:
                     dbase_col = entry['dbase_col']
