@@ -126,7 +126,11 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
     except Exception as e:
         traceback.print_exc()
         print(f"Error updating {column_name}: {e}")
-        
+
+def format_part_name(part_name):
+    part_name = ('320' + part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
+    return part_name
+
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
     

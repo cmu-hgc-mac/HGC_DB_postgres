@@ -6,7 +6,7 @@ import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
 
@@ -19,7 +19,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     if not module_data:
         print("No 'module' data found in YAML file")
         return
-    print(module_data)
+
     # get the unique database tables that are directly associated with the xml creation
     dbase_tables = ['module_assembly', 'module_inspect']
 
@@ -55,6 +55,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     # Fetch database values for the XML template variables
     for module in module_list:
         print(f'--> {module}...')
+        
         try:
             db_values = {}
             for entry in module_data:
@@ -63,9 +64,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 if xml_var in ['LOCATION', 'INSTITUTION']:
                     db_values[xml_var] = LOCATION
                 elif xml_var == 'ID':
-                    db_values[xml_var] = module
+                    db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var] = get_kind_of_part(module)
+                    db_values[xml_var] = get_kind_of_part(format_part_name(module))
+                elif entry['default_value']:
+                    db_values[xml_var] = entry['default_value']
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -73,11 +76,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     # Skip entries without a database column or table
                     if not dbase_col or not dbase_table:
                         continue
-                    
-                    default_value = entry.get('default_value')
-                    if default_value:
-                        xml_var = entry['xml_temp_val']
-                        db_values[xml_var] = default_value
                         
                     # Ignore nested queries for now
                     if entry['nested_query']:

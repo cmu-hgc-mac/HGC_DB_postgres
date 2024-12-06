@@ -6,7 +6,7 @@ import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -54,9 +54,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 if xml_var in ['LOCATION', 'INSTITUTION']:
                     db_values[xml_var] = LOCATION
                 elif xml_var == 'ID':
-                    db_values[xml_var] = sen_name
+                    db_values[xml_var] = format_part_name(sen_name)
                 elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var] = get_kind_of_part(sen_name)
+                    db_values[xml_var] = get_kind_of_part(format_part_name(sen_name))
+                elif entry['default_value']:
+                    db_values[xml_var] = entry['default_value']
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']

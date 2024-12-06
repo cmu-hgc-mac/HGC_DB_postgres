@@ -3,18 +3,22 @@ module_assembly:
     dbase_col: null ## batch_no ##GUI - step number (should be same as proto_assembly run_num), how many modules has been assembled in a MAC. 
     dbase_table: null
     nested_query: null
+    default_value: null
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_begin
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: operator
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: LOCATION
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
@@ -22,44 +26,54 @@ module_assembly:
     dbase_col: ass_tray_id
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: PROTOMODULE
     dbase_col: proto_name
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: COMP_TRAY_NAME
     dbase_col: hxb_tray_id
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: PCB
     dbase_col: hxb_name
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: PCB_THICKNESS
     dbase_col: thickness
     dbase_table: hxb_inspect
     nested_query: SELECT thickness::text FROM hxb_inspect JOIN module_assembly ON module_assembly.hxb_name = hxb_inspect.hxb_name
+    default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: PCB_TOOL_NAME
     dbase_col: null ## missing
     dbase_table: null
     nested_query: null
+    default_value: null
   - xml_temp_val: PCB_TOOL_FEET_CHK_STR
-    dbase_col: null ## In GUI, checkbox under hexaboard - pre-assembly ## true by default ## missing
+    dbase_col: null ## In GUI, checkbox under hexaboard - pre-assembly ## true by default
     dbase_table: null
     nested_query: null
     default_value: 'True'
@@ -67,40 +81,49 @@ module_assembly:
     dbase_col: adhesive
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: GRADE
     dbase_col: grade
     dbase_table: module_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: STEP_PCB
-    dbase_col: batch_no ## is this batch_no for module? ## missing
+    dbase_col: batch_no ## is this batch_no for module?
     dbase_table: module_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: PCB_PLCMENT_X_OFFSET
     dbase_col: x_offset_mu
     dbase_table: module_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: PCB_PLCMENT_Y_OFFSET
     dbase_col: y_offset_mu
     dbase_table: module_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: PCB_PLCMENT_ANG_OFFSET
     dbase_col: ang_offset_deg
     dbase_table: module_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: module_inspect
     nested_query: null
+    default_value: null
     # nested_query: SELECT flatness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: THICKNESS
     dbase_col: ave_thickness
     dbase_table: module_inspect
     nested_query: null
+    default_value: null
     # nested_query: SELECT ave_thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: MAX_THICKNESS
     dbase_col: max_thickness
     dbase_table: module_inspect
     nested_query: null
+    default_value: null
     # nested_query: SELECT max_thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
 
 wirebond:
@@ -418,14 +441,17 @@ proto_assembly:
     dbase_col: ass_run_date, ass_time_begin
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: operator
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: LOCATION
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
@@ -433,65 +459,79 @@ proto_assembly:
     dbase_col: ass_tray_id
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: BASEPLATE
     dbase_col: bp_name
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: proto_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: THICKNESS
     dbase_col: ave_thickness
     dbase_table: proto_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: COMP_TRAY_NAME
     dbase_col: sen_tray_id ## is this really sen_tray_id? should it be hxb_tray_id from module_inspect?
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: SENSOR
     dbase_col: sen_name
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
     dbase_table: null
     nested_query: null
+    default_value: null
   - xml_temp_val: SNSR_X_OFFST
     dbase_col: x_offset_mu
     dbase_table: proto_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: SNSR_Y_OFFST
     dbase_col: y_offset_mu
     dbase_table: proto_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: SNSR_ANG_OFFST
     dbase_col: ang_offset_deg
     dbase_table: proto_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: SNSR_TOOL_NAME
     dbase_col: null ## number for each tool ([institute]_1) in an institute. ## missing
     dbase_table: null
     nested_query: null
+    default_value: null
   - xml_temp_val: SNSR_TOOL_HT_SET
     dbase_col: null ## sensor tool height set. default 0 ## missing
     dbase_table: null
     nested_query: null
     default_value: 0
   - xml_temp_val: SNSR_TOOL_HT_CHK
-    dbase_col: null ## default 0  ## missing
+    dbase_col: null ## default 0
     dbase_table: null
     nested_query: null
     default_value: 0
@@ -499,18 +539,22 @@ proto_assembly:
     dbase_col: adhesive
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: GRADE
     dbase_col: grade
     dbase_table: proto_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: SNSR_TOOL_FEET_CHK
-    dbase_col: null ## in GUI, production steps and testing, "check: correct..." (True/False) ## True by default ## missing
+    dbase_col: null ## in GUI, production steps and testing, "check: correct..." (True/False) ## True by default
     dbase_table: null
     nested_query: null
+    default_value: 'True'
   - xml_temp_val: STEP_SENSOR
     dbase_col: null ## step number for sensor / protomodule. doesn't have to be unique ## missing
     dbase_table: null
     nested_query: null
+    default_value: null
 
 proto_build:
   - xml_temp_val: KIND_OF_PART
@@ -578,14 +622,17 @@ sensor_cond:
     dbase_col: ass_run_date, ass_time_begin
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: null ##db_loader will auto-fill based on username on lxplus
     dbase_table: null
     nested_query: null
+    default_value: null
   - xml_temp_val: LOCATION
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
@@ -593,27 +640,34 @@ sensor_cond:
     dbase_col: operator 
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: RUN_BEGIN_DATE_
     dbase_col: ass_run_date ## date from run_end_timestap 
     dbase_table: proto_assembly
     nested_query: null
+    default_value: null
   - xml_temp_val: VISUAL_INSPECTION
     dbase_col: null ## In GUI, sensors / sensor qualification visual inspection ## missing
     dbase_table: null
     nested_query: null
+    default_value: null
   - xml_temp_val: FLATNESS
     dbase_col: null ## default "None" since we don't measure it ## missing
     dbase_table: null
     nested_query: null
+    default_value: 'None'
   - xml_temp_val: THICKNESS
     dbase_col: thickness
     dbase_table: sensor
     nested_query: null
+    default_value: null
   - xml_temp_val: GRADE
     dbase_col: grade
     dbase_table: sensor
     nested_query: null
+    default_value: null
   - xml_temp_val: COMMENTS_UPLOAD
     dbase_col: comment
     dbase_table: sensor
     nested_query: null
+    default_value: null
