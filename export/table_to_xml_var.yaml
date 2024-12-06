@@ -62,7 +62,7 @@ module_assembly:
     dbase_col: null ## In GUI, checkbox under hexaboard - pre-assembly ## true by default ## missing
     dbase_table: null
     nested_query: null
-    default_val: 'True'
+    default_value: 'True'
   - xml_temp_val: ADHESIVE_TYPE
     dbase_col: adhesive
     dbase_table: module_assembly
@@ -489,12 +489,12 @@ proto_assembly:
     dbase_col: null ## sensor tool height set. default 0 ## missing
     dbase_table: null
     nested_query: null
-    default_val: 0
+    default_value: 0
   - xml_temp_val: SNSR_TOOL_HT_CHK
     dbase_col: null ## default 0  ## missing
     dbase_table: null
     nested_query: null
-    default_val: 0
+    default_value: 0
   - xml_temp_val: ADHESIVE_TYPE
     dbase_col: adhesive
     dbase_table: proto_assembly
