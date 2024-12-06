@@ -73,7 +73,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     # Skip entries without a database column or table
                     if not dbase_col or not dbase_table:
                         continue
-
+                    if entry['default_value']:
+                        db_values[xml_var] = entry['default_value']
+                        
                     # Ignore nested queries for now
                     if entry['nested_query']:
                         query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}' AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end}' AND module_assembly.xml_upload_success IS NULL;"
