@@ -6,12 +6,12 @@ Sample queries can be found in [mac_public/queries.py](https://github.com/cmu-hg
 
 From the main directory, run
 ```
-python mac_public/get_macs_data.py -q mod_simple_query -of csv
+python mac_public/save_macs_data.py -q mod_simple_query -of csv
 ```
 
 Run for options
 ```
-python mac_public/get_macs_data.py --help
+python mac_public/save_macs_data.py --help
 ```
 
 Alternatively, you can also import `get_macs_data()` and pass your own query.
