@@ -36,7 +36,7 @@ macs:
 
   -
     mac_id: 'UCSB'
-    hostname: ''
+    hostname: 'gut.physics.ucsb.edu'
     password: ''  ## not required
     port: '5432'
     db_name: 'hgcdb'
