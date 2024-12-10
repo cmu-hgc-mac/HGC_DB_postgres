@@ -36,9 +36,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
     sensor_list = set()
     module_query = f"""
-    SELECT DISTINCT sen_name
-    FROM sensor
-    WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' 
+    SELECT DISTINCT sen_name FROM sensor
+    JOIN proto_assembly ON sensor.sen_name = proto_assembly.sen_name
+    WHERE proto_assembly.ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
     """
     results = await conn.fetch(module_query)
     sensor_list.update(row['sen_name'] for row in results if 'sen_name' in row)
