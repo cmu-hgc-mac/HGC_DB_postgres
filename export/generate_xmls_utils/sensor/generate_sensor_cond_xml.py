@@ -43,6 +43,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     results = await conn.fetch(module_query)
     sensor_list.update(row['sen_name'] for row in results if 'sen_name' in row)
 
+    print(sensor_list)
+
     # Fetch database values for the XML template variables
     for sen_name in sensor_list:
         print(f'--> {sen_name}...')
@@ -58,6 +60,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(format_part_name(sen_name))
                 elif entry['default_value']:
+                    print(entry['default_value'])
                     db_values[xml_var] = entry['default_value']
                 else:
                     dbase_col = entry['dbase_col']
