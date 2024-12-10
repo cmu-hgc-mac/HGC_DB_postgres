@@ -36,7 +36,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
     sensor_list = set()
     module_query = f"""
-    SELECT DISTINCT sen_name FROM sensor
+    SELECT DISTINCT sensor.sen_name FROM sensor
     JOIN proto_assembly ON sensor.sen_name = proto_assembly.sen_name
     WHERE proto_assembly.ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
     """
