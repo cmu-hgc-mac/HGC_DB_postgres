@@ -33,12 +33,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             FROM {dbase_table}
             WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' 
             """
-        elif dbase_table.endswith('_test'):
-            module_query = f"""
-            SELECT DISTINCT proto_name
-            FROM {dbase_table}
-            WHERE date_test BETWEEN '{date_start}' AND '{date_end}' 
-            """
         elif dbase_table.endswith('_assembly'):
             module_query = f"""
             SELECT DISTINCT proto_name
@@ -48,7 +42,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
         results = await conn.fetch(module_query)
         proto_list.update(row['proto_name'] for row in results if 'proto_name' in row)
-    
+
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
         print(f'--> {proto_name}...')
@@ -63,8 +57,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = format_part_name(proto_name)
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(format_part_name(proto_name))
-                elif entry['default_value']:
+                elif entry['default_value']:## something is wrong 
                     db_values[xml_var] = entry['default_value']
+
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
