@@ -14,7 +14,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         yaml_data = yaml.safe_load(file)
 
     # Retrieve module data from the YAML file
-    module_data = yaml_data['sensor_build']
+    module_data = yaml_data['sensor_cond']
     # module_data = [item for item in yaml_data if 'module' in item['dbase_table']]
     
     if not module_data:
@@ -43,7 +43,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     results = await conn.fetch(module_query)
     sensor_list.update(row['sen_name'] for row in results if 'sen_name' in row)
 
-    print(sensor_list)
 
     # Fetch database values for the XML template variables
     for sen_name in sensor_list:
@@ -52,7 +51,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             db_values = {}
             for entry in module_data:
                 xml_var = entry['xml_temp_val']
-
+                
                 if xml_var in ['LOCATION', 'INSTITUTION']:
                     db_values[xml_var] = LOCATION
                 elif xml_var == 'ID':
@@ -60,7 +59,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(format_part_name(sen_name))
                 elif entry['default_value']:
-                    print(entry['default_value'])
                     db_values[xml_var] = entry['default_value']
                 else:
                     dbase_col = entry['dbase_col']
@@ -76,7 +74,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         
                     else:
                         # Modify the query to get the latest entry
-                        query = f"SELECT {dbase_col} FROM {dbase_table} WHERE sen_name = '{sen_name}' AND xml_upload_success IS NULL ORDER BY sen_received DESC, sen_received DESC LIMIT 1"
+                        query = f"SELECT {dbase_col} FROM {dbase_table} WHERE sen_name = '{sen_name}' AND xml_upload_success IS NULL"
                     
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
