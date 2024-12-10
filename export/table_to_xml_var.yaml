@@ -529,12 +529,12 @@ proto_assembly:
     dbase_col: null ## sensor tool height set. default 0 ## missing
     dbase_table: null
     nested_query: null
-    default_value: 0
+    default_value: '0'
   - xml_temp_val: SNSR_TOOL_HT_CHK
     dbase_col: null ## default 0
     dbase_table: null
     nested_query: null
-    default_value: 0
+    default_value: '0'
   - xml_temp_val: ADHESIVE_TYPE
     dbase_col: adhesive
     dbase_table: proto_assembly

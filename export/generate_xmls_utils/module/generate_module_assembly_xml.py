@@ -115,6 +115,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_end", "")
                             db_values[xml_var] = f"{run_date}T{time_end}"
+                        elif xml_var == 'PCB':
+                            db_values[xml_var] = format_part_name(results.get('hxb_name'))
+                        elif xml_var == 'PROTOMODULE':
+                            db_values[xml_var] = format_part_name(results.get('proto_name'))
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         except Exception as e:

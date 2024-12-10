@@ -6,7 +6,7 @@ import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -107,6 +107,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_end", "")
                             db_values[xml_var] = f"{run_date}T{time_end}"
+                        elif xml_var == 'BASEPLATE':
+                            db_values[xml_var] = format_part_name(results.get('bp_name'))
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         except Exception as e:
