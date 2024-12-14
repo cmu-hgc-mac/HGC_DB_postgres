@@ -138,7 +138,7 @@ def main():
     ## Step 2: SCP files to central DB
 
     if str2bool(args.upload_stat):
-        if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = search_date, encryption_key = encryption_key):
+        if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = date_start, encryption_key = encryption_key):
         # Step 3: Delete generated XMLs on success
             if str2bool(args.del_xml):
                 clean_generated_xmls()
