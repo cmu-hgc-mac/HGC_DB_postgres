@@ -8,6 +8,7 @@ kind_of_part:
   resolution:
     'L': 'LD'
     'H': 'HD'
+    '0': ''
   geometry:
     'F': 'Full'
     'T': 'Top' 
