@@ -161,7 +161,7 @@ def import_data():
 
         if dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
             input_window.destroy()  
-            subprocess.run([sys.executable, "import/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
