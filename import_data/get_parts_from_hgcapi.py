@@ -169,6 +169,9 @@ async def main():
         dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode() ## Decode base64 to get encrypted string and then decrypt
         db_params.update({'password': dbpassword})
 
+    if len(inst_code) == 0:
+        print("Check institution abbreviation in conn.py"); exit()
+
     cern_db_url = db_source_dict[source_db_cern]['url']
     pool = await asyncpg.create_pool(**db_params)
     for pt in ['bp','hxb','sen']:  #, 'pml', 'ml']:
