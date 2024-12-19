@@ -7,7 +7,7 @@
 '''
 
 import os, sys, argparse, base64, subprocess, traceback
-import shutil, pwinput, datetime
+import shutil, pwinput, datetime, yaml
 from cryptography.fernet import Fernet
 
 XML_GENERATOR_DIR = 'export/generate_xmls_utils'## directory for py scripts to generate xmls
@@ -130,6 +130,10 @@ def main():
     date_start = args.date_start
     date_end = args.date_end
     encryption_key = args.encrypt_key
+
+    inst_code  = (yaml.safe_load(open(os.path.join('dbase_info', 'conn.yaml'), 'r'))).get('institution_abbr')
+    if len(inst_code) == 0:
+        print("Check institution abbreviation in conn.py"); exit()
 
     ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
