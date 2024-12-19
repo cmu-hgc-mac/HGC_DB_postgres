@@ -28,6 +28,11 @@ kind_of_part:
     'C': 'CF'
     'P': 'PCB'
     'X': ''
+  roc_version:
+    'X': 'preseries'
+    '2': 'HGCROCV3b-2'
+    '4': 'HGCROCV3b-4'
+    'C': 'HGCROCV3c'
   sensor: ## thickness, resolution, shape
     '1': ['300','LD', 'Wafer']
     '2': ['200', 'LD', 'Wafer']
