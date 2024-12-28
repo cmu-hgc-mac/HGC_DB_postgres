@@ -7,7 +7,6 @@ from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION
 from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name
-import numpy as np
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -145,9 +144,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
                     
                         if 'BOND_PULL_AVG' in list(db_values.keys()):
-                            db_values['BOND_PULL_AVG'] = str(np.round(float(db_values['BOND_PULL_AVG']), 3))
+                            db_values['BOND_PULL_AVG'] = str(round(float(db_values['BOND_PULL_AVG']), 3))
                         if 'BOND_PULL_STDDEV' in list(db_values.keys()):
-                            db_values['BOND_PULL_STDDEV'] = str(np.round(float(db_values['BOND_PULL_STDDEV']), 3))
+                            db_values['BOND_PULL_STDDEV'] = str(round(float(db_values['BOND_PULL_STDDEV']), 3))
 
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)

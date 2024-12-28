@@ -98,6 +98,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
+                        if 'THICKNESS' in list(db_tables.keys()):
+                            db_values['THICKNESS'] = str(round(float(db_values['THICKNESS']),3))
+                        if 'FLATNESS' in list(db_tables.keys()):
+                            db_values['FLATNESS'] = str(round(float(db_values['FLATNESS']),3))
+
             output_file_name = f'{hxb_name}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
 
