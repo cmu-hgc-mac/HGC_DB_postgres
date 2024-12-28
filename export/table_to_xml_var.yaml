@@ -55,7 +55,7 @@ module_assembly:
   - xml_temp_val: PCB_THICKNESS
     dbase_col: thickness
     dbase_table: hxb_inspect
-    nested_query: SELECT thickness::text FROM hxb_inspect JOIN module_assembly ON module_assembly.hxb_name = hxb_inspect.hxb_name
+    nested_query: SELECT thickness::text FROM hxb_inspect JOIN module_assembly ON REPLACE(module_assembly.hxb_name,'-','') = REPLACE(hxb_inspect.hxb_name,'-','')
     default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
@@ -68,8 +68,8 @@ module_assembly:
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_TOOL_NAME
-    dbase_col: null ## missing
-    dbase_table: null
+    dbase_col: hxb_put_id
+    dbase_table: module_assembly
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_TOOL_FEET_CHK_STR
@@ -77,12 +77,17 @@ module_assembly:
     dbase_table: null
     nested_query: null
     default_value: 'True'
-  - xml_temp_val: ADHESIVE_TYPE
+  - xml_temp_val: GLUE_TYPE
     dbase_col: adhesive
     dbase_table: module_assembly
     nested_query: null
     default_value: null
-  - xml_temp_val: GRADE
+  - xml_temp_val: GLUE_BATCH_NUM
+    dbase_col: glue_batch
+    dbase_table: module_assembly
+    nested_query: null
+    default_value: null
+  - xml_temp_val: MOD_GRADE
     dbase_col: grade
     dbase_table: module_inspect
     nested_query: null
@@ -281,11 +286,11 @@ wirebond:
   - xml_temp_val: WIREBOND_COMMENTS_CONCAT
     dbase_col: comment
     dbase_table: front_wirebond
-    nested_query: (SELECT comment AS back_wirebond_comment FROM back_wirebond WHERE module_name = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_bond DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_wirebond_comment FROM front_wirebond WHERE module_name = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_bond DESC LIMIT 1);"
+    nested_query: (SELECT comment AS back_wirebond_comment FROM back_wirebond WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_bond DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_wirebond_comment FROM front_wirebond WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_bond DESC LIMIT 1);"
   - xml_temp_val: ENCAPSULATION_COMMENTS_CONCAT
     dbase_col: comment
     dbase_table: front_wirebond
-    nested_query: (SELECT comment AS back_encap_comment FROM back_encap WHERE module_name = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_encap_comment FROM front_encap WHERE module_name = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1);"
+    nested_query: (SELECT comment AS back_encap_comment FROM back_encap WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_encap_comment FROM front_encap WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1);"
 
 module_build:
   - xml_temp_val: KIND_OF_PART
@@ -521,8 +526,8 @@ proto_assembly:
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_TOOL_NAME
-    dbase_col: null ## number for each tool ([institute]_1) in an institute. ## missing
-    dbase_table: null
+    dbase_col: sen_put_id
+    dbase_table: proto_assembly
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_TOOL_HT_SET
@@ -531,16 +536,21 @@ proto_assembly:
     nested_query: null
     default_value: '0'
   - xml_temp_val: SNSR_TOOL_HT_CHK
-    dbase_col: null ## default 0
+    dbase_col: null ##'user': 'shipper', default 0
     dbase_table: null
     nested_query: null
-    default_value: '0'
-  - xml_temp_val: ADHESIVE_TYPE
+    default_value: 'True'
+  - xml_temp_val: GLUE_TYPE
     dbase_col: adhesive
     dbase_table: proto_assembly
     nested_query: null
     default_value: null
-  - xml_temp_val: GRADE
+  - xml_temp_val: GLUE_BATCH_NUM
+    dbase_col: glue_batch
+    dbase_table: proto_assembly
+    nested_query: null
+    default_value: null
+  - xml_temp_val: PRTO_GRADE
     dbase_col: grade
     dbase_table: proto_inspect
     nested_query: null

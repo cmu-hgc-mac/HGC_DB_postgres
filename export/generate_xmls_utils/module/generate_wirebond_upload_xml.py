@@ -6,7 +6,8 @@ import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name
+import numpy as np
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -28,13 +29,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     for dbase_table in db_tables:
         if dbase_table.endswith(('_wirebond', '_test')):
             module_query = f"""
-            SELECT DISTINCT module_name
+            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
             FROM {dbase_table}
             WHERE date_bond BETWEEN '{date_start}' AND '{date_end}' 
             """
         elif dbase_table.endswith('_encap'):
             module_query = f"""
-            SELECT DISTINCT module_name
+            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
             FROM {dbase_table}
             WHERE date_encap BETWEEN '{date_start}' AND '{date_end}' 
             """
@@ -54,7 +55,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 if xml_var in ['LOCATION', 'INSTITUTION']:
                     db_values[xml_var] = LOCATION
                 elif xml_var == 'ID':
-                    db_values[xml_var] = module
+                    db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(module)
                 else:
@@ -72,7 +73,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             (
                                 SELECT comment AS back_wirebond_comment
                                 FROM back_wirebond
-                                WHERE module_name = '{module}'
+                                WHERE REPLACE(module_name,'-','') = '{module}'
                                 AND xml_upload_success IS NULL
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
@@ -81,14 +82,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             (
                                 SELECT comment AS front_wirebond_comment
                                 FROM front_wirebond
-                                WHERE module_name = '{module}'
+                                WHERE REPLACE(module_name,'-','') = '{module}'
                                 AND xml_upload_success IS NULL
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
                             );
                             """
                         else:
-                            query = entry['nested_query'] + f" WHERE {dbase_table}.module_name = '{module}' AND xml_upload_success IS NULL;"
+                            query = entry['nested_query'] + f" WHERE REPLACE({dbase_table}.module_name,'-','') = '{module}' AND xml_upload_success IS NULL;"
                         
                         # print(f'Executing query: {query}')
 
@@ -97,7 +98,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         if dbase_table in ['back_encap', 'front_encap']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
-                            WHERE module_name = '{module}'
+                            WHERE REPLACE(module_name,'-','') = '{module}'
                             AND xml_upload_success IS NULL
                             ORDER BY date_encap DESC, time_encap DESC
                             LIMIT 1;
@@ -105,13 +106,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif dbase_table == 'module_info':
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
-                            WHERE module_name = '{module}'
+                            WHERE REPLACE(module_name,'-','') = '{module}'
                             AND xml_upload_success IS NULL;
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE module_name = '{module}'
+                            WHERE REPLACE(module_name,'-','') = '{module}'
                             AND xml_upload_success IS NULL
                             ORDER BY date_bond DESC, time_bond DESC LIMIT 1;
                             """
@@ -142,9 +143,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = f"{bk_comment}-{fr_comment}"
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
+                    
+                        if 'BOND_PULL_AVG' in list(db_values.keys()):
+                            db_values['BOND_PULL_AVG'] = str(np.round(float(db_values['BOND_PULL_AVG']), 3))
+                        if 'BOND_PULL_STDDEV' in list(db_values.keys()):
+                            db_values['BOND_PULL_STDDEV'] = str(np.round(float(db_values['BOND_PULL_STDDEV']), 3))
 
         except Exception as e:
-            print('#'*30, f'ERROR','#'*30 ); traceback.print_exc(); print('')
+            print('#'*15, f'ERROR for above part','#'*15 ); traceback.print_exc(); print('')
             
         output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)

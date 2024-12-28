@@ -32,19 +32,19 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     for dbase_table in dbase_tables:
         if dbase_table.endswith('_inspect'):
             module_query = f"""
-            SELECT DISTINCT module_name
+            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
             FROM {dbase_table}
             WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' 
             """
         elif dbase_table.endswith('_test'):
             module_query = f"""
-            SELECT DISTINCT module_name
+            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
             FROM {dbase_table}
             WHERE date_test BETWEEN '{date_start}' AND '{date_end}' 
             """
         elif dbase_table.endswith('_assembly'):
             module_query = f"""
-            SELECT DISTINCT module_name
+            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
             FROM {dbase_table}
             WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
             """
@@ -79,21 +79,21 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE module_assembly.module_name = '{module}' AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end}' AND module_assembly.xml_upload_success IS NULL;"
+                        query = entry['nested_query'] + f" WHERE REPLACE(module_assembly.module_name,'-','') = '{module}' AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end}' AND module_assembly.xml_upload_success IS NULL;"
                         
                     else:
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE module_name = '{module}' 
+                            WHERE REPLACE(module_name,'-','') = '{module}' 
                             AND xml_upload_success IS NULL 
                             """
                             # ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE module_name = '{module}' 
+                            WHERE REPLACE(module_name,'-','') = '{module}' 
                             AND xml_upload_success IS NULL 
                             """
                             # ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
@@ -122,7 +122,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         except Exception as e:
-            print('#'*30, f'ERROR','#'*30 ); traceback.print_exc(); print('')
+            print('#'*15, f'ERROR for above part','#'*15 ); traceback.print_exc(); print('')
 
         # Update the XML with the database values
         output_file_name = f'{module}_{os.path.basename(xml_file_path)}'

@@ -6,7 +6,7 @@ import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from HGC_DB_postgres.export.define_global_var import LOCATION
-from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
+from HGC_DB_postgres.export.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -29,7 +29,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
     bp_list = set()
     module_query = f"""
-    SELECT DISTINCT bp_name
+    SELECT DISTINCT REPLACE(bp_name,'-','') AS bp_name
     FROM bp_inspect
     WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}'
     """
@@ -48,7 +48,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 if xml_var in ['LOCATION', 'INSTITUTION']:
                     db_values[xml_var] = LOCATION
                 elif xml_var == 'ID':
-                    db_values[xml_var] = bp_name
+                    db_values[xml_var] = format_part_name(bp_name)
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(bp_name)
                 else:
@@ -61,7 +61,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE {dbase_table}.bp_name = '{bp_name}' AND xml_upload_success IS NULL;"
+                        query = entry['nested_query'] + f" WHERE REPLACE({dbase_table}.bp_name,'-','') = '{bp_name}' AND xml_upload_success IS NULL;"
                         
                         # print(f'Executing query: {query}')
 
@@ -70,14 +70,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         if dbase_table in ['baseplate']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
-                            WHERE bp_name = '{bp_name}'
+                            WHERE REPLACE(bp_name,'-','') = '{bp_name}'
                             AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE bp_name = '{bp_name}'
+                            WHERE REPLACE(bp_name,'-','') = '{bp_name}'
                             AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
                             """
@@ -108,7 +108,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         except Exception as e:
-            print('#'*30, f'ERROR','#'*30 ); traceback.print_exc(); print('')
+            print('#'*15, f'ERROR for above part','#'*15 ); traceback.print_exc(); print('')
             
         output_file_name = f'{bp_name}_{os.path.basename(xml_file_path)}'
         output_file_path = os.path.join(output_dir, output_file_name)

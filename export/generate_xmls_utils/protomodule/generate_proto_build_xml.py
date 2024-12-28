@@ -25,7 +25,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
     proto_list = set()
     module_query = f"""
-    SELECT DISTINCT proto_name
+    SELECT DISTINCT REPLACE(proto_name,'-','') AS proto_name
     FROM proto_assembly
     WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
     """
@@ -46,7 +46,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(proto_name)
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
-                    _query = f"SELECT bp_name FROM proto_assembly WHERE proto_name = '{proto_name}' AND xml_upload_success IS NULL;"
+                    _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' AND xml_upload_success IS NULL;"
                     _bp_name = await conn.fetch(_query)
                     if _bp_name:
                         bp_name = _bp_name[0]['bp_name']
@@ -54,7 +54,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         bp_name = ''
                     db_values[xml_var] = get_kind_of_part(bp_name)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
-                    _query = f"SELECT sen_name FROM proto_assembly WHERE proto_name = '{proto_name}' AND xml_upload_success IS NULL;"
+                    _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' AND xml_upload_success IS NULL;"
                     _sen_name = await conn.fetch(_query)
                     if _sen_name:
                         sen_name = _sen_name[0]['sen_name']
@@ -78,14 +78,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         if dbase_table == 'proto_assembly':
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE proto_name = '{proto_name}' 
+                            WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
                             AND xml_upload_success IS NULL
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE proto_name = '{proto_name}' 
+                            WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
                             AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
@@ -112,7 +112,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         except Exception as e:
-            print('#'*30, f'ERROR','#'*30 ); traceback.print_exc(); print('')
+            print('#'*15, f'ERROR for above part','#'*15 ); traceback.print_exc(); print('')
 
         # Update the XML with the database values
         output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
