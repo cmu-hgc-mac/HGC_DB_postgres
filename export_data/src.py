@@ -98,7 +98,7 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
 async def get_parts_name(name, table, conn):
     ##  returns part name in a specific table
     ##  i.e., baseplate-> get bp_name
-    query = f"SELECT DISTINCT {name} FROM {table};"
+    query = f"SELECT DISTINCT REPLACE({name},'-','') AS {name} FROM {table};"
     fetched_query = await conn.fetch(query)
     name_list = [record[name] for record in fetched_query]
     return name_list
