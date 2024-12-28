@@ -4,7 +4,7 @@ import xml.dom.minidom as minidom
 from lxml import etree
 import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION
 from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col
 
@@ -95,19 +95,22 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = f"{run_date}T{time_end}"
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
+
+            # Update the XML with the database values
+            output_file_name = f'{sen_name}_{os.path.basename(xml_file_path)}'
+            output_file_path = os.path.join(output_dir, output_file_name)
+            await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+            await update_timestamp_col(conn,
+                                    update_flag=True,
+                                    table_list=db_tables,
+                                    column_name='xml_gen_datetime',
+                                    part='sensor',
+                                    part_name=sen_name)
+        
         except Exception as e:
             print('#'*15, f'ERROR for above part','#'*15 ); traceback.print_exc(); print('')
             
-        # Update the XML with the database values
-        output_file_name = f'{sen_name}_{os.path.basename(xml_file_path)}'
-        output_file_path = os.path.join(output_dir, output_file_name)
-        await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-        await update_timestamp_col(conn,
-                                   update_flag=True,
-                                   table_list=db_tables,
-                                   column_name='xml_gen_datetime',
-                                   part='sensor',
-                                   part_name=sen_name)
+        
         
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
     # Configuration
