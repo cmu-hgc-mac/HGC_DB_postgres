@@ -179,15 +179,15 @@ def export_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    TLabel(input_window, text="**Enter local db USER password:**").pack(pady=5)
+    TLabel(input_window, text="**Enter local DB USER password:**").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
-    TLabel(input_window, text="**Enter lxplus username:**").pack(pady=5)
+    TLabel(input_window, text="**Enter LXPLUS username:**").pack(pady=5)
     lxuser_var = StringVar()
     lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxuser_var_entry.pack(pady=5)
-    TLabel(input_window, text="**Enter lxplus password:**").pack(pady=5)
+    TLabel(input_window, text="**Enter LXPLUS password:**").pack(pady=5)
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxpassword_entry.pack(pady=5)
@@ -287,7 +287,7 @@ def export_data():
                 input_window.destroy()  
         
 
-    select_specific_button = Button(input_window, text="Select specific XMLs", command=select_specific)
+    select_specific_button = Button(input_window, text="Select type of XMLs", command=select_specific)
     select_specific_button.pack(pady=10)
     bind_button_keys(select_specific_button)
 
