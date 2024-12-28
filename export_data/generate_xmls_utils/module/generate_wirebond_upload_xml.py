@@ -160,7 +160,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                     part_name=module)
 
         except Exception as e:
-            print('#'*15, f'ERROR for above part','#'*15 ); traceback.print_exc(); print('')
+            print('#'*15, f'ERROR for {module}','#'*15 ); traceback.print_exc(); print('')
             
 
         

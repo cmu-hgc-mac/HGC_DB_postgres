@@ -118,7 +118,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                     part='baseplate',
                                     part_name=bp_name)
         except Exception as e:
-            print('#'*15, f'ERROR for above part','#'*15 ); traceback.print_exc(); print('')
+            print('#'*15, f'ERROR for {bp_name}','#'*15 ); traceback.print_exc(); print('')
             
         
 
