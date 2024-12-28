@@ -1,0 +1,15 @@
+baseplate:
+- bp_cond_xml: true
+hexaboard:
+- hxb_cond_xml: true
+module:
+- module_assembly_xml: true
+- module_build_xml: true
+- module_cond_xml: true
+- wirebond_xml: true
+protomodule:
+- proto_assembly_xml: true
+- proto_build_xml: true
+- proto_cond_xml: true
+sensor:
+- sensor_cond_xml: true

@@ -12,6 +12,40 @@ resource_yaml = 'export_data/resource.yaml'
 with open(resource_yaml, 'r') as file:
         kind_of_part_yaml = yaml.safe_load(file)['kind_of_part']
 
+
+def update_yaml_with_checkboxes(xml_list, checkbox_vars):
+    if isinstance(xml_list, list):
+        return [{k: checkbox_vars[i][k].get() == 1 for k in item.keys()} for i, item in enumerate(xml_list)]
+    elif isinstance(xml_list, dict):
+        return {key: update_yaml_with_checkboxes(value, checkbox_vars[key]) for key, value in xml_list.items()}
+    return xml_list  
+
+def process_xml_list(xml_list = None, get_yaml_data = False):
+    list_of_xmls_yaml = 'export_data/list_of_xmls.yaml'
+        
+    if get_yaml_data:
+        with open(list_of_xmls_yaml, "r") as file:
+            return yaml.safe_load(file)
+    
+    def set_all_to_true(xml_list):
+        if isinstance(xml_list, dict):
+            for key in xml_list:
+                xml_list[key] = set_all_to_true(xml_list[key])
+        elif isinstance(xml_list, list):
+            xml_list = [set_all_to_true(item) for item in xml_list]
+        elif isinstance(xml_list, bool):
+            return True
+        return xml_list
+    
+    if xml_list is None:
+        with open(list_of_xmls_yaml, "r") as file:
+            xml_list = yaml.safe_load(file)
+        xml_list = set_all_to_true(xml_list)
+
+    with open(list_of_xmls_yaml, "w") as file:
+        yaml.dump(xml_list, file, default_flow_style=False)
+
+
 async def get_conn(dbpassword, encryption_key = None):
     '''
     Does: get connection to database

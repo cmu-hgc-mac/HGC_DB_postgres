@@ -9,6 +9,7 @@
 import os, sys, argparse, base64, subprocess, traceback
 import shutil, pwinput, datetime, yaml
 from cryptography.fernet import Fernet
+from src import process_xml_list
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
 GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
@@ -42,21 +43,24 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
-    subdirs = ['baseplate', 'hexaboard', 'module', 'protomodule', 'sensor', 'testing']
+    xml_list = process_xml_list(get_yaml_data = True)
+    process_xml_list() ## sets everthing back to True in the yaml file
+    subdirs = list(xml_list.keys())    # subdirs = ['baseplate', 'hexaboard', 'module', 'protomodule', 'sensor', 'testing']
     scripts_to_run = []
 
     for subdir in subdirs:
         subdir_path = os.path.join(XML_GENERATOR_DIR, subdir)
         
         if os.path.exists(subdir_path):
-            for file in os.listdir(subdir_path):
-                
-                ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules. 
-                if (subdir_path.split('/')[-1] in ['protomodule', 'module']):
-                    script_path = os.path.join(subdir_path, file)
-                    scripts_to_run.append(script_path)
-                    
-                elif subdir_path.split('/')[-1] not in ['protomodule', 'module'] and (file.endswith('build_xml.py') == False):
+            # for file in os.listdir(subdir_path):
+            for filetype in list(xml_list[subdir]):
+                file_suff = list(filetype.keys())[0]
+                file = f"generate_{file_suff}.py"
+            
+                if filetype[file_suff] and os.path.exists(os.path.join(subdir_path, file)):                
+                    ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules.     
+                    if subdir_path.split('/')[-1] not in ['protomodule', 'module'] and (file.endswith('build_xml.py') == True):
+                        continue; 
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
 

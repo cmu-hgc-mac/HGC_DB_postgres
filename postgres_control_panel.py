@@ -5,8 +5,10 @@ import os, yaml, base64
 from cryptography.fernet import Fernet
 import subprocess, webbrowser
 import tkinter
-from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, StringVar, BooleanVar, Text, END, DISABLED, Label as TLabel
+from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame
+from tkinter import END, DISABLED, Label as TLabel
 from datetime import datetime
+from export_data.src import process_xml_list, update_yaml_with_checkboxes
 
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
@@ -210,6 +212,59 @@ def export_data():
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
     deleteXML_var_entry.pack(pady=5)
     
+    def select_specific():
+        popup = Toplevel()
+        popup.title("Select XMLs")
+        
+        xml_list = process_xml_list(get_yaml_data = True)
+        checkbox_vars = {}
+        
+        def create_checkboxes(xml_list, parent):
+            if isinstance(xml_list, dict):
+                for key, value in xml_list.items():
+                    frame = LabelFrame(parent, text=key, padx=5, pady=5)
+                    frame.pack(fill="x", expand=True, padx=10, pady=5)
+                    checkbox_vars[key] = create_checkboxes(value, frame)
+            elif isinstance(xml_list, list):
+                vars_list = []
+                for item in xml_list:
+                    for key, value in item.items():
+                        var = IntVar(value=1 if value else 0)
+                        checkbox = Checkbutton(parent, text=key, variable=var)
+                        checkbox.pack(anchor="w", padx=10, pady=2)
+                        vars_list.append({key: var})
+                return vars_list
+            return {}
+
+        create_checkboxes(xml_list, popup)
+        toggle_state = {"all_selected": True} 
+
+        def toggle_all():
+            toggle_state["all_selected"] = not toggle_state["all_selected"]
+            new_state = 1 if toggle_state["all_selected"] else 0
+
+            def apply_toggle(data):
+                if isinstance(data, list):
+                    for item in data:
+                        for _, var in item.items():
+                            var.set(new_state)
+                elif isinstance(data, dict):
+                    for value in data.values():
+                        apply_toggle(value)
+
+            apply_toggle(checkbox_vars)
+
+        toggle_all_button = Button(popup, text="(De)Select All", command=toggle_all)
+        toggle_all_button.pack(pady=10)
+
+        def submit_selection():
+            updated_data = update_yaml_with_checkboxes(xml_list = xml_list, checkbox_vars=checkbox_vars)
+            process_xml_list(updated_data)
+            popup.destroy()
+        
+        submit_select_button = Button(popup, text="Submit", command=submit_selection)
+        submit_select_button.pack(pady=10)
+        
     def submit_export():
         lxp_username = lxuser_var.get()
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
@@ -230,6 +285,11 @@ def export_data():
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
+        
+
+    select_specific_button = Button(input_window, text="Select specific XMLs", command=select_specific)
+    select_specific_button.pack(pady=10)
+    bind_button_keys(select_specific_button)
 
     submit_export_button = Button(input_window, text="Submit", command=submit_export)
     submit_export_button.pack(pady=10)
