@@ -56,7 +56,7 @@ async def get_conn(dbpassword, encryption_key = None):
     db_params = {
             'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
             'user': 'shipper',
-            'user': 'viewer',
+            # 'user': 'viewer',
             'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
     
     if encryption_key is None:
