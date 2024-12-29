@@ -76,7 +76,7 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
         print(f"Progress: {completed_scripts}/{total_scripts} XML file types generated.")
         print('-'*10); print('')
 
-def scp_files(lxplus_username, lxplus_password, directory, search_date, encryption_key = None):
+def scp_files(lxplus_username, lxplus_password, directory, search_date, encryption_key = None, cerndb = 'dev_db'):
     """Call the scp script to transfer files."""
     try:
         scp_command = ['python3', 
@@ -85,9 +85,11 @@ def scp_files(lxplus_username, lxplus_password, directory, search_date, encrypti
                        '-lxp', lxplus_password, 
                        '-dir', directory,
                        '-date', str(search_date),
+                       '-cerndb', cerndb,
                        '-k', encryption_key]
     
         process = subprocess.run(scp_command, check=True)
+        return True
 
     except Exception as e:
         traceback.print_exc()
@@ -123,7 +125,8 @@ def main():
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-gen', '--generate_stat', default='True', required=False, help="Generate XMLs.")
-    parser.add_argument('-upl', '--upload_stat', default='True', required=False, help="Upload to DBLoader without generate.")
+    parser.add_argument('-upld', '--upload_dev_stat', default='True', required=False, help="Upload to dev DBLoader without generate.")
+    parser.add_argument('-uplp', '--upload_prod_stat', default='True', required=False, help="Upload to prod DBLoader without generate.")
     parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")
     args = parser.parse_args()
 
@@ -134,6 +137,8 @@ def main():
     date_start = args.date_start
     date_end = args.date_end
     encryption_key = args.encrypt_key
+    upload_dev_stat = str2bool(args.upload_dev_stat)
+    upload_prod_stat = str2bool(args.upload_prod_stat)
 
     inst_code  = (yaml.safe_load(open(os.path.join('dbase_info', 'conn.yaml'), 'r'))).get('institution_abbr')
     if len(inst_code) == 0:
@@ -145,11 +150,18 @@ def main():
 
     ## Step 2: SCP files to central DB
 
-    if str2bool(args.upload_stat):
-        if scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = date_start, encryption_key = encryption_key):
-        # Step 3: Delete generated XMLs on success
-            if str2bool(args.del_xml):
-                clean_generated_xmls()
+    db_list = []
+    if upload_prod_stat:
+        db_list.append('prod_db')
+    if upload_dev_stat:
+        db_list.append('dev_db')
+    
+    if upload_dev_stat or upload_prod_stat:
+        for cerndb in db_list:
+            ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = date_start, encryption_key = encryption_key, cerndb = cerndb)
+            # Step 3: Delete generated XMLs on success
+        if ret and str2bool(args.del_xml):
+            clean_generated_xmls()
 
 if __name__ == '__main__':
     main()

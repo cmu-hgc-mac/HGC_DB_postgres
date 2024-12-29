@@ -156,20 +156,33 @@ def import_data():
     # lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     # lxpassword_entry.pack(pady=5)
 
+    download_dev_var = BooleanVar(value=False)
+    download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
+    download_dev_var_entry.pack(pady=5)
+    download_prod_var = BooleanVar(value=True)
+    download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
+    download_prod_var_entry.pack(pady=2)
+
     def submit_import():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
         # lxuser_pass = lxuser_var.get()
         # lxpassword_pass = lxpassword_var.get()
+        download_dev_stat = download_dev_var.get()
+        download_prod_stat = download_prod_var.get()
 
-        if dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
-            input_window.destroy()  
-            subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key])
-            # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
-            # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
-        else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+        if not download_prod_stat and not download_dev_stat:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nSelect a source database."):
                 input_window.destroy()  
+        else:
+            if dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
+                input_window.destroy()  
+                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat)])
+                # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
+                # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+                show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
+            else:
+                if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+                    input_window.destroy()  
 
     submit_import_button = Button(input_window, text="Submit", command=submit_import)
     submit_import_button.pack(pady=10)
@@ -205,9 +218,12 @@ def export_data():
     generate_var = BooleanVar(value=True)
     generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
     generate_var_entry.pack(pady=5)
-    upload_var = BooleanVar(value=True)
-    upload_var_entry = Checkbutton(input_window, text="Upload to DBLoader", variable=upload_var)
-    upload_var_entry.pack(pady=5)
+    upload_dev_var = BooleanVar(value=True)
+    upload_dev_var_entry = Checkbutton(input_window, text="Upload to INT2R (DEV-DB)", variable=upload_dev_var)
+    upload_dev_var_entry.pack(pady=5)
+    upload_prod_var = BooleanVar(value=False)
+    upload_prod_var_entry = Checkbutton(input_window, text="Upload to CMSR (PROD-DB)", variable=upload_prod_var)
+    upload_prod_var_entry.pack(pady=2)
     deleteXML_var = BooleanVar(value=False)
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
     deleteXML_var_entry.pack(pady=5)
@@ -270,17 +286,18 @@ def export_data():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
         lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
         generate_stat = generate_var.get()
-        upload_stat = upload_var.get()
+        upload_dev_stat = upload_dev_var.get()
+        upload_prod_stat = upload_prod_var.get()
         deleteXML_stat = deleteXML_var.get()
 
-        if not upload_stat:
+        if not upload_dev_stat and not upload_prod_stat:
             lxp_username, lxp_password = 'na', 'na'
 
         if dbshipper_pass.strip() and lxp_username.strip() and lxp_password.strip():
             input_window.destroy()  
             # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", str(generate_stat), "-upl", str(upload_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())])
+            subprocess.run([sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())])
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
@@ -382,9 +399,9 @@ bind_button_keys(button_upload)
 def open_documentation():
     webbrowser.open("https://github.com/cmu-hgc-mac/")  
 
-cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
-dbtype_label = Label(root, text=f'Writing to CERN {cerndb_types[cern_dbase]["dbtype"]} Database: {cerndb_types[cern_dbase]["dbname"]}', fg="black")
-dbtype_label.pack(pady=2)
+# cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
+# dbtype_label = Label(root, text=f'Writing to CERN {cerndb_types[cern_dbase]["dbtype"]} Database: {cerndb_types[cern_dbase]["dbname"]}', fg="black")
+# dbtype_label.pack(pady=2)
 
 doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
 doc_label.pack(pady=5)

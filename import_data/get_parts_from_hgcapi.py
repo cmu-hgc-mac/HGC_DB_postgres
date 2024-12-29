@@ -1,13 +1,14 @@
-import requests, json, yaml, os, argparse, datetime
+import requests, json, yaml, os, argparse, datetime, sys
 import pwinput, asyncio, asyncpg, base64, traceback
 from cryptography.fernet import Fernet
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
-kop_yaml = yaml.safe_load(open(os.path.join('export', 'resource.yaml'), 'r')).get('kind_of_part')
+kop_yaml = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r')).get('kind_of_part')
 inst_code  = conn_info.get('institution_abbr')
-source_db_cern = conn_info.get('cern_db')
+# source_db_cern = conn_info.get('cern_db')
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
 
 db_params = {
@@ -16,6 +17,10 @@ db_params = {
     'host': conn_info.get('db_hostname'),
     'port': conn_info.get('port'),
 }
+
+def str2bool(boolstr):
+    dictstr = {'True': True, 'False': False}
+    return dictstr[boolstr]
 
 partTrans = {'bp' : {'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 'bp_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
              'sen':{'apikey':'sensors', 'dbtabname': 'sensor', 'db_col': 'sen_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment'}},
@@ -43,6 +48,7 @@ def check_exists_query(table_name, column_names):
     query = f'{pre_query} {" AND ".join(data_placeholder)} );'
     return query
 
+# OLD CODE
 # async def write_to_db(pool, db_upload_data, partType = None):
 #     table_name = partTrans[partType]["dbtabname"]
 #     check_col = {key: db_upload_data[key] for key in [partTrans[partType]["db_col"], "date_inspect"]}
@@ -158,6 +164,8 @@ async def main():
     parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
     parser.add_argument('-pid', '--pardID', default=None, required=False, help="Part ID to query from HGC API.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
+    parser.add_argument('-downld', '--download_dev_stat', default='False', required=False, help="Download from dev DBLoader without generate.")
+    parser.add_argument('-downlp', '--download_prod_stat', default='True', required=False, help="Download from prod DBLoader without generate.")
     args = parser.parse_args()
 
     if args.password is None:
@@ -172,25 +180,35 @@ async def main():
     if len(inst_code) == 0:
         print("Check institution abbreviation in conn.py"); exit()
 
-    cern_db_url = db_source_dict[source_db_cern]['url']
-    pool = await asyncpg.create_pool(**db_params)
-    for pt in ['bp','hxb','sen']:  #, 'pml', 'ml']:
-        print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
-        parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))['parts']
-        for p in parts:
-            try:
-                db_dict = get_data_for_db_init(p, partType = pt)
-                if db_dict is not None:
-                    try:
-                        await write_to_db(pool, db_dict, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
-                    except Exception as e:
-                        print(f"ERROR for single part upload for {p['serial_number']}", e)
-                        traceback.print_exc()
-                        print('Dictionary:', (db_dict))
-            except:
-                traceback.print_exc()
-        print(f'Writing {partTrans[pt]["apikey"]} to postgres complete.')
-        print('-'*40); print('\n')
+    db_list = []
+    dev_bool = str2bool(args.download_dev_stat) 
+    prod_bool = str2bool(args.download_prod_stat)
+    if dev_bool:
+        db_list.append('dev_db')
+    if prod_bool or (not dev_bool and not prod_bool):
+        db_list.append('prod_db')
+
+    for source_db_cern in db_list:
+        cern_db_url = db_source_dict[source_db_cern]['url']
+        pool = await asyncpg.create_pool(**db_params)
+        for pt in ['bp','hxb','sen']:  #, 'pml', 'ml']:
+            print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
+            parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))['parts']
+            for p in parts:
+                try:
+                    db_dict = get_data_for_db_init(p, partType = pt)
+                    if db_dict is not None:
+                        try:
+                            await write_to_db(pool, db_dict, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
+                        except Exception as e:
+                            print(f"ERROR for single part upload for {p['serial_number']}", e)
+                            traceback.print_exc()
+                            print('Dictionary:', (db_dict))
+                except:
+                    traceback.print_exc()
+            print(f'Writing {partTrans[pt]["apikey"]} to postgres from {cern_db_url.upper()} complete.')
+            print('-'*40); print('\n')
+    
     await pool.close()
     print('Refresh postgres tables')
 

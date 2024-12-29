@@ -9,10 +9,9 @@ from cryptography.fernet import Fernet
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 # cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
-cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
+# cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
                 "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
-cern_dbname = (cerndb_types[cern_dbase]['dbname']).lower()
 
 def valid_directory(path):
     if os.path.isdir(path):
@@ -52,7 +51,7 @@ def get_build_files(files_list):
     return build_files, other_files
 
 
-def scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = None):
+def scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = None, cern_dbname = ''):
     ssh_server1 = paramiko.SSHClient()
     ssh_server1.load_system_host_keys()
     ssh_server1.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -99,6 +98,7 @@ def main(): #dbl_username, dbl_password, directory_to_search, search_date, encry
     parser.add_argument('-date', '--date', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-lxp', '--dbl_password', default=None, required=False, help="Password to access lxplus.")
+    parser.add_argument('-cerndb', '--cern_dbase', default='dev_db', required=False, help="Name of cern db to upload to - dev_db/prod_db.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     args = parser.parse_args()
 
@@ -115,17 +115,17 @@ def main(): #dbl_username, dbl_password, directory_to_search, search_date, encry
         print("Files found: ")
         for file in files_found: print(file)
         print('\n')
+        build_files, other_files = get_build_files(files_found)
         # dbl_username = input('LXPLUS Username: ')
         # dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')
-        
-        build_files, other_files = get_build_files(files_found)
-        print("Uploading build files ...")
+        cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
+        print(f"Uploading 'build' files to {cern_dbname}...")
         for fname in tqdm(build_files):
-            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key)
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
 
-        print("Uploading other files ...")
+        print(f"Uploading other files to {cern_dbname}...")
         for fname in tqdm(other_files):
-            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key)
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname=cern_dbname)
     else:
         print("No files found for the given date.")
 
