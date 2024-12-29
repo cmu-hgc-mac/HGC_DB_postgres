@@ -158,7 +158,7 @@ def main():
     
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
-            ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = date_start, encryption_key = encryption_key, cerndb = cerndb)
+            ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = today, encryption_key = encryption_key, cerndb = cerndb)
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
             clean_generated_xmls()
