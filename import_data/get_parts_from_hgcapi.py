@@ -69,8 +69,8 @@ def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-
         return f'https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full'
     elif partType is not None:
         if macID is not None:
-            return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit=100&location={macID}'
-        return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit=100'
+            return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit=500&location={macID}'
+        return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit=500'
     return
 
 def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi-cmsr'):
@@ -80,8 +80,13 @@ def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url
         data = response.json() ; 
 #         print(json.dumps(data, indent=2))
         return data
+    elif response.status_code == 500:
+        print(f'Internal Server ERROR for {cern_db_url.upper()}. Try again later.')
     else:
-        print(f'ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}')
+        if partType:
+            print(f'ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}')
+        if partID:
+            print(f'ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}')
         return None
 
 def form(data):
@@ -193,21 +198,22 @@ async def main():
         pool = await asyncpg.create_pool(**db_params)
         for pt in ['bp','hxb','sen']:  #, 'pml', 'ml']:
             print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
-            parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))['parts']
-            for p in parts:
-                try:
-                    db_dict = get_data_for_db_init(p, partType = pt)
-                    if db_dict is not None:
-                        try:
-                            await write_to_db(pool, db_dict, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
-                        except Exception as e:
-                            print(f"ERROR for single part upload for {p['serial_number']}", e)
-                            traceback.print_exc()
-                            print('Dictionary:', (db_dict))
-                except:
-                    traceback.print_exc()
-            print(f'Writing {partTrans[pt]["apikey"]} to postgres from {cern_db_url.upper()} complete.')
-            print('-'*40); print('\n')
+            parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
+            if parts:
+                for p in parts['parts']:
+                    try:
+                        db_dict = get_data_for_db_init(p, partType = pt)
+                        if db_dict is not None:
+                            try:
+                                await write_to_db(pool, db_dict, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
+                            except Exception as e:
+                                print(f"ERROR for single part upload for {p['serial_number']}", e)
+                                traceback.print_exc()
+                                print('Dictionary:', (db_dict))
+                    except:
+                        traceback.print_exc()
+                print(f'Writing {partTrans[pt]["apikey"]} to postgres from {cern_db_url.upper()} complete.')
+                print('-'*40); print('\n')
     
     await pool.close()
     print('Refresh postgres tables')
