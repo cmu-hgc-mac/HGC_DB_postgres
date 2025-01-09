@@ -5,7 +5,7 @@
 
 2. [Specify a server name of your choice](#step2)
 	
-3. [Under `Connection`, set the database hostname (or static IP address) under `host name`. ](#step3)
+3. [Under `Connection`, provide the database hostname (or static IP address) under `host name`. ](#step3)
 	
 4.  [Refresh to see the new server.](#step4)
 
@@ -31,7 +31,7 @@ IP Adress whitelist needs to be set up on the database prior to this step. ([Ins
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/47753236-a575-4f51-8a73-16c6d6cb1596"  width="70%">
 
 
-### <a name="step3"></a>2. Under `Connection`, set the database hostname (or static IP address) under `host name`. Set username and password for the type of role. Save.
+### <a name="step3"></a>2. Under `Connection`, provide the database hostname (or static IP address) under `host name`. Provide username and password for the type of role. Save.
 (The available roles are `viewer`, `editor`, `ogp_user`, `gantry_user`, `teststand_user`, and `shipper` as found in [tables.yaml](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml)) **Table view and write permissions will be apply here.** See below for [password guidelines](#dbpassword).
 
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/361fa679-a7c7-480b-8759-3c7b8c4118d4" width="70%">
