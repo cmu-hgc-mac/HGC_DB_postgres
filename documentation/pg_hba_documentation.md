@@ -45,10 +45,12 @@ port = 5432                             # (change requires restart)
 8. `sudo nano /[global_path_to_conf]/pg_hba.conf` to open and edit in Mac/Linux. <br />
 (In Windows, open as Administrator with `notepad /[global_path_to_conf]/pg_hba.conf`)                                                                                                                
 9. After the first entry under ```# IPv4 local connections:```, add the following line for each station connecting into the database: <br />
- **```host  all  all  [station ip address or hostname]  scram-sha-256```**  Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0  scram-sha-256```. This is not secure and hence not recommended during production.
-10. The `viewer` user can be set to be publicly accessible without password with ```host  all  viewer  0.0.0.0/0  trust```. A `viewer` may only read from the database and has no edit permissions. Various user permissions for the differernt tables are in [dbase_info/tables.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/dbase_info/tables.yaml#L37).
-11. Save and close `pg_hba.conf`.
-12. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
+ **```host  all  all  [station ip address or hostname]  scram-sha-256```**
+10. You may contact your institution's IT department to get the **IP address and netmask** for their network to restrict access and keep your computer secure. ```host  all  all  $$$.$$$.$$$.$$$/$$  scram-sha-256```
+Note: if IP addresses are not known, it can be configured to accept all connections with ```host  all  all  0.0.0.0/0  scram-sha-256```. This is not secure and hence not recommended during production.
+11. The `viewer` user can be set to be publicly accessible without password with ```host  all  viewer  0.0.0.0/0  trust```. A `viewer` may only read from the database and has no edit permissions. Various user permissions for the differernt tables are in [dbase_info/tables.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/dbase_info/tables.yaml#L37).
+12. Save and close `pg_hba.conf`.
+13. [Restart](pg_hba_documentation.md#restart-postgresql) postgreSQL15.
 
 ### Example
 ```
@@ -58,12 +60,12 @@ port = 5432                             # (change requires restart)
 local   all             all                                         scram-sha-256
 # IPv4 local connections:
 host    all             all             127.0.0.1/32                scram-sha-256
-host    all             viewer          0.0.0.0/0                   trust          ## Viewer w/o password
+host    all             viewer          $$$.$$$.$$$.$$$/$$          trust          ## Viewer w/o password on school network
 host    all             all             mycomp1.phys.school.edu     md5            ## OGP
-host    all             gantry_user     mycomp2.phys.school.edu     md5            ## Gantry 
+host    all             all             mycomp2.phys.school.edu     md5            ## Gantry 
 host    all             all             mycomp3.phys.school.edu     md5            ## Test stand
 host    all             all             192.168.0.1/32              scram-sha-256  ## Shipping
-host    all             all             0.0.0.0/0                   scram-sha-256  ## From anywhere w/ password
+host    all             all             0.0.0.0/0                   scram-sha-256  ## From anywhere w/ password -- Not recommended
 ```
 
 How to read above example --
