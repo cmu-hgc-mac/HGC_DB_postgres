@@ -22,6 +22,7 @@ IP Adress whitelist needs to be set up on the database prior to this step. ([Ins
 
 ---
 ## <a name="step1"></a>Register a new server at the workstation
+Install [pgAdmin4](https://www.pgadmin.org/download/) on the workstation computer. (Alternatively, you may use phpPgAdmin.)
 <!--![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/475dafdb-725f-44b5-96b4-f50dff813446)-->
 
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/475dafdb-725f-44b5-96b4-f50dff813446"  width="80%">
@@ -29,6 +30,9 @@ IP Adress whitelist needs to be set up on the database prior to this step. ([Ins
 ### <a name="step2"></a>1. Specify a server name of your choice
 <!--![image](https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/47753236-a575-4f51-8a73-16c6d6cb1596)-->
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/47753236-a575-4f51-8a73-16c6d6cb1596"  width="70%">
+
+You may choose to restrict it to a particular database if your host computer has mutiple databases.
+![image](https://github.com/user-attachments/assets/6a1f5d0d-f26d-4701-a0b6-c38fb046e721)
 
 
 ### <a name="step3"></a>2. Under `Connection`, provide the database hostname (or static IP address) under `host name`. Provide username and password for the type of role. Save.
