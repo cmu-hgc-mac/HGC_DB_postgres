@@ -32,8 +32,7 @@ Install [pgAdmin4](https://www.pgadmin.org/download/) on the workstation compute
 <img src="https://github.com/murthysindhu/HGC_DB_postgres/assets/58646122/47753236-a575-4f51-8a73-16c6d6cb1596"  width="70%">
 
 You may choose to restrict it to a particular database if your host computer has mutiple databases.
-![image](https://github.com/user-attachments/assets/6a1f5d0d-f26d-4701-a0b6-c38fb046e721)
-
+<img src="https://github.com/user-attachments/assets/6a1f5d0d-f26d-4701-a0b6-c38fb046e721"  width="55%">
 
 ### <a name="step3"></a>2. Under `Connection`, provide the database hostname (or static IP address) under `host name`. Provide username and password for the type of role. Save.
 (The available roles are `viewer`, `editor`, `ogp_user`, `gantry_user`, `teststand_user`, and `shipper` as found in [tables.yaml](https://github.com/murthysindhu/HGC_DB_postgres/blob/main/dbase_info/tables.yaml)) **Table view and write permissions will be apply here.** See below for [password guidelines](#dbpassword).
