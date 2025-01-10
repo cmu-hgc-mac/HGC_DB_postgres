@@ -73,7 +73,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 SELECT comment AS back_wirebond_comment
                                 FROM back_wirebond
                                 WHERE REPLACE(module_name,'-','') = '{module}'
-                                AND xml_upload_success IS NULL
+                                -- AND xml_upload_success IS NULL
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
                             )
@@ -82,13 +82,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 SELECT comment AS front_wirebond_comment
                                 FROM front_wirebond
                                 WHERE REPLACE(module_name,'-','') = '{module}'
-                                AND xml_upload_success IS NULL
+                                -- AND xml_upload_success IS NULL
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
                             );
                             """
                         else:
-                            query = entry['nested_query'] + f" WHERE REPLACE({dbase_table}.module_name,'-','') = '{module}' AND xml_upload_success IS NULL;"
+                            query = entry['nested_query'] + f" WHERE REPLACE({dbase_table}.module_name,'-','') = '{module}' /* AND xml_upload_success IS NULL */;"
                         
                         # print(f'Executing query: {query}')
 
@@ -98,7 +98,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND xml_upload_success IS NULL
+                            -- AND xml_upload_success IS NULL
                             ORDER BY date_encap DESC, time_encap DESC
                             LIMIT 1;
                             """
@@ -106,13 +106,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND xml_upload_success IS NULL;
+                            -- AND xml_upload_success IS NULL;
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND xml_upload_success IS NULL
+                            -- AND xml_upload_success IS NULL
                             ORDER BY date_bond DESC, time_bond DESC LIMIT 1;
                             """
                     # print(f'Executing query -- \n\t{query}')

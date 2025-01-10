@@ -56,7 +56,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE {dbase_table}.hxb_name = '{hxb_name}' AND xml_upload_success IS NULL;"
+                        query = entry['nested_query'] + f" WHERE {dbase_table}.hxb_name = '{hxb_name}' /* AND xml_upload_success IS NULL */;"
                         
                         # print(f'Executing query: {query}')
 
@@ -66,14 +66,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE hxb_name = '{hxb_name}'
-                            AND xml_upload_success IS NULL
+                            -- AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE hxb_name = '{hxb_name}'
-                            AND xml_upload_success IS NULL
+                            -- AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
                             """
                     try:
