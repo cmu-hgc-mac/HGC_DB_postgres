@@ -213,7 +213,7 @@ def get_kind_of_part(part_name):
                         module_type = 'EM'
                     elif bp_material in ['Ti', 'CF']:
                         module_type = 'HAD'
-                    kind_of_part = f'{module_type} Si {part_type} {resolution} {geometry}'  
+                    kind_of_part = f'{bp_material}/Kapton {part_type} {resolution} {geometry}'  
 
                 elif part_type == 'Sensor':
                     '''
