@@ -19,7 +19,7 @@ A whitelist of IP addresses of the other stations need to be added to ```pg_hba.
 In Mac/Linux, it is customary to find it under ```PostgreSQL/15/main/pg_hba.conf``` . In Windows, it is typically found under ```C:/Program Files/PostgreSQL/l5/data/pg_hba.conf```.
 
 5. Set `max_connections = 500` and verify that `port = 5432` is available.
-6. Under `Connections and Authentication`, list static IPs or hostnames of other stations under `listen_addresses` along with `localhost`. Note: if IP addresses are not known, it can be configured to listen on all addresses with `listen_addresses = '*'`. (This is not secure and hence not recommended during production but is necessary to make the database publicly accessible.)
+6. Under `Connections and Authentication`, list static IPs or hostnames of other stations under `listen_addresses` along with `localhost`. Note: if IP addresses are not known, it can be configured to listen on all addresses with `listen_addresses = '*'`.
 7. Save and close `postgresql.conf`. ([Restart required](pg_hba_documentation.md#restart-postgresql)).
 
 ```
