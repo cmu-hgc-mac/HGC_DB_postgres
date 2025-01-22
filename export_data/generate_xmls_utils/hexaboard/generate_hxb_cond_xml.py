@@ -89,12 +89,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             time_begin = results.get("time_inspect", "")
                             db_values[xml_var] = f"{run_date}T{time_begin}"
                         elif xml_var == "RUN_END_TIMESTAMP_":
-                            run_date = results.get("ass_run_date", "")
-                            time_end = results.get("ass_time_end", "")
-                            db_values[xml_var] = f"{run_date}T{time_end}"
+                            db_values[xml_var] = db_values["RUN_BEGIN_TIMESTAMP_"]
+                            # run_date = results.get("ass_run_date", "")
+                            # time_end = results.get("ass_time_end", "")
+                            # db_values[xml_var] = f"{run_date}T{time_end}"
                         elif xml_var == "RUN_BEGIN_DATE_":
-                            run_date = results.get("ass_run_date", "")
-                            db_values[xml_var] = f"{run_date}T{time_end}"
+                            run_date = results.get("date_inspect", "")
+                            db_values[xml_var] = f"{run_date}"
                         elif xml_var == "THICKNESS":
                             db_values['THICKNESS'] = str(round(float(results.get("thickness")), 3))
                         elif xml_var == "FLATNESS":

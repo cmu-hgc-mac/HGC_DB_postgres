@@ -359,8 +359,8 @@ bp_cond:
     dbase_table: bp_inspect
     nested_query: 
   - xml_temp_val: RUN_END_TIMESTAMP_
-    dbase_col: null ##time to click "save" on GUI (end of inspection) ## ask aleetha if we can have the same time as RUN_BEGIN_TIMESTAMP_ ## missing
-    dbase_table: null
+    dbase_col: date_inspect, time_inspect ##time to click "save" on GUI (end of inspection) ## ask aleetha if we can have the same time as RUN_BEGIN_TIMESTAMP_ ## missing
+    dbase_table: bp_inspect
     nested_query: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: inspector
@@ -402,8 +402,8 @@ hxb_cond:
     dbase_table: hxb_inspect
     nested_query: null
   - xml_temp_val: RUN_END_TIMESTAMP_
-    dbase_col: null ## time when clicking "save" on GUI (time exporting data from GUI to db)
-    dbase_table: null
+    dbase_col: date_inspect, time_inspect ## time when clicking "save" on GUI (time exporting data from GUI to db)
+    dbase_table: hxb_inspect
     nested_query: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: null ## should be none, db_loader will auto-fill based on username on lxplus
@@ -417,8 +417,8 @@ hxb_cond:
     dbase_table: hxb_inspect
     nested_query: null
   - xml_temp_val: RUN_BEGIN_DATE_
-    dbase_col: null ## same as RUN_END_TIMESTAMP for date
-    dbase_table: null
+    dbase_col: date_inspect ## same as RUN_END_TIMESTAMP for date
+    dbase_table: hxb_inspect
     nested_query: null
   - xml_temp_val: TEST_FILES
     dbase_col: null ## name of testing data file, as of now 10/14 nullable in CentralDB. Leave it NULL. 

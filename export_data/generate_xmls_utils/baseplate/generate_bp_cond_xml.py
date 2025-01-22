@@ -94,9 +94,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             time_begin = results.get("time_inspect", "")
                             db_values[xml_var] = f"{run_date}T{time_begin}"
                         elif xml_var == "RUN_END_TIMESTAMP_":
-                            run_date = results.get("ass_run_date", "")
-                            time_end = results.get("ass_time_end", "")
-                            db_values[xml_var] = f"{run_date}T{time_end}"
+                            db_values[xml_var] = db_values["RUN_BEGIN_TIMESTAMP_"]
+                            # run_date = results.get("ass_run_date", "")
+                            # time_end = results.get("ass_time_end", "")
+                            # if run_date == "null" and time_end == 'null':
+                            #     db_values[xml_var] = db_values["RUN_BEGIN_TIMESTAMP_"]
+                            # else:
+                            #     db_values[xml_var] = f"{run_date}T{time_end}"
                         elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_begin", "")
