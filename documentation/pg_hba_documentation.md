@@ -61,9 +61,9 @@ local   all             all                                         scram-sha-25
 # IPv4 local connections:
 host    all             all             127.0.0.1/32                scram-sha-256
 host    all             viewer          $$$.$$$.$$$.$$$/$$          trust          ## Viewer w/o password on school network
-host    all             all             mycomp1.phys.school.edu     md5            ## OGP
-host    all             all             mycomp2.phys.school.edu     md5            ## Gantry 
-host    all             all             mycomp3.phys.school.edu     md5            ## Test stand
+host    all             all             $$$.$$$.$$$.$$$/$$          scram-sha-256  ## Require password to write to db from school network
+
+host    all             all             mycomp1.phys.school.edu     md5            ## Test stand
 host    all             all             192.168.0.1/32              scram-sha-256  ## Shipping
 host    all             all             0.0.0.0/0                   scram-sha-256  ## From anywhere w/ password -- Not recommended
 ```
