@@ -64,7 +64,6 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
 
-    #scripts_to_run = ['export_data/generate_xmls_utils/module/generate_module_assembly_xml.py']
     #Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
