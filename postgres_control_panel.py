@@ -95,7 +95,7 @@ def create_database():
     def submit_create():
         viewer_pass = viewer_var.get()
         user_pass = user_var.get()
-        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt((password_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt((password_var.get()).encode()) ).decode() if password_var.get().strip() else ""  ## Encrypt password and then convert to base64
         if db_pass.strip():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
@@ -120,7 +120,7 @@ def modify_tables():
     entry.pack(pady=10)
 
     def submit_modify():
-        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (password_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (password_var.get()).encode()) ).decode() if password_var.get().strip() else "" ## Encrypt password and then convert to base64
         if db_pass.strip():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
@@ -163,7 +163,7 @@ def import_data():
     download_prod_var_entry.pack(pady=2)
 
     def submit_import():
-        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         # lxuser_pass = lxuser_var.get()
         # lxpassword_pass = lxpassword_var.get()
         download_dev_stat = download_dev_var.get()
@@ -282,8 +282,8 @@ def export_data():
         
     def submit_export():
         lxp_username = lxuser_var.get()
-        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
-        lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+        lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() if lxpassword_var.get().strip() else "" ## Encrypt password and then convert to base64
         generate_stat = generate_var.get()
         upload_dev_stat = upload_dev_var.get()
         upload_prod_stat = upload_prod_var.get()
@@ -321,7 +321,7 @@ def refresh_data():
     shipper_var_entry.pack(pady=5)
 
     def submit_refresh():
-        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() ## Encrypt password and then convert to base64
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else ""  ## Encrypt password and then convert to base64
     
         if dbshipper_pass.strip():
             input_window.destroy()  
@@ -350,70 +350,68 @@ root.geometry("400x550")
 image_path = "documentation/images/logo_small_75.png"  # Update with your image path
 logo_image = load_image(image_path)
 
-# Create a frame for the layout
+button_width, button_height = 22, 3
+small_button_width, small_button_height = 15, 1
+
+# Create a frame for the layout using grid
 frame = Frame(root)
-frame.pack(pady=10, fill='both', expand=True)
+frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+for row in range(3):  # Assuming you have 3 rows
+    frame.grid_rowconfigure(row, weight=1)
+
+# Configure grid layout to expand in all directions
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
 
 # Add logo or fallback label
 if logo_image:
     logo_label = Label(frame, image=logo_image, anchor="w")
-    logo_label.pack(side="top", anchor="w", padx=10)
+    logo_label.grid(row=0, column=0, padx=10, rowspan=3)
 else:
     logo_label = Label(frame, text="Carnegie Mellon University")
-    logo_label.pack(side="top", anchor="w", padx=10)
+    logo_label.grid(row=0, column=0, padx=10, rowspan=3)
 
-button_width, button_height = 22, 3
-small_button_width, small_button_height = 15, 1
+# Add buttons with grid layout
+button_create = Button(frame, text="Create DBase Tables", command=create_database, width=small_button_width, height=small_button_height)
+button_create.grid(row=0, column=1, pady=5)
 
-# Create buttons with large size
-button_create = Button(frame, text="Create DBase Tables", command=create_database, width = small_button_width, height = small_button_height)
-button_create.pack(pady=5)
-bind_button_keys(button_create)
+button_modify = Button(frame, text="Modify Existing Tables", command=modify_tables, width=small_button_width, height=small_button_height)
+button_modify.grid(row=1, column=1, pady=5)
 
-button_modify = Button(frame, text="Modify Existing Tables", command=modify_tables, width = small_button_width, height = small_button_height)
-button_modify.pack(pady=5)
-bind_button_keys(button_modify)
+button_check_config = Button(frame, text="Check Config", command=check_config_action, width=small_button_width, height=small_button_height)
+button_check_config.grid(row=2, column=1, pady=5)
 
-button_check_config = Button(frame, text="Check Config", command=check_config_action, width = small_button_width, height = small_button_height)
-button_check_config.pack(pady=5)
-bind_button_keys(button_check_config)
+spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
+spacer.grid(row=3, column=1, pady=10)
 
-spacer = Frame(frame, height=20)  # Spacer with height (for vertical spacing)
-spacer.pack()
-
-button_shipin = Button(frame, text="Verify received shipment 📦 ⬇️", command=refresh_data, width = button_width, height = button_height)
-button_shipin.pack(pady=5)
-bind_button_keys(button_shipin)
+button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=refresh_data, width=button_width, height=button_height)
+button_shipin.grid(row=4, column=1, pady=5, sticky='ew')
 button_shipin.config(state="disabled")
 
-# button_download = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(import_action), width = button_width, height = button_height)
-button_download = Button(frame, text="   Import Parts Data     📁 ⬇️", command=import_data, width = button_width, height = button_height)
-button_download.pack(pady=5)
-bind_button_keys(button_download)
+button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
+button_download.grid(row=5, column=1, pady=5, sticky='ew')
 
-button_upload = Button(frame, text=" Upload XMLs to DBLoader 📁 ⬆️", command=export_data, width = button_width, height = button_height)
-button_upload.pack(pady=5)
-bind_button_keys(button_upload)
+button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader 📁⬆️", command=export_data, width=button_width, height=button_height)
+button_upload_xml.grid(row=6, column=1, pady=5, sticky='ew')
 
-button_shipout = Button(frame, text="   Outgoing shipment     📦 ⬆️", command=refresh_data, width = button_width, height = button_height)
-button_shipout.pack(pady=5)
+button_shipout = Button(frame, text="   Outgoing shipment     📦⬆️", command=refresh_data, width=button_width, height=button_height)
+button_shipout.grid(row=7, column=1, pady=5, sticky='ew')
 button_shipout.config(state="disabled")
-bind_button_keys(button_shipout)
 
-button_upload = Button(frame, text=" Refresh local database     🔄", command=refresh_data, width = button_width, height = button_height)  #🔃 
-button_upload.pack(pady=5)
-bind_button_keys(button_upload)
+button_refresh_db = Button(frame, text=" Refresh local database     🔄", command=refresh_data, width=button_width, height=button_height)  #🔃 
+button_refresh_db.grid(row=8, column=1, pady=5, sticky='ew')
 
+# Configure grid to ensure all rows expand with window resize
+for i in range(10):
+    frame.grid_rowconfigure(i, weight=1)
 
 # Documentation link at the bottom
 def open_documentation():
-    webbrowser.open("https://github.com/cmu-hgc-mac/")  
-
+    webbrowser.open("https://github.com/cmu-hgc-mac/")
 
 doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
-doc_label.pack(pady=5)
-# doc_label.pack(side='bottom', pady=5)
-doc_label.bind("<Button-1>", lambda e: open_documentation())  # Bind click event to the label
+doc_label.grid(row=1, column=0, sticky="s")
+doc_label.bind("<Button-1>", lambda e: open_documentation())
 
 # Bind the close event to exit cleanly
 root.protocol("WM_DELETE_WINDOW", exit_application)
