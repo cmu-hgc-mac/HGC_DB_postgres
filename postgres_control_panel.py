@@ -30,7 +30,6 @@ run_git_pull_seq()
 
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
-    button.bind("<space>", lambda event: button.invoke())   # Bind Space key
 
 # Synchronous functions for button actions
 def import_action():
@@ -357,57 +356,64 @@ frame.pack(pady=10, fill='both', expand=True)
 
 # Add logo or fallback label
 if logo_image:
-    logo_label = Label(frame, image=logo_image)
-    logo_label.pack()
+    logo_label = Label(frame, image=logo_image, anchor="w")
+    logo_label.pack(side="top", anchor="w", padx=10)
 else:
     logo_label = Label(frame, text="Carnegie Mellon University")
-    logo_label.pack()
+    logo_label.pack(side="top", anchor="w", padx=10)
 
-button_width, button_height = 20, 3
-
-def bind_button_keys(button):
-    button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
-    button.bind("<space>", lambda event: button.invoke())   # Bind Space key
+button_width, button_height = 22, 3
+small_button_width, small_button_height = 15, 1
 
 # Create buttons with large size
-button_create = Button(frame, text="Create DBase Tables", command=create_database, width = button_width, height = button_height)
+button_create = Button(frame, text="Create DBase Tables", command=create_database, width = small_button_width, height = small_button_height)
 button_create.pack(pady=5)
 bind_button_keys(button_create)
 
-button_modify = Button(frame, text="Modify Existing Tables", command=modify_tables, width = button_width, height = button_height)
+button_modify = Button(frame, text="Modify Existing Tables", command=modify_tables, width = small_button_width, height = small_button_height)
 button_modify.pack(pady=5)
 bind_button_keys(button_modify)
 
-button_check_config = Button(frame, text="Check Config", command=check_config_action, width = button_width, height = button_height)
+button_check_config = Button(frame, text="Check Config", command=check_config_action, width = small_button_width, height = small_button_height)
 button_check_config.pack(pady=5)
 bind_button_keys(button_check_config)
 
+spacer = Frame(frame, height=20)  # Spacer with height (for vertical spacing)
+spacer.pack()
+
+button_shipin = Button(frame, text="Verify received shipment 📦 ⬇️", command=refresh_data, width = button_width, height = button_height)
+button_shipin.pack(pady=5)
+bind_button_keys(button_shipin)
+button_shipin.config(state="disabled")
+
 # button_download = Button(frame, text="Import Parts Data", command=lambda: handle_button_click(import_action), width = button_width, height = button_height)
-button_download = Button(frame, text="Import Parts Data", command=import_data, width = button_width, height = button_height)
+button_download = Button(frame, text="   Import Parts Data     📁 ⬇️", command=import_data, width = button_width, height = button_height)
 button_download.pack(pady=5)
 bind_button_keys(button_download)
 
-button_upload = Button(frame, text="Upload XMLs to DBLoader", command=export_data, width = button_width, height = button_height)
+button_upload = Button(frame, text=" Upload XMLs to DBLoader 📁 ⬆️", command=export_data, width = button_width, height = button_height)
 button_upload.pack(pady=5)
 bind_button_keys(button_upload)
 
-button_upload = Button(frame, text="Refresh local database", command=refresh_data, width = button_width, height = button_height)
+button_shipout = Button(frame, text="   Outgoing shipment     📦 ⬆️", command=refresh_data, width = button_width, height = button_height)
+button_shipout.pack(pady=5)
+button_shipout.config(state="disabled")
+bind_button_keys(button_shipout)
+
+button_upload = Button(frame, text=" Refresh local database     🔄", command=refresh_data, width = button_width, height = button_height)  #🔃 
 button_upload.pack(pady=5)
 bind_button_keys(button_upload)
+
 
 # Documentation link at the bottom
 def open_documentation():
     webbrowser.open("https://github.com/cmu-hgc-mac/")  
 
-# cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
-# dbtype_label = Label(root, text=f'Writing to CERN {cerndb_types[cern_dbase]["dbtype"]} Database: {cerndb_types[cern_dbase]["dbname"]}', fg="black")
-# dbtype_label.pack(pady=2)
 
 doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
 doc_label.pack(pady=5)
 # doc_label.pack(side='bottom', pady=5)
 doc_label.bind("<Button-1>", lambda e: open_documentation())  # Bind click event to the label
-
 
 # Bind the close event to exit cleanly
 root.protocol("WM_DELETE_WINDOW", exit_application)
