@@ -5,8 +5,8 @@ import os, yaml, base64
 from cryptography.fernet import Fernet
 import subprocess, webbrowser
 import tkinter
-from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame
-from tkinter import END, DISABLED, Label as TLabel
+from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog
+from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
 from export_data.src import process_xml_list, update_yaml_with_checkboxes
 
@@ -32,8 +32,7 @@ def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
 
 # Synchronous functions for button actions
-def import_action():
-    show_message("Currently under development...")
+def donothing(): False
 
 def upload_action():
     show_message("Currently under development...")
@@ -77,17 +76,17 @@ def create_database():
     input_window = Toplevel(root)
     input_window.title("Input Required")
     # Field 1: Database Name
-    TLabel(input_window, text="Set initial: VIEWER password (only read):").pack(pady=5)
+    Label(input_window, text="Set initial: VIEWER password (only read):").pack(pady=5)
     viewer_var = StringVar()
     viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     viewer_var_entry.pack(pady=5)
     # Field 2: Username
-    TLabel(input_window, text="Set initial: USER password (write access):").pack(pady=5)
+    Label(input_window, text="Set initial: USER password (write access):").pack(pady=5)
     user_var = StringVar()
     user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     user_var_entry.pack(pady=5)
     # Field 3: Password (hidden input)
-    TLabel(input_window, text="**Enter postgres password:**").pack(pady=5)
+    Label(input_window, text="**Enter postgres password:**").pack(pady=5)
     password_var = StringVar()
     password_entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     password_entry.pack(pady=5)
@@ -114,7 +113,7 @@ def modify_tables():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    TLabel(input_window, text="**Enter postgres password:**").pack(pady=10)
+    Label(input_window, text="**Enter postgres password:**").pack(pady=10)
     password_var = StringVar()
     entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     entry.pack(pady=10)
@@ -135,22 +134,91 @@ def modify_tables():
     submit_modify_button.pack(pady=10)
     bind_button_keys(submit_modify_button)
 
+def verify_shipin():
+    def enter_parts():
+        popup = Toplevel()
+        popup.title("Scan part QR codes")
+
+    input_window = Toplevel(root)
+    input_window.title("Verify received components")
+    Label(input_window, text="Enter local db USER password:").pack(pady=5)
+    shipper_var = StringVar()
+    shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    shipper_var_entry.pack(pady=5)
+
+    today_date = datetime.now()
+    Label(input_window, text="Shipment verification date (approx.)").pack(pady=5)
+    shipindate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
+    shipindate_var_entry = Entry(input_window, textvariable=shipindate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    shipindate_var_entry.pack(pady=5)
+    
+    Label(input_window, text="Type of component:").pack(pady=5)
+    selected_component = StringVar()
+    radio_bp = Radiobutton(input_window, text="baseplate", variable=selected_component, value="baseplate") #, command=func_do_something)
+    radio_bp.pack(anchor="w", pady=2, padx=80)
+    radio_sen = Radiobutton(input_window, text="sensor", variable=selected_component, value="sensor") #, command=func_do_something)
+    radio_sen.pack(anchor="w", pady=2, padx=80)
+    radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard") #, command=func_do_something)
+    radio_hxb.pack(anchor="w", pady=2, padx=80)
+
+    Label(input_window, text="Please physically verify the reception of each component at your MAC.", fg="red",wraplength=270).pack(pady=5)
+
+    def upload_file_with_part():
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+        if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
+            popup = Toplevel()
+            popup.title("Upload text/csv file with component names")
+            file_entry = None
+            
+            def browse_file():
+                file_path = filedialog.askopenfilename(title="Select a File")
+                if file_path:
+                    file_entry.delete(0, 'end')  # Clear the current entry
+                    file_entry.insert(0, file_path)
+
+            browse_button = Button(popup, text="Browse", command=browse_file)
+            browse_button.pack(pady=10)
+            file_entry = Entry(popup, width=50, bd=2)
+            file_entry.pack(pady=10)
+
+            def verify_components():
+                if file_entry.get().strip():
+                    subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get())])
+                    popup.destroy()  
+
+            submit_fileparts_button = Button(popup, text="Submit to DB", command=verify_components)
+            submit_fileparts_button.pack(pady=10)
+            bind_button_keys(submit_fileparts_button)
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                input_window.destroy()  
+
+    submit_export_button = Button(input_window, text="Enter (up to 10) individual parts", command=donothing)
+    submit_export_button.pack(pady=10)
+    bind_button_keys(submit_export_button)
+    submit_export_button.config(state='disabled')
+    Label(input_window, text="Or").pack(pady=5)
+    select_specific_button = Button(input_window, text="Upload text/csv file with part names", command=upload_file_with_part)
+    select_specific_button.pack(pady=10)
+    bind_button_keys(select_specific_button)
+    
+
 def import_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
 
-    TLabel(input_window, text="Enter local db USER password:").pack(pady=5)
+    Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
 
-    # TLabel(input_window, text="Enter lxplus username:").pack(pady=5)
+    # Label(input_window, text="Enter lxplus username:").pack(pady=5)
     # lxuser_var = StringVar()
     # lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     # lxuser_var_entry.pack(pady=5)
 
-    # TLabel(input_window, text="Enter lxplus password:").pack(pady=5)
+    # Label(input_window, text="Enter lxplus password:").pack(pady=5)
     # lxpassword_var = StringVar()
     # lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     # lxpassword_entry.pack(pady=5)
@@ -191,25 +259,25 @@ def export_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    TLabel(input_window, text="**Enter local DB USER password:**").pack(pady=5)
+    Label(input_window, text="**Enter local DB USER password:**").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
-    TLabel(input_window, text="**Enter LXPLUS username:**").pack(pady=5)
+    Label(input_window, text="**Enter LXPLUS username:**").pack(pady=5)
     lxuser_var = StringVar()
     lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxuser_var_entry.pack(pady=5)
-    TLabel(input_window, text="**Enter LXPLUS password:**").pack(pady=5)
+    Label(input_window, text="**Enter LXPLUS password:**").pack(pady=5)
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxpassword_entry.pack(pady=5)
 
     today_date = datetime.now()
-    TLabel(input_window, text="Start date").pack(pady=5)
+    Label(input_window, text="Start date").pack(pady=5)
     startdate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
     startdate_var_entry = Entry(input_window, textvariable=startdate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     startdate_var_entry.pack(pady=5)
-    TLabel(input_window, text="End date").pack(pady=5)
+    Label(input_window, text="End date").pack(pady=5)
     enddate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
     enddate_var_entry = Entry(input_window, textvariable=enddate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     enddate_var_entry.pack(pady=5)
@@ -315,7 +383,7 @@ def refresh_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    TLabel(input_window, text="Enter local db USER password:").pack(pady=5)
+    Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
@@ -384,9 +452,9 @@ button_check_config.grid(row=2, column=1, pady=5)
 spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
 spacer.grid(row=3, column=1, pady=10)
 
-button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=refresh_data, width=button_width, height=button_height)
+button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=verify_shipin, width=button_width, height=button_height)
 button_shipin.grid(row=4, column=1, pady=5, sticky='ew')
-button_shipin.config(state="disabled")
+# button_shipin.config(state="disabled")
 
 button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=5, column=1, pady=5, sticky='ew')

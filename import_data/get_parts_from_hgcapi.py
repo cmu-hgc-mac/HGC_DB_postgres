@@ -22,7 +22,7 @@ def str2bool(boolstr):
     dictstr = {'True': True, 'False': False}
     return dictstr[boolstr]
 
-partTrans = {'bp' : {'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 'bp_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
+partTrans = {'bp' :{'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 'bp_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
              'sen':{'apikey':'sensors', 'dbtabname': 'sensor', 'db_col': 'sen_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment'}},
              'hxb':{'apikey':'pcbs', 'dbtabname': 'hxb_inspect', 'db_col': 'hxb_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
              'pml':{'apikey':'protomodules', 'dbtabname': 'proto_inspect', 'db_col': 'proto_name' ,'qc_cols':  {'prto_grade': 'grade', 'prto_thkns_mm': 'ave_thickness', "prto_thkns_mm": 'max_thickness', 'prto_fltns_mm': 'flatness', "snsr_x_offst": 'x_offset_mu', "snsr_y_offst": 'y_offset_mu',"snsr_ang_offst": 'ang_offset_deg'}},
@@ -39,24 +39,16 @@ def get_query_write(table_name, column_names, check_conflict_col = None, db_uplo
     data_placeholder = ', '.join([f'${i+1}' for i in range(len(column_names))])
     query = f""" {pre_query} {f'{data_placeholder}'}  """
     if check_conflict_col is not None:
-        query += f" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' ) "
+        query += f" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NOT NULL); "
+        update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
+        query += f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
     return query
 
-def check_exists_query(table_name, column_names):
-    pre_query = f"""SELECT EXISTS ( SELECT 1 FROM {table_name} WHERE """ 
-    data_placeholder = [f'{col_name} = ${n+1}' for n, col_name in enumerate(column_names)]
-    query = f'{pre_query} {" AND ".join(data_placeholder)} );'
-    return query
-
-# OLD CODE
-# async def write_to_db(pool, db_upload_data, partType = None):
-#     table_name = partTrans[partType]["dbtabname"]
-#     check_col = {key: db_upload_data[key] for key in [partTrans[partType]["db_col"], "date_inspect"]}
-#     async with pool.acquire() as conn:
-#         check_exists = await conn.fetchval( check_exists_query(table_name, check_col.keys()), *check_col.values())
-#         if not check_exists:
-#             query = get_query_write(table_name, db_upload_data.keys())
-#             await conn.execute(query, *db_upload_data.values())
+# def check_exists_query(table_name, column_names):
+#     pre_query = f"""SELECT EXISTS ( SELECT 1 FROM {table_name} WHERE """ 
+#     data_placeholder = [f'{col_name} = ${n+1}' for n, col_name in enumerate(column_names)]
+#     query = f'{pre_query} {" AND ".join(data_placeholder)} );'
+#     return query
 
 async def write_to_db(pool, db_upload_data, partType = None, check_conflict_col=None):
     table_name = partTransInit[partType]["dbtabname"]
@@ -113,7 +105,7 @@ def get_part_type(partName, partType):
         return_dict.update({'thickness': int(kop_yaml['sensor'][partName[0]][0])})  
     return return_dict
 
-def get_data_for_db_init(data_full, partType):
+def get_dict_for_db_upload(data_full, partType):
     try:
         db_dict = {partTransInit[partType]["db_cols"][k]: data_full[k] for k in (partTransInit[partType]["db_cols"]).keys()}
         db_dict.update(get_part_type(data_full['serial_number'], partType))
@@ -125,49 +117,10 @@ def get_data_for_db_init(data_full, partType):
         # print('*'*100)
         return None
 
-def get_data_for_db(data_full, partType):
-    try:
-        db_dict = {partTrans[partType]["db_col"] : data_full['serial_number'],}
-        if bool(data_full["record_lastupdate_time"]):
-            datetime_object = datetime.datetime.fromisoformat(data_full["record_lastupdate_time"] )
-        else:
-            datetime_object = datetime.datetime.fromisoformat(data_full["record_insertion_time"] )
-        db_dict.update({'date_inspect': datetime_object.date()})
-        db_dict.update({'time_inspect': datetime_object.time()})
-        db_dict.update({'xml_gen_datetime': datetime_object.date()})
-        db_dict.update({'xml_upload_success': True})
-        qc_cols = partTrans[partType]["qc_cols"]
-        if bool(data_full['qc']):
-            if partType in ['bp','hxb','sen']:
-                qc_data = data_full['qc'][partTrans[partType]["apikey"][0:-1]]
-                db_dict.update({qc_cols[key]: form(qc_data[key]) if key in qc_data.keys() else None for key in qc_cols.keys() })
-            elif partType in ['pml', 'ml']:
-                if bool(data_full['qc'][f'{partTrans[partType]["apikey"][0:-1]}_assembly']):
-                        qc_data = data_full['qc'][f'{partTrans[partType]["apikey"][0:-1]}_assembly']
-                        db_dict.update({qc_cols[key]: form(qc_data[key]) if key in qc_data.keys() else None for key in qc_cols.keys() })
-        else:
-            db_dict.update({qc_cols[key]: None for key in qc_cols.keys()})
-        return db_dict
-    except Exception as e:
-        # print('*'*100)
-        traceback.print_exc()
-        print(f'ERROR in acquiring data from API output for {data_full["serial_number"]}', e)
-        # print(json.dumps(data_full, indent=2))
-        # print('*'*100)
-        return None
-
-# def process_part_id(partID = None, partType = None):
-#     part_id = partID[0:3].replace("320","") + partID[3:]
-#     part_id = (str(part_id).replace("-",""))
-#     pos_list = {'bp': [2, 5, 7], 'sen': [2, 5, 7], 'hxb': [2, 5, 7]}
-#     parts = [part_id[i:j] for i, j in zip([0] + pos_list[partType], pos_list[partType] + [None])]
-#     output_string = f'320{"".join(parts)}'
-#     return output_string
-
 async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
-    parser.add_argument('-pid', '--pardID', default=None, required=False, help="Part ID to query from HGC API.")
+    # parser.add_argument('-pid', '--partID', default=None, required=False, help="Part ID to query from HGC API.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-downld', '--download_dev_stat', default='False', required=False, help="Download from dev DBLoader without generate.")
     parser.add_argument('-downlp', '--download_prod_stat', default='True', required=False, help="Download from prod DBLoader without generate.")
@@ -202,7 +155,7 @@ async def main():
             if parts:
                 for p in parts['parts']:
                     try:
-                        db_dict = get_data_for_db_init(p, partType = pt)
+                        db_dict = get_dict_for_db_upload(p, partType = pt)
                         if db_dict is not None:
                             try:
                                 await write_to_db(pool, db_dict, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
@@ -221,21 +174,4 @@ async def main():
 
 asyncio.run(main())
 
-    #             data_full = read_from_cern_db(partID = p['serial_number'], cern_db_url = cern_db_url)
-    #             if data_full is not None:
-    #                 db_dict = get_data_for_db(data_full, partType = pt)
-    #                 if db_dict is not None:
-    #                     try:
-    #                         # print(db_dict)
-    #                         await write_to_db(pool, db_dict, partType = pt)
-    #                     except Exception as e:
-    #                         print(f'ERROR for single part upload for {data_full} {db_dict}', e)
-    #                         traceback.print_exc()
-    #                         print('Dictionary:', (db_dict))
-    #         except:
-    #             traceback.print_exc()
-    #     print(f'Writing {partTrans[pt]["apikey"]} to postgres complete.')
-    #     print('-'*40); print('\n')
-    # await pool.close()
-    # print('Refresh postgres tables')
 
