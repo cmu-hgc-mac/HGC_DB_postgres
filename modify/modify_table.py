@@ -205,7 +205,7 @@ async def main():
 
     ## temporary function to correct the ave_thickness fiasco
     for table_name in ['proto_inspect', 'module_inspect']:
-        correct_avg_thickness_col(conn, table_name)
+        await correct_avg_thickness_col(conn, table_name)
     
     # retrieve all table names from csv files
     all_table_names = []
