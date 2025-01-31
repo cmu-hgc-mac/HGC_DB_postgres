@@ -5,7 +5,7 @@ import os, yaml, base64
 from cryptography.fernet import Fernet
 import subprocess, webbrowser
 import tkinter
-from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog
+from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
 from export_data.src import process_xml_list, update_yaml_with_checkboxes
@@ -152,15 +152,37 @@ def verify_shipin():
     shipindate_var_entry = Entry(input_window, textvariable=shipindate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipindate_var_entry.pack(pady=5)
     
-    Label(input_window, text="Type of component:").pack(pady=5)
-    selected_component = StringVar()
-    radio_bp = Radiobutton(input_window, text="baseplate", variable=selected_component, value="baseplate") #, command=func_do_something)
-    radio_bp.pack(anchor="w", pady=2, padx=80)
-    radio_sen = Radiobutton(input_window, text="sensor", variable=selected_component, value="sensor") #, command=func_do_something)
-    radio_sen.pack(anchor="w", pady=2, padx=80)
-    radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard") #, command=func_do_something)
-    radio_hxb.pack(anchor="w", pady=2, padx=80)
+    def activate_dens_geom():
+        if selected_component.get() != 'sensor':
+            dens_dropdown.config(state="disabled")
+            geom_dropdown.config(state="disabled")
+        else:
+            dens_dropdown.config(state="normal")
+            geom_dropdown.config(state="normal")
 
+    Label(input_window, text="Type of component:").pack(pady=5)
+    selected_component = StringVar(value="baseplate")
+    radio_bp = Radiobutton(input_window, text="baseplate", variable=selected_component, value="baseplate", command=activate_dens_geom)
+    radio_bp.pack(anchor="w", pady=2, padx=80)
+    radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard", command=activate_dens_geom)
+    radio_hxb.pack(anchor="w", pady=2, padx=80)
+    radio_sen = Radiobutton(input_window, text="sensor", variable=selected_component, value="sensor", command=activate_dens_geom)
+    radio_sen.pack(anchor="w", pady=2, padx=80)
+    densgeomframe = Frame(input_window)
+    densgeomframe.pack(pady=5)
+    dens_options = ["LD", "HD"]
+    geom_options = ["Full", "Top", "Bottom", "Left", "Right", "Five"]
+    selected_dens = StringVar(value=dens_options[0])
+    selected_geom = StringVar(value=geom_options[0])
+    dens_dropdown = OptionMenu(densgeomframe, selected_dens, *dens_options)
+    dens_dropdown.pack(side="left", padx=15, pady=2)
+    geom_dropdown = OptionMenu(densgeomframe, selected_geom, *geom_options)
+    geom_dropdown.pack(side="left", padx=10, pady=2)
+    dens_dropdown.config(state="disabled")
+    geom_dropdown.config(state="disabled")
+
+    selected_dens.get()
+    selected_geom.get()
     Label(input_window, text="Please physically verify the reception of each component at your MAC.", fg="red",wraplength=270).pack(pady=5)
 
     def upload_file_with_part():
@@ -193,14 +215,14 @@ def verify_shipin():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
-    submit_export_button = Button(input_window, text="Enter (up to 10) individual parts", command=donothing)
-    submit_export_button.pack(pady=10)
-    bind_button_keys(submit_export_button)
-    submit_export_button.config(state='disabled')
+    enter_verify_button = Button(input_window, text="Enter (up to 10) individual parts", command=donothing)
+    enter_verify_button.pack(pady=10, padx=0)
+    bind_button_keys(enter_verify_button)
+    enter_verify_button.config(state='disabled')
     Label(input_window, text="Or").pack(pady=5)
-    select_specific_button = Button(input_window, text="Upload text/csv file with part names", command=upload_file_with_part)
-    select_specific_button.pack(pady=10)
-    bind_button_keys(select_specific_button)
+    upload_verfile_button = Button(input_window, text="Upload text/csv file with part names", command=upload_file_with_part)
+    upload_verfile_button.pack(pady=10)
+    bind_button_keys(upload_verfile_button)
     
 
 def import_data():
@@ -454,7 +476,7 @@ spacer.grid(row=3, column=1, pady=10)
 
 button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=verify_shipin, width=button_width, height=button_height)
 button_shipin.grid(row=4, column=1, pady=5, sticky='ew')
-# button_shipin.config(state="disabled")
+button_shipin.config(state="disabled")
 
 button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=5, column=1, pady=5, sticky='ew')
