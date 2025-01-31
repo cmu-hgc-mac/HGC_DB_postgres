@@ -119,11 +119,11 @@ module_assembly:
     default_value: null
     # nested_query: SELECT flatness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: THICKNESS
-    dbase_col: ave_thickness
+    dbase_col: avg_thickness
     dbase_table: module_inspect
     nested_query: null
     default_value: null
-    # nested_query: SELECT ave_thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
+    # nested_query: SELECT avg_thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: MAX_THICKNESS
     dbase_col: max_thickness
     dbase_table: module_inspect
@@ -486,7 +486,7 @@ proto_assembly:
     nested_query: null
     default_value: null
   - xml_temp_val: THICKNESS
-    dbase_col: ave_thickness
+    dbase_col: avg_thickness
     dbase_table: proto_inspect
     nested_query: null
     default_value: null

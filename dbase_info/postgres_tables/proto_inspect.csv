@@ -3,7 +3,7 @@ proto_no,INT,fk_pm_insp,proto_assembly
 proto_name,TEXT,fk_identifier,
 grade,TEXT,,
 flatness,REAL,,
-ave_thickness,REAL,,
+avg_thickness,REAL,,
 max_thickness,REAL,,
 x_offset_mu,REAL,,
 y_offset_mu,REAL,,
