@@ -156,6 +156,22 @@ async def table_modify_seq(conn, table_name, loc, tables_subdir):
     changes = compare_schemas(existing_schema, desired_schema)
     await apply_changes(conn, table_name, changes, existing_schema)
 
+#### temporary function to correct the ave_thickness fiasco
+async def correct_avg_thickness_col(conn, table_name):
+    try:
+        query = f"""SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}' AND column_name IN ('ave_thickness', 'thickness');"""
+        existing_columns = await conn.fetch(query)
+        column_names = {row["column_name"] for row in existing_columns}
+
+        if "ave_thickness" in column_names and "thickness" in column_names:
+            async with conn.transaction():
+                await conn.execute(f"ALTER TABLE {table_name} RENAME COLUMN thickness TO avg_thickness;")
+                await conn.execute(f"""UPDATE {table_name} SET avg_thickness = ave_thickness WHERE avg_thickness IS NULL;""") ### copy to avg_thickness value from ave_thickness
+                await conn.execute(f"ALTER TABLE {table_name} DROP COLUMN ave_thickness;")  ## delete ave_thickness
+
+    except Exception as e:
+        print(f"Error: {e}")
+
 async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-t', '--tablename', default='all', required=False, help="Name of table to modify.")
@@ -187,6 +203,10 @@ async def main():
     # Establish a connection with database
     conn = await asyncpg.connect(**db_params)
 
+    ## temporary function to correct the ave_thickness fiasco
+    for table_name in ['proto_inspect', 'module_inspect']:
+        correct_avg_thickness_col(conn, table_name)
+    
     # retrieve all table names from csv files
     all_table_names = []
     for filename in os.listdir(os.path.join(loc, tables_subdir)):
