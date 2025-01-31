@@ -86,7 +86,7 @@ def create_database():
     user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     user_var_entry.pack(pady=5)
     # Field 3: Password (hidden input)
-    Label(input_window, text="**Enter postgres password:**").pack(pady=5)
+    Label(input_window, text="**Enter postgres password:** (for modifications)").pack(pady=5)
     password_var = StringVar()
     password_entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     password_entry.pack(pady=5)
@@ -100,7 +100,8 @@ def create_database():
             # Run the subprocess command
             subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass, "-k", encryption_key])
-            show_message(f"PostgreSQL database '{dbase_name}' tables created.")
+            subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
+            show_message(f"Check terminal for PostgreSQL database tables. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
                 input_window.destroy()  
@@ -108,31 +109,6 @@ def create_database():
     submit_create_button = Button(input_window, text="Submit", command=submit_create)
     submit_create_button.pack(pady=10)
     bind_button_keys(submit_create_button)
-
-def modify_tables():
-    # run_git_pull_seq()
-    input_window = Toplevel(root)
-    input_window.title("Input Required")
-    Label(input_window, text="**Enter postgres password:**").pack(pady=10)
-    password_var = StringVar()
-    entry = Entry(input_window, textvariable=password_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    entry.pack(pady=10)
-
-    def submit_modify():
-        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (password_var.get()).encode()) ).decode() if password_var.get().strip() else "" ## Encrypt password and then convert to base64
-        if db_pass.strip():
-            input_window.destroy()  # Close the input window
-            # Run the subprocess command
-            subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass, "-k", encryption_key])
-            show_message(f"Check terminal for tables modified. Refresh pgAdmin4.")
-        else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
-                input_window.destroy()  
-
-    submit_modify_button = Button(input_window, text="Submit", command=submit_modify)
-    submit_modify_button.pack(pady=10)
-    bind_button_keys(submit_modify_button)
 
 def verify_shipin():
     def enter_parts():
@@ -441,7 +417,7 @@ image_path = "documentation/images/logo_small_75.png"  # Update with your image 
 logo_image = load_image(image_path)
 
 button_width, button_height = 22, 3
-small_button_width, small_button_height = 15, 1
+small_button_width, small_button_height = 22, 1
 
 # Create a frame for the layout using grid
 frame = Frame(root)
@@ -456,40 +432,37 @@ root.grid_columnconfigure(0, weight=1)
 # Add logo or fallback label
 if logo_image:
     logo_label = Label(frame, image=logo_image, anchor="w")
-    logo_label.grid(row=0, column=0, padx=10, rowspan=3)
+    logo_label.grid(row=0, column=0, padx=10, rowspan=2)
 else:
     logo_label = Label(frame, text="Carnegie Mellon University")
-    logo_label.grid(row=0, column=0, padx=10, rowspan=3)
+    logo_label.grid(row=0, column=0, padx=10, rowspan=2)
 
 # Add buttons with grid layout
-button_create = Button(frame, text="Create DBase Tables", command=create_database, width=small_button_width, height=small_button_height)
+button_create = Button(frame, text="Create/Modify DBase Tables", command=create_database, width=small_button_width, height=small_button_height)
 button_create.grid(row=0, column=1, pady=5)
 
-button_modify = Button(frame, text="Modify Existing Tables", command=modify_tables, width=small_button_width, height=small_button_height)
-button_modify.grid(row=1, column=1, pady=5)
-
 button_check_config = Button(frame, text="Check Config", command=check_config_action, width=small_button_width, height=small_button_height)
-button_check_config.grid(row=2, column=1, pady=5)
+button_check_config.grid(row=1, column=1, pady=5)
 
 spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
-spacer.grid(row=3, column=1, pady=10)
+spacer.grid(row=2, column=1, pady=10)
 
 button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=verify_shipin, width=button_width, height=button_height)
-button_shipin.grid(row=4, column=1, pady=5, sticky='ew')
+button_shipin.grid(row=3, column=1, pady=5, sticky='ew')
 button_shipin.config(state="disabled")
 
 button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
-button_download.grid(row=5, column=1, pady=5, sticky='ew')
+button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader 📁⬆️", command=export_data, width=button_width, height=button_height)
-button_upload_xml.grid(row=6, column=1, pady=5, sticky='ew')
+button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
 
 button_shipout = Button(frame, text="   Outgoing shipment     📦⬆️", command=refresh_data, width=button_width, height=button_height)
-button_shipout.grid(row=7, column=1, pady=5, sticky='ew')
+button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
 button_shipout.config(state="disabled")
 
 button_refresh_db = Button(frame, text=" Refresh local database     🔄", command=refresh_data, width=button_width, height=button_height)  #🔃 
-button_refresh_db.grid(row=8, column=1, pady=5, sticky='ew')
+button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
 
 # Configure grid to ensure all rows expand with window resize
 for i in range(10):
