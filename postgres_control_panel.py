@@ -71,7 +71,7 @@ def exit_application():
     if adminer_process:
         print("Attempting to close Adminer...") ### lsof -i :8080; kill <pid>
         atexit.register(cleanup)
-            
+
     root.quit()  # Exit the application
 
 # Load image
@@ -504,8 +504,5 @@ doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
 doc_label.grid(row=1, column=0, sticky="s")
 doc_label.bind("<Button-1>", lambda e: open_documentation())
 
-# Bind the close event to exit cleanly
-root.protocol("WM_DELETE_WINDOW", exit_application)
-
-# Show the window and start the application
-root.mainloop()
+root.protocol("WM_DELETE_WINDOW", exit_application)  # Bind the close event to exit cleanly
+root.mainloop() # Show the window and start the application
