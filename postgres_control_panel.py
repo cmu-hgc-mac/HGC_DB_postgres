@@ -1,7 +1,7 @@
 import os, yaml, base64, sys, threading, atexit, signal
 from pathlib import Path
 from cryptography.fernet import Fernet
-import subprocess, webbrowser
+import subprocess, webbrowser, zipfile, urllib.request
 import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
@@ -417,11 +417,15 @@ def refresh_data():
 
 def open_adminerevo():
     global adminer_process
-    adminer_php_file = os.path.join('housekeeping','adminer-pgsql.zip')
+    adminer_php_file = 'adminer-pgsql.php'
     if not os.path.exists(adminer_php_file):
         try:
-            subprocess.run(["curl", "-o", f"{adminer_php_file}", "https://download.adminerevo.org/latest/adminer/adminer-pgsql.zip"], check=True, capture_output=True, text=True)
-            subprocess.run(["unzip", f"{adminer_php_file}"])
+            url = "https://download.adminerevo.org/latest/adminer/adminer-pgsql.zip"
+            adminer_zip_file = adminer_php_file.replace('.php','.zip')
+            urllib.request.urlretrieve(url, adminer_zip_file)
+            with zipfile.ZipFile(adminer_zip_file, 'r') as zip_ref:
+                zip_ref.extractall() 
+            if os.path.exists(adminer_zip_file): os.remove(adminer_zip_file)
         except Exception as e:
             print(e)
     adminer_process = subprocess.Popen(["php", "-S", "127.0.0.1:8080", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
