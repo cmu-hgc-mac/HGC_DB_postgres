@@ -1,7 +1,5 @@
-import sys
-import threading
-import time
-import os, yaml, base64
+import os, yaml, base64, sys, threading, atexit, signal
+from pathlib import Path
 from cryptography.fernet import Fernet
 import subprocess, webbrowser
 import tkinter
@@ -12,11 +10,12 @@ from export_data.src import process_xml_list, update_yaml_with_checkboxes
 
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
-
+adminer_process = None
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 dbase_name = config_data.get('dbname')
+db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
 
 def run_git_pull_seq():
@@ -51,15 +50,28 @@ def check_config_action():
     message += "\n".join(f"{key}: {value}" for key, value in config_data.items())
     show_message_textbox(message)
 
-def print_action():
-    time.sleep(1)  # Simulate a time-consuming task
-    show_message("Printing...")
+# import time
+# def print_action():
+#     time.sleep(1)  # Simulate a time-consuming task
+#     show_message("Printing...")
 
 def show_message(message):
     messagebox.showinfo("Action", message)
 
 # Function to exit the application
 def exit_application():
+    def cleanup():
+        try:
+            adminer_process.terminate()  
+            adminer_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            os.kill(adminer_process.pid, signal.SIGTERM)
+        print("Closed Adminer process.")
+
+    if adminer_process:
+        print("Attempting to close Adminer...") ### lsof -i :8080; kill <pid>
+        atexit.register(cleanup)
+            
     root.quit()  # Exit the application
 
 # Load image
@@ -403,13 +415,26 @@ def refresh_data():
     submit_refresh_button.pack(pady=10)
     bind_button_keys(submit_refresh_button)
 
+def open_adminerevo():
+    global adminer_process
+    adminer_php_file = os.path.join('housekeeping','adminer-pgsql.zip')
+    if not os.path.exists(adminer_php_file):
+        try:
+            subprocess.run(["curl", "-o", f"{adminer_php_file}", "https://download.adminerevo.org/latest/adminer/adminer-pgsql.zip"], check=True, capture_output=True, text=True)
+            subprocess.run(["unzip", f"{adminer_php_file}"])
+        except Exception as e:
+            print(e)
+    adminer_process = subprocess.Popen(["php", "-S", "127.0.0.1:8080", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+    webbrowser.open(f"http://127.0.0.1:8080/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
+
+
 # Create a helper function to handle button clicks
 def handle_button_click(action):
     threading.Thread(target=action).start()
 
 # Initialize the application
 root = Tk()
-root.title("Local DB Dashboard - CMS HGC MAC")
+root.title("Local DB Control Panel - CMS HGC MAC")
 root.geometry("400x550")
 
 # Load logo image
@@ -444,8 +469,8 @@ button_create.grid(row=0, column=1, pady=5)
 button_check_config = Button(frame, text="Check Config", command=check_config_action, width=small_button_width, height=small_button_height)
 button_check_config.grid(row=1, column=1, pady=5)
 
-spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
-spacer.grid(row=2, column=1, pady=10)
+# spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
+# spacer.grid(row=2, column=1, pady=10)
 
 button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=verify_shipin, width=button_width, height=button_height)
 button_shipin.grid(row=3, column=1, pady=5, sticky='ew')
@@ -464,13 +489,16 @@ button_shipout.config(state="disabled")
 button_refresh_db = Button(frame, text=" Refresh local database     🔄", command=refresh_data, width=button_width, height=button_height)  #🔃 
 button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
 
+button_search_data = Button(frame, text=" Search/Edit Data   📝🔍", command=open_adminerevo, width=button_width, height=button_height) 
+button_search_data.grid(row=7, column=1, pady=5, sticky='ew')
+
 # Configure grid to ensure all rows expand with window resize
 for i in range(10):
     frame.grid_rowconfigure(i, weight=1)
 
 # Documentation link at the bottom
 def open_documentation():
-    webbrowser.open("https://github.com/cmu-hgc-mac/")
+    webbrowser.open("https://github.com/cmu-hgc-mac/HGC_DB_postgres?tab=readme-ov-file#hgc_db_postgres")
 
 doc_label = Label(root, text="Documentation", fg="blue", cursor="hand2")
 doc_label.grid(row=1, column=0, sticky="s")
