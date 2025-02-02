@@ -17,6 +17,7 @@ config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 dbase_name = config_data.get('dbname')
 db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
+php_port = config_data.get('php_port', '8083') 
 
 def run_git_pull_seq():
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
@@ -69,7 +70,7 @@ def exit_application():
         print("Closed Adminer process.")
 
     if adminer_process:
-        print("Attempting to close Adminer...") ### lsof -i :8080; kill <pid>
+        print("Attempting to close Adminer...") ### lsof -i :8085; kill <pid>
         atexit.register(cleanup)
 
     root.quit()  # Exit the application
@@ -428,8 +429,8 @@ def open_adminerevo():
             if os.path.exists(adminer_zip_file): os.remove(adminer_zip_file)
         except Exception as e:
             print(e)
-    adminer_process = subprocess.Popen(["php", "-S", "127.0.0.1:8080", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
-    webbrowser.open(f"http://127.0.0.1:8080/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
+    adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+    webbrowser.open(f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
 
 
 # Create a helper function to handle button clicks
@@ -483,7 +484,7 @@ button_shipin.config(state="disabled")
 button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
-button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader 📁⬆️", command=export_data, width=button_width, height=button_height)
+button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader (WIP)📁⬆️", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
 
 button_shipout = Button(frame, text="   Outgoing shipment     📦⬆️", command=refresh_data, width=button_width, height=button_height)

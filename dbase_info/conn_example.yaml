@@ -3,3 +3,4 @@ port: '5432'
 db_hostname: 'localhost' 
 institution_abbr: '' ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB
 cern_db: 'prod_db' ## dev_db vs prod_db
+php_port: 8083
