@@ -124,10 +124,6 @@ def create_database():
     bind_button_keys(submit_create_button)
 
 def verify_shipin():
-    def enter_parts():
-        popup = Toplevel()
-        popup.title("Scan part QR codes")
-
     input_window = Toplevel(root)
     input_window.title("Verify received components")
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
@@ -173,7 +169,6 @@ def verify_shipin():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
             popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
-
             def verify_components():
                 popup1.destroy() 
                 subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
@@ -194,6 +189,9 @@ def verify_shipin():
 
             submit_button = Button(popup1, text="Submit to DB", command=save_entries)
             submit_button.grid(row=10, column=0, columnspan=2, pady=10)
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                input_window.destroy()  
 
     def upload_file_with_part():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
