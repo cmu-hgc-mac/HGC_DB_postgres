@@ -455,7 +455,7 @@ def open_adminerevo():
     except Exception as e:
         traceback.print_exc()
         print('\n*** PHP Installation Instructions at', 'https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md ***')
-        webbrowser.open(f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
+        webbrowser.open(f"https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md")
         
     
 
