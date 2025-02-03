@@ -40,10 +40,13 @@ def get_query_write(table_name, column_names, check_conflict_col = None, db_uplo
     query = f""" {pre_query} {f'{data_placeholder}'}  """
     if check_conflict_col is not None:
         query += f" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NOT NULL); "
-        update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
-        query += f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
     return query
 
+
+def get_query_update(table_name, column_names, check_conflict_col = None, db_upload_data = None):
+    update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
+    query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
+    return query
 # def check_exists_query(table_name, column_names):
 #     pre_query = f"""SELECT EXISTS ( SELECT 1 FROM {table_name} WHERE """ 
 #     data_placeholder = [f'{col_name} = ${n+1}' for n, col_name in enumerate(column_names)]
@@ -54,6 +57,8 @@ async def write_to_db(pool, db_upload_data, partType = None, check_conflict_col=
     table_name = partTransInit[partType]["dbtabname"]
     async with pool.acquire() as conn:
         query = get_query_write(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
+        await conn.execute(query, *db_upload_data.values())
+        query = get_query_update(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
         await conn.execute(query, *db_upload_data.values())
 
 def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-cmsr'):

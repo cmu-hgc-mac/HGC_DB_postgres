@@ -141,44 +141,65 @@ def verify_shipin():
     shipindate_var_entry = Entry(input_window, textvariable=shipindate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipindate_var_entry.pack(pady=5)
     
-    def activate_dens_geom():
+    def activate_geom():
         if selected_component.get() != 'sensor':
-            dens_dropdown.config(state="disabled")
             geom_dropdown.config(state="disabled")
         else:
-            dens_dropdown.config(state="normal")
             geom_dropdown.config(state="normal")
 
     Label(input_window, text="Type of component:").pack(pady=5)
     selected_component = StringVar(value="baseplate")
-    radio_bp = Radiobutton(input_window, text="baseplate", variable=selected_component, value="baseplate", command=activate_dens_geom)
+    radio_bp = Radiobutton(input_window, text="baseplate", variable=selected_component, value="baseplate", command=activate_geom)
     radio_bp.pack(anchor="w", pady=2, padx=80)
-    radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard", command=activate_dens_geom)
+    radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard", command=activate_geom)
     radio_hxb.pack(anchor="w", pady=2, padx=80)
-    radio_sen = Radiobutton(input_window, text="sensor", variable=selected_component, value="sensor", command=activate_dens_geom)
+    radio_sen = Radiobutton(input_window, text="sensor -- select geometry", variable=selected_component, value="sensor", command=activate_geom)
     radio_sen.pack(anchor="w", pady=2, padx=80)
     densgeomframe = Frame(input_window)
     densgeomframe.pack(pady=5)
-    dens_options = ["LD", "HD"]
+
     geom_options = ["Full", "Top", "Bottom", "Left", "Right", "Five"]
-    selected_dens = StringVar(value=dens_options[0])
     selected_geom = StringVar(value=geom_options[0])
-    dens_dropdown = OptionMenu(densgeomframe, selected_dens, *dens_options)
-    dens_dropdown.pack(side="left", padx=15, pady=2)
     geom_dropdown = OptionMenu(densgeomframe, selected_geom, *geom_options)
     geom_dropdown.pack(side="left", padx=10, pady=2)
-    dens_dropdown.config(state="disabled")
     geom_dropdown.config(state="disabled")
-
-    selected_dens.get()
-    selected_geom.get()
+    
     Label(input_window, text="Please physically verify the reception of each component at your MAC.", fg="red",wraplength=270).pack(pady=5)
+
+    def enter_part_barcodes():
+        entries = []
+        abspath = os.path.dirname(os.path.abspath(__file__))
+        temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries.txt"))
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+        if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
+            popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
+
+            def verify_components():
+                popup1.destroy() 
+                subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+
+            def save_entries():
+                with open("shipping/temporary_part_entries.txt", "w") as file:
+                    for entry in entries:
+                        text = entry.get().strip()
+                        if text: file.write(text + "\n")
+                verify_components()
+
+            for i in range(10):
+                listlabel = Label(popup1, text=f"{i + 1}:")
+                listlabel.grid(row=i, column=0, padx=10, pady=0, sticky="w")
+                entry = Entry(popup1, width=30)
+                entry.grid(row=i, column=1, padx=10, pady=0)
+                entries.append(entry)
+
+            submit_button = Button(popup1, text="Submit to DB", command=save_entries)
+            submit_button.grid(row=10, column=0, columnspan=2, pady=10)
 
     def upload_file_with_part():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            popup = Toplevel()
-            popup.title("Upload text/csv file with component names")
+            popup2 = Toplevel()
+            popup2.title("Upload text/csv file with component names")
             file_entry = None
             
             def browse_file():
@@ -187,29 +208,29 @@ def verify_shipin():
                     file_entry.delete(0, 'end')  # Clear the current entry
                     file_entry.insert(0, file_path)
 
-            browse_button = Button(popup, text="Browse", command=browse_file)
+            browse_button = Button(popup2, text="Browse", command=browse_file)
             browse_button.pack(pady=10)
-            file_entry = Entry(popup, width=50, bd=2)
+            file_entry = Entry(popup2, width=50, bd=2)
             file_entry.pack(pady=10)
 
             def verify_components():
                 if file_entry.get().strip():
-                    subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get())])
-                    popup.destroy()  
+                    subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+                    popup2.destroy()  
 
-            submit_fileparts_button = Button(popup, text="Submit to DB", command=verify_components)
+            submit_fileparts_button = Button(popup2, text="Submit to DB", command=verify_components)
             submit_fileparts_button.pack(pady=10)
             bind_button_keys(submit_fileparts_button)
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
-    enter_verify_button = Button(input_window, text="Enter (up to 10) individual parts", command=donothing)
+    enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes)
     enter_verify_button.pack(pady=10, padx=0)
     bind_button_keys(enter_verify_button)
-    enter_verify_button.config(state='disabled')
+    # enter_verify_button.config(state='disabled')
     Label(input_window, text="Or").pack(pady=5)
-    upload_verfile_button = Button(input_window, text="Upload text/csv file with part names", command=upload_file_with_part)
+    upload_verfile_button = Button(input_window, text="Upload text/csv file with part barcodes", command=upload_file_with_part)
     upload_verfile_button.pack(pady=10)
     bind_button_keys(upload_verfile_button)
     
@@ -479,13 +500,14 @@ button_check_config.grid(row=1, column=1, pady=5)
 
 button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=verify_shipin, width=button_width, height=button_height)
 button_shipin.grid(row=3, column=1, pady=5, sticky='ew')
-button_shipin.config(state="disabled")
+# button_shipin.config(state="disabled")
 
 button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
-button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader (WIP)📁⬆️", command=export_data, width=button_width, height=button_height)
+button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader 📁⬆️", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
+# button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Outgoing shipment     📦⬆️", command=refresh_data, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')

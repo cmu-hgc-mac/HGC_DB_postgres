@@ -1,6 +1,7 @@
 sen_no,serial PRIMARY KEY,,
 sen_name,TEXT,fk_identifier,
 kind,TEXT,,
+sen_batch_id,TEXT,,
 geometry,TEXT,,
 resolution,TEXT,,
 thickness,INT,,
