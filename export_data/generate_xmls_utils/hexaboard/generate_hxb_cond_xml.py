@@ -87,7 +87,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_inspect", "")
                             time_begin = results.get("time_inspect", "")
-                            db_values[xml_var] = f"{run_date}T{time_begin}"
+                            db_values[xml_var] = f"{run_date} {time_begin}"
                         elif xml_var == "RUN_END_TIMESTAMP_":
                             db_values[xml_var] = db_values["RUN_BEGIN_TIMESTAMP_"]
                             # run_date = results.get("ass_run_date", "")

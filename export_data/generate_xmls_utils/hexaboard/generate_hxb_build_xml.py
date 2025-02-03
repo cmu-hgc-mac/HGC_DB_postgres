@@ -87,19 +87,19 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_inspect", "")
                             time_begin = results.get("time_inspect", "")
-                            db_values[xml_var] = f"{run_date}T{time_begin}"
+                            db_values[xml_var] = f"{run_date} {time_begin}"
                         elif xml_var == "RUN_END_TIMESTAMP_":
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_end", "")
-                            db_values[xml_var] = f"{run_date}T{time_end}"
+                            db_values[xml_var] = f"{run_date} {time_end}"
                         elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_begin", "")
-                            db_values[xml_var] = f"{run_date}T{time_end}"
+                            db_values[xml_var] = f"{run_date} {time_end}"
                         elif xml_var == "CURE_END_TIMESTAMP_":
                             run_date = results.get("cure_date_end", "")
                             time_end = results.get("cure_time_end", "")
-                            db_values[xml_var] = f"{run_date}T{time_end}"
+                            db_values[xml_var] = f"{run_date} {time_end}"
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 

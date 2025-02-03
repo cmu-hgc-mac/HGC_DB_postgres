@@ -127,11 +127,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_bond", "")
                             time_begin = results.get("time_bond", "")
-                            db_values[xml_var] = f"{run_date}T{time_begin}"
+                            db_values[xml_var] = f"{run_date} {time_begin}"
                         elif xml_var == "RUN_NAME_TIME_STAMP":
                             run_date = results.get("date_bond", "")
                             time_end = results.get("time_bond", "")
-                            db_values[xml_var] = f"{run_date}T{time_end}"
+                            db_values[xml_var] = f"{run_date} {time_end}"
                         elif xml_var == "WIREBOND_COMMENTS_CONCAT":
                             bk_comment = results.get("back_wirebond_comment", "")
                             fr_comment = results.get("front_wirebond_comment", "")
