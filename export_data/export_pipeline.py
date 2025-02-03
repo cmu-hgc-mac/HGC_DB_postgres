@@ -44,7 +44,6 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
     tasks = []
     # Specific subdirectories to process
     xml_list = process_xml_list(get_yaml_data = True)
-    process_xml_list() ## sets everthing back to True in the list_of_xmls.yaml file for the next run
     subdirs = list(xml_list.keys())    # subdirs = ['baseplate', 'hexaboard', 'module', 'protomodule', 'sensor', 'testing']
     scripts_to_run = []
 
