@@ -1,10 +1,14 @@
 import platform, os, argparse, base64
+from pathlib import Path
 from scp import SCPClient
+from src import process_xml_list
 import numpy as np
 import datetime, yaml, paramiko, pwinput, sys
 from tqdm import tqdm
 from cryptography.fernet import Fernet
 
+xml_list = process_xml_list(get_yaml_data = True)
+xml_list = {t: {list(d.keys())[0]: d[list(d.keys())[0]]  for d in xml_list[t]}  for t in xml_list.keys()}
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -12,6 +16,15 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 # cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
                 "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
+
+def get_selected_type_files(files_found_all):
+    files_selected = []
+    for fi in files_found_all:
+        parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]
+        for xmlt in list(xml_list[parent_directory].keys()):
+            if xml_list[parent_directory][xmlt] and file_type in xmlt:
+                files_selected.append(fi)
+    return files_selected
 
 def valid_directory(path):
     if os.path.isdir(path):
@@ -109,8 +122,9 @@ def main(): #dbl_username, dbl_password, directory_to_search, search_date, encry
     search_date = args.date
 
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
-    files_found = find_files_by_date(directory_to_search, search_date)
-
+    files_found_all = find_files_by_date(directory_to_search, search_date)
+    files_found = get_selected_type_files(files_found_all)
+    
     if files_found:
         print("Files found: ")
         for file in files_found: print(file)

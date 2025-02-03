@@ -7,7 +7,7 @@ from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel,
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
 from export_data.src import process_xml_list, update_yaml_with_checkboxes
-
+process_xml_list()
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
 adminer_process = None
@@ -61,6 +61,7 @@ def show_message(message):
 
 # Function to exit the application
 def exit_application():
+    process_xml_list()
     def cleanup():
         try:
             adminer_process.terminate()  
