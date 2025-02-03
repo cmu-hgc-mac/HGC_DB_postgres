@@ -1,7 +1,7 @@
 import os, yaml, base64, sys, threading, atexit, signal
 from pathlib import Path
 from cryptography.fernet import Fernet
-import subprocess, webbrowser, zipfile, urllib.request
+import subprocess, webbrowser, zipfile, urllib.request, traceback
 import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
@@ -448,8 +448,16 @@ def open_adminerevo():
             if os.path.exists(adminer_zip_file): os.remove(adminer_zip_file)
         except Exception as e:
             print(e)
-    adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
-    webbrowser.open(f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
+    
+    try:
+        adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+        webbrowser.open(f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
+    except Exception as e:
+        traceback.print_exc()
+        print('\n*** PHP Installation Instructions at', 'https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md ***')
+        webbrowser.open(f"https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md")
+        
+    
 
 
 # Create a helper function to handle button clicks
@@ -465,7 +473,7 @@ root.geometry("400x550")
 image_path = "documentation/images/logo_small_75.png"  # Update with your image path
 logo_image = load_image(image_path)
 
-button_width, button_height = 22, 3
+button_width, button_height = 25, 3
 small_button_width, small_button_height = 22, 1
 
 # Create a frame for the layout using grid
@@ -505,7 +513,7 @@ button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader 📁⬆️", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
-# button_upload_xml.config(state='disabled')
+button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Outgoing shipment     📦⬆️", command=refresh_data, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
