@@ -507,14 +507,13 @@ button_check_config.grid(row=1, column=1, pady=5)
 
 button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=verify_shipin, width=button_width, height=button_height)
 button_shipin.grid(row=3, column=1, pady=5, sticky='ew')
-# button_shipin.config(state="disabled")
 
 button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader 📁⬆️", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
-button_upload_xml.config(state='disabled')
+# button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Outgoing shipment     📦⬆️", command=refresh_data, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
