@@ -7,10 +7,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from datetime import datetime
 from cryptography.fernet import Fernet
 import traceback
+import datetime
 
 resource_yaml = 'export_data/resource.yaml'
 with open(resource_yaml, 'r') as file:
         kind_of_part_yaml = yaml.safe_load(file)['kind_of_part']
+        shipping_loc_yaml = yaml.safe_load(file)['shipping_location']
 
 
 def update_yaml_with_checkboxes(xml_list, checkbox_vars):
@@ -165,6 +167,14 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
 def format_part_name(part_name):
     part_name = ('320' + part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
     return part_name
+
+def get_run_num(location):
+    ##  format: SSSSYYMMDDTTTTTT
+    shipping_code = shipping_loc_yaml[location]
+    timestamp = datetime.now()
+    formatted_timestamp = timestamp.strftime('%y%m%d%S%f')[:12]
+    run_num = shipping_code + formatted_timestamp
+    return run_num
 
 def get_kind_of_part(part_name):
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
