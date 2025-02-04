@@ -6,15 +6,13 @@
         <NAME>Si Module Baseplate Test Data</NAME>
     </TYPE>
     <RUN>
-<!-- get rid of RUN_NAME,RUN_BEGIN_TIMESTAMP, RUN_END_TIMESTAMP.  -->
-<!-- Add RUN_NUMBER and RUN_TYPE -->
-<!-- RUN_NUMBER refer this link: https://gitlab.cern.ch/hgcal-database/uploads-parts-and-qc-data/-/issues/28#note_8645210 -->
-<!-- RUN_TYPE = needs to be consistent (visual inspection, iv-test for module, etc...)-->
-        <RUN_NAME>Flatness/thickness measurements</RUN_NAME>
+        <!-- <RUN_NAME>Flatness/thickness measurements</RUN_NAME> -->
+        <!-- <LOCATION>{{ location }}</LOCATION> -->
+        <RUN_TYPE>MAC baseplate mechanical inspection</RUN_TYPE>
+        <RUN_NUMBER>{{ run_number }}<RUN_NUMBER>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
         <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
-        <LOCATION>{{ location }}</LOCATION>
         <COMMENT_DESCRIPTION>Measured flatness/thickness data</COMMENT_DESCRIPTION>
     </RUN>
 

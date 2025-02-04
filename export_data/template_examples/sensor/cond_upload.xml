@@ -7,10 +7,11 @@
     </TYPE>
     <RUN>
         <RUN_NAME>Flatness measurement</RUN_NAME>
+        <RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
         <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
-        <LOCATION>{{ location }}</LOCATION>
+        <!-- <LOCATION>{{ location }}</LOCATION> -->
         <COMMENT_DESCRIPTION>Upload flatness measurement</COMMENT_DESCRIPTION>
     </RUN>
 
