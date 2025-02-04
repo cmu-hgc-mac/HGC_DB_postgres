@@ -17,7 +17,8 @@ config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 dbase_name = config_data.get('dbname')
 db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
-php_port = config_data.get('php_port', '8083') 
+php_port = config_data.get('php_port', '8083')
+php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}"
 
 def get_pid_result():
     return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
@@ -453,9 +454,10 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
  
         try:
             adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
-            webbrowser.open(f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
+            webbrowser.open(php_url)
             button_search_data.config(text="Stop AdminerEvo", fg="red")
             print('AdminerEvo opened in browser...')
+            print(php_url)
         except Exception as e:
             traceback.print_exc()
             print('\n*** PHP Installation Instructions at', 'https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md ***')
@@ -528,7 +530,7 @@ button_refresh_db = Button(frame, text=" Refresh local database     🔄", comma
 button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
 
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
-button_search_data.grid(row=7, column=1, pady=5, sticky='ew')
+button_search_data.grid(row=8, column=1, pady=5, sticky='ew')
 
 for pid in get_pid_result().stdout.strip().split("\n"):
     if pid.isdigit():
