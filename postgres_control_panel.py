@@ -10,7 +10,7 @@ from export_data.src import process_xml_list, update_yaml_with_checkboxes
 process_xml_list()
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
-adminer_process = None
+adminer_process_button_face = " Search/Edit Data   📝🔍"
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -18,6 +18,9 @@ dbase_name = config_data.get('dbname')
 db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
 php_port = config_data.get('php_port', '8083') 
+
+def get_pid_result():
+    return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
 
 def run_git_pull_seq():
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
@@ -62,18 +65,6 @@ def show_message(message):
 # Function to exit the application
 def exit_application():
     process_xml_list()
-    def cleanup():
-        try:
-            adminer_process.terminate()  
-            adminer_process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            os.kill(adminer_process.pid, signal.SIGTERM)
-        print("Closed Adminer process.")
-
-    if adminer_process:
-        print("Attempting to close Adminer...") ### lsof -i :8085; kill <pid>
-        atexit.register(cleanup)
-
     root.quit()  # Exit the application
 
 # Load image
@@ -436,28 +427,42 @@ def refresh_data():
     submit_refresh_button.pack(pady=10)
     bind_button_keys(submit_refresh_button)
 
-def open_adminerevo():
-    global adminer_process
-    adminer_php_file = 'adminer-pgsql.php'
-    if not os.path.exists(adminer_php_file):
+def open_adminerevo():   ### lsof -i :8083; kill <pid>
+    def close_adminer_process():
         try:
-            url = "https://download.adminerevo.org/latest/adminer/adminer-pgsql.zip"
-            adminer_zip_file = adminer_php_file.replace('.php','.zip')
-            urllib.request.urlretrieve(url, adminer_zip_file)
-            with zipfile.ZipFile(adminer_zip_file, 'r') as zip_ref:
-                zip_ref.extractall() 
-            if os.path.exists(adminer_zip_file): os.remove(adminer_zip_file)
+            pids = get_pid_result().stdout.strip().split("\n")
+            for pid in pids:
+                if pid.isdigit():
+                    os.kill(int(pid), signal.SIGTERM)
+            print("Closed Adminer process.")
         except Exception as e:
-            print(e)
-    
-    try:
-        adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
-        webbrowser.open(f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
-    except Exception as e:
-        traceback.print_exc()
-        print('\n*** PHP Installation Instructions at', 'https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md ***')
-        webbrowser.open(f"https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md")
-        
+            print(f"Error: {e}")
+
+    if 'search' in button_search_data.config('text')[-1].lower():
+        adminer_php_file = 'adminer-pgsql.php'
+        if not os.path.exists(adminer_php_file):
+            try:
+                url = "https://download.adminerevo.org/latest/adminer/adminer-pgsql.zip"
+                adminer_zip_file = adminer_php_file.replace('.php','.zip')
+                urllib.request.urlretrieve(url, adminer_zip_file)
+                with zipfile.ZipFile(adminer_zip_file, 'r') as zip_ref:
+                    zip_ref.extractall() 
+                if os.path.exists(adminer_zip_file): os.remove(adminer_zip_file)
+            except Exception as e:
+                print(e)
+ 
+        try:
+            adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+            webbrowser.open(f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}")
+            button_search_data.config(text="Stop AdminerEvo", fg="red")
+            print('AdminerEvo opened in browser...')
+        except Exception as e:
+            traceback.print_exc()
+            print('\n*** PHP Installation Instructions at', 'https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md ***')
+            webbrowser.open(f"https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md")
+    else:
+        close_adminer_process()
+        button_search_data.config(text=adminer_process_button_face, fg="black")    
     
 
 
@@ -522,9 +527,15 @@ button_shipout.config(state="disabled")
 button_refresh_db = Button(frame, text=" Refresh local database     🔄", command=refresh_data, width=button_width, height=button_height)  #🔃 
 button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
 
-button_search_data = Button(frame, text=" Search/Edit Data   📝🔍", command=open_adminerevo, width=button_width, height=button_height) 
+button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
 button_search_data.grid(row=7, column=1, pady=5, sticky='ew')
 
+for pid in get_pid_result().stdout.strip().split("\n"):
+    if pid.isdigit():
+        button_search_data.config(text="Stop AdminerEvo", fg="red")
+    else:
+        button_search_data.config(text=adminer_process_button_face, fg="black")
+        
 # Configure grid to ensure all rows expand with window resize
 for i in range(10):
     frame.grid_rowconfigure(i, weight=1)
