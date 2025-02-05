@@ -33,8 +33,9 @@ Click on the `Modify Dbase tables` button to implement the latest updates to the
 10. The import parts button downloads from INT2R/CMSR the parts that are marked for the specific MAC.
 
     (Col `kind` gets populated when parts data are imported from CERN; Col `date_received_verify` gets populated upon verification; Discrepancy between these columns suggests missing parts)
+11. The `Refresh` button updates primary keys and foreign keys and connects the parts in the various tables. This should happen automatically during the assembly steps but the button may be used in instances it doensn't happen for some reason.
 
-11. The control panel also opens browser-based AdminerEvo for vieweing data. This requires installation of [PHP](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md).
+12. The control panel also opens browser-based AdminerEvo for vieweing data. This requires installation of [PHP](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md).
 
 ![image](https://github.com/user-attachments/assets/3083f1fd-7606-41e9-8697-823591bd1f48)
 
