@@ -20,17 +20,26 @@ pip install asyncpg tk matplotlib pwinput pillow pyyaml paramiko cryptography
 ```
 pip install -r housekeeping/requirements.txt
 ```
-
 8. Create database and tables with appropriate passwords:
 ```
 python3 postgres_control_panel.py
 ```
-Click on the `Modify existing tables` button to implement the latest updates to the tables.
+Click on the `Modify Dbase tables` button to implement the latest updates to the tables.
 
-<img src="https://raw.githubusercontent.com/cmu-hgc-mac/HGC_DB_postgres/main/documentation/images/postgres_control_panel.png" alt="Postgres Control Panel" width="25%">
+![Screenshot 2025-02-04 at 12 55 06 PM](https://github.com/user-attachments/assets/98a21c6b-2dad-4c60-b333-eaa5c2424d04)
 
-9. Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pgAdmin_instructions.md#4-view-the-list-of-tables) to view tables in pgAdmin4 tool on the database computer. The tables are found under `hgcdb -> Schemas -> public -> Tables`. Right-click on a selected table to `view/edit data` for the `Last 100 Rows`.
-10. Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pgAdmin_instructions.md) to view tables in pgAdmin4 tool on the other stations.
+
+9. It is recomended to verify parts once they are received at a MAC. This can be done by uploading a list of barcodes.
+10. The import parts button downloads from INT2R/CMSR the parts that are marked for the specific MAC.
+
+    (Col `kind` gets populated when parts data are imported from CERN; Col `date_received_verify` gets populated upon verification; Discrepancy between these columns suggests missing parts)
+
+11. The control panel also opens browser-based AdminerEvo for vieweing data. This requires installation of [PHP](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md).
+
+![image](https://github.com/user-attachments/assets/3083f1fd-7606-41e9-8697-823591bd1f48)
+
+12. (Optional) Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pgAdmin_instructions.md#4-view-the-list-of-tables) to view tables in pgAdmin4 tool on the database computer. The tables are found under `hgcdb -> Schemas -> public -> Tables`. Right-click on a selected table to `view/edit data` for the `Last 100 Rows`.
+13. (Optional) Follow [instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pgAdmin_instructions.md) to view tables in pgAdmin4 tool on the other stations.
 <img src="https://raw.githubusercontent.com/cmu-hgc-mac/HGC_DB_postgres/main/documentation/images/table_example.png" alt="Postgres Control Panel" width="95%">
 
 
