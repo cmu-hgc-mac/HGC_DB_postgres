@@ -15,9 +15,9 @@ def run_git_pull_seq():
         print("Git pull failed ..."); print(result.stderr); exit()
 
 run_git_pull_seq()
-
 from export_data.src import process_xml_list, update_yaml_with_checkboxes
 process_xml_list()
+
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
 adminer_process_button_face = " Search/Edit Data   📝🔍"
