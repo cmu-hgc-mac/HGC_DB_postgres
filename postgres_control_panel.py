@@ -20,7 +20,7 @@ process_xml_list()
 
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
-adminer_process_button_face = " Search/Edit Data   "
+adminer_process_button_face = " Search/Edit Data  "
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
