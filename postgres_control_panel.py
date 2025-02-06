@@ -6,6 +6,16 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
+
+def run_git_pull_seq():
+    result = subprocess.run(["git", "pull"], capture_output=True, text=True)
+    if result.returncode == 0:
+        print("Git pull successful ..."); print(result.stdout)
+    else:
+        print("Git pull failed ..."); print(result.stderr); exit()
+
+run_git_pull_seq()
+
 from export_data.src import process_xml_list, update_yaml_with_checkboxes
 process_xml_list()
 encryption_key = Fernet.generate_key()
@@ -22,15 +32,6 @@ php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&us
 
 def get_pid_result():
     return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
-
-def run_git_pull_seq():
-    result = subprocess.run(["git", "pull"], capture_output=True, text=True)
-    if result.returncode == 0:
-        print("Git pull successful ..."); print(result.stdout)
-    else:
-        print("Git pull failed ..."); print(result.stderr); exit()
-
-run_git_pull_seq()
 
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
