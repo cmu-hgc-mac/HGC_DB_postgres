@@ -20,7 +20,7 @@ process_xml_list()
 
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
-adminer_process_button_face = " Search/Edit Data   📝🔍"
+adminer_process_button_face = " Search/Edit Data   "
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -513,21 +513,21 @@ button_check_config.grid(row=1, column=1, pady=5)
 # spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
 # spacer.grid(row=2, column=1, pady=10)
 
-button_shipin = Button(frame, text="Verify received shipment 📦⬇️", command=verify_shipin, width=button_width, height=button_height)
+button_shipin = Button(frame, text="Verify received shipment ", command=verify_shipin, width=button_width, height=button_height)
 button_shipin.grid(row=3, column=1, pady=5, sticky='ew')
 
-button_download = Button(frame, text="    Import Parts Data      📁⬇️", command=import_data, width=button_width, height=button_height)
+button_download = Button(frame, text="    Import Parts Data      ", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
-button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader 📁⬆️", command=export_data, width=button_width, height=button_height)
+button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
 button_upload_xml.config(state='disabled')
 
-button_shipout = Button(frame, text="   Outgoing shipment     📦⬆️", command=refresh_data, width=button_width, height=button_height)
+button_shipout = Button(frame, text="   Outgoing shipment     ", command=refresh_data, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
 button_shipout.config(state="disabled")
 
-button_refresh_db = Button(frame, text=" Refresh local database     🔄", command=refresh_data, width=button_width, height=button_height)  #🔃 
+button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=button_height)  
 button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
 
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
