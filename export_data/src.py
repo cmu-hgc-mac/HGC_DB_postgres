@@ -11,8 +11,9 @@ import datetime
 
 resource_yaml = 'export_data/resource.yaml'
 with open(resource_yaml, 'r') as file:
-        kind_of_part_yaml = yaml.safe_load(file)['kind_of_part']
-        shipping_loc_yaml = yaml.safe_load(file)['shipping_location']
+    yaml_content = yaml.safe_load(file)
+    kind_of_part_yaml = yaml_content['kind_of_part']
+    shipping_loc_yaml = yaml_content['shipping_location']
 
 
 def update_yaml_with_checkboxes(xml_list, checkbox_vars):
