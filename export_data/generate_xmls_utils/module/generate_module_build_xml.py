@@ -6,7 +6,7 @@ import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION
-from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name 
+from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name, get_run_num 
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -46,6 +46,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = LOCATION
                 elif xml_var in ['ID', 'BARCODE']:
                     db_values[xml_var] = format_part_name(module)
+                elif xml_var == 'RUN_NUMBER':
+                    db_values[xml_var] = get_run_num(LOCATION)
                 elif xml_var in ['KIND_OF_PART', 'KIND_OF_PART_PROTOMODULE', 'KIND_OF_PART_PCB']:
                     if xml_var == 'KIND_OF_PART':
                         db_values[xml_var] = get_kind_of_part(module)
@@ -132,10 +134,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("ass_run_date", "")
                             time_begin = results.get("ass_time_begin", "")
+                            if time_begin is None:
+                                time_begin = datetime.datetime.now().time()
                             db_values[xml_var] = f"{run_date} {time_begin}"
                         elif xml_var == "RUN_END_TIMESTAMP_":
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_end", "")
+                            if time_end is None:
+                                time_end = datetime.datetime.now().time()
                             db_values[xml_var] = f"{run_date} {time_end}"
                         elif xml_var == 'PCB':
                             db_values[xml_var] = format_part_name(results.get('hxb_name'))
