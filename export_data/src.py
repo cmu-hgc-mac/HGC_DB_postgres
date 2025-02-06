@@ -153,7 +153,7 @@ async def update_timestamp_col(conn, update_flag: bool, table_list: list, column
         part_name_col = _part_name_col[part]
 
         # Generate the current timestamp
-        current_timestamp = datetime.now()
+        current_timestamp = datetime.datetime.now()
         for table in table_list:
             query = f"""
             UPDATE {table}
@@ -172,9 +172,9 @@ def format_part_name(part_name):
 def get_run_num(location):
     ##  format: SSSSYYMMDDTTTTTT
     shipping_code = shipping_loc_yaml[location]
-    timestamp = datetime.now()
+    timestamp = datetime.datetime.now()
     formatted_timestamp = timestamp.strftime('%y%m%d%S%f')[:12]
-    run_num = shipping_code + formatted_timestamp
+    run_num = str(shipping_code) + formatted_timestamp
     return run_num
 
 def get_kind_of_part(part_name):

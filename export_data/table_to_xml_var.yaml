@@ -19,7 +19,8 @@ module_assembly:
     dbase_table: module_assembly
     nested_query: null
     default_value: null
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
   - xml_temp_val: ASMBL_TRAY_NAME
@@ -148,7 +149,8 @@ wirebond:
     dbase_col: technician
     dbase_table: bond_pull_test
     nested_query: null
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
   - xml_temp_val: BOND_WIRE_BATCH_NUM
@@ -323,7 +325,8 @@ module_cond:
     dbase_col: operator
     dbase_table: module_assembly
     nested_query: null
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
   - xml_temp_val: CURING_TIME_HRS
@@ -366,7 +369,8 @@ bp_cond:
     dbase_col: inspector
     dbase_table: bp_inspect
     nested_query: 
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: FLATNESS
@@ -409,7 +413,8 @@ hxb_cond:
     dbase_col: null ## should be none, db_loader will auto-fill based on username on lxplus
     dbase_table: null
     nested_query: null
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: RECORD_INSERTION_USER
@@ -457,7 +462,8 @@ proto_assembly:
     dbase_table: proto_assembly
     nested_query: null
     default_value: null
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
   - xml_temp_val: ASMBL_TRAY_NAME
@@ -597,7 +603,8 @@ proto_cond:
     dbase_col: null ## db_loader will auto-fill based on username on lxplus
     dbase_table: null
     nested_query: null
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: CURING_TIME_HRS
@@ -643,7 +650,8 @@ sensor_cond:
     dbase_table: null
     nested_query: null
     default_value: null
-  - xml_temp_val: LOCATION
+  # - xml_temp_val: LOCATION
+  # - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: RECORD_INSERTION_USER
