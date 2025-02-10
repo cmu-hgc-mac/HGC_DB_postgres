@@ -19,8 +19,8 @@ def main():
     db_upload_data = {
         'log_timestamp': now,
         'log_location': 'main_clean_room',
-        'temp_c': 22.5,
-        'rel_hum': 45.5,
+        'temp_c': round(22.53453,2),
+        'rel_hum': round(45.2322342,2),
         'prtcls_per_cubic_m_500nm': 100,
         'prtcls_per_cubic_m_1um': 234,
         'prtcls_per_cubic_m_5um': 234,}
