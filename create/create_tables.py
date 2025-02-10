@@ -43,7 +43,7 @@ async def create_tables():
 
     def get_table_info(loc, tables_subdir, fname):
         with open(os.path.join(loc, tables_subdir, fname) , mode='r') as file:
-            csvFile = csv.reader(file)
+            csvFile = csv.reader(file, quotechar='"')
             rows = []
             for row in csvFile:
                 rows.append(row)

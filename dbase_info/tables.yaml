@@ -351,3 +351,16 @@ tables:
       'teststand_user':  'SELECT'
       'shipper':  'SELECT'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
+    fname: 'environmental_conditions.csv' 
+    description: ''
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'INSERT, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'

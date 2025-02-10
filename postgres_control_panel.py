@@ -14,7 +14,11 @@ def run_git_pull_seq():
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
-run_git_pull_seq()
+try:
+    run_git_pull_seq()
+except:
+    print("There is a git conflict but continue.")
+
 from export_data.src import process_xml_list, update_yaml_with_checkboxes
 process_xml_list()
 
