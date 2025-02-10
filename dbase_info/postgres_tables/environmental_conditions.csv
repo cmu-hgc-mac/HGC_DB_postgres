@@ -1,0 +1,8 @@
+log_no,serial PRIMARY KEY,,
+log_timestamp,TIMESTAMP,,
+log_location,TEXT,,
+temp_c,"NUMERIC(6,2)",,
+rel_hum,"NUMERIC(6,2)",,
+prtcls_per_cubic_m_500nm,INTEGER,,
+prtcls_per_cubic_m_1um,INTEGER,,
+prtcls_per_cubic_m_5um,INTEGER,,
