@@ -2,11 +2,11 @@ import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, os, base64, sys, argparse, traceback, datetime
+import yaml, os, base64, sys, argparse, traceback, datetime, tzlocal, pytz
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION
-from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name, get_run_num
+from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name, get_run_num, format_datetime
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -89,9 +89,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_inspect", "")
                             time_begin = results.get("time_inspect", "")
-                            if time_begin is None:
-                                time_begin = datetime.datetime.now().time()
-                            db_values[xml_var] = f"{run_date} {time_begin}"
+                            db_values[xml_var] = format_datetime(run_date, time_begin)
                         elif xml_var == "RUN_END_TIMESTAMP_":
                             db_values[xml_var] = db_values["RUN_BEGIN_TIMESTAMP_"]
                             # run_date = results.get("ass_run_date", "")
