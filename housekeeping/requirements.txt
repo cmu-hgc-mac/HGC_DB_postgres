@@ -8,3 +8,5 @@ python==3.9.12
 PyYAML==6.0
 scp==0.15
 tk==0.1.0
+pytz==2023.3
+tzlocal==5.1
