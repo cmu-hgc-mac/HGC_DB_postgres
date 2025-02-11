@@ -266,7 +266,10 @@ def format_datetime(input_date, input_time):
     local_timezone = pytz.timezone(str(tzlocal.get_localzone()))
     if input_time is None:
         # If time_begin is missing, use the current time with timezone
-        current_dt = datetime.datetime.now(local_timezone)
+        current_dt = datetime.datetime.now(local_timezone).time()
+        combined_str = f"{input_date} {current_dt}"
+        current_dt = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
+        current_dt = local_timezone.localize(current_dt)
     else:
         # Combine run_date and time_begin into a full datetime object
         combined_str = f"{input_date} {input_time}"
