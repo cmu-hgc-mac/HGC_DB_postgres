@@ -8,6 +8,9 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import traceback
 import datetime
+import tzlocal
+import pytz
+# from zoneinfo import ZoneInfo
 
 resource_yaml = 'export_data/resource.yaml'
 with open(resource_yaml, 'r') as file:
@@ -258,3 +261,28 @@ def get_kind_of_part(part_name):
         return kind_of_part
     except Exception as e:
         raise
+
+def format_datetime(input_date, input_time):
+    local_timezone = pytz.timezone(str(tzlocal.get_localzone()))
+    if input_time is None:
+        # If time_begin is missing, use the current time with timezone
+        current_dt = datetime.datetime.now(local_timezone)
+    else:
+        # Combine run_date and time_begin into a full datetime object
+        combined_str = f"{input_date} {input_time}"
+        current_dt = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+
+        # Attach the system's local timezone
+        current_dt = local_timezone.localize(current_dt)
+        ## uncomment below if you use python 3.9+
+        # current_dt = current_dt.replace(tzinfo=ZoneInfo(str(local_timezone)))
+
+    # Format the output as "YYYY-MM-DD HH:MM:SS+HH:MM"
+    formatted_time = current_dt.strftime("%Y-%m-%d %H:%M:%S%z")
+    
+    # Ensure offset is in "+HH:MM" format
+    formatted_time = formatted_time[:-2] + ":" + formatted_time[-2:]
+    formatted_time = formatted_time[:-6] + '+' + formatted_time[-5:]
+
+    ### returns the format of "2025-02-10 19:19:44+05:00"
+    return formatted_time
