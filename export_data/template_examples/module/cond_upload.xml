@@ -7,12 +7,12 @@
 	</TYPE>
 	<RUN>
 		<!-- <RUN_NAME>Si Module Assembly</RUN_NAME> -->
-		<!-- <LOCATION>{{ location }}</LOCATION> -->
 		<RUN_TYPE>Si module curing conditions</RUN_TYPE>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
 		<RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
 		<RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
 		<INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
+		<LOCATION>{{ location }}</LOCATION>
 		<COMMENT_DESCRIPTION>Module cond data</COMMENT_DESCRIPTION>
 	</RUN>
 </HEADER>
