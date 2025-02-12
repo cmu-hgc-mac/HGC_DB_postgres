@@ -271,9 +271,14 @@ def format_datetime(input_date, input_time):
         current_dt = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
         current_dt = local_timezone.localize(current_dt)
     else:
+        time_begin_str = str(input_time) if isinstance(input_time, datetime.time) else input_time
+        if "." in time_begin_str:
+            time_format = "%Y-%m-%d %H:%M:%S.%f"
+        else:
+            time_format = "%Y-%m-%d %H:%M:%S"
         # Combine run_date and time_begin into a full datetime object
-        combined_str = f"{input_date} {input_time}"
-        current_dt = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+        combined_str = f"{input_date} {time_begin_str}"
+        current_dt = datetime.datetime.strptime(combined_str, time_format)
 
         # Attach the system's local timezone
         current_dt = local_timezone.localize(current_dt)
