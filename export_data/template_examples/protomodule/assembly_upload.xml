@@ -20,7 +20,8 @@
 	<DATA_SET>
 		<COMMENT_DESCRIPTION>Upload protomodule assembly data</COMMENT_DESCRIPTION>
 		<VERSION>1</VERSION>
-		<PART mode="auto">
+		<!-- <PART mode="auto"> -->
+		<PART>
 			<KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
 			<SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
 		</PART>
