@@ -410,16 +410,16 @@ hxb_cond:
     dbase_table: hxb_inspect
     nested_query: null
   - xml_temp_val: INITIATED_BY_USER
-    dbase_col: null ## should be none, db_loader will auto-fill based on username on lxplus
-    dbase_table: null
+    dbase_col: inspector ## should be none, db_loader will auto-fill based on username on lxplus
+    dbase_table: hxb_inspect
     nested_query: null
   - xml_temp_val: LOCATION
   - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
-  - xml_temp_val: RECORD_INSERTION_USER
-    dbase_col: inspector
-    dbase_table: hxb_inspect
+  - xml_temp_val: RECORD_INSERTION_USER ## should be none, db_loader will auto-fill based on username on lxplus
+    dbase_col: null
+    dbase_table: null
     nested_query: null
   - xml_temp_val: RUN_BEGIN_DATE_
     dbase_col: date_inspect ## same as RUN_END_TIMESTAMP for date
@@ -545,7 +545,7 @@ proto_assembly:
     dbase_col: null ##'user': 'shipper', default 0
     dbase_table: null
     nested_query: null
-    default_value: 'True'
+    default_value: '0'
   - xml_temp_val: GLUE_TYPE
     dbase_col: adhesive
     dbase_table: proto_assembly
@@ -570,7 +570,7 @@ proto_assembly:
     dbase_col: null ## step number for sensor / protomodule. doesn't have to be unique ## missing
     dbase_table: null
     nested_query: null
-    default_value: null
+    default_value: 'n/a'
 
 proto_build:
   - xml_temp_val: KIND_OF_PART
