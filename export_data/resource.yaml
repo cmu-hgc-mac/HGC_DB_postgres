@@ -98,3 +98,17 @@ shipping_location:
   UND: 2301
   admin CERN: 1006
   admin0: 1005
+
+institution_fullname:
+  'CERN': 'CERN'
+  'FNAL': 'Fermi National Accelerator Lab.'
+  'UCSB': 'Univ. of California Santa Barbara'
+  'UMN': 'UMN'
+  'HEPHY': 'Institut fuer Hochenergiephysik'
+  'HPK': 'HPK'
+  'CMU': 'Carnegie-Mellon University'
+  'TTU': 'Texas Tech University'
+  'IHEP': 'Institute of High Energy Physics'
+  'TIFR': 'Tata Inst. of Fundamental Research'
+  'NTU': 'National Taiwan University'
+  'FSU': 'Florida State University'

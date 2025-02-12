@@ -5,7 +5,7 @@ from lxml import etree
 import yaml, os, base64, sys, argparse, traceback, datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from export_data.define_global_var import LOCATION
+from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name, get_run_num 
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
@@ -42,8 +42,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             for entry in xml_data:
                 xml_var = entry['xml_temp_val']
 
-                if xml_var in ['LOCATION', 'INSTITUTION', 'MANUFACTURER']:
+                if xml_var in ['LOCATION', 'MANUFACTURER']:
                     db_values[xml_var] = LOCATION
+                elif xml_var == 'INSTITUTION':
+                    db_values[xml_var] = INSTITUTION
                 elif xml_var in ['ID', 'BARCODE']:
                     db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'RUN_NUMBER':
