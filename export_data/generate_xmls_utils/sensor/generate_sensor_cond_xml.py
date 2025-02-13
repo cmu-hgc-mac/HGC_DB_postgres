@@ -6,7 +6,7 @@ import yaml, os, base64, sys, argparse, traceback, datetime, tzlocal, pytz
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION, INSTITUTION
-from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_datetime
+from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_datetime, get_run_num
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -60,6 +60,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = sen_name
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = get_kind_of_part(sen_name)
+                elif xml_var == 'RUN_NUMBER':
+                    db_values[xml_var] = get_run_num(LOCATION)
                 elif entry['default_value']:
                     db_values[xml_var] = entry['default_value']
                 else:
@@ -95,6 +97,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_end", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
+                        elif xml_var == 'VISUAL_INSPECTION':
+                            grade = results.get("grade", "")
+                            if grade == 'A':
+                                db_values[xml_var] = 'pass'
+                            else:
+                                db_values[xml_var] = 'fail'
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 

@@ -50,6 +50,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = get_kind_of_part(hxb_name)
                 elif xml_var == 'RUN_NUMBER':
                     db_values[xml_var] = get_run_num(LOCATION)
+                elif entry['default_value']:## something is wrong 
+                    db_values[xml_var] = entry['default_value']
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']

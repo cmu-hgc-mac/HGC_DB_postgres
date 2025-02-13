@@ -405,14 +405,17 @@ hxb_cond:
     dbase_col: date_inspect, time_inspect
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: date_inspect, time_inspect ## time when clicking "save" on GUI (time exporting data from GUI to db)
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: inspector ## should be none, db_loader will auto-fill based on username on lxplus
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: LOCATION
   - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
@@ -421,30 +424,37 @@ hxb_cond:
     dbase_col: null
     dbase_table: null
     nested_query: null
+    default_value: null
   - xml_temp_val: RUN_BEGIN_DATE_
     dbase_col: date_inspect ## same as RUN_END_TIMESTAMP for date
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: TEST_FILES
     dbase_col: null ## name of testing data file, as of now 10/14 nullable in CentralDB. Leave it NULL. 
     dbase_table: null
     nested_query: null
+    default_value: 'n/a'
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: THICKNESS
     dbase_col: thickness
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: GRADE
     dbase_col: grade
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
   - xml_temp_val: COMMENTS_UPLOAD
     dbase_col: comment
     dbase_table: hxb_inspect
     nested_query: null
+    default_value: null
 
 proto_assembly:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
@@ -651,9 +661,9 @@ sensor_cond:
     nested_query: null
     default_value: null
   - xml_temp_val: LOCATION
-  # - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
+  - xml_temp_val: RUN_NUMBER
   - xml_temp_val: RECORD_INSERTION_USER
     dbase_col: operator 
     dbase_table: proto_assembly
@@ -665,8 +675,8 @@ sensor_cond:
     nested_query: null
     default_value: null
   - xml_temp_val: VISUAL_INSPECTION
-    dbase_col: null ## In GUI, sensors / sensor qualification visual inspection ## missing
-    dbase_table: null
+    dbase_col: grade ## Assume that visual inspection is same as grade
+    dbase_table: sensor
     nested_query: null
     default_value: null
   - xml_temp_val: FLATNESS
