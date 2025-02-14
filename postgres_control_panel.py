@@ -35,7 +35,10 @@ php_port = config_data.get('php_port', '8083')
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}"
 
 def get_pid_result():
-    return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
+    try:
+        return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
+    except:
+        return subprocess.run(["cmd", "/c", f'netstat -ano | findstr :{php_port}'], capture_output=True, text=True) ### for Windows
 
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
@@ -525,7 +528,7 @@ button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
-button_upload_xml.config(state='disabled')
+# button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Outgoing shipment     ", command=refresh_data, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
