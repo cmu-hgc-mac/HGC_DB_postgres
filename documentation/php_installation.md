@@ -30,6 +30,11 @@ php -v
 - Open `Edit system environment variable` Control Panel window. Select `Environment Variables...`. Under `System variables`, navigate to find the `Path` variable. Double-click to edit `Path`. In the pop-up window, add `C:\xampp\php` to the end of the list. Save and exit.
 - Open a new Powershell terminal. Type and enter `php -v` to check installation was successful.
 
+- Open `C:\xampp\php\php.ini` and uncomment the following lines:
+```
+extension=pdo_pgsql
+extension=pgsql
+```
 
 The same may be done for Linux and MacOS if not using the above mentioned methods but we haven't tested these.
 For MacOS, add `php` to path in `zshrc` (or `bashrc`).
