@@ -462,7 +462,7 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
  
         try:
             if os.name == 'nt': ### Windows
-                adminer_process = subprocess.Popen(["start", "php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True, shell=True)
+                adminer_process = subprocess.Popen(["start", "php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
             
