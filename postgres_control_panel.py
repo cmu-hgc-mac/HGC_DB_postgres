@@ -461,7 +461,11 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
                 print(e)
  
         try:
-            adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+            if os.name == 'nt': ### Windows
+                adminer_process = subprocess.Popen(["start", "php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True, shell=True)
+            else:
+                adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+            
             webbrowser.open(php_url)
             button_search_data.config(text="Stop AdminerEvo", fg="red")
             print('AdminerEvo opened in browser...')
