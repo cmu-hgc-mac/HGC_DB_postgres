@@ -2,7 +2,6 @@
 
 ## Linux Ubuntu/Debian
 ```
-sudo apt update && sudo apt upgrade -y
 sudo apt install php -y
 php -v
 ```
