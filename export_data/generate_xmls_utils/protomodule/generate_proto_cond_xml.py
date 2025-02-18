@@ -111,7 +111,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = db_values['RUN_BEGIN_TIMESTAMP_']
                         elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                             run_date = results.get("ass_run_date", "")
-                            time_begin = results.get("ass_time_begin", "")
+                            time_begin = results.get("ass_time_end", "")
                             db_values[xml_var] = format_datetime(run_date, time_begin)
                         elif xml_var == "CURE_END_TIMESTAMP_":
                             run_date = results.get("cure_date_end", "")
