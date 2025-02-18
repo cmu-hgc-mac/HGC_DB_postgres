@@ -35,7 +35,10 @@ php_port = config_data.get('php_port', '8083')
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}"
 
 def get_pid_result():
-    return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
+    try:
+        return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
+    except:
+        return subprocess.run(["cmd", "/c", f'netstat -ano | findstr :{php_port}'], capture_output=True, text=True) ### for Windows
 
 def bind_button_keys(button):
     button.bind("<Return>", lambda event: button.invoke())  # Bind Enter key
@@ -458,7 +461,11 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
                 print(e)
  
         try:
-            adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+            if os.name == 'nt': ### Windows
+                adminer_process = subprocess.Popen(["start", "php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            else:
+                adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+            
             webbrowser.open(php_url)
             button_search_data.config(text="Stop AdminerEvo", fg="red")
             print('AdminerEvo opened in browser...')
