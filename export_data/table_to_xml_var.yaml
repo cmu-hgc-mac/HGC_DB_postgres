@@ -627,7 +627,7 @@ proto_cond:
     nested_query: null
   - xml_temp_val: CURE_END_TIMESTAMP_
     dbase_col: cure_date_end, cure_time_end
-    dbase_table: module_assembly
+    dbase_table: proto_assembly
     nested_query: null
   - xml_temp_val: TEMP_DEGC
     dbase_col: temp_c

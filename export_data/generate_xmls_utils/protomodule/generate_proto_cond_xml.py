@@ -121,6 +121,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values['THICKNESS'] = str(round(float(db_values['THICKNESS']),3))
                         elif xml_var == 'FLATNESS':
                             db_values['FLATNESS'] = str(round(float(db_values['FLATNESS']),3))
+                        elif xml_var == "CURING_TIME_HRS":
+                            ass_run_date = results.get("ass_run_date", "")
+                            ass_time_end = results.get("ass_time_end", "")
+                            cure_start = datetime.datetime.combine(ass_run_date, ass_time_end) 
+                            cure_date_end = results.get("cure_date_end", "")
+                            cure_time_end = results.get("cure_time_end", "")
+                            cure_end = datetime.datetime.combine(cure_date_end, cure_time_end) 
+                            db_values[xml_var] = round((cure_end - cure_start).total_seconds() / 3600,3)
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
