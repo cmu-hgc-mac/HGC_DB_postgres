@@ -330,16 +330,16 @@ module_cond:
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: ID
   - xml_temp_val: CURING_TIME_HRS
-    dbase_col:  (cure_date_end + cure_time_end::time) - (ass_run_date + ass_time_begin::time)
+    dbase_col:  (cure_date_end + cure_time_end::time) - (ass_run_date + ass_time_end::time)
     dbase_table: module_assembly
     nested_query: null
   - xml_temp_val: CURE_BEGIN_TIMESTAMP_
-    dbase_col: ass_run_date, ass_time_begin
+    dbase_col: ass_run_date, ass_time_end
     dbase_table: module_assembly
     nested_query: null
   - xml_temp_val: CURE_END_TIMESTAMP_
-    dbase_col: cure_date_end, cure_time_end
-    dbase_table: module_assembly
+    dbase_col: date_inspect, time_inspect
+    dbase_table: module_inspect
     nested_query: null
   - xml_temp_val: TEMP_DEGC
     dbase_col: temp_c
@@ -618,16 +618,16 @@ proto_cond:
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: CURING_TIME_HRS
-    dbase_col: (ass_run_date + ass_time_end::time) - (cure_date_end + cure_time_end::time)
+    dbase_col: (cure_date_end + cure_time_end::time) - (ass_run_date + ass_time_end::time)
     dbase_table: proto_assembly
     nested_query: null
   - xml_temp_val: CURE_BEGIN_TIMESTAMP_
-    dbase_col: date_inspect, time_inspect
-    dbase_table: proto_inspect
+    dbase_col: ass_run_date, ass_time_end
+    dbase_table: proto_assembly
     nested_query: null
   - xml_temp_val: CURE_END_TIMESTAMP_
-    dbase_col: cure_date_end, cure_time_end
-    dbase_table: proto_assembly
+    dbase_col: date_inspect, time_inspect
+    dbase_table: proto_inspect
     nested_query: null
   - xml_temp_val: TEMP_DEGC
     dbase_col: temp_c
