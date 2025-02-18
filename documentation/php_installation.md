@@ -35,7 +35,7 @@ extension=pdo_pgsql
 - [Download XAMPP](https://www.apachefriends.org/download.html)
 - Install XAMPP and deselect the installation of all additional non-essential packages. Ensure PHP and Apache is selected. Check under `C:\xampp\php` that `php.exe` exists after installation is complete.
 - Open `Edit system environment variable` Control Panel window. Select `Environment Variables...`. Under `System variables`, navigate to find the `Path` variable. Double-click to edit `Path`. In the pop-up window, add `C:\xampp\php` to the end of the list. Save and exit.
-- Open `php.ini` under `C:\xampp\php\`. Comment out the following lines:
+- Open `php.ini` under `C:\xampp\php\` and comment out the following lines:
 ```
 extension=pgsql
 extension=pdo_pgsql
