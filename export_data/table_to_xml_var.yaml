@@ -421,8 +421,8 @@ hxb_cond:
   - xml_temp_val: ID
   - xml_temp_val: KIND_OF_PART
   - xml_temp_val: RECORD_INSERTION_USER ## should be none, db_loader will auto-fill based on username on lxplus
-    dbase_col: null
-    dbase_table: null
+    dbase_col: inspector
+    dbase_table: hxb_pedestal_test
     nested_query: null
     default_value: null
   - xml_temp_val: RUN_BEGIN_DATE_
@@ -507,7 +507,7 @@ proto_assembly:
     nested_query: null
     default_value: null
   - xml_temp_val: COMP_TRAY_NAME
-    dbase_col: sen_tray_id ## is this really sen_tray_id? should it be hxb_tray_id from module_inspect?
+    dbase_col: sen_tray_id 
     dbase_table: proto_assembly
     nested_query: null
     default_value: null
@@ -656,8 +656,8 @@ sensor_cond:
     nested_query: null
     default_value: null
   - xml_temp_val: INITIATED_BY_USER
-    dbase_col: null ##db_loader will auto-fill based on username on lxplus
-    dbase_table: null
+    dbase_col: operator
+    dbase_table: proto_assembly
     nested_query: null
     default_value: null
   - xml_temp_val: LOCATION

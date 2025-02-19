@@ -75,6 +75,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
+                        elif dbase_table in ['hxb_pedestal_test']:
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE REPLACE(hxb_name,'-','') = '{hxb_name}'
+                            ORDER BY date_test DESC, time_test DESC LIMIT 1;
+                            """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
