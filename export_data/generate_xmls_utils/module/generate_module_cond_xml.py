@@ -98,7 +98,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
-                        else:
+                        elif dbase_table in ['module_inspect']:
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE REPLACE(module_name,'-','') = '{module}'
+                            -- AND xml_upload_success IS NULL 
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
+                            """
+                        elif dbase_table in ['module_assembly']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}'
@@ -140,9 +147,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == 'THICKNESS':
                             thickness = results.get('thickness', "")
                             db_values[xml_var] = str(round(float(thickness),3))
+                            print(db_values[xml_var])
                         elif xml_var == 'FLATNESS':
                             flatness = results.get('flatness', "")
                             db_values[xml_var] = str(round(float(flatness),3))
+                            print(db_values[xml_var])
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         
