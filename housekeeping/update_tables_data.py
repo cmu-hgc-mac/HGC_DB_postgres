@@ -54,11 +54,32 @@ async def update_module_info():
             WHERE REPLACE(module_info.proto_name,'-','') = REPLACE(proto_assembly.proto_name,'-','')
               AND (module_info.bp_name IS NULL OR module_info.sen_name IS NULL);
         """
-        
+        update_query_mod_cure = """
+            UPDATE module_assembly
+            SET 
+                cure_date_end = module_inspect.date_inspect,
+                cure_time_end = module_inspect.time_inspect
+            FROM module_inspect
+            WHERE REPLACE(module_inspect.module_name,'-','') = REPLACE(module_assembly.module_name,'-','')
+              AND (module_assembly.cure_date_end IS NULL OR module_assembly.cure_time_end IS NULL);
+        """
+        update_query_proto_cure = """
+            UPDATE proto_assembly
+            SET 
+                cure_date_end = proto_inspect.date_inspect,
+                cure_time_end = proto_inspect.time_inspect
+            FROM proto_inspect
+            WHERE REPLACE(proto_inspect.proto_name,'-','') = REPLACE(proto_assembly.proto_name,'-','')
+              AND (proto_assembly.cure_date_end IS NULL OR proto_assembly.cure_time_end IS NULL);
+        """
         result = await conn.execute(update_query_mod)
         print(f"Updated proto_name, hxb_name columns in module_info table")
         result = await conn.execute(update_query_proto)
         print(f"Updated bp_name, sen_name columns in module_info table")
+        result = await conn.execute(update_query_mod_cure)
+        print(f"Updated module curing time")
+        result = await conn.execute(update_query_proto_cure)
+        print(f"Updated protomodule curing time")
 
     except Exception as e:
         print(f"An error occurred: {e}")

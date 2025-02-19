@@ -83,8 +83,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE REPLACE(module_assembly.module_name,'-','') = '{module}' AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end}' /* AND module_assembly.xml_upload_success IS NULL */;"
-                        
+                        query = f"""SELECT hxb_inspect.thickness FROM module_assembly  JOIN hxb_inspect  ON REPLACE(module_assembly.hxb_name, '-', '') = REPLACE(hxb_inspect.hxb_name, '-', '')  WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}' AND module_assembly.xml_upload_success IS NULL ORDER BY hxb_inspect.date_inspect DESC LIMIT 1;"""
                     else:
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':

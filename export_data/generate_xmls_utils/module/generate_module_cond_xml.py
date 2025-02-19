@@ -98,7 +98,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
-                        else:
+                        elif dbase_table in ['module_inspect']:
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE REPLACE(module_name,'-','') = '{module}'
+                            -- AND xml_upload_success IS NULL 
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
+                            """
+                        elif dbase_table in ['module_assembly']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}'
@@ -123,12 +130,20 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = format_datetime(run_date, time_end)
                         elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                             run_date = results.get("ass_run_date", "")
-                            time_begin = results.get("ass_time_begin", "")
+                            time_begin = results.get("ass_time_end", "")
                             db_values[xml_var] = format_datetime(run_date, time_begin)
                         elif xml_var == "CURE_END_TIMESTAMP_":
                             run_date = results.get("cure_date_end", "")
                             time_end = results.get("cure_time_end", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
+                        elif xml_var == "CURING_TIME_HRS":
+                            ass_run_date = results.get("ass_run_date", "")
+                            ass_time_end = results.get("ass_time_end", "")
+                            cure_start = datetime.datetime.combine(ass_run_date, ass_time_end) 
+                            cure_date_end = results.get("cure_date_end", "")
+                            cure_time_end = results.get("cure_time_end", "")
+                            cure_end = datetime.datetime.combine(cure_date_end, cure_time_end) 
+                            db_values[xml_var] = round((cure_end - cure_start).total_seconds() / 3600,3)
                         elif xml_var == 'THICKNESS':
                             thickness = results.get('thickness', "")
                             db_values[xml_var] = str(round(float(thickness),3))
