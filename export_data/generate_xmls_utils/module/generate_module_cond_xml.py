@@ -147,11 +147,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == 'THICKNESS':
                             thickness = results.get('thickness', "")
                             db_values[xml_var] = str(round(float(thickness),3))
-                            print(db_values[xml_var])
                         elif xml_var == 'FLATNESS':
                             flatness = results.get('flatness', "")
                             db_values[xml_var] = str(round(float(flatness),3))
-                            print(db_values[xml_var])
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         
