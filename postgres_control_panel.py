@@ -304,7 +304,6 @@ def export_data():
     lxpassword_entry.pack(pady=(0,25))
 
     Label(input_window, text="Comma-separated parts names (optional)").pack(pady=1)
-    partsname_var = StringVar(master=input_window, value='')
     partsname_var_entry = Text(input_window, width=40, height=4, wrap="word", bd=1.5, highlightbackground="black", highlightthickness=1)
     partsname_var_entry.pack(pady=0)
 
@@ -394,6 +393,7 @@ def export_data():
         upload_dev_stat = upload_dev_var.get()
         upload_prod_stat = upload_prod_var.get()
         deleteXML_stat = deleteXML_var.get()
+        partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if not upload_dev_stat and not upload_prod_stat:
             lxp_username, lxp_password = 'na', 'na'
@@ -402,7 +402,12 @@ def export_data():
             input_window.destroy()  
             # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())])
+            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
+            if partslistpre.strip():
+                partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
+                export_command_list += ['-pn', ] + partslist
+            
+            subprocess.run(export_command_list)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
