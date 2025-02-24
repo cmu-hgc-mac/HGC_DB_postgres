@@ -305,10 +305,10 @@ def export_data():
 
     Label(input_window, text="Comma-separated parts names (optional)").pack(pady=1)
     partsname_var = StringVar(master=input_window, value='')
-    partsname_var_entry = Entry(input_window, textvariable=partsname_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    partsname_var_entry = Text(input_window, width=40, height=4, wrap="word", bd=1.5, highlightbackground="black", highlightthickness=1)
     partsname_var_entry.pack(pady=0)
 
-    Label(input_window, text="Or").pack(pady=2)
+    Label(input_window, text="OR").pack(pady=2)
 
     today_date = datetime.now()
     Label(input_window, text="Start date").pack(pady=0)
