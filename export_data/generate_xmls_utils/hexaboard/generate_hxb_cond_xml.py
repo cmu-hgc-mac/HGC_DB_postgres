@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, partnameslist = None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, partsnamelist = None):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -24,9 +24,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     hxb_tables = ['hexaboard', 'hxb_inspect', 'hxb_pedestal_test']
     hxb_list = set()
 
-    if partnameslist:
+    if partsnamelist:
         query = f"""SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM hxb_inspect WHERE hxb_name = ANY($1)"""
-        results = await conn.fetch(query, partnameslist)
+        results = await conn.fetch(query, partsnamelist)
     else:    
         module_query = f"""
         SELECT DISTINCT REPLACE(hxb_name,'-','') AS hxb_name

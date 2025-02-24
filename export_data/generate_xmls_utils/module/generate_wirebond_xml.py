@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, partsnamelist=None):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -24,22 +24,28 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     module_tables = ['module_assembly', 'mod_hxb_other_test', 'module_info', 'module_inspect', 'module_iv_test', 'module_pedestal_test', 'module_pedestal_plots', 'module_qc_summary']
     
     module_list = set()
+
     # Get the unique module names for the specified date
     for dbase_table in db_tables:
-        if dbase_table.endswith(('_wirebond', '_test')):
-            module_query = f"""
-            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
-            FROM {dbase_table}
-            WHERE date_bond BETWEEN '{date_start}' AND '{date_end}' 
-            """
-        elif dbase_table.endswith('_encap'):
-            module_query = f"""
-            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
-            FROM {dbase_table}
-            WHERE date_encap BETWEEN '{date_start}' AND '{date_end}' 
-            """
+        if partsnamelist:
+            query = f"""SELECT REPLACE(module_name,'-','') AS module_name FROM {dbase_table} WHERE module_name = ANY($1)"""
+            results = await conn.fetch(query, partsnamelist)
+        else:
+            if dbase_table.endswith(('_wirebond', '_test')):
+                module_query = f"""
+                SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
+                FROM {dbase_table}
+                WHERE date_bond BETWEEN '{date_start}' AND '{date_end}' 
+                """
+            elif dbase_table.endswith('_encap'):
+                module_query = f"""
+                SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
+                FROM {dbase_table}
+                WHERE date_encap BETWEEN '{date_start}' AND '{date_end}' 
+                """
 
-        results = await conn.fetch(module_query)
+            results = await conn.fetch(module_query)
+    
         module_list.update(row['module_name'] for row in results if 'module_name' in row)
 
     for module in module_list:
@@ -170,7 +176,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
 
         
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/module/wirebond_upload.xml'# XML template file path
@@ -180,7 +186,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key = No
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, partsnamelist)
     finally:
         await conn.close()
 
@@ -194,7 +200,7 @@ if __name__ == "__main__":
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-
+    parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
     dbpassword = args.dbpassword
@@ -202,5 +208,6 @@ if __name__ == "__main__":
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
+    partsnamelist = args.partnameslist
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist))
