@@ -6,7 +6,7 @@ import yaml, os, base64, sys, argparse, traceback, datetime, tzlocal, pytz
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION, INSTITUTION
-from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name, get_run_num, format_datetime
+from export_data.src import *
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
     # Load the YAML file
@@ -119,6 +119,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+            missing_entries = get_missing_db_mappings(yaml_data=module_data, filled_xml_file=output_file_path)
+            print_missing_entries(missing_entries)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,

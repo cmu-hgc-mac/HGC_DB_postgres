@@ -2,11 +2,11 @@ import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, os, base64, sys, argparse, traceback, datetime, tzlocal, pytz
+import yaml, os, base64, sys, argparse, traceback, datetime, tzlocal, pytz, re
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION, INSTITUTION
-from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name, get_run_num, format_datetime
+from export_data.src import *
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
 
@@ -83,8 +83,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE REPLACE(module_assembly.module_name,'-','') = '{module}' AND hxb_inspect.date_inspect BETWEEN '{date_start}' AND '{date_end}' /* AND module_assembly.xml_upload_success IS NULL */;"
-                        
+                        query = f"""SELECT hxb_inspect.thickness FROM module_assembly  JOIN hxb_inspect  ON REPLACE(module_assembly.hxb_name, '-', '') = REPLACE(hxb_inspect.hxb_name, '-', '')  WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}' AND module_assembly.xml_upload_success IS NULL ORDER BY hxb_inspect.date_inspect DESC LIMIT 1;"""
                     else:
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':
@@ -107,7 +106,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     except Exception as e:
                         print('QUERY:', query)
                         print('ERROR:', e)
-
+                    
                     if results:
                         if xml_var == "RUN_BEGIN_TIMESTAMP_":
                             # Fetching both ass_run_date and ass_time_begin
@@ -126,11 +125,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = format_part_name(results.get('proto_name'))
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-
+            
             # Update the XML with the database values
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+            missing_entries = get_missing_db_mappings(yaml_data=module_data, filled_xml_file=output_file_path)
+            print_missing_entries(missing_entries)
+            
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=dbase_tables,

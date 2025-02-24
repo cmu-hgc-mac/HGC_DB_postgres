@@ -10,6 +10,7 @@ import traceback
 import datetime
 import tzlocal
 import pytz
+import re
 # from zoneinfo import ZoneInfo
 
 resource_yaml = 'export_data/resource.yaml'
@@ -271,7 +272,8 @@ def format_datetime(input_date, input_time):
         current_dt = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
         current_dt = local_timezone.localize(current_dt)
     else:
-        time_begin_str = str(input_time) if isinstance(input_time, datetime.time) else input_time
+        # time_begin_str = str(input_time) if isinstance(input_time, datetime.time) else input_time
+        time_begin_str = str(input_time)
         if "." in time_begin_str:
             time_format = "%Y-%m-%d %H:%M:%S.%f"
         else:
@@ -294,3 +296,44 @@ def format_datetime(input_date, input_time):
 
     ### returns the format of "2025-02-10 19:19:44+05:00"
     return formatted_time
+
+def extract_unfilled_variables(filled_xml_file):
+    """Extract unfilled variables (e.g., '{{ thickness }}') from the filled XML."""
+    with open(filled_xml_file, 'r') as file:
+        xml_content = file.read()
+    
+    # Find placeholders like '{{ thickness }}'
+    unfilled_vars = re.findall(r'{{\s*(\w+)\s*}}', xml_content)
+    return set(unfilled_vars)  # Use a set to avoid duplicates
+
+def get_missing_db_mappings(yaml_data, filled_xml_file):
+    unfilled_vars = extract_unfilled_variables(filled_xml_file)
+    missing_entries = []
+
+    for entry in yaml_data:
+        xml_temp_val = entry.get('xml_temp_val')
+        dbase_col = entry.get('dbase_col')
+        dbase_table = entry.get('dbase_table')
+
+        # Only process unfilled XML variables
+        if xml_temp_val in unfilled_vars or dbase_col or dbase_table:
+            missing_entries.append({
+                'xml_temp_val': xml_temp_val,
+                'dbase_col': dbase_col,
+                'dbase_table': dbase_table
+            })
+
+    return missing_entries
+
+def print_missing_entries(missing_entries):
+    """Print missing database values in a terminal-friendly table."""
+    print('>>> Variables not filled in XML <<<')
+    print("=" * 50)
+    print(f"{'XML Temp Val':<20} | {'Database Column':<20} | {'Database Table'}")
+    print("=" * 50)
+    
+    for entry in missing_entries:
+        print(f"{entry['xml_temp_val']:<20} | {entry['dbase_col']:<20} | {entry['dbase_table']}")
+    
+    print("=" * 50 + "\n")
+
