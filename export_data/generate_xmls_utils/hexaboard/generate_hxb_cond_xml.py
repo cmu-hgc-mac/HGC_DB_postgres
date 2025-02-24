@@ -25,9 +25,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     hxb_list = set()
 
     if partnameslist:
-        query = f"""SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM hxb_inspect WHERE name = ANY($1)"""
+        query = f"""SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM hxb_inspect WHERE hxb_name = ANY($1)"""
         results = await conn.fetch(query, partnameslist)
-        print(results)
     else:    
         module_query = f"""
         SELECT DISTINCT REPLACE(hxb_name,'-','') AS hxb_name
