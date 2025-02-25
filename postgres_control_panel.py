@@ -163,10 +163,10 @@ def verify_shipin():
     
     Label(input_window, text="Please physically verify the reception of each component at your MAC.", fg="red",wraplength=270).pack(pady=5)
 
-    def enter_part_barcodes():
+    def enter_part_barcodes_in():
         entries = []
         abspath = os.path.dirname(os.path.abspath(__file__))
-        temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries.txt"))
+        temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
             popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
@@ -175,7 +175,7 @@ def verify_shipin():
                 subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
 
             def save_entries():
-                with open("shipping/temporary_part_entries.txt", "w") as file:
+                with open("shipping/temporary_part_entries_in.txt", "w") as file:
                     for entry in entries:
                         text = entry.get().strip()
                         if text: file.write(text + "\n")
@@ -224,7 +224,7 @@ def verify_shipin():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
-    enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes)
+    enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes_in)
     enter_verify_button.pack(pady=10, padx=0)
     bind_button_keys(enter_verify_button)
     # enter_verify_button.config(state='disabled')
@@ -422,6 +422,62 @@ def export_data():
     submit_export_button.pack(pady=10)
     bind_button_keys(submit_export_button)
 
+def record_shipout():
+    input_window = Toplevel(root)
+    input_window.title("Record outgoing shipment")
+    Label(input_window, text="Enter local db USER password:").pack(pady=5)
+    shipper_var = StringVar()
+    shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    shipper_var_entry.pack(pady=5)
+
+    today_date = datetime.now()
+    Label(input_window, text=f"Now: {today_date.strftime('%Y-%m-%d %H:%M:%S')}").pack(pady=5)
+
+    def enter_part_barcodes_out():
+        entries = []
+        abspath = os.path.dirname(os.path.abspath(__file__))
+        temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+        if dbshipper_pass.strip():
+            popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
+            def verify_components():
+                popup1.destroy() 
+                subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+
+            def save_entries():
+                with open("shipping/temporary_part_entries_out.txt", "w") as file:
+                    for entry in entries:
+                        text = entry.get().strip()
+                        if text: file.write(text + "\n")
+                verify_components()
+
+            num_entries, cols = 12, 2
+            for i in range(num_entries):
+                row, col = i // cols, i % cols
+                listlabel = Label(popup1, text=f"{i + 1}:")
+                listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
+                entry = Entry(popup1, width=30)
+                entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
+                entries.append(entry)
+
+            submit_button = Button(popup1, text="Record to DB", command=donothing)
+            submit_button.grid(row=(num_entries//2), column=1, columnspan=4, pady=10)
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                input_window.destroy()  
+
+
+    single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out)
+    single_pack_button.pack(pady=10)
+    bind_button_keys(single_pack_button)
+
+    record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=donothing)
+    record_crate_button.pack(pady=10)
+    bind_button_keys(record_crate_button)
+
+
+
+
 def refresh_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
@@ -546,9 +602,9 @@ button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=expo
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
 button_upload_xml.config(state='disabled')
 
-button_shipout = Button(frame, text="   Outgoing shipment     ", command=refresh_data, width=button_width, height=button_height)
+button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
-button_shipout.config(state="disabled")
+# button_shipout.config(state="disabled")
 
 button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=button_height)  
 button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
