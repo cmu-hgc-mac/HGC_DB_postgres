@@ -488,12 +488,12 @@ hxb_cond:
     dbase_col: grade
     dbase_table: hxb_inspect
     nested_query: null
-    default_value: null
+    default_value: 'n/a'
   - xml_temp_val: COMMENTS_UPLOAD
     dbase_col: comment
     dbase_table: hxb_inspect
     nested_query: null
-    default_value: null
+    default_value: 'n/a'
 
 proto_assembly:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_

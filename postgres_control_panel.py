@@ -290,41 +290,47 @@ def export_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    Label(input_window, text="**Enter local DB USER password:**").pack(pady=5)
+    Label(input_window, text="**Enter local DB USER password:**").pack(pady=1)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    shipper_var_entry.pack(pady=5)
-    Label(input_window, text="**Enter LXPLUS username:**").pack(pady=5)
+    shipper_var_entry.pack(pady=0)
+    Label(input_window, text="**Enter LXPLUS username:**").pack(pady=1)
     lxuser_var = StringVar()
     lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    lxuser_var_entry.pack(pady=5)
-    Label(input_window, text="**Enter LXPLUS password:**").pack(pady=5)
+    lxuser_var_entry.pack(pady=0)
+    Label(input_window, text="**Enter LXPLUS password:**").pack(pady=1)
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    lxpassword_entry.pack(pady=5)
+    lxpassword_entry.pack(pady=(0,25))
+
+    Label(input_window, text="Comma-separated parts names (optional)").pack(pady=1)
+    partsname_var_entry = Text(input_window, width=40, height=4, wrap="word", bd=1.5, highlightbackground="black", highlightthickness=1)
+    partsname_var_entry.pack(pady=0)
+
+    Label(input_window, text="OR").pack(pady=2)
 
     today_date = datetime.now()
-    Label(input_window, text="Start date").pack(pady=5)
+    Label(input_window, text="Start date").pack(pady=0)
     startdate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
     startdate_var_entry = Entry(input_window, textvariable=startdate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    startdate_var_entry.pack(pady=5)
-    Label(input_window, text="End date").pack(pady=5)
+    startdate_var_entry.pack(pady=0)
+    Label(input_window, text="End date").pack(pady=0)
     enddate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
     enddate_var_entry = Entry(input_window, textvariable=enddate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    enddate_var_entry.pack(pady=5)
+    enddate_var_entry.pack(pady=(0,25))
 
     generate_var = BooleanVar(value=True)
     generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
-    generate_var_entry.pack(pady=5)
+    generate_var_entry.pack(pady=0)
     upload_dev_var = BooleanVar(value=True)
     upload_dev_var_entry = Checkbutton(input_window, text="Upload to INT2R (DEV-DB)", variable=upload_dev_var)
-    upload_dev_var_entry.pack(pady=5)
+    upload_dev_var_entry.pack(pady=0)
     upload_prod_var = BooleanVar(value=False)
     upload_prod_var_entry = Checkbutton(input_window, text="Upload to CMSR (PROD-DB)", variable=upload_prod_var)
-    upload_prod_var_entry.pack(pady=2)
+    upload_prod_var_entry.pack(pady=0)
     deleteXML_var = BooleanVar(value=False)
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
-    deleteXML_var_entry.pack(pady=5)
+    deleteXML_var_entry.pack(pady=0)
     
     def select_specific():
         popup = Toplevel()
@@ -387,6 +393,7 @@ def export_data():
         upload_dev_stat = upload_dev_var.get()
         upload_prod_stat = upload_prod_var.get()
         deleteXML_stat = deleteXML_var.get()
+        partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if not upload_dev_stat and not upload_prod_stat:
             lxp_username, lxp_password = 'na', 'na'
@@ -395,7 +402,12 @@ def export_data():
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())])
+            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
+            if partslistpre.strip():
+                partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
+                export_command_list += ['-pn', ] + partslist
+            
+            subprocess.run(export_command_list)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
