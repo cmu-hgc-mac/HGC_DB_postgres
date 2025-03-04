@@ -127,8 +127,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_name = f'{bp_name}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            missing_entries = get_missing_db_mappings(yaml_data=wb_data, filled_xml_file=output_file_path)
-            print_missing_entries(missing_entries)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,

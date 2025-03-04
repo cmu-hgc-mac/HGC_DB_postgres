@@ -163,18 +163,15 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             fr_comment = results.get("front_encap_comment", "")
                             db_values[xml_var] = f"{bk_comment}-{fr_comment}"
                         elif xml_var == 'BOND_PULL_AVG':
-                            db_values[xml_var] = str(round(float(results.get('avg_pull_strg_g', ''), 3)))
+                            db_values[xml_var] = str(round(float(results.get('avg_pull_strg_g', '')), 3))
                         elif xml_var == 'BOND_PULL_STDDEV':
-                            db_values[xml_var] = str(round(float(results.get('std_pull_strg_g')), 3))
+                            db_values[xml_var] = str(round(float(results.get('std_pull_strg_g', '')), 3))
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            missing_entries = get_missing_db_mappings(yaml_data=wb_data, filled_xml_file=output_file_path)
-            print_missing_entries(missing_entries)
-
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,
