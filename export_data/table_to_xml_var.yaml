@@ -161,12 +161,12 @@ module_assembly:
     # nested_query: SELECT max_thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
 
 wirebond:
-  - xml_temp_val: RUN_NAME_TIME_STAMP
-    dbase_col: date_bond, time_bond
-    dbase_table: back_wirebond
-    xml_tag: RUN_NAME
-    nested_query: null
-    default_value: null
+  # - xml_temp_val: RUN_NAME_TIME_STAMP
+  #   dbase_col: date_bond, time_bond
+  #   dbase_table: back_wirebond
+  #   xml_tag: RUN_NAME
+  #   nested_query: null
+  #   default_value: null
   - xml_temp_val: BACK_BONDS_DATE
     dbase_col: date_bond
     dbase_table: back_wirebond
