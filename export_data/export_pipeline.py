@@ -10,6 +10,7 @@ import os, sys, argparse, base64, subprocess, traceback
 import shutil, pwinput, datetime, yaml
 from cryptography.fernet import Fernet
 from src import process_xml_list
+from find_missing_var_xml import find_missing_var_xml
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
 GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
@@ -57,10 +58,10 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None, parts
             for filetype in list(xml_list[subdir]):
                 file_suff = list(filetype.keys())[0]
                 file = f"generate_{file_suff}.py"
-            
                 if filetype[file_suff] and os.path.exists(os.path.join(subdir_path, file)):                
                     ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules.     
                     if subdir_path.split('/')[-1] not in ['protomodule', 'module'] and (file.endswith('build_xml.py') == True):
+                        print(f'subdir_path to skip -- {subdir_path}')
                         continue; 
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
@@ -150,7 +151,7 @@ def main():
     ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
         generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist)
-
+        find_missing_var_xml(time_limit=90)
     ## Step 2: SCP files to central DB
 
     db_list = []
