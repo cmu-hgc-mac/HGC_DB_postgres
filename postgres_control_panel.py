@@ -6,6 +6,7 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
+from housekeeping.shipping_helper import update_packed_timestamp_sync
 
 def run_git_pull_seq():
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
@@ -33,6 +34,7 @@ db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
 php_port = config_data.get('php_port', '8083')
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
+max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}"
 
 def get_pid_result():
@@ -431,8 +433,8 @@ def record_shipout():
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
 
-    today_date = datetime.now()
-    Label(input_window, text=f"Now: {today_date.strftime('%Y-%m-%d %H:%M:%S')}").pack(pady=5)
+    datetime_now = datetime.now()
+    Label(input_window, text=f"Now: {datetime_now.strftime('%Y-%m-%d %H:%M:%S')}").pack(pady=5)
 
     def enter_part_barcodes_out():
         lines_from_file = []
@@ -501,7 +503,12 @@ def record_shipout():
                 entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
                 entries.append(entry)
 
-            submit_button = Button(popup1, text="Record to DB", command=donothing)
+            def update_db_packed():
+                module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
+                popup1.close()
+                update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now)
+
+            submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
             submit_button.grid(row=1+(num_entries//2), column=1, columnspan=4, pady=10)
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
