@@ -495,7 +495,7 @@ def record_shipout():
             datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
             datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
 
-            label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to creating shipments.")
+            label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to record shipments.")
             label.grid(row=1, column=1, columnspan=4, pady=10)
             upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
             upload_from_file_button.grid(row=2, column=1, columnspan=4, pady=10)
@@ -707,7 +707,6 @@ button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
-# button_shipout.config(state="disabled")
 
 button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=button_height)  
 button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
