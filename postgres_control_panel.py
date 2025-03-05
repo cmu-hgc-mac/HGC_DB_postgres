@@ -432,6 +432,7 @@ def record_shipout():
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
+    Label(input_window, wraplength = 200, text="Modify tables prior to creating shipments for the first time.", fg="red").pack(pady=5)
 
     def enter_part_barcodes_out():
         lines_from_file = []
@@ -525,14 +526,14 @@ def record_shipout():
             datetime_now = datetime.now().replace(microsecond=0)
             datetime_now_label = Label(popup1, text=f"Now: {datetime_now.strftime('%Y-%m-%d %H:%M:%S')}")
             datetime_now_label.grid(row=0, column=1, columnspan=4, pady=10)
-            datetime_now_label = Label(popup1, text=f"Shipment contents will be saved under 'shipping/shipmentout_{datetime_now.strftime('%Y%m%d_%H%M%S')}_modules_XXX.txt'")
-            datetime_now_label.grid(row=1, column=1, columnspan=4, pady=10)
+            label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_{datetime_now.strftime('%Y%m%d_%H%M%S')}_modules_XXX.txt' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
+            label1.grid(row=1, column=0, columnspan=4, pady=10)
             instruction_label = Label(popup1, text=f"Enter the ID of any one module present in each container in this shipment.")
-            instruction_label.grid(row=2, column=0, columnspan=4, pady=10)
+            instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
 
             num_entries, cols = int(max_box_per_shipment), 2
             for i in range(num_entries):
-                row, col = 3 + i % int(num_entries//cols), i // int(num_entries//cols)
+                row, col = 4 + i % int(num_entries//cols), i // int(num_entries//cols)
                 listlabel = Label(popup1, text=f"{i + 1}:")
                 listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
                 entry = Entry(popup1, width=30)
@@ -545,8 +546,11 @@ def record_shipout():
                 if len(module_update_ship) > 0:
                     fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now)
                     print("List of modules saved under ", fileout_name)
+                    webbrowser.open(f"https://int2r-shipment.web.cern.ch/shipping_add/")
+                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/shipping_add/")
+
             submit_button = Button(popup1, text="Record to DB", command=update_db_shipped)
-            submit_button.grid(row=2+(num_entries//2), column=1, columnspan=4, pady=10)
+            submit_button.grid(row=4+(num_entries//2), column=1, columnspan=4, pady=10)
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
