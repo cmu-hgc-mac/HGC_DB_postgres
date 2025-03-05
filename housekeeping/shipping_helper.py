@@ -11,7 +11,7 @@ db_params = {
 }
 
 def update_packed_timestamp_sync(encrypt_key, password, module_names, timestamp):
-    query = """UPDATE module_info SET packed_timestamp = $1 WHERE module_name = ANY($2)"""
+    query = """UPDATE module_info SET packed_datetime = $1 WHERE module_name = ANY($2)"""
     asyncio.run(_update_packed_timestamp(encrypt_key = encrypt_key, password = password, query = query, module_names = module_names, timestamp = timestamp))
 
 async def _update_packed_timestamp(encrypt_key, password, query, module_names, timestamp, db_params = db_params):
