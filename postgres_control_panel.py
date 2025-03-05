@@ -6,7 +6,7 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
-from housekeeping.shipping_helper import update_packed_timestamp_sync
+from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync
 
 def run_git_pull_seq():
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
@@ -480,10 +480,8 @@ def record_shipout():
                 if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                     input_window.destroy()  
 
-
         entries = []
         abspath = os.path.dirname(os.path.abspath(__file__))
-        temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip():
             popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
@@ -516,12 +514,48 @@ def record_shipout():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
+    def enter_shipment_contents_out():
+        entries = []
+        abspath = os.path.dirname(os.path.abspath(__file__))
+        # temptextfileout = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+        if dbshipper_pass.strip():
+            popup1 = Toplevel(); popup1.title("Enter containers in this shipment")
+            
+            datetime_now = datetime.now().replace(microsecond=0)
+            datetime_now_label = Label(popup1, text=f"Now: {datetime_now.strftime('%Y-%m-%d %H:%M:%S')}")
+            datetime_now_label.grid(row=0, column=1, columnspan=4, pady=10)
+            datetime_now_label = Label(popup1, text=f"Shipment contents will be saved under 'shipping/shipmentout_{datetime_now.strftime('%Y%m%d_%H%M%S')}_modules_XXX.txt'")
+            datetime_now_label.grid(row=1, column=1, columnspan=4, pady=10)
+            instruction_label = Label(popup1, text=f"Enter the ID of any one module present in each container in this shipment.")
+            instruction_label.grid(row=2, column=0, columnspan=4, pady=10)
+
+            num_entries, cols = int(max_box_per_shipment), 2
+            for i in range(num_entries):
+                row, col = 3 + i % int(num_entries//cols), i // int(num_entries//cols)
+                listlabel = Label(popup1, text=f"{i + 1}:")
+                listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
+                entry = Entry(popup1, width=30)
+                entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
+                entries.append(entry)
+
+            def update_db_shipped():
+                module_update_ship = [entry.get() for entry in entries if entry.get().strip() != ""]
+                popup1.destroy()
+                if len(module_update_ship) > 0:
+                    fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now)
+                    print("List of modules saved under ", fileout_name)
+            submit_button = Button(popup1, text="Record to DB", command=update_db_shipped)
+            submit_button.grid(row=2+(num_entries//2), column=1, columnspan=4, pady=10)
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                input_window.destroy()  
 
     single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out)
     single_pack_button.pack(pady=10)
     bind_button_keys(single_pack_button)
 
-    record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=donothing)
+    record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=enter_shipment_contents_out)
     record_crate_button.pack(pady=10)
     bind_button_keys(record_crate_button)
 
