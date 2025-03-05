@@ -490,13 +490,14 @@ def record_shipout():
             datetime_now = datetime.now().replace(microsecond=0)
             datetime_now_label = Label(popup1, text=f"Now: {datetime_now.strftime('%Y-%m-%d %H:%M:%S')}")
             datetime_now_label.grid(row=0, column=1, columnspan=4, pady=10)
-
+            label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to creating shipments.")
+            label.grid(row=1, column=1, columnspan=4, pady=10)
             upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
-            upload_from_file_button.grid(row=1, column=1, columnspan=4, pady=10)
+            upload_from_file_button.grid(row=2, column=1, columnspan=4, pady=10)
 
             num_entries, cols = int(max_mod_per_box), 2
             for i in range(num_entries):
-                row, col = 2 + i // cols, i % cols
+                row, col = 3 + i // cols, i % cols
                 listlabel = Label(popup1, text=f"{i + 1}:")
                 listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
                 entry = Entry(popup1, width=30)
@@ -510,7 +511,7 @@ def record_shipout():
                     update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now)
 
             submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
-            submit_button.grid(row=2+(num_entries//2), column=1, columnspan=4, pady=10)
+            submit_button.grid(row=3+(num_entries//2), column=1, columnspan=4, pady=10)
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
@@ -528,7 +529,7 @@ def record_shipout():
             datetime_now_label.grid(row=0, column=1, columnspan=4, pady=10)
             label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_{datetime_now.strftime('%Y%m%d_%H%M%S')}_modules_XXX.txt' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
             label1.grid(row=1, column=0, columnspan=4, pady=10)
-            instruction_label = Label(popup1, text=f"Enter the ID of any one module present in each container in this shipment.")
+            instruction_label = Label(popup1, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
             instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
 
             num_entries, cols = int(max_box_per_shipment), 2
