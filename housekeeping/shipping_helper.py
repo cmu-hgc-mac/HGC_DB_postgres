@@ -44,6 +44,7 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
         shipped_modules = [row['module_name'] for row in mod_names_out]
         print(f"Updated shipped_timestamp for {len(shipped_modules)} modules.")
         fileout_name = f"""shipping/shipmentout_{timestamp.strftime('%Y%m%d_%H%M%S')}_modules_{len(shipped_modules)}.txt"""
+        os.makedirs('shipping', exist_ok=True)
         with open(fileout_name, "w") as file:
             for module in shipped_modules:
                 file.write(module + "\n")
