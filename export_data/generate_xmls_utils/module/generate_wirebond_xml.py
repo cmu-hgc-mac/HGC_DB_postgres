@@ -67,6 +67,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = get_kind_of_part(module)
                 elif xml_var == 'RUN_NUMBER':
                     db_values[xml_var] = get_run_num(LOCATION)
+                elif entry['default_value']:
+                    db_values[xml_var] = entry['default_value']
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -112,7 +114,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             ORDER BY date_encap DESC, time_encap DESC
                             LIMIT 1;
                             """
-                        elif dbase_table == 'module_info':
+                        elif dbase_table in ['module_info', 'module_inspect']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE REPLACE(module_name,'-','') = '{module}'
@@ -142,6 +144,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("date_bond", "")
                             time_end = results.get("time_bond", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
+                        elif xml_var == 'BACK_ENCAP':
+                            if results.get('back_encap.date_encap') is not None:
+                                db_values[xml_var] = 'True'
+                            else:
+                                db_values[xml_var] = 'False'
+                        elif xml_var == 'IS_TEST_BOND_MODULE':
+                            if results.get('avg_pull_strg_g') is not None:
+                                db_values[xml_var] = 'True'
+                            else:
+                                db_values[xml_var] = 'False'
                         elif xml_var == "WIREBOND_COMMENTS_CONCAT":
                             bk_comment = results.get("back_wirebond_comment", "")
                             fr_comment = results.get("front_wirebond_comment", "")
@@ -150,20 +162,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             bk_comment = results.get("back_encap_comment", "")
                             fr_comment = results.get("front_encap_comment", "")
                             db_values[xml_var] = f"{bk_comment}-{fr_comment}"
+                        elif xml_var == 'BOND_PULL_AVG':
+                            db_values[xml_var] = str(round(float(results.get('avg_pull_strg_g', '')), 3))
+                        elif xml_var == 'BOND_PULL_STDDEV':
+                            db_values[xml_var] = str(round(float(results.get('std_pull_strg_g', '')), 3))
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-                    
-                        if 'BOND_PULL_AVG' in list(db_values.keys()):
-                            db_values['BOND_PULL_AVG'] = str(round(float(db_values['BOND_PULL_AVG']), 3))
-                        if 'BOND_PULL_STDDEV' in list(db_values.keys()):
-                            db_values['BOND_PULL_STDDEV'] = str(round(float(db_values['BOND_PULL_STDDEV']), 3))
 
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            missing_entries = get_missing_db_mappings(yaml_data=wb_data, filled_xml_file=output_file_path)
-            print_missing_entries(missing_entries)
-
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,

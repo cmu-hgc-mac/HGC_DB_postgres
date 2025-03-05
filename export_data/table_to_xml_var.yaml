@@ -7,347 +7,479 @@ module_assembly:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_begin
     dbase_table: module_assembly
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: module_assembly
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: operator
     dbase_table: module_assembly
+    xml_tag: INITIATED_BY_USER
     nested_query: null
     default_value: null
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: ASMBL_TRAY_NAME
     dbase_col: ass_tray_id
     dbase_table: module_assembly
+    xml_tag: ASMBL_TRAY_NAME
     nested_query: null
     default_value: null
   - xml_temp_val: PROTOMODULE
     dbase_col: proto_name
     dbase_table: module_assembly
+    xml_tag: PRTO_SER_NUM
     nested_query: null
     default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: module_assembly
+    xml_tag: PRTO_ASM_ROW
     nested_query: null
     default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
     dbase_table: module_assembly
+    xml_tag: PCB_CMP_COL
     nested_query: null
     default_value: null
   - xml_temp_val: COMP_TRAY_NAME
     dbase_col: hxb_tray_id
     dbase_table: module_assembly
+    xml_tag: COMP_TRAY_NAME
     nested_query: null
     default_value: null
   - xml_temp_val: PCB
     dbase_col: hxb_name
     dbase_table: module_assembly
+    xml_tag: PCB_SER_NUM
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_THICKNESS
     dbase_col: thickness
     dbase_table: hxb_inspect
+    xml_tag: PCB_THKNES_MM
     nested_query: SELECT thickness::text FROM hxb_inspect JOIN module_assembly ON REPLACE(module_assembly.hxb_name,'-','') = REPLACE(hxb_inspect.hxb_name,'-','')
     default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: module_assembly
+    xml_tag: PCB_CMP_ROW
     nested_query: null
     default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
     dbase_table: module_assembly
+    xml_tag: PCB_CMP_COL
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_TOOL_NAME
     dbase_col: hxb_put_id
     dbase_table: module_assembly
+    xml_tag: PCB_TOOL_NAME
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_TOOL_FEET_CHK_STR
     dbase_col: null ## In GUI, checkbox under hexaboard - pre-assembly ## true by default
     dbase_table: null
+    xml_tag: PCB_TOOL_FEET_CHK
     nested_query: null
     default_value: 'True'
   - xml_temp_val: GLUE_TYPE
     dbase_col: adhesive
     dbase_table: module_assembly
+    xml_tag: GLUE_TYPE
     nested_query: null
     default_value: null
   - xml_temp_val: GLUE_BATCH_NUM
     dbase_col: glue_batch
     dbase_table: module_assembly
+    xml_tag: GLUE_BATCH_NUM
     nested_query: null
     default_value: null
   - xml_temp_val: MOD_GRADE
     dbase_col: grade
     dbase_table: module_inspect
+    xml_tag: MOD_GRADE
     nested_query: null
     default_value: null
   - xml_temp_val: STEP_PCB
     dbase_col: batch_no ## is this batch_no for module?
     dbase_table: module_assembly
+    xml_tag: PCB_STEP
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_PLCMENT_X_OFFSET
     dbase_col: x_offset_mu
     dbase_table: module_inspect
+    xml_tag: PCB_PLCMENT_X_OFFSET
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_PLCMENT_Y_OFFSET
     dbase_col: y_offset_mu
     dbase_table: module_inspect
+    xml_tag: PCB_PLCMENT_Y_OFFSET
     nested_query: null
     default_value: null
   - xml_temp_val: PCB_PLCMENT_ANG_OFFSET
     dbase_col: ang_offset_deg
     dbase_table: module_inspect
+    xml_tag: PCB_PLCMENT_ANG_OFFSET
     nested_query: null
     default_value: null
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: module_inspect
+    xml_tag: MOD_FLTNS_MM
     nested_query: null
     default_value: null
     # nested_query: SELECT flatness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: THICKNESS
     dbase_col: avg_thickness
     dbase_table: module_inspect
+    xml_tag: MOD_THKNS_MM
     nested_query: null
     default_value: null
     # nested_query: SELECT avg_thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
   - xml_temp_val: MAX_THICKNESS
     dbase_col: max_thickness
     dbase_table: module_inspect
+    xml_tag: MOD_MAX_THKNS_MM
     nested_query: null
     default_value: null
     # nested_query: SELECT max_thickness::text FROM module_inspect JOIN module_assembly ON module_assembly.module_name = module_inspect.module_name
 
 wirebond:
-  - xml_temp_val: RUN_NAME_TIME_STAMP
-    dbase_col: date_bond, time_bond
-    dbase_table: back_wirebond
-    nested_query: null
+  # - xml_temp_val: RUN_NAME_TIME_STAMP
+  #   dbase_col: date_bond, time_bond
+  #   dbase_table: back_wirebond
+  #   xml_tag: RUN_NAME
+  #   nested_query: null
+  #   default_value: null
   - xml_temp_val: BACK_BONDS_DATE
     dbase_col: date_bond
     dbase_table: back_wirebond
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_BONDS_DATE
     dbase_col: date_bond
     dbase_table: front_wirebond
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
+    default_value: null
   - xml_temp_val: BOND_PULL_USER
     dbase_col: technician
     dbase_table: bond_pull_test
+    xml_tag: INITIATED_BY_USER
     nested_query: null
+    default_value: null
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: BOND_WIRE_BATCH_NUM
     dbase_col: spool_batch
     dbase_table: front_wirebond
+    xml_tag: BOND_WIRE_BATCH_NUM
     nested_query: null
+    default_value: null
   - xml_temp_val: PRE_INSPECTION
-    dbase_col: null ## visual inspection (pass/fail) ## corresponding to Hexaboard post-assembly grade. ## missing
-    dbase_table: null
+    dbase_col: grade ## visual inspection (pass/fail) ## corresponding to Hexaboard post-assembly grade. ## missing ## not nullable
+    dbase_table: module_inspect
+    xml_tag: PRE_INSPECTION
     nested_query: null
+    default_value: null
   - xml_temp_val: SYLGARD_BATCH
     dbase_col: epoxy_batch
     dbase_table: back_encap
+    xml_tag: SYLGARD_BATCH
     nested_query: null
+    default_value: null
   - xml_temp_val: WEDGE_BATCH
     dbase_col: wedge_id
     dbase_table: back_wirebond
+    xml_tag: WEDGE_BATCH
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_BONDS
     dbase_col: wb_bk_marked_done
     dbase_table: back_wirebond
+    xml_tag: BACK_BONDS
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_BONDS_DATE
     dbase_col: date_bond
     dbase_table: back_wirebond
+    xml_tag: BACK_BONDS_DATE
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_BONDS_USER
     dbase_col: technician
     dbase_table: back_wirebond
+    xml_tag: BACK_BONDS_USER
     nested_query: null
-  - xml_temp_val: BACK_UNBONDED
+    default_value: null
+  - xml_temp_val: BACK_UNBONDED ## not nullable
     dbase_col: null ## number of channells that is not bonded. (max. 18) # missing
     dbase_table: null
+    xml_tag: BACK_UNBONDED
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_BOND_INSPXN
     dbase_col: wb_bk_marked_done
     dbase_table: back_wirebond
+    xml_tag: BACK_BOND_INSPXN
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_REPAIR_USER
     dbase_col: technician
     dbase_table: back_wirebond
+    xml_tag: BACK_REPAIR_USER
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_BONDS
     dbase_col: wb_fr_marked_done
     dbase_table: front_wirebond
+    xml_tag: FRONT_BONDS
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_BONDS_DATE
     dbase_col: date_bond
     dbase_table: front_wirebond
+    xml_tag: FRONT_BONDS_DATE
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_BONDS_USER
     dbase_col: technician
     dbase_table: front_wirebond
+    xml_tag: FRONT_BONDS_USER
     nested_query: null
-  - xml_temp_val: FRONT_SKIP
+    default_value: null
+  - xml_temp_val: FRONT_SKIP ## not nullable
     dbase_col: null ## missing
     dbase_table: null
+    xml_tag: SI_CELLS_GROUNDED
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_UNBONDED
     dbase_col: list_unbonded_cells
     dbase_table: front_wirebond
+    xml_tag: SI_CELLS_UNBONDED
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_BOND_INSPXN
     dbase_col: wb_fr_marked_done
     dbase_table: front_wirebond
+    xml_tag: FRONT_BOND_INSPXN
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_REPAIR_USER
     dbase_col: technician
     dbase_table: front_wirebond
+    xml_tag: FRONT_REPAIR_USER
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_ENCAP
-    dbase_col: null ## missing
-    dbase_table: null
+    dbase_col: back_encap.date_encap ## True or False
+    dbase_table: back_encap
+    xml_tag: BACK_ENCAP
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_ENCAP_USER
     dbase_col: technician
     dbase_table: back_encap
+    xml_tag: BACK_ENCAP_USER
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_ENCAP_CURE_START
     dbase_col: cure_start
     dbase_table: back_encap
+    xml_tag: BACK_ENCAP_CURE_START
     nested_query: null
+    default_value: null
   - xml_temp_val: BACK_ENCAP_CURE_STOP
     dbase_col: cure_end
     dbase_table: back_encap
+    xml_tag: BACK_ENCAP_CURE_STOP
     nested_query: null
-  - xml_temp_val: BACK_ENCAP_INSPXN
-    dbase_col: null ## inspect_grade in back_encap? ## missing
+    default_value: null
+  - xml_temp_val: BACK_ENCAP_INSPXN ## not nullable
+    dbase_col: null ## inspect_grade in back_encap? ## missing pass/fail
     dbase_table: null
+    xml_tag: BACK_ENCAP_INSPXN
     nested_query: null
-  - xml_temp_val: FRONT_ENCAP
-    dbase_col: null ## True if cure_end is not Null ## missing
+    default_value: null
+  - xml_temp_val: FRONT_ENCAP ## not nullable
+    dbase_col: null ## True if cure_end is not Null ## missing True/False
     dbase_table: null
+    xml_tag: FRONT_ENCAP
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_ENCAP_USER
     dbase_col: technician
     dbase_table: front_encap
+    xml_tag: FRONT_ENCAP_USER
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_ENCAP_CURE_START
     dbase_col: cure_start
     dbase_table: front_encap
+    xml_tag: FRONT_ENCAP_CURE_START
     nested_query: null
+    default_value: null
   - xml_temp_val: FRONT_ENCAP_CURE_STOP
     dbase_col: cure_end
     dbase_table: front_encap
+    xml_tag: FRONT_ENCAP_CURE_STOP
     nested_query: null
-  - xml_temp_val: FRONT_ENCAP_INSPXN
-    dbase_col: null ## inspect_grade in front_encap? ## missing
+    default_value: null
+  - xml_temp_val: FRONT_ENCAP_INSPXN ## not nullable
+    dbase_col: null ## inspect_grade in front_encap? ## missing pass/fail
     dbase_table: null
+    xml_tag: FRONT_ENCAP_INSPXN
     nested_query: null
-  - xml_temp_val: IS_TEST_BOND_MODULE
-    dbase_col: null ## missing
-    dbase_table: null
+    default_value: null
+  - xml_temp_val: IS_TEST_BOND_MODULE ## not nullable
+    dbase_col: avg_pull_strg_g
+    dbase_table: bond_pull_test
+    xml_tag: IS_TEST_BOND_MODULE
     nested_query: null
+    default_value: null
   - xml_temp_val: BOND_PULL_USER
     dbase_col: technician
     dbase_table: bond_pull_test
+    xml_tag: BOND_IULL_USER
     nested_query: null
+    default_value: null
   - xml_temp_val: BOND_PULL_AVG
     dbase_col: avg_pull_strg_g
     dbase_table: bond_pull_test
+    xml_tag: BOND_PULL_AVG
     nested_query: null
+    default_value: null
   - xml_temp_val: BOND_PULL_STDDEV
     dbase_col: std_pull_strg_g
     dbase_table: bond_pull_test
+    xml_tag: BOND_PULL_STDDEV
     nested_query: null
-  - xml_temp_val: FINAL_INSPXN_USER
-    dbase_col: null ## is this same as front_encap technician? ## missing
+    default_value: null
+  - xml_temp_val: FINAL_INSPXN_USER ## not nullable
+    dbase_col: technician ## is this same as front_encap technician?
+    dbase_table: front_encap
+    xml_tag: FINAL_INSPXN_USER
+    nested_query: null
+    default_value: null
+  - xml_temp_val: FINAL_INSPXN_OK ## not nullable
+    dbase_col: null ## missing ## True/False
     dbase_table: null
+    xml_tag: FINAL_INSPXN_OK
     nested_query: null
-  - xml_temp_val: FINAL_INSPXN_OK
-    dbase_col: null ## missing
-    dbase_table: null
-    nested_query: null
+    default_value: 'True'
   - xml_temp_val: WIREBOND_COMMENTS_CONCAT
     dbase_col: comment
     dbase_table: front_wirebond
+    xml_tag: WIREBOND_COMMENTS
     nested_query: (SELECT comment AS back_wirebond_comment FROM back_wirebond WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_bond DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_wirebond_comment FROM front_wirebond WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_bond DESC LIMIT 1);"
+    default_value: null
   - xml_temp_val: ENCAPSULATION_COMMENTS_CONCAT
     dbase_col: comment
     dbase_table: front_wirebond
+    xml_tag: ENCAPSULATION_COMMENTS
     nested_query: (SELECT comment AS back_encap_comment FROM back_encap WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_encap_comment FROM front_encap WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL ORDER BY date_encap DESC, time_encap DESC LIMIT 1);"
+    default_value: null
 
 module_build:
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: BARCODE ## filled with module_name
+    xml_tag: BARCODE
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: INSTITUTION
+    xml_tag: INSTITUTION
   - xml_temp_val: MANUFACTURER
+    xml_tag: MANUFACTURER
   - xml_temp_val: KIND_OF_PART_PROTOMODULE
+    xml_tag: KIND_OF_PART
   - xml_temp_val: PROTOMODULE
     dbase_col: proto_name
     dbase_table: module_assembly
+    xml_tag: SERIAL_NUMBER
     nested_query: null
   - xml_temp_val: KIND_OF_PART_PCB
+    xml_tag: KIND_OF_PART
   - xml_temp_val: PCB
     dbase_col: hxb_name
     dbase_table: module_assembly
+    xml_tag: SERIAL_NUMBER
     nested_query: null
 
 module_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_begin
     dbase_table: module_assembly
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: module_assembly
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: inspector
     dbase_table: module_inspect
+    xml_tag: INITIATED_BY_USER
     nested_query: null
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: CURING_TIME_HRS
     dbase_col:  ass_run_date, ass_time_end, cure_date_end, cure_time_end
     dbase_table: module_assembly
+    xml_tag: CURING_TIME_HRS
     nested_query: null
-  - xml_temp_val: CURE_BEGIN_TIMESTAMP_
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: module_assembly
+    xml_tag: TIME_START
     nested_query: null
-  - xml_temp_val: CURE_END_TIMESTAMP_
+  - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: cure_date_end, cure_time_end
     dbase_table: module_assembly
+    xml_tag: TIME_STOP
     nested_query: null
   - xml_temp_val: TEMP_DEGC
     dbase_col: temp_c
     dbase_table: module_assembly
+    xml_tag: TEMP_DEGC
     nested_query: null
   - xml_temp_val: HUMIDITY_PRCNT
     dbase_col: rel_hum
     dbase_table: module_assembly
+    xml_tag: HUMIDITY_PRCNT
     nested_query: null
 
 bp_build:
@@ -360,26 +492,35 @@ bp_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: date_inspect, time_inspect
     dbase_table: bp_inspect
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: 
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: date_inspect, time_inspect ##time to click "save" on GUI (end of inspection) ## ask aleetha if we can have the same time as RUN_BEGIN_TIMESTAMP_ ## missing
     dbase_table: bp_inspect
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: inspector
     dbase_table: bp_inspect
+    xml_tag: INITIATED_BY_USER
     nested_query: 
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: bp_inspect
+    xml_tag: FLATNESS
     nested_query: 
   - xml_temp_val: THICKNESS
     dbase_col: thickness
     dbase_table: bp_inspect
+    xml_tag: THICKNESS
     nested_query: 
   - xml_temp_val: WEIGHT
     dbase_col: weight
@@ -388,71 +529,90 @@ bp_cond:
   - xml_temp_val: GRADE
     dbase_col: grade
     dbase_table: bp_inspect
+    xml_tag: GRADE
     nested_query: null
   - xml_temp_val: COMMENTS_UPLOAD
     dbase_col: comment
     dbase_table: bp_inspect
+    xml_tag: COMMENTS
     nested_query: null
 
 hxb_build:
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: INSTITUTION
+    xml_tag: INSTITUTION
 
 hxb_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: date_inspect, time_inspect
     dbase_table: hxb_inspect
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: date_inspect, time_inspect ## time when clicking "save" on GUI (time exporting data from GUI to db)
     dbase_table: hxb_inspect
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: inspector ## should be none, db_loader will auto-fill based on username on lxplus
     dbase_table: hxb_inspect
+    xml_tag: INITIATED_BY_USER
     nested_query: null
     default_value: null
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: RUN_NUMBER
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: RECORD_INSERTION_USER ## should be none, db_loader will auto-fill based on username on lxplus
     dbase_col: inspector
     dbase_table: hxb_pedestal_test
+    xml_tag: TESTED_BY
     nested_query: null
     default_value: null
   - xml_temp_val: RUN_BEGIN_DATE_
     dbase_col: date_inspect ## same as RUN_END_TIMESTAMP for date
     dbase_table: hxb_inspect
+    xml_tag: TEST_DATE
     nested_query: null
     default_value: null
   - xml_temp_val: TEST_FILES
     dbase_col: null ## name of testing data file, as of now 10/14 nullable in CentralDB. Leave it NULL. 
     dbase_table: null
+    xml_tag: TEST_FILE_NAME
     nested_query: null
     default_value: 'n/a'
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: hxb_inspect
+    xml_tag: FLATNESS
     nested_query: null
     default_value: null
   - xml_temp_val: THICKNESS
     dbase_col: thickness
     dbase_table: hxb_inspect
+    xml_tag: THICKNESS
     nested_query: null
     default_value: null
   - xml_temp_val: GRADE
     dbase_col: grade
     dbase_table: hxb_inspect
+    xml_tag: GRADE
     nested_query: null
     default_value: 'n/a'
   - xml_temp_val: COMMENTS_UPLOAD
     dbase_col: comment
     dbase_table: hxb_inspect
+    xml_tag: COMMENTS
     nested_query: null
     default_value: 'n/a'
 
@@ -460,242 +620,310 @@ proto_assembly:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_begin
     dbase_table: proto_assembly
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: proto_assembly
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: operator
     dbase_table: proto_assembly
+    xml_tag: INITIATED_BY_USER
     nested_query: null
     default_value: null
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: ASMBL_TRAY_NAME
     dbase_col: ass_tray_id
     dbase_table: proto_assembly
+    xml_tag: ASMBL_TRAY_NAME
     nested_query: null
     default_value: null
   - xml_temp_val: BASEPLATE
     dbase_col: bp_name
     dbase_table: proto_assembly
+    xml_tag: PLT_SER_NUM
     nested_query: null
     default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: proto_assembly
+    xml_tag: PLT_ASM_ROW
     nested_query: null
     default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
     dbase_table: proto_assembly
+    xml_tag: PLT_ASM_COL
     nested_query: null
     default_value: null
   - xml_temp_val: FLATNESS
     dbase_col: flatness
     dbase_table: proto_inspect
+    xml_tag: PLT_FLTNES_MM
     nested_query: null
     default_value: null
   - xml_temp_val: THICKNESS
     dbase_col: avg_thickness
     dbase_table: proto_inspect
+    xml_tag: PLT_THKNES_MM
     nested_query: null
     default_value: null
   - xml_temp_val: COMP_TRAY_NAME
     dbase_col: sen_tray_id 
     dbase_table: proto_assembly
+    xml_tag: COMP_TRAY_NAME
     nested_query: null
     default_value: null
   - xml_temp_val: SENSOR
     dbase_col: sen_name
     dbase_table: proto_assembly
+    xml_tag: SNSR_SER_NUM
     nested_query: null
     default_value: null
   - xml_temp_val: ASM_ROW
     dbase_col: pos_row
     dbase_table: proto_assembly
+    xml_tag: SNSR_CMP_ROW
     nested_query: null
     default_value: null
   - xml_temp_val: ASM_COL
     dbase_col: pos_col
-    dbase_table: null
+    dbase_table: proto_assembly
+    xml_tag: SNSR_CMP_COL
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_X_OFFST
     dbase_col: x_offset_mu
     dbase_table: proto_inspect
+    xml_tag: SNSR_X_OFFST
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_Y_OFFST
     dbase_col: y_offset_mu
     dbase_table: proto_inspect
+    xml_tag: SNSR_Y_OFFST
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_ANG_OFFST
     dbase_col: ang_offset_deg
     dbase_table: proto_inspect
+    xml_tag: SNSR_ANG_OFFSET
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_TOOL_NAME
     dbase_col: sen_put_id
     dbase_table: proto_assembly
+    xml_tag: SNSR_TOOL_NAME
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_TOOL_HT_SET
     dbase_col: null ## sensor tool height set. default 0 ## missing
     dbase_table: null
+    xml_tag: SNSR_TOOL_HT_SET
     nested_query: null
     default_value: '0'
   - xml_temp_val: SNSR_TOOL_HT_CHK
     dbase_col: null ##'user': 'shipper', default 0
     dbase_table: null
+    xml_tag: SNSR_TOOL_HT_CHK
     nested_query: null
     default_value: '0'
   - xml_temp_val: GLUE_TYPE
     dbase_col: adhesive
     dbase_table: proto_assembly
+    xml_tag: GLUE_TYPE
     nested_query: null
     default_value: null
   - xml_temp_val: GLUE_BATCH_NUM
     dbase_col: glue_batch
     dbase_table: proto_assembly
+    xml_tag: GLUE_BATCH_NUM
     nested_query: null
     default_value: null
   - xml_temp_val: PRTO_GRADE
     dbase_col: grade
     dbase_table: proto_inspect
+    xml_tag: PLT_GRADE
     nested_query: null
     default_value: null
   - xml_temp_val: SNSR_TOOL_FEET_CHK
     dbase_col: null ## in GUI, production steps and testing, "check: correct..." (True/False) ## True by default
     dbase_table: null
+    xml_tag: SNSR_TOOL_FEET_CHK
     nested_query: null
     default_value: 'True'
   - xml_temp_val: STEP_SENSOR
     dbase_col: null ## step number for sensor / protomodule. doesn't have to be unique ## missing
     dbase_table: null
+    xml_tag: SNSR_STEP
     nested_query: null
     default_value: 'n/a'
 
 proto_build:
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: BARCODE # filled with proto_name
+    xml_tag: BARCODE
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: INSTITUTION
+    xml_tag: INSTITUTION
   - xml_temp_val: MANUFACTURER
+    xml_tag: MANUFACTURER
   - xml_temp_val: KIND_OF_PART_BASEPLATE
+    xml_tag: KIND_OF_PART
   - xml_temp_val: BASEPLATE
     dbase_col: bp_name
     dbase_table: proto_assembly
+    xml_tag: SERIAL_NUMBER
     nested_query: null
   - xml_temp_val: KIND_OF_PART_SENSOR
+    xml_tag: KIND_OF_PART
   - xml_temp_val: SENSOR
     dbase_col: sen_name
     dbase_table: proto_assembly
+    xml_tag: SERIAL_NUMBER
     nested_query: null
 
 proto_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: date_inspect, time_inspect
     dbase_table: proto_inspect
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: cure_date_end, cure_time_end
     dbase_table: proto_assembly
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: inspector
     dbase_table: proto_inspect
+    xml_tag: INITIATED_BY_USER
     nested_query: null
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: CURING_TIME_HRS
     dbase_col: ass_run_date, ass_time_end, cure_date_end, cure_time_end
     dbase_table: proto_assembly
+    xml_tag: CURING_TIME_HRS
     nested_query: null
   - xml_temp_val: CURE_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: proto_assembly
+    xml_tag: TIME_START
     nested_query: null
   - xml_temp_val: CURE_END_TIMESTAMP_
     dbase_col: cure_date_end, cure_time_end
     dbase_table: proto_assembly
+    xml_tag: TIME_STOP
     nested_query: null
   - xml_temp_val: TEMP_DEGC
     dbase_col: temp_c
     dbase_table: proto_assembly
+    xml_tag: TEMP_DEGC
     nested_query: null
   - xml_temp_val: HUMIDITY_PRCNT
     dbase_col: rel_hum
     dbase_table: proto_assembly
+    xml_tag: HUMIDITY_PRCNT
     nested_query: null
 
 sensor_build:
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: INSTITUTION
+    xml_tag: INSTITUTION
 
 sensor_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_begin
     dbase_table: proto_assembly
+    xml_tag: RUN_BEGIN_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: RUN_END_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: proto_assembly
+    xml_tag: RUN_END_TIMESTAMP
     nested_query: null
     default_value: null
   - xml_temp_val: INITIATED_BY_USER
     dbase_col: operator
     dbase_table: proto_assembly
+    xml_tag: INITIATED_BY_USER
     nested_query: null
     default_value: null
   - xml_temp_val: LOCATION
+    xml_tag: LOCATION
   - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
   - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
   - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
   - xml_temp_val: RECORD_INSERTION_USER
     dbase_col: operator 
     dbase_table: proto_assembly
+    xml_tag: TESTED_BY
     nested_query: null
     default_value: null
   - xml_temp_val: RUN_BEGIN_DATE_
     dbase_col: ass_run_date ## date from run_end_timestap 
     dbase_table: proto_assembly
+    xml_tag: TEST_DATE
     nested_query: null
     default_value: null
   - xml_temp_val: VISUAL_INSPECTION
     dbase_col: grade ## Assume that visual inspection is same as grade
     dbase_table: sensor
+    xml_tag: VISUAL_INSPECTION
     nested_query: null
     default_value: null
   - xml_temp_val: FLATNESS
     dbase_col: null ## default "None" since we don't measure it ## missing
     dbase_table: null
+    xml_tag: FLATNESS
     nested_query: null
     default_value: 'None'
   - xml_temp_val: THICKNESS
     dbase_col: thickness
     dbase_table: sensor
+    xml_tag: THICKNESS
     nested_query: null
     default_value: null
   - xml_temp_val: GRADE
     dbase_col: grade
     dbase_table: sensor
+    xml_tag: GRADE
     nested_query: null
     default_value: null
   - xml_temp_val: COMMENTS_UPLOAD
     dbase_col: comment
     dbase_table: sensor
+    xml_tag: COMMENTS
     nested_query: null
     default_value: null
