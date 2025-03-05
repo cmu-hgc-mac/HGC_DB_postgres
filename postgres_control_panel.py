@@ -1,4 +1,4 @@
-import os, yaml, base64, sys, threading, atexit, signal
+import os, yaml, base64, sys, threading, atexit, signal, csv
 from pathlib import Path
 from cryptography.fernet import Fernet
 import subprocess, webbrowser, zipfile, urllib.request, traceback
@@ -32,6 +32,7 @@ dbase_name = config_data.get('dbname')
 db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
 php_port = config_data.get('php_port', '8083')
+max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}"
 
 def get_pid_result():
@@ -194,7 +195,7 @@ def verify_shipin():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
-    def upload_file_with_part():
+    def upload_file_with_part_in():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
             popup2 = Toplevel()
@@ -229,7 +230,7 @@ def verify_shipin():
     bind_button_keys(enter_verify_button)
     # enter_verify_button.config(state='disabled')
     Label(input_window, text="Or").pack(pady=5)
-    upload_verfile_button = Button(input_window, text="Upload text/csv file with part barcodes", command=upload_file_with_part)
+    upload_verfile_button = Button(input_window, text="Upload text/csv file with part barcodes", command=upload_file_with_part_in)
     upload_verfile_button.pack(pady=10)
     bind_button_keys(upload_verfile_button)
     
@@ -434,26 +435,66 @@ def record_shipout():
     Label(input_window, text=f"Now: {today_date.strftime('%Y-%m-%d %H:%M:%S')}").pack(pady=5)
 
     def enter_part_barcodes_out():
+        lines_from_file = []
+        def upload_file_with_part_out():
+            dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+            if dbshipper_pass.strip():
+                popup2 = Toplevel()
+                popup2.title("Upload text/csv file with component names")
+                file_entry = None
+                
+                def browse_file():
+                    file_path = filedialog.askopenfilename(title="Select a File")
+                    if file_path:
+                        file_entry.delete(0, 'end')  # Clear the current entry
+                        file_entry.insert(0, file_path)
+
+                browse_button = Button(popup2, text="Browse", command=browse_file)
+                browse_button.pack(pady=10)
+                file_entry = Entry(popup2, width=50, bd=2)
+                file_entry.pack(pady=10)
+
+                def enter_partnames_in_window():
+                    if file_entry.get().strip():
+                        file_path = file_entry.get().strip()
+                        if file_path.endswith(".csv"):
+                            with open(file_path, newline="", encoding="utf-8") as file:
+                                reader = csv.reader(file)
+                                lines_from_file = [row[0] for row in reader if row]  
+                        else:
+                            with open(file_path, "r", encoding="utf-8") as file:
+                                lines_from_file = [line.strip() for line in file.readlines()]  
+                    
+                    if len(lines_from_file) < len(entries):
+                        popup2.destroy()
+                        for i in range(len(lines_from_file)):
+                            input_window.destroy()  
+                            entries[i].insert(0, lines_from_file[i])
+                    else:
+                        messagebox.showerror("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
+
+
+                submit_fileparts_button = Button(popup2, text="Load module barcodes", command=enter_partnames_in_window)
+                submit_fileparts_button.pack(pady=10)
+                bind_button_keys(submit_fileparts_button)
+            else:
+                if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                    input_window.destroy()  
+
+
         entries = []
         abspath = os.path.dirname(os.path.abspath(__file__))
         temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip():
-            popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
-            def verify_components():
-                popup1.destroy() 
-                subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+            popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
+            
+            upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
+            upload_from_file_button.grid(row=(0), column=1, columnspan=4, pady=10)
 
-            def save_entries():
-                with open("shipping/temporary_part_entries_out.txt", "w") as file:
-                    for entry in entries:
-                        text = entry.get().strip()
-                        if text: file.write(text + "\n")
-                verify_components()
-
-            num_entries, cols = 12, 2
+            num_entries, cols = int(max_mod_per_box), 2
             for i in range(num_entries):
-                row, col = i // cols, i % cols
+                row, col = 1 + i // cols, i % cols
                 listlabel = Label(popup1, text=f"{i + 1}:")
                 listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
                 entry = Entry(popup1, width=30)
@@ -461,7 +502,7 @@ def record_shipout():
                 entries.append(entry)
 
             submit_button = Button(popup1, text="Record to DB", command=donothing)
-            submit_button.grid(row=(num_entries//2), column=1, columnspan=4, pady=10)
+            submit_button.grid(row=1+(num_entries//2), column=1, columnspan=4, pady=10)
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
