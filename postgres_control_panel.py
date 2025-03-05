@@ -487,9 +487,14 @@ def record_shipout():
         if dbshipper_pass.strip():
             popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
             
-            datetime_now = datetime.now().replace(microsecond=0)
-            datetime_now_label = Label(popup1, text=f"Now: {datetime_now.strftime('%Y-%m-%d %H:%M:%S')}")
-            datetime_now_label.grid(row=0, column=1, columnspan=4, pady=10)
+            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
+            datetime_now_label.grid(row=0, column=2, columnspan=1, pady=10)
+
+            datetime_now_var = StringVar(master=popup1, value=datetime_now)
+            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+            datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
+
             label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to creating shipments.")
             label.grid(row=1, column=1, columnspan=4, pady=10)
             upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
@@ -507,8 +512,10 @@ def record_shipout():
             def update_db_packed():
                 module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
                 popup1.destroy()
-                if len(module_update_pack) > 0:
-                    update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now)
+                if len(module_update_pack) > 0 :
+                    if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
+                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
+                    update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj)
 
             submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
             submit_button.grid(row=3+(num_entries//2), column=1, columnspan=4, pady=10)
@@ -523,11 +530,16 @@ def record_shipout():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip():
             popup1 = Toplevel(); popup1.title("Enter containers in this shipment")
-            
-            datetime_now = datetime.now().replace(microsecond=0)
-            datetime_now_label = Label(popup1, text=f"Now: {datetime_now.strftime('%Y-%m-%d %H:%M:%S')}")
-            datetime_now_label.grid(row=0, column=1, columnspan=4, pady=10)
-            label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_{datetime_now.strftime('%Y%m%d_%H%M%S')}_modules_XXX.txt' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
+
+            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
+            datetime_now_label.grid(row=0, column=2, columnspan=1, pady=10)
+
+            datetime_now_var = StringVar(master=popup1, value=datetime_now)
+            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+            datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
+
+            label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.txt' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
             label1.grid(row=1, column=0, columnspan=4, pady=10)
             instruction_label = Label(popup1, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
             instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
@@ -545,7 +557,9 @@ def record_shipout():
                 module_update_ship = [entry.get() for entry in entries if entry.get().strip() != ""]
                 popup1.destroy()
                 if len(module_update_ship) > 0:
-                    fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now)
+                    if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
+                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
+                    fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
                     print("List of modules saved under ", fileout_name)
                     webbrowser.open(f"https://int2r-shipment.web.cern.ch/shipping_add/")
                     webbrowser.open(f"https://cmsr-shipment.web.cern.ch/shipping_add/")
