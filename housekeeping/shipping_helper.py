@@ -10,7 +10,14 @@ db_params = {
     'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),
 }
 
-def update_packed_timestamp_sync(encrypt_key, password, module_names, timestamp):
+def update_packed_timestamp_sync(encrypt_key, password, module_names, timestamp, savetofile = False):
+    if savetofile:
+        fileout_name = f"""shipping/packed_{timestamp.strftime('%Y%m%d_%H%M%S')}_modules_{len(module_names)}.txt"""
+        os.makedirs('shipping', exist_ok=True)
+        with open(fileout_name, "w") as file:
+            for module in module_names:
+                file.write(module + "\n")
+        print('Module names saved to', fileout_name)
     asyncio.run(_update_packed_timestamp(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp))
 
 async def _update_packed_timestamp(encrypt_key, password, module_names, timestamp, db_params = db_params):

@@ -498,7 +498,7 @@ def record_shipout():
             label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to record shipments.")
             label.grid(row=1, column=1, columnspan=4, pady=10)
             upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
-            upload_from_file_button.grid(row=2, column=1, columnspan=4, pady=10)
+            upload_from_file_button.grid(row=0, column=1, columnspan=1, pady=10)
 
             num_entries, cols = int(max_mod_per_box), 2
             for i in range(num_entries):
@@ -509,16 +509,21 @@ def record_shipout():
                 entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
                 entries.append(entry)
 
+            export_var = IntVar()
+            export_var.set(1)
+            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...txt)', variable=export_var)
+            export_checkbox.grid(row=3+(num_entries//2), column=1, columnspan=1, pady=10)
+
             def update_db_packed():
                 module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
                 popup1.destroy()
                 if len(module_update_pack) > 0 :
                     if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
-                    update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj)
+                    update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj, savetofile=bool(export_var.get()))
 
             submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
-            submit_button.grid(row=3+(num_entries//2), column=1, columnspan=4, pady=10)
+            submit_button.grid(row=3+(num_entries//2), column=2, columnspan=2, pady=10)
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
