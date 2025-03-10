@@ -90,10 +90,6 @@ def find_missing_var_xml(time_limit=90):
         print("No XML files found.")
 
     for xml_file in xml_files:
-        print("\n------------------------------------------------------------")
-        print(f"  Processing File: {xml_file}")
-        print("------------------------------------------------------------")
-
         xml_data = extract_xml_tags_and_values(xml_file)
         yaml_category = get_yaml_categories(xml_file)
 
@@ -103,7 +99,7 @@ def find_missing_var_xml(time_limit=90):
 
             if missing_tags:
 
-                print("\n===== MISSING OR EMPTY TAGS FOUND! =====")
+                print(f"\n===== MISSING OR EMPTY TAGS FOUND for {xml_file.split('/')[-1]}! =====")
                 print(f"  Referencing YAML categories: {yaml_category}")
                 print("------------------------------------------------------------")
 
@@ -111,7 +107,5 @@ def find_missing_var_xml(time_limit=90):
                     print(f" - {tag}:\n   → dbase_table: {dbase_table}\n   → dbase_col: {dbase_col}")
                 print("============================================================")
 
-            else:
-                print("\n===== ALL TAGS PRESENT IN XML! =====")
         else:
             print(f"\nNo matching YAML categories found for {xml_file}. Skipping.")
