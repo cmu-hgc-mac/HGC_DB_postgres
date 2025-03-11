@@ -289,6 +289,10 @@ def import_data():
     submit_import_button.pack(pady=10)
     bind_button_keys(submit_import_button)
 
+def focus_next_widget(event):
+    event.widget.tk_focusNext().focus()
+    return "break" 
+
 def export_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
@@ -309,6 +313,7 @@ def export_data():
     Label(input_window, text="Comma-separated parts names (optional)").pack(pady=1)
     partsname_var_entry = Text(input_window, width=40, height=4, wrap="word", bd=1.5, highlightbackground="black", highlightthickness=1)
     partsname_var_entry.pack(pady=0)
+    partsname_var_entry.bind("<Tab>", focus_next_widget)
 
     Label(input_window, text="OR").pack(pady=2)
 
@@ -708,7 +713,7 @@ button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
-button_upload_xml.config(state='disabled')
+# button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
