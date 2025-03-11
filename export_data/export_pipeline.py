@@ -11,6 +11,7 @@ import shutil, pwinput, datetime, yaml
 from cryptography.fernet import Fernet
 from src import process_xml_list
 from find_missing_var_xml import find_missing_var_xml
+from check_successful_upload import check_upload, get_api_data, get_part_id_fromXML
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
 GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
@@ -163,9 +164,10 @@ def main():
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = today, encryption_key = encryption_key, cerndb = cerndb)
+        if ret:
+            check_upload()
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
             clean_generated_xmls()
-
 if __name__ == '__main__':
     main()
