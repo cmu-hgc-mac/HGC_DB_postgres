@@ -175,7 +175,7 @@ async def main():
     
     async with pool.acquire() as conn:
         try:
-            query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44%' OR comment LIKE '%4c%'; """
+            query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44-4c%'; """
             await conn.execute(query_v3c)
         except:
             print('v3c query failed')
