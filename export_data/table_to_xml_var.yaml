@@ -461,12 +461,12 @@ module_cond:
     dbase_table: module_assembly
     xml_tag: CURING_TIME_HRS
     nested_query: null
-  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  - xml_temp_val: CURE_BEGIN_TIMESTAMP_
     dbase_col: ass_run_date, ass_time_end
     dbase_table: module_assembly
     xml_tag: TIME_START
     nested_query: null
-  - xml_temp_val: RUN_END_TIMESTAMP_
+  - xml_temp_val: CURE_END_TIMESTAMP_
     dbase_col: cure_date_end, cure_time_end
     dbase_table: module_assembly
     xml_tag: TIME_STOP
