@@ -173,9 +173,14 @@ async def main():
                 print(f'Writing {partTrans[pt]["apikey"]} to postgres from {cern_db_url.upper()} complete.')
                 print('-'*40); print('\n')
     
+    async with pool.acquire() as conn:
+        try:
+            query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44%' OR comment LIKE '%4c%'; """
+            await conn.execute(query_v3c)
+        except:
+            print('v3c query failed')
     await pool.close()
     print('Refresh postgres tables')
-
 
 asyncio.run(main())
 
