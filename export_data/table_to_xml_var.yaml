@@ -95,7 +95,7 @@ module_assembly:
     dbase_table: null
     xml_tag: PCB_TOOL_FEET_CHK
     nested_query: null
-    default_value: 'True'
+    default_value: 'yes'
   - xml_temp_val: GLUE_TYPE
     dbase_col: adhesive
     dbase_table: module_assembly
