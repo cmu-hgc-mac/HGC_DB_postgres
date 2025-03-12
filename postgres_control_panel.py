@@ -175,7 +175,7 @@ def verify_shipin():
             popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
             def verify_components():
                 popup1.destroy() 
-                subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+                subprocess.run([sys.executable, "housekeeping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
 
             def save_entries():
                 with open("shipping/temporary_part_entries_in.txt", "w") as file:
