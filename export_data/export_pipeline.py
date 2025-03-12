@@ -158,14 +158,16 @@ def main():
     db_list = []
     if upload_prod_stat:
         db_list.append('prod_db')
+        db_type = 'cmsr'
     if upload_dev_stat:
         db_list.append('dev_db')
+        db_type = 'int2r'
     
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = today, encryption_key = encryption_key, cerndb = cerndb)
         if ret:
-            check_upload()
+            check_upload(db_type)
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
             clean_generated_xmls()

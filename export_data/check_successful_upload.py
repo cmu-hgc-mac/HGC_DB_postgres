@@ -1,9 +1,14 @@
 import requests, time, os
 from datetime import datetime, timedelta
 from src import get_kind_of_part
+    
 
-def get_api_data(search_id):
-    url = f"https://hgcapi-cmsr.web.cern.ch/mac/part/{search_id}/full"
+def get_api_data(search_id, db_type):
+    if db_type == 'cmsr':
+        url = f"https://hgcapi-cmsr.web.cern.ch/mac/part/{search_id}/full"
+    elif db_type == 'int2r':
+        url = f"https://hgcapi.web.cern.ch/mac/part/{search_id}/full"
+
     headers = {'Accept': 'application/json'}
     selected_keys = ['kind', 'record_insertion_user', 'record_insertion_time', 'serial_number']
 
@@ -41,7 +46,7 @@ def get_part_id_fromXML(base_dir="export_data/xmls_for_upload", time_limit=90):
     
     return part_ids
 
-def check_upload():
+def check_upload(db_type):
     '''
     We say, if serial id and kind_of_part match in API match with our xmls, then the data is successfully uploaded. 
     '''
@@ -50,7 +55,7 @@ def check_upload():
     for search_id in part_ids:
         print(f'------ checking {search_id} upload ------')
 
-        cern_data = get_api_data(search_id)
+        cern_data = get_api_data(search_id, db_type)
         # record_datetime = datetime.strptime(cern_data['record_insertion_time'], '%Y-%m-%d%H:%M:%S.%f')
         kind = cern_data['kind']
         part_id = cern_data['serial_number']
