@@ -51,10 +51,12 @@ def read_parts_from_file(filename):
         if file_extension == '.csv':
             reader = csv.reader(file)
             for line in reader:
-                part_names.append(line[0].strip())
+                if line[0].strip():
+                    part_names.append(line[0].strip())
         elif file_extension == '.txt':
             for line in file:
-                part_names.append(line.strip())
+                if line.strip():
+                    part_names.append(line.strip())
     return part_names
 
 async def main():
