@@ -13,6 +13,8 @@ def run_git_pull_seq():
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
     if result.returncode == 0:
         print("Git pull successful ..."); print(result.stdout)
+        if "Already up to date." not in result.stdout:
+            print("Re-run postgres_control_panel.py with new updates."); exit()
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
