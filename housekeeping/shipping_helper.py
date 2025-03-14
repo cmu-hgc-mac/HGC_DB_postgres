@@ -1,5 +1,6 @@
-import asyncpg, asyncio, os, yaml, base64
+import asyncpg, asyncio, os, yaml, base64, csv
 from cryptography.fernet import Fernet
+from natsort import natsorted
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -50,11 +51,12 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
         mod_names_out = await conn.fetch(query_update, timestamp, packed_datetimes)
         shipped_modules = [row['module_name'] for row in mod_names_out]
         print(f"Updated shipped_timestamp for {len(shipped_modules)} modules.")
-        fileout_name = f"""shipping/shipmentout_{timestamp.strftime('%Y%m%d_%H%M%S')}_modules_{len(shipped_modules)}.txt"""
+        fileout_name = f"""shipping/shipmentout_{timestamp.strftime('%Y%m%d_%H%M%S')}_modules_{len(shipped_modules)}.csv"""
         os.makedirs('shipping', exist_ok=True)
-        with open(fileout_name, "w") as file:
-            for module in shipped_modules:
-                file.write(module + "\n")
+        with open(fileout_name, "w", newline="") as file:
+            writer = csv.writer(file)
+            for module in natsorted(shipped_modules):
+                writer.writerow([module])
         return fileout_name
     except Exception as e:
         print(f"Error updating shipped_timestamp: {e}")

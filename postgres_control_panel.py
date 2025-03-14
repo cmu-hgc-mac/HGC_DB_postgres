@@ -1,4 +1,5 @@
 import os, yaml, base64, sys, threading, atexit, signal, csv
+from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
 import subprocess, webbrowser, zipfile, urllib.request, traceback
@@ -180,7 +181,7 @@ def verify_shipin():
             def save_entries():
                 os.makedirs('shipping', exist_ok=True)
                 with open("shipping/temporary_part_entries_in.txt", "w") as file:
-                    for entry in entries:
+                    for entry in natsorted(entries):
                         text = entry.get().strip()
                         if text: file.write(text + "\n")
                 verify_components()
@@ -550,7 +551,7 @@ def record_shipout():
             datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
             datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
 
-            label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.txt' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
+            label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
             label1.grid(row=1, column=0, columnspan=4, pady=10)
             instruction_label = Label(popup1, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
             instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
