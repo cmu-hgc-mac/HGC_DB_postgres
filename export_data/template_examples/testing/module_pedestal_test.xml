@@ -2,17 +2,18 @@
 <ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <HEADER>
     <TYPE>
-        <EXTENSION_TABLE_NAME>SI_MODULE_PEDESTAL_TEST</EXTENSION_TABLE_NAME>
-        <NAME>Si Module Pedestal Test Data</NAME>
+        <EXTENSION_TABLE_NAME>HGC_PEDESTAL_DATA</EXTENSION_TABLE_NAME>
+        <NAME>HGCROC Pedestal Data</NAME>
     </TYPE>
+
     <RUN>
         <!-- <RUN_NAME>Current/voltage measurements</RUN_NAME> -->
-        <!-- <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
-        <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP> -->
         <RUN_TYPE>Si module pedestal and noise</RUN_TYPE>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
+        <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
+        <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
         <INSPECTOR>{{ inspector }}</INSPECTOR>
-        <!-- <LOCATION>{{ location }}</LOCATION> -->
+        <LOCATION>{{ location }}</LOCATION>
         <COMMENT_DESCRIPTION>Measured pedestal test data</COMMENT_DESCRIPTION>
     </RUN>
 
