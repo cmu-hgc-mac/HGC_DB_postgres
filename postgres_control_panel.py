@@ -520,7 +520,7 @@ def record_shipout():
 
             export_var = IntVar()
             export_var.set(1)
-            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...txt)', variable=export_var)
+            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...csv)', variable=export_var)
             export_checkbox.grid(row=3+(num_entries//2), column=1, columnspan=1, pady=10)
 
             def update_db_packed():
