@@ -44,10 +44,22 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
             return True
         return xml_list
     
+    def set_build_to_true(xml_list):
+        if isinstance(xml_list, dict):
+            for key in xml_list:
+                if "build" not in key:
+                    xml_list[key] = set_build_to_true(xml_list[key])
+        elif isinstance(xml_list, list):
+            xml_list = [set_build_to_true(item) for item in xml_list]
+        elif isinstance(xml_list, bool):
+            return False
+        return xml_list
+    
     if xml_list is None:
         with open(list_of_xmls_yaml, "r") as file:
             xml_list = yaml.safe_load(file)
         xml_list = set_all_to_true(xml_list)
+        xml_list = set_build_to_true(xml_list)
 
     with open(list_of_xmls_yaml, "w") as file:
         yaml.dump(xml_list, file, default_flow_style=False)

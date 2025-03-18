@@ -10,6 +10,7 @@ kop_yaml = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r'
 inst_code  = conn_info.get('institution_abbr')
 # source_db_cern = conn_info.get('cern_db')
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
+max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
 
 db_params = {
     'database': conn_info.get('dbname'),
@@ -66,8 +67,8 @@ def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-
         return f'https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full'
     elif partType is not None:
         if macID is not None:
-            return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit=500&location={macID}'
-        return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit=500'
+            return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}&location={macID}'
+        return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}'
     return
 
 def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi-cmsr'):

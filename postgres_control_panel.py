@@ -334,10 +334,10 @@ def export_data():
     generate_var = BooleanVar(value=True)
     generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
     generate_var_entry.pack(pady=0)
-    upload_dev_var = BooleanVar(value=True)
+    upload_dev_var = BooleanVar(value=False)
     upload_dev_var_entry = Checkbutton(input_window, text="Upload to INT2R (DEV-DB)", variable=upload_dev_var)
     upload_dev_var_entry.pack(pady=0)
-    upload_prod_var = BooleanVar(value=False)
+    upload_prod_var = BooleanVar(value=True)
     upload_prod_var_entry = Checkbutton(input_window, text="Upload to CMSR (PROD-DB)", variable=upload_prod_var)
     upload_prod_var_entry.pack(pady=0)
     deleteXML_var = BooleanVar(value=False)
@@ -433,6 +433,7 @@ def export_data():
     submit_export_button = Button(input_window, text="Submit", command=submit_export)
     submit_export_button.pack(pady=10)
     bind_button_keys(submit_export_button)
+    Label(input_window, text="Only (proto)module build to CMSR currently available.", fg = 'red').pack(pady=1)
 
 def record_shipout():
     input_window = Toplevel(root)
@@ -520,7 +521,7 @@ def record_shipout():
 
             export_var = IntVar()
             export_var.set(1)
-            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...txt)', variable=export_var)
+            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...csv)', variable=export_var)
             export_checkbox.grid(row=3+(num_entries//2), column=1, columnspan=1, pady=10)
 
             def update_db_packed():
@@ -717,7 +718,7 @@ button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
-button_upload_xml.config(state='disabled')
+# button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
