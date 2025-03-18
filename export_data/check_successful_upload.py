@@ -64,6 +64,8 @@ def check_upload(db_type):
         # time_diff = abs(record_datetime - today)
         if kind == kind_of_part:
             if part_id == search_id:
-                print('Data matched, Upload successful')
+                # print('Data matched, Upload successful')
                 return True
+            else:
+                print('Data unmatched, Upload failed')
 
