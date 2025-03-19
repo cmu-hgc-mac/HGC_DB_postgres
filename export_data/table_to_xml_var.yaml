@@ -927,3 +927,148 @@ sensor_cond:
     xml_tag: COMMENTS
     nested_query: null
     default_value: null
+
+pedestal_test:
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    dbase_col: date_test, time_test
+    dbase_table: module_pedestal_test
+    xml_tag: RUN_BEGIN_TIMESTAMP
+    nested_query: null
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    dbase_col: date_test, time_test
+    dbase_table: module_pedestal_test
+    xml_tag: RUN_END_TIMESTAMP
+    nested_query: null
+  - xml_temp_val: INSPECTOR
+    dbase_col: inspector
+    dbase_table: module_pedestal_test
+    xml_tag: INSPECTOR
+    nested_query: null
+  - xml_temp_val: LOCATION
+    xml_tag: LOCATION
+  - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
+  - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
+  - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
+  - xml_temp_val: REL_HUM
+    dbase_col: rel_hum
+    dbase_table: module_pedestal_test
+    xml_tag: REL_HUM
+    nested_query: null
+  - xml_temp_val: TEMP_C
+    dbase_col: temp_c
+    dbase_table: module_pedestal_test
+    xml_tag: TEMP_C
+    nested_query: null
+  - xml_temp_val: BIAS_VOL
+    dbase_col: bias_vol
+    dbase_table: module_pedestal_test
+    xml_tag: BIAS_VOL
+    nested_query: null
+  - xml_temp_val: CHIP
+    dbase_col: chip
+    dbase_table: module_pedestal_test
+    xml_tag: CHIP
+    nested_query: null
+  - xml_temp_val: CHANNEL
+    dbase_col: channel
+    dbase_table: module_pedestal_test
+    xml_tag: CHANNEL
+    nested_query: null
+  - xml_temp_val: CHANNELTYPE
+    dbase_col: channeltype
+    dbase_table: module_pedestal_test
+    xml_tag: CHANNELTYPE
+    nested_query: null
+  - xml_temp_val: ADC_MEDIAN
+    dbase_col: adc_median
+    dbase_table: module_pedestal_test
+    xml_tag: ADC_MEDIAN
+    nested_query: null
+  - xml_temp_val: ADC_IQR
+    dbase_col: adc_iqr
+    dbase_table: module_pedestal_test
+    xml_tag: ADC_IQR
+    nested_query: null
+  - xml_temp_val: TOT_MEDIAN
+    dbase_col: tot_median
+    dbase_table: module_pedestal_test
+    xml_tag: TOT_MEDIAN
+    nested_query: null
+  - xml_temp_val: TOT_IQR
+    dbase_col: tot_iqr
+    dbase_table: module_pedestal_test
+    xml_tag: TOT_IQR
+    nested_query: null
+  - xml_temp_val: ADC_MEAN
+    dbase_col: adc_mean
+    dbase_table: module_pedestal_test
+    xml_tag: ADC_MEAN
+    nested_query: null
+  - xml_temp_val: ADC_STDD
+    dbase_col: adc_stdd
+    dbase_table: module_pedestal_test
+    xml_tag: ADC_STDD
+    nested_query: null
+  - xml_temp_val: TOT_MEAN
+    dbase_col: tot_mean
+    dbase_table: module_pedestal_test
+    xml_tag: TOT_MEAN
+    nested_query: null
+  - xml_temp_val: TOT_STDD
+    dbase_col: tot_stdd
+    dbase_table: module_pedestal_test
+    xml_tag: TOT_STDD
+    nested_query: null
+  - xml_temp_val: TOA_MEAN
+    dbase_col: toa_mean
+    dbase_table: module_pedestal_test
+    xml_tag: TOA_MEAN
+    nested_query: null
+  - xml_temp_val: TOA_STDD
+    dbase_col: toa_stdd
+    dbase_table: module_pedestal_test
+    xml_tag: TOA_STDD
+    nested_query: null
+  - xml_temp_val: TOT_EFFICIENCY
+    dbase_col: tot_efficiency
+    dbase_table: module_pedestal_test
+    xml_tag: TOT_EFFICIENCY
+    nested_query: null
+  - xml_temp_val: TOT_EFFICIENCY_ERROR
+    dbase_col: tot_efficiency_error
+    dbase_table: module_pedestal_test
+    xml_tag: TOT_EFFICIENCY_ERROR
+    nested_query: null
+  - xml_temp_val: TOA_EFFICIENCY
+    dbase_col: toa_efficiency
+    dbase_table: module_pedestal_test
+    xml_tag: TOA_EFFICIENCY
+    nested_query: null
+  - xml_temp_val: TOA_EFFICIENCY_ERROR
+    dbase_col: toa_efficiency_error
+    dbase_table: module_pedestal_test
+    xml_tag: TOA_EFFICIENCY_ERROR
+    nested_query: null
+  - xml_temp_val: PAD
+    # dbase_col: 
+    dbase_table: module_pedestal_test
+    xml_tag: PAD
+    nested_query: null
+  - xml_temp_val: X
+    dbase_col: x
+    dbase_table: module_pedestal_test
+    xml_tag: X
+    nested_query: null
+  - xml_temp_val: Y
+    dbase_col: y
+    dbase_table: module_pedestal_test
+    xml_tag: Y
+    nested_query: null
+  - xml_temp_val: COUNT_DEAD_CHAN
+    dbase_col: list_dead_cells
+    dbase_table: module_pedestal_test
+    xml_tag: COUNT_DEAD_CHAN
+    nested_query: null
