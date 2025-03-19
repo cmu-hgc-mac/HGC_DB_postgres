@@ -204,7 +204,7 @@ wirebond:
     dbase_table: module_inspect
     xml_tag: PRE_INSPECTION
     nested_query: null
-    default_value: null
+    default_value: 'pass'
   - xml_temp_val: SYLGARD_BATCH
     dbase_col: epoxy_batch
     dbase_table: back_encap
@@ -236,8 +236,8 @@ wirebond:
     nested_query: null
     default_value: null
   - xml_temp_val: BACK_UNBONDED ## not nullable
-    dbase_col: null ## number of channells that is not bonded. (max. 18) # missing
-    dbase_table: null
+    dbase_col: bond_count_for_mbite ## number of channells that is not bonded. (max. 18)
+    dbase_table: back_wirebond
     xml_tag: BACK_UNBONDED
     nested_query: null
     default_value: null
@@ -272,8 +272,8 @@ wirebond:
     nested_query: null
     default_value: null
   - xml_temp_val: FRONT_SKIP ## not nullable
-    dbase_col: null ## missing
-    dbase_table: null
+    dbase_col: list_unbonded_cells
+    dbase_table: front_wirebond
     xml_tag: SI_CELLS_GROUNDED
     nested_query: null
     default_value: null
@@ -320,14 +320,14 @@ wirebond:
     nested_query: null
     default_value: null
   - xml_temp_val: BACK_ENCAP_INSPXN ## not nullable
-    dbase_col: null ## inspect_grade in back_encap? ## missing pass/fail
+    dbase_col: null ## pass/fail
     dbase_table: null
     xml_tag: BACK_ENCAP_INSPXN
     nested_query: null
-    default_value: null
+    default_value: 'pass'
   - xml_temp_val: FRONT_ENCAP ## not nullable
-    dbase_col: null ## True if cure_end is not Null ## missing True/False
-    dbase_table: null
+    dbase_col: cure_start ## y/n if encap is performed
+    dbase_table: front_encap
     xml_tag: FRONT_ENCAP
     nested_query: null
     default_value: null
@@ -354,7 +354,7 @@ wirebond:
     dbase_table: null
     xml_tag: FRONT_ENCAP_INSPXN
     nested_query: null
-    default_value: null
+    default_value: 'pass'
   - xml_temp_val: IS_TEST_BOND_MODULE ## not nullable
     dbase_col: avg_pull_strg_g
     dbase_table: bond_pull_test
@@ -380,17 +380,17 @@ wirebond:
     nested_query: null
     default_value: null
   - xml_temp_val: FINAL_INSPXN_USER ## not nullable
-    dbase_col: technician ## is this same as front_encap technician?
+    dbase_col: technician
     dbase_table: front_encap
     xml_tag: FINAL_INSPXN_USER
     nested_query: null
     default_value: null
   - xml_temp_val: FINAL_INSPXN_OK ## not nullable
-    dbase_col: null ## missing ## True/False
+    dbase_col: null ## missing ## pass/fail
     dbase_table: null
     xml_tag: FINAL_INSPXN_OK
     nested_query: null
-    default_value: 'True'
+    default_value: 'pass'
   - xml_temp_val: WIREBOND_COMMENTS_CONCAT
     dbase_col: comment
     dbase_table: front_wirebond

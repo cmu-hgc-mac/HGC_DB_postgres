@@ -69,6 +69,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = get_run_num(LOCATION)
                 elif entry['default_value']:
                     db_values[xml_var] = entry['default_value']
+
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -146,9 +147,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = format_datetime(run_date, time_end)
                         elif xml_var == 'BACK_ENCAP':
                             if results.get('back_encap.date_encap') is not None:
-                                db_values[xml_var] = 'True'
+                                db_values[xml_var] = 'y'
                             else:
-                                db_values[xml_var] = 'False'
+                                db_values[xml_var] = 'n'
                         elif xml_var == 'IS_TEST_BOND_MODULE':
                             if results.get('avg_pull_strg_g') is not None:
                                 db_values[xml_var] = 'True'
@@ -166,6 +167,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = str(round(float(results.get('avg_pull_strg_g', '')), 3))
                         elif xml_var == 'BOND_PULL_STDDEV':
                             db_values[xml_var] = str(round(float(results.get('std_pull_strg_g', '')), 3))
+                        elif xml_var == 'BACK_UNBONDED':
+                            bond_count_for_mbite = results.get("bond_count_for_mbite", "")
+                            unbonded_count = bond_count_for_mbite.count(0)
+                            db_values[xml_var] = unbonded_count
+
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
