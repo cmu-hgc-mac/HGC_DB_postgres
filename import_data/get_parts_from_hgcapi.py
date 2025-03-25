@@ -47,7 +47,7 @@ def check_roc_count(hxb_name, roc_count):
     return False
 
 async def get_missing_roc_hxb(pool):
-    get_missing_roc_hxb_query = """SELECT hxb_name FROM hexaboard WHERE roc_name IS NULL OR roc_index IS NULL;"""
+    get_missing_roc_hxb_query = """SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM hexaboard WHERE roc_name IS NULL OR roc_index IS NULL;"""
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_missing_roc_hxb_query)
     return [row['hxb_name'] for row in rows]
