@@ -1072,3 +1072,8 @@ pedestal_test:
     dbase_table: module_pedestal_test
     xml_tag: COUNT_DEAD_CHAN
     nested_query: null
+  - xml_temp_val: COMMENTS_UPLOAD
+    dbase_col: comment
+    dbase_table: module_pedestal_test
+    xml_tag: COMMENTS
+    nested_query: null
