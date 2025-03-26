@@ -18,46 +18,46 @@
     </RUN>
 
 </HEADER>
-
     <DATA_SET>
         <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
         <VERSION>1</VERSION>
         <PART mode="auto">
-            <SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
-            <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
+            <SERIAL_NUMBER>{{ ROC_1 }}</SERIAL_NUMBER>
         </PART>
         <DATA>
-            <REL_HUM>{{ rel_hum }}</REL_HUM>
-            <TEMP_C>{{ temp_c }}</TEMP_C>
-            <BIAS_VOL>{{ bias_vol }}</BIAS_VOL>
-            <CHIP>{{ chip }}</CHIP>
             <CHANNEL>{{ channel }}</CHANNEL>
-            <CHANNELTYPE>{{ channeltype }}</CHANNELTYPE>
-            <ADC_MEDIAN>{{ adc_median }}</ADC_MEDIAN>
-            <ADC_IQR>{{ adc_iqr }}</ADC_IQR>
-            <TOT_MEDIAN>{{ tot_median }}</TOT_MEDIAN>
-            <TOT_IQR>{{ tot_iqr }}</TOT_IQR>
-            <TOA_MEDIAN>{{ toa_median }}</TOA_MEDIAN>
-            <TOA_IQR>{{ toa_iqr }}</TOA_IQR>
             <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
             <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
-            <TOT_MEAN>{{ tot_mean }}</TOT_MEAN>
-            <TOT_STDD>{{ tot_stdd }}</TOT_STDD>
-            <TOA_MEAN>{{ toa_mean }}</TOA_MEAN>
-            <TOA_STDD>{{ toa_stdd }}</TOA_STDD>
-            <TOT_EFFICIENCY>{{ tot_efficiency }}</TOT_EFFICIENCY>
-            <TOT_EFFICIENCY_ERROR>{{ tot_efficiency_error }}</TOT_EFFICIENCY_ERROR>
-            <TOA_EFFICIENCY>{{ toa_efficiency }}</TOA_EFFICIENCY>
-            <TOA_EFFICIENCY_ERROR>{{ toa_efficiency_error }}</TOA_EFFICIENCY_ERROR>
-            <!-- <CELL>{{ cell }}</CELL> -->
-            <PAD>{{ pad }}</PAD>
-            <X>{{ x }}</X>
-            <Y>{{ y }}</Y>
-            <!-- <COUNT_NOISY_CHAN>{{ count_noisy_chan }}</COUNT_NOISY_CHAN>
-            <COUNT_BAD_CHAN>{{ count_bad_chan }}</COUNT_BAD_CHAN>
-            <COUNT_DISCONNECTED_CHAN>{{ count_disconnected_chan }}</COUNT_DISCONNECTED_CHAN> -->
-            <COUNT_DEAD_CHAN>{{ count_dead_chan }}</COUNT_DEAD_CHAN>
-            <COMMENTS>{{ comments_upload }}</COMMENTS>
+            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
+            <FLAGS>{{ flags }}</FLAGS>
+        </DATA>
+    </DATA_SET>
+    <DATA_SET>
+        <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
+        <VERSION>1</VERSION>
+        <PART mode="auto">
+            <SERIAL_NUMBER>{{ ROC_2 }}</SERIAL_NUMBER>
+        </PART>
+        <DATA>
+            <CHANNEL>{{ channel }}</CHANNEL>
+            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
+            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
+            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
+            <FLAGS>{{ flags }}</FLAGS>
+        </DATA>
+    </DATA_SET>
+    <DATA_SET>
+        <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
+        <VERSION>1</VERSION>
+        <PART mode="auto">
+            <SERIAL_NUMBER>{{ ROC_3 }}</SERIAL_NUMBER>
+        </PART>
+        <DATA>
+            <CHANNEL>{{ channel }}</CHANNEL>
+            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
+            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
+            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
+            <FLAGS>{{ flags }}</FLAGS>
         </DATA>
     </DATA_SET>
 </ROOT>
