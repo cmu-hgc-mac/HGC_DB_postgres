@@ -31,6 +31,23 @@
             <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
             <FLAGS>{{ flags }}</FLAGS>
         </DATA>
+
+        <DATA>
+            <CHANNEL>{{ channel }}</CHANNEL>
+            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
+            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
+            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
+            <FLAGS>{{ flags }}</FLAGS>
+        </DATA>
+
+        <DATA>
+            <CHANNEL>{{ channel }}</CHANNEL>
+            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
+            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
+            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
+            <FLAGS>{{ flags }}</FLAGS>
+        </DATA>
+
     </DATA_SET>
     <DATA_SET>
         <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
