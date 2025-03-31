@@ -183,8 +183,8 @@ def verify_shipin():
             def save_entries():
                 os.makedirs('shipping', exist_ok=True)
                 with open("shipping/temporary_part_entries_in.txt", "w") as file:
-                    for entry in natsorted(entries):
-                        text = entry.get().strip()
+                    list_to_write = [entry.get().strip() for entry in entries]
+                    for text in natsorted(list_to_write):
                         if text: file.write(text + "\n")
                 verify_components()
 
