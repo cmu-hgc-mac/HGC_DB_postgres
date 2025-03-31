@@ -1,6 +1,8 @@
 import asyncio
 import asyncpg
 import numpy as np
+import copy
+import xml.etree.ElementTree as ET
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
@@ -47,10 +49,46 @@ def check_duplicate_combo(data):
     skim_data = data[:, :2]## takes only chip and channel
     unq, count = np.unique(skim_data, axis=0, return_counts=True)
     duplicates = unq[count > 1]
-    print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
-    return None
+    if duplicates:
+        print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
+        return False
+    else:
+        return True
+
+def duplicate_xml_children(xml_temp_path, test_data, output_path):
+    # Load template
+    tree = ET.parse(xml_temp_path)
+    root = tree.getroot()
+    # Find and remove the original <DATA> block
+    data_template = root.find('DATA')
+    if data_template is None:
+        raise ValueError("No <DATA> tag found in the template.")
+    root.remove(data_template)
+
+    # Loop through each row in test_data
+    for row in test_data:
+        channel, adc_mean, adc_stdd, frac_unc, flags = row
+
+        # Deep copy the <DATA> element
+        new_data = copy.deepcopy(data_template)
+
+        # Fill in values
+        new_data.find('CHANNEL').text = str(int(channel))
+        new_data.find('ADC_MEAN').text = str(adc_mean)
+        new_data.find('ADC_STDD').text = str(adc_stdd)
+        new_data.find('FRAC_UNC').text = str(frac_unc)
+        new_data.find('FLAGS').text = str(flags)
+
+        # Append to root
+        root.append(new_data)
+    # Save to file
+    tree.write(output_path, encoding='utf-8', xml_declaration=True)
 
 async def main():
+    yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
+    xml_temp_path = 'export_data/template_examples/testing/module_pedestal_test.xml'
+    output_path = output_dir + '/testing'
+
     conn = await get_conn(dbpassword='hgcal')
 
     try:
@@ -58,10 +96,8 @@ async def main():
         test_data = remap_channels(data)
     
         print(f'module -- {module_name}')
-        # print(f'test_data shape -- {test_data.shape} as {type(test_data.shape)}')
-        # print(test_data[:, 1:3])
-        check_duplicate_combo(test_data)
-        # print(remap_channels(test_data))
+        if not check_duplicate_combo(test_data):
+            duplicate_xml_children(xml_temp_path, test_data, output_path)
         
     finally:
         await conn.close()
