@@ -262,8 +262,8 @@ def import_data():
     # lxpassword_entry.pack(pady=5)
 
     download_dev_var = BooleanVar(value=False)
-    download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
-    download_dev_var_entry.pack(pady=5)
+    # download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
+    # download_dev_var_entry.pack(pady=5)
     download_prod_var = BooleanVar(value=True)
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
     download_prod_var_entry.pack(pady=2)
