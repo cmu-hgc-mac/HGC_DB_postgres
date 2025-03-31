@@ -49,58 +49,108 @@ def check_duplicate_combo(data):
     skim_data = data[:, :2]## takes only chip and channel
     unq, count = np.unique(skim_data, axis=0, return_counts=True)
     duplicates = unq[count > 1]
-    if duplicates:
+
+    if duplicates.size == 0:
+        print('No duplicates are found')
+        return True
+    else:
         print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
         return False
-    else:
-        return True
 
-def duplicate_xml_children(xml_temp_path, test_data, output_path):
-    # Load template
+def convert_nparray_to_dict(data):
+    return [
+        {
+            'channel': int(row[0]),
+            'adc_mean': float(row[1]),
+            'adc_stdd': float(row[2]),
+            'frac_unc': float(row[3]),
+            'flags': int(row[4]),
+        }
+        for row in data
+    ]
+
+def fill_data_element(template, row):
+    data = copy.deepcopy(template)
+    data.find('CHANNEL').text = str(int(row[0]))
+    data.find('ADC_MEAN').text = str(row[1])
+    data.find('ADC_STDD').text = str(row[2])
+    data.find('FRAC_UNC').text = str(row[3])
+    data.find('FLAGS').text = str(int(row[4]))
+    return data
+
+
+def duplicate_xml_children(xml_temp_path, roc_test_data, output_path):
     tree = ET.parse(xml_temp_path)
     root = tree.getroot()
-    # Find and remove the original <DATA> block
-    data_template = root.find('DATA')
-    if data_template is None:
-        raise ValueError("No <DATA> tag found in the template.")
-    root.remove(data_template)
 
-    # Loop through each row in test_data
-    for row in test_data:
-        channel, adc_mean, adc_stdd, frac_unc, flags = row
+    # Get all <DATA_SET> and use the first one as a template
+    original_data_sets = root.findall('DATA_SET')
+    if not original_data_sets:
+        raise ValueError("No <DATA_SET> found in template.")
+    
+    # Remove all existing <DATA_SET> blocks from the template
+    for ds in original_data_sets:
+        root.remove(ds)
 
-        # Deep copy the <DATA> element
-        new_data = copy.deepcopy(data_template)
+    template_data_set = copy.deepcopy(original_data_sets[0])
+    data_template = template_data_set.find('DATA')
 
-        # Fill in values
-        new_data.find('CHANNEL').text = str(int(channel))
-        new_data.find('ADC_MEAN').text = str(adc_mean)
-        new_data.find('ADC_STDD').text = str(adc_stdd)
-        new_data.find('FRAC_UNC').text = str(frac_unc)
-        new_data.find('FLAGS').text = str(flags)
+    # For each ROC, create a new <DATA_SET> block
+    for roc_name, test_data in roc_test_data.items():
+        data_set = copy.deepcopy(template_data_set)
 
-        # Append to root
-        root.append(new_data)
-    # Save to file
+        # Set ROC name
+        serial_elem = data_set.find('PART').find('SERIAL_NUMBER')
+        serial_elem.text = roc_name
+        
+        # Re-locate the <DATA> inside this new data_set
+        data_template = data_set.find('DATA')
+        if data_template is not None:
+            data_set.remove(data_template)
+
+        # Add one <DATA> per row
+        for row in test_data:
+            data_elem = fill_data_element(data_template, row)
+            data_set.append(data_elem)
+
+        # Append this filled <DATA_SET> back to root
+        root.append(data_set)
+    
+    # Write to file
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     tree.write(output_path, encoding='utf-8', xml_declaration=True)
 
 async def main():
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_temp_path = 'export_data/template_examples/testing/module_pedestal_test.xml'
-    output_path = output_dir + '/testing'
+    output_dir = 'export_data/xmls_for_upload/testing'
+    module_name = 'dummy_1'
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, f'{module_name}.xml')
 
-    conn = await get_conn(dbpassword='hgcal')
-
-    try:
-        module_name, data = await fetch_test_data(conn)
-        test_data = remap_channels(data)
     
-        print(f'module -- {module_name}')
-        if not check_duplicate_combo(test_data):
-            duplicate_xml_children(xml_temp_path, test_data, output_path)
+    # conn = await get_conn(dbpassword='hgcal')
+    
+    test_data = [[ 0,          0,          0,         89.40699768,  6.00158834,],
+                [ 0,          1,          0,         91.44507599,  5.80598879,],
+                [ 0,          2,          0,         93.568183,   5.11564207,],
+                [ 0,          3,          0,         91.98484802,  5.57028532,],
+                [ 0,          4,          0,         92.0732650,  3.73036003,]]
+    
+    roc_test_data_map = {'ROC_1_dummy': test_data}
+    duplicate_xml_children(xml_temp_path, roc_test_data_map, output_path)
+
+    # try:
+    #     module_name, data = await fetch_test_data(conn)
+    #     test_data = remap_channels(data)
+    #     roc_test_data_map = {'roc_1': test_data}
+
+    #     print(f'module -- {module_name}')
+    #     if check_duplicate_combo(test_data):## if no duplicates, then return True
+    #         duplicate_xml_children(xml_temp_path, test_data, output_path)
         
-    finally:
-        await conn.close()
+    # finally:
+    #     await conn.close()
 
 # Run if this is the main script
 if __name__ == "__main__":
