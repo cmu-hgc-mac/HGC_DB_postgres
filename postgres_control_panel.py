@@ -183,8 +183,8 @@ def verify_shipin():
             def save_entries():
                 os.makedirs('shipping', exist_ok=True)
                 with open("shipping/temporary_part_entries_in.txt", "w") as file:
-                    for entry in natsorted(entries):
-                        text = entry.get().strip()
+                    list_to_write = [entry.get().strip() for entry in entries]
+                    for text in natsorted(list_to_write):
                         if text: file.write(text + "\n")
                 verify_components()
 
@@ -262,8 +262,8 @@ def import_data():
     # lxpassword_entry.pack(pady=5)
 
     download_dev_var = BooleanVar(value=False)
-    download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
-    download_dev_var_entry.pack(pady=5)
+    # download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
+    # download_dev_var_entry.pack(pady=5)
     download_prod_var = BooleanVar(value=True)
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
     download_prod_var_entry.pack(pady=2)
