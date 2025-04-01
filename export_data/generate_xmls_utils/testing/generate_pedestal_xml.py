@@ -3,9 +3,44 @@ import asyncpg
 import numpy as np
 import copy
 import xml.etree.ElementTree as ET
-import sys, os
+import sys, os, yaml
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
+
+chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
+resource_yaml = 'export_data/resource.yaml'
+with open(chip_idxMap_yaml, 'r') as file:
+    chip_idx_yaml = yaml.safe_load(file)
+
+with open(resource_yaml, 'r') as file:
+    yaml_content = yaml.safe_load(file)
+    kind_of_part_yaml = yaml_content['kind_of_part']
+    
+async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
+    '''
+    1. Get a geometry of a module (=hxb)
+    2. get a corresponding chip number and name from yaml using the geometry
+    3. get a ROC-ID from hxb table 
+    '''
+    part_id = (module_name[0:3].replace('320', '') + module_name[3:]).replace('-', '')
+    resolution_dict = kind_of_part_yaml['resolution']
+    geometry_dict = kind_of_part_yaml['geometry']
+    resolution = resolution_dict[part_id[1]]
+    geometry = geometry_dict[part_id[2]]
+    chip_idx_data = chip_idx_yaml[f'{resolution} {geometry}']
+    chip_names = [item['name'] for item in chip_idx_data] ##i.e., [M1, M2, M3]
+
+    query = f'''
+    SELECT roc_name, roc_index FROM hexaboard where module_no = {module_num} 
+    '''
+    roc_name, roc_index = await conn.fetchrow(query)
+    if roc_index == chip_names:
+        return roc_name## i.e., ['SU02-0124-001061', 'SU02-0124-001067', 'SU02-0124-001076']
+    else:
+        print('roc_index unmatched. No ROC was found')
+        return False
+
+
 
 async def fetch_test_data(conn):
     # Retrieve the first row of chip and channel arrays
@@ -23,6 +58,7 @@ async def fetch_test_data(conn):
     adc_mean = row['adc_mean']
     adc_stdd = row['adc_stdd']
     module_name = row['module_name']
+    module_num = row['module_no']
 
     # Check if the lengths match
     if len(chip) != len(channel):
@@ -31,7 +67,7 @@ async def fetch_test_data(conn):
     # Create test_data as list of [chip, channel, channel_type, adc_mean, adc_stdd] pairs
     test_data = np.array(list(zip(chip, channel, channel_type, adc_mean, adc_stdd)))## DO NOT CHANGE THE ORDER!!!!!
     
-    return module_name, test_data
+    return module_name, module_num, test_data
 
 def remap_channels(data):
     updated_data = data.copy()
@@ -129,7 +165,7 @@ async def main():
     output_path = os.path.join(output_dir, f'{module_name}.xml')
 
     
-    # conn = await get_conn(dbpassword='hgcal')
+    conn = await get_conn(dbpassword='hgcal')
     
     test_data = [[ 0,          0,          0,         89.40699768,  6.00158834,],
                 [ 0,          1,          0,         91.44507599,  5.80598879,],
@@ -137,11 +173,14 @@ async def main():
                 [ 0,          3,          0,         91.98484802,  5.57028532,],
                 [ 0,          4,          0,         92.0732650,  3.73036003,]]
     
-    roc_test_data_map = {'ROC_1_dummy': test_data}
-    duplicate_xml_children(xml_temp_path, roc_test_data_map, output_path)
+    params = {'module_name': '320MLF3W2CM0115', 'module_num': 33, 'conn': conn}
+    roc_1, roc_2, roc_3 = await find_rocID(**params)
+
+    # roc_test_data_map = {'ROC_1_dummy': test_data}
+    # duplicate_xml_children(xml_temp_path, roc_test_data_map, output_path)
 
     # try:
-    #     module_name, data = await fetch_test_data(conn)
+    #     module_name, module_num, data = await fetch_test_data(conn)
     #     test_data = remap_channels(data)
     #     roc_test_data_map = {'roc_1': test_data}
 
