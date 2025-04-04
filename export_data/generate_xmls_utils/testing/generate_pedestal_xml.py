@@ -42,23 +42,30 @@ async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
 
 
 
-async def fetch_test_data(conn):
+async def fetch_test_data(conn, date_start, date_end):
     # Retrieve the first row of chip and channel arrays
-    query = """
-        SELECT chip, channel, adc_mean, adc_stdd, channeltype, module_name FROM module_pedestal_test LIMIT 1;
+    query = f"""
+        SELECT DISTINCT ON (module_name)
+        chip, channel, adc_mean, adc_stdd, channeltype, module_name, module_no, date_test, time_test
+        FROM module_pedestal_test 
+        WHERE date_test BETWEEN '{date_start}' AND '{date_end}'
+        ORDER BY module_name, date_test DESC, time_test DESC
     """
-    row = await conn.fetchrow(query)
+    rows = await conn.fetch(query)
     
-    if row is None:
+    if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
-    chip = row['chip']
-    channel = row['channel']
-    channel_type = row['channeltype']
-    adc_mean = row['adc_mean']
-    adc_stdd = row['adc_stdd']
-    module_name = row['module_name']
-    module_num = row['module_no']
+    for row in rows:
+        chip = row['chip']
+        channel = row['channel']
+        channel_type = row['channeltype']
+        adc_mean = row['adc_mean']
+        adc_stdd = row['adc_stdd']
+        date_test = row['date_test']
+        time_test = row['time_test']
+        module_name = row['module_name']
+        module_num = row['module_no']
 
     # Check if the lengths match
     if len(chip) != len(channel):
@@ -79,7 +86,11 @@ def remap_channels(data):
             updated_data[i, 1] += 80
         elif channel_type == 100:
             updated_data[i, 1] += 90
-    return updated_data
+    
+    ## drop channel_type column
+    updated_data = np.delete(updated_data, index=2, axis=1)
+
+    return updated_data## [:, 3]
 
 def check_duplicate_combo(data):
     skim_data = data[:, :2]## takes only chip and channel
@@ -100,7 +111,7 @@ def convert_nparray_to_dict(data):
             'adc_mean': float(row[1]),
             'adc_stdd': float(row[2]),
             'frac_unc': float(row[3]),
-            'flags': int(row[4]),
+            # 'flags': int(row[4]),
         }
         for row in data
     ]
@@ -111,7 +122,7 @@ def fill_data_element(template, row):
     data.find('ADC_MEAN').text = str(row[1])
     data.find('ADC_STDD').text = str(row[2])
     data.find('FRAC_UNC').text = str(row[3])
-    data.find('FLAGS').text = str(int(row[4]))
+    # data.find('FLAGS').text = str(int(row[4]))
     return data
 
 
@@ -152,44 +163,45 @@ def duplicate_xml_children(xml_temp_path, roc_test_data, output_path):
         # Append this filled <DATA_SET> back to root
         root.append(data_set)
     
+    ## customize the file name
+    ####################
     # Write to file
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     tree.write(output_path, encoding='utf-8', xml_declaration=True)
+
 
 async def main():
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_temp_path = 'export_data/template_examples/testing/module_pedestal_test.xml'
     output_dir = 'export_data/xmls_for_upload/testing'
-    module_name = 'dummy_1'
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, f'{module_name}.xml')
 
-    
     conn = await get_conn(dbpassword='hgcal')
     
-    test_data = [[ 0,          0,          0,         89.40699768,  6.00158834,],
-                [ 0,          1,          0,         91.44507599,  5.80598879,],
-                [ 0,          2,          0,         93.568183,   5.11564207,],
-                [ 0,          3,          0,         91.98484802,  5.57028532,],
-                [ 0,          4,          0,         92.0732650,  3.73036003,]]
-    
-    params = {'module_name': '320MLF3W2CM0115', 'module_num': 33, 'conn': conn}
-    roc_1, roc_2, roc_3 = await find_rocID(**params)
+    # params = {'module_name': '320MLF3W2CM0115', 'module_num': 33, 'conn': conn}
+    # roc_1, roc_2, roc_3 = await find_rocID(**params)
 
     # roc_test_data_map = {'ROC_1_dummy': test_data}
     # duplicate_xml_children(xml_temp_path, roc_test_data_map, output_path)
+    date_start, date_end = '2025-02-14', '2025-02-17'
 
-    # try:
-    #     module_name, module_num, data = await fetch_test_data(conn)
-    #     test_data = remap_channels(data)
-    #     roc_test_data_map = {'roc_1': test_data}
+    try:
+        module_name, module_num, data = await fetch_test_data(conn, date_start, date_end)
+        print(module_name)
+        # params = {'module_name': module_name, 'module_num': module_num, 'conn': conn}
+        # test_data = remap_channels(data)#[:, 3], chip, channel, adc_mean, adc_stdd
 
-    #     print(f'module -- {module_name}')
-    #     if check_duplicate_combo(test_data):## if no duplicates, then return True
-    #         duplicate_xml_children(xml_temp_path, test_data, output_path)
+        # print(f'module -- {module_name}')
+        # if check_duplicate_combo(test_data):## if no duplicates, then return True
+        #     rocs = await find_rocID(**params)
+        #     mapped_test_data = {}
+        #     for i, roc in enumerate(rocs):
+        #         if np.any(test_data[:, 0] == i):
+        #             mapped_test_data[roc] = test_data[test_data[:, 0] == i, 3]
+
+        #     duplicate_xml_children(xml_temp_path, test_data, output_dir)
         
-    # finally:
-    #     await conn.close()
+    finally:
+        await conn.close()
 
 # Run if this is the main script
 if __name__ == "__main__":

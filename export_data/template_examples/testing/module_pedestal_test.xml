@@ -9,12 +9,12 @@
         <RUN_TYPE>Si module pedestal and noise</RUN_TYPE>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <INSPECTOR>{{ inspector }}</INSPECTOR>
+        <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp }}</RUN_BEGIN_TIMESTAMP>
         <LOCATION>{{ location }}</LOCATION>
         <COMMENT_DESCRIPTION>Measured pedestal test data</COMMENT_DESCRIPTION>
     </RUN>
 
 </HEADER>
-
     <DATA_SET>
         <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
         <VERSION>1</VERSION>
