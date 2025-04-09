@@ -10,6 +10,6 @@ source env_lxplus.sh <my_cern_id>
 ```
 Then `cd` back into this directory and run the python file here.
 ```
-cd HGC_DB_postgres/import
+cd HGC_DB_postgres/import_data
 python import_sensor_iv_data.py
 ```
