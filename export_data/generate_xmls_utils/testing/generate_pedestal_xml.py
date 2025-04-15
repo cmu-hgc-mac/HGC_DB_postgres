@@ -9,6 +9,7 @@ from collections import defaultdict
 import sys, os, yaml
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
+from export_data.define_global_var import LOCATION, INSTITUTION
 
 chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
 resource_yaml = 'export_data/resource.yaml'
@@ -114,29 +115,8 @@ async def fetch_test_data(conn, date_start, date_end):
             }
     return test_data
 
-# def retreive_roc_name(module_name, chips):
-#     '''
-#     To-Do: retreive ROC name
-#     chip -> chip_name (M1, M2, etc) from spreadsheet -> ROC_NAME from hxb_table
-#     '''
-#     resolution_dict = kind_of_part_yaml['resolution']
-#     geometry_dict = kind_of_part_yaml['geometry']
-#     if module_name != '' or module_name != 'NoneType':
-#         module_name = (module_name[0:3].replace('320', '') + module_name[3:]).replace('-', '')
-#         _resolution = resolution_dict[module_name[1]]
-#         _geometry = geometry_dict[module_name[2]]
-#         geometry = f'{_resolution} {_geometry}' ## LD Full, LD Right, etc...
 
-#     unique_chip = list(set(chips))## 0, 1, 2
-#     roc_chip_mapping = {}
-#     for i in range(len(unique_chip)):
-#         _chip_name = next((entry["name"] for entry in chip_idx_yaml[geometry] if entry["chip"] == unique_chip[i]), None)
-#         roc_chip_mapping = {_chip_name: unique_chip[i]}
-
-#     print(roc_chip_mapping)
-
-
-def generate_module_pedestal_xml(test_data, template_path, output_path):
+def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path):
     tree = ET.parse(template_path)
     root = tree.getroot()
 
@@ -145,8 +125,8 @@ def generate_module_pedestal_xml(test_data, template_path, output_path):
     if run_info is not None:
         run_info.find("RUN_NUMBER").text = "1"
         run_info.find("INSPECTOR").text = test_data.get("inspector", "unknown")
-        run_info.find("RUN_BEGIN_TIMESTAMP").text = test_data.get("run_begin_timestamp",'')
-        run_info.find("LOCATION").text = "CERN"  # Or any value you want
+        run_info.find("RUN_BEGIN_TIMESTAMP").text = run_begin_timestamp
+        run_info.find("LOCATION").text = LOCATION  
 
     # Get and remove the original <DATA_SET> template block
     data_set_template = root.find("DATA_SET")
@@ -215,64 +195,16 @@ def generate_module_pedestal_xml(test_data, template_path, output_path):
 
     # Write to output file
     os.makedirs(output_path, exist_ok=True)
-    file_path = os.path.join(output_path, f"{test_data['module_name']}_pedestal.xml")
+    file_path = os.path.join(output_path, f"{test_data['module_name']}_{run_begin_timestamp}_pedestal.xml")
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml)
 
     return file_path
-def duplicate_xml_children(xml_temp_path, roc_test_data, output_path):
-
-    '''
-    #######################################
-    Major change on this function. See chatgpt!!!
-    #######################################
-    '''
-    tree = ET.parse(xml_temp_path)
-    root = tree.getroot()
-
-    # Get all <DATA_SET> and use the first one as a template
-    original_data_sets = root.findall('DATA_SET')
-    if not original_data_sets:
-        raise ValueError("No <DATA_SET> found in template.")
-    
-    # Remove all existing <DATA_SET> blocks from the template
-    for ds in original_data_sets:
-        root.remove(ds)
-
-    template_data_set = copy.deepcopy(original_data_sets[0])
-    data_template = template_data_set.find('DATA')
-
-    # For each ROC, create a new <DATA_SET> block
-    for roc_name, test_data in roc_test_data.items():
-        data_set = copy.deepcopy(template_data_set)
-
-        # Set ROC name
-        serial_elem = data_set.find('PART').find('SERIAL_NUMBER')
-        serial_elem.text = roc_name
-        
-        # Re-locate the <DATA> inside this new data_set
-        data_template = data_set.find('DATA')
-        if data_template is not None:
-            data_set.remove(data_template)
-
-        # Add one <DATA> per row
-        for row in test_data:
-            data_elem = fill_data_element(data_template, row)
-            data_set.append(data_elem)
-
-        # Append this filled <DATA_SET> back to root
-        root.append(data_set)
-    
-    ## customize the file name
-    ####################
-    # Write to file
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    tree.write(output_path, encoding='utf-8', xml_declaration=True)
 
 
 async def main():
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
-    xml_temp_path = 'export_data/template_examples/testing/module_pedestal_test.xml'
+    temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
     output_dir = 'export_data/xmls_for_upload/testing'
 
     conn = await get_conn(dbpassword='hgcal')
@@ -280,12 +212,10 @@ async def main():
 
     try:
         test_data = await fetch_test_data(conn, date_start, date_end)
-        temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
-        output_dir = 'export_data/xmls_for_dbloader_upload/testing'
-        output_file = generate_module_pedestal_xml(test_data[list(test_data.keys())[0]], temp_dir, output_dir)
-        print(f"XML saved to: {output_file}")
-        #     duplicate_xml_children(xml_temp_path, test_data, output_dir)
-        
+
+        for run_begin_timestamp in list(test_data.keys()):
+            output_file = generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir)
+            print(f"XML saved to: {output_file}")
     finally:
         await conn.close()
 
