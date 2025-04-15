@@ -250,8 +250,8 @@ if __name__ == "__main__":
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
-    parser.add_argument('-datestart', '--date_start', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-    parser.add_argument('-dateend', '--date_end', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
