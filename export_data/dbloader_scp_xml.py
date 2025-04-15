@@ -20,9 +20,13 @@ cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'},
 def get_selected_type_files(files_found_all):
     files_selected = []
     for fi in files_found_all:
+        parent_directory = str(Path(fi).parent.name)
         parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]
         if parent_directory == 'sensor':
             file_type = file_type.split('_',1)[1] ## since sensor name has extra _
+        elif parent_directory == 'testing':
+            file_type = file_type.split('_')[1].split('.')[0]
+
         for xmlt in list(xml_list[parent_directory].keys()):
             if xml_list[parent_directory][xmlt] and file_type in xmlt:
                 files_selected.append(fi)
@@ -136,7 +140,7 @@ def main(): #dbl_username, dbl_password, directory_to_search, search_date, encry
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
     files_found_all = find_files_by_date(directory_to_search, search_date)
     files_found = get_selected_type_files(files_found_all)
-    
+
     if files_found:
         print("Files found: ")
         for file in files_found: print(file)

@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
+from tqdm import tqdm
 import sys, os, yaml, argparse
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
@@ -83,7 +84,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
-        WHERE m.module_name = ANY($1) AND m.date_test BETWEEN '{date_start}' AND '{date_end}'
+        WHERE m.module_name = ANY($1) OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         """
         rows = await conn.fetch(query, partsnamelist)
     else:
@@ -106,7 +107,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
         """
         rows = await conn.fetch(query)
-    
+
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
@@ -179,7 +180,7 @@ def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, 
     # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
     for roc, entries in roc_grouped_data.items():
         # Clone the template <DATA_SET>
-        data_set = ET.fromstring(ET.tostring(data_set_template))
+        data_set = ET.fromstring(ET.tostring(data_set_template))[0]
 
         # Set the correct SERIAL_NUMBER
         serial_elem = data_set.find("PART/SERIAL_NUMBER")
@@ -206,13 +207,16 @@ def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, 
     rough_string = ET.tostring(root, encoding="utf-8")
     pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
     pretty_xml = "\n".join(line for line in pretty_xml.split("\n") if line.strip())
-
-    # Add the first two lines of xml manually
+    
+    # delete the first <ROOT> for formatting
+    lines = pretty_xml.splitlines()
+    if lines[1].strip().startswith("<ROOT"):
+        lines.pop(1)
+    pretty_xml = "\n".join(lines)
     fixed_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
     
     if pretty_xml.startswith('<?xml'):
         pretty_xml = fixed_declaration + '\n'.join(pretty_xml.split('\n')[1:])
-
 
     # Write to output file
     os.makedirs(output_path, exist_ok=True)
@@ -232,10 +236,8 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
 
     try:
         test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
-
-        for run_begin_timestamp in list(test_data.keys()):
+        for run_begin_timestamp in tqdm(list(test_data.keys())):
             output_file = generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir)
-            print(f"XML saved to: {output_file}")
     finally:
         await conn.close()
 
@@ -248,8 +250,8 @@ if __name__ == "__main__":
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
-    parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-    parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-datestart', '--date_start', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
+    parser.add_argument('-dateend', '--date_end', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
