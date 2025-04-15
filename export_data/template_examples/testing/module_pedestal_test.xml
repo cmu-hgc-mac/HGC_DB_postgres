@@ -2,16 +2,14 @@
 <ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <HEADER>
     <TYPE>
-        <EXTENSION_TABLE_NAME>HGC_PEDESTAL_DATA</EXTENSION_TABLE_NAME>
-        <NAME>HGCROC Pedestal Data</NAME>
+        <EXTENSION_TABLE_NAME>SI_MODULE_PEDESTAL_TEST</EXTENSION_TABLE_NAME>
+        <NAME>Si Module Pedestal Test Data</NAME>
     </TYPE>
 
     <RUN>
-        <!-- <RUN_NAME>Current/voltage measurements</RUN_NAME> -->
         <RUN_TYPE>Si module pedestal and noise</RUN_TYPE>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
-        <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
         <INSPECTOR>{{ inspector }}</INSPECTOR>
         <LOCATION>{{ location }}</LOCATION>
         <COMMENT_DESCRIPTION>Measured pedestal test data</COMMENT_DESCRIPTION>
@@ -23,51 +21,6 @@
         <VERSION>1</VERSION>
         <PART mode="auto">
             <SERIAL_NUMBER>{{ ROC_1 }}</SERIAL_NUMBER>
-        </PART>
-        <DATA>
-            <CHANNEL>{{ channel }}</CHANNEL>
-            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
-            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
-            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
-            <FLAGS>{{ flags }}</FLAGS>
-        </DATA>
-
-        <DATA>
-            <CHANNEL>{{ channel }}</CHANNEL>
-            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
-            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
-            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
-            <FLAGS>{{ flags }}</FLAGS>
-        </DATA>
-
-        <DATA>
-            <CHANNEL>{{ channel }}</CHANNEL>
-            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
-            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
-            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
-            <FLAGS>{{ flags }}</FLAGS>
-        </DATA>
-
-    </DATA_SET>
-    <DATA_SET>
-        <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
-        <VERSION>1</VERSION>
-        <PART mode="auto">
-            <SERIAL_NUMBER>{{ ROC_2 }}</SERIAL_NUMBER>
-        </PART>
-        <DATA>
-            <CHANNEL>{{ channel }}</CHANNEL>
-            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
-            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
-            <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
-            <FLAGS>{{ flags }}</FLAGS>
-        </DATA>
-    </DATA_SET>
-    <DATA_SET>
-        <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
-        <VERSION>1</VERSION>
-        <PART mode="auto">
-            <SERIAL_NUMBER>{{ ROC_3 }}</SERIAL_NUMBER>
         </PART>
         <DATA>
             <CHANNEL>{{ channel }}</CHANNEL>
