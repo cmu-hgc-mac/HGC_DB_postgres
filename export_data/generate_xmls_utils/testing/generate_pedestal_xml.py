@@ -40,93 +40,107 @@ async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
         print('roc_index unmatched. No ROC was found')
         return False
 
+def remap_channels(channel, channel_type):
+    for i in range(len(channel)):
+        if channel_type[i] == 1:
+            channel[i] += 80
+        elif channel_type[i] == 100:
+            channel[i] += 90
+    return channel, channel_type
 
+def check_duplicate_combo(chip, channel):
+    chip_channel = np.column_stack((chip, channel))
+    unq, count = np.unique(chip_channel, axis=0, return_counts=True)
+    duplicates = unq[count > 1]
 
+    if duplicates.size == 0:
+        # print('No duplicates in chips and channels are found\n')
+        return True
+    else:
+        print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
+        return False
+    
 async def fetch_test_data(conn, date_start, date_end):
     # Retrieve the first row of chip and channel arrays
     query = f"""
-        SELECT DISTINCT ON (module_name)
-        chip, channel, adc_mean, adc_stdd, channeltype, module_name, module_no, date_test, time_test
-        FROM module_pedestal_test 
-        WHERE date_test BETWEEN '{date_start}' AND '{date_end}'
-        ORDER BY module_name, date_test DESC, time_test DESC
+        SELECT m.module_name,
+               m.chip, 
+               m.channel, 
+               m.adc_mean, 
+               m.adc_stdd, 
+               m.channeltype, 
+               m.module_name, 
+               m.module_no, 
+               m.date_test, 
+               m.time_test,
+               m.inspector,
+               h.roc_name, 
+               h.roc_index
+        FROM module_pedestal_test m
+        LEFT JOIN hexaboard h ON m.module_no = h.module_no
+        WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
     """
     rows = await conn.fetch(query)
     
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
+    test_data = {}
     for row in rows:
-        chip = row['chip']
-        channel = row['channel']
-        channel_type = row['channeltype']
-        adc_mean = row['adc_mean']
-        adc_stdd = row['adc_stdd']
         date_test = row['date_test']
-        time_test = row['time_test']
-        module_name = row['module_name']
-        module_num = row['module_no']
-
-    # Check if the lengths match
-    if len(chip) != len(channel):
-        raise ValueError("chip and channel arrays must have the same length.")
-
-    # Create test_data as list of [chip, channel, channel_type, adc_mean, adc_stdd] pairs
-    test_data = np.array(list(zip(chip, channel, channel_type, adc_mean, adc_stdd)))## DO NOT CHANGE THE ORDER!!!!!
+        time_test = str(row['time_test']).split('.')[0]
+        run_begin_timestamp = f"{date_test}T{time_test}"
     
-    return module_name, module_num, test_data
+        if run_begin_timestamp not in test_data:
+            _channel = list(row['channel'])
+            _channeltype = list(row['channeltype'])
+            _chip = list(row['chip'])
+            channel, channeltype = remap_channels(_channel, _channeltype)
+            check_duplicate_combo(_chip, channel)
 
-def remap_channels(data):
-    updated_data = data.copy()
-    for i in range(len(updated_data)):
-        channel = updated_data[i, 1]
-        channel_type = updated_data[i, 2]
-        
-        if channel_type == 1:
-            updated_data[i, 1] += 80
-        elif channel_type == 100:
-            updated_data[i, 1] += 90
-    
-    ## drop channel_type column
-    updated_data = np.delete(updated_data, index=2, axis=1)
+            test_data[run_begin_timestamp] = {
+                'module_name': row['module_name'],
+                'module_no': row['module_no'],
+                'inspector': row['inspector'],
+                'chip': _chip,
+                'channel': channel,
+                'channeltype': channeltype,
+                'adc_mean': row['adc_mean'],
+                'adc_stdd': row['adc_stdd'],
+                'roc_name': row['roc_name']
+            }
+    return test_data
 
-    return updated_data## [:, 3]
+# def retreive_roc_name(module_name, chips):
+#     '''
+#     To-Do: retreive ROC name
+#     chip -> chip_name (M1, M2, etc) from spreadsheet -> ROC_NAME from hxb_table
+#     '''
+#     resolution_dict = kind_of_part_yaml['resolution']
+#     geometry_dict = kind_of_part_yaml['geometry']
+#     if module_name != '' or module_name != 'NoneType':
+#         module_name = (module_name[0:3].replace('320', '') + module_name[3:]).replace('-', '')
+#         _resolution = resolution_dict[module_name[1]]
+#         _geometry = geometry_dict[module_name[2]]
+#         geometry = f'{_resolution} {_geometry}' ## LD Full, LD Right, etc...
 
-def check_duplicate_combo(data):
-    skim_data = data[:, :2]## takes only chip and channel
-    unq, count = np.unique(skim_data, axis=0, return_counts=True)
-    duplicates = unq[count > 1]
+#     unique_chip = list(set(chips))## 0, 1, 2
+#     roc_chip_mapping = {}
+#     for i in range(len(unique_chip)):
+#         _chip_name = next((entry["name"] for entry in chip_idx_yaml[geometry] if entry["chip"] == unique_chip[i]), None)
+#         roc_chip_mapping = {_chip_name: unique_chip[i]}
 
-    if duplicates.size == 0:
-        print('No duplicates are found')
-        return True
-    else:
-        print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
-        return False
+#     print(roc_chip_mapping)
 
-def convert_nparray_to_dict(data):
-    return [
-        {
-            'channel': int(row[0]),
-            'adc_mean': float(row[1]),
-            'adc_stdd': float(row[2]),
-            'frac_unc': float(row[3]),
-            # 'flags': int(row[4]),
-        }
-        for row in data
-    ]
-
-def fill_data_element(template, row):
-    data = copy.deepcopy(template)
-    data.find('CHANNEL').text = str(int(row[0]))
-    data.find('ADC_MEAN').text = str(row[1])
-    data.find('ADC_STDD').text = str(row[2])
-    data.find('FRAC_UNC').text = str(row[3])
-    # data.find('FLAGS').text = str(int(row[4]))
-    return data
 
 
 def duplicate_xml_children(xml_temp_path, roc_test_data, output_path):
+
+    '''
+    #######################################
+    Major change on this function. See chatgpt!!!
+    #######################################
+    '''
     tree = ET.parse(xml_temp_path)
     root = tree.getroot()
 
@@ -176,28 +190,11 @@ async def main():
     output_dir = 'export_data/xmls_for_upload/testing'
 
     conn = await get_conn(dbpassword='hgcal')
-    
-    # params = {'module_name': '320MLF3W2CM0115', 'module_num': 33, 'conn': conn}
-    # roc_1, roc_2, roc_3 = await find_rocID(**params)
-
-    # roc_test_data_map = {'ROC_1_dummy': test_data}
-    # duplicate_xml_children(xml_temp_path, roc_test_data_map, output_path)
-    date_start, date_end = '2025-02-14', '2025-02-17'
+    date_start, date_end = '2025-04-04', '2025-04-04'
 
     try:
-        module_name, module_num, data = await fetch_test_data(conn, date_start, date_end)
-        print(module_name)
-        # params = {'module_name': module_name, 'module_num': module_num, 'conn': conn}
-        # test_data = remap_channels(data)#[:, 3], chip, channel, adc_mean, adc_stdd
-
-        # print(f'module -- {module_name}')
-        # if check_duplicate_combo(test_data):## if no duplicates, then return True
-        #     rocs = await find_rocID(**params)
-        #     mapped_test_data = {}
-        #     for i, roc in enumerate(rocs):
-        #         if np.any(test_data[:, 0] == i):
-        #             mapped_test_data[roc] = test_data[test_data[:, 0] == i, 3]
-
+        test_data = await fetch_test_data(conn, date_start, date_end)
+        print(list(test_data.items())[0])
         #     duplicate_xml_children(xml_temp_path, test_data, output_dir)
         
     finally:
