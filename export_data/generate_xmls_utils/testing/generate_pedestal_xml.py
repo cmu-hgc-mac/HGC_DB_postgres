@@ -3,6 +3,9 @@ import asyncpg
 import numpy as np
 import copy
 import xml.etree.ElementTree as ET
+import xml.dom.minidom as minidom
+from datetime import datetime
+from collections import defaultdict
 import sys, os, yaml
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
@@ -133,7 +136,90 @@ async def fetch_test_data(conn, date_start, date_end):
 #     print(roc_chip_mapping)
 
 
+def generate_module_pedestal_xml(test_data, template_path, output_path):
+    tree = ET.parse(template_path)
+    root = tree.getroot()
 
+    # === Fill in <RUN> metadata ===
+    run_info = root.find("HEADER/RUN")
+    if run_info is not None:
+        run_info.find("RUN_NUMBER").text = "1"
+        run_info.find("INSPECTOR").text = test_data.get("inspector", "unknown")
+        run_info.find("RUN_BEGIN_TIMESTAMP").text = test_data.get("run_begin_timestamp",'')
+        run_info.find("LOCATION").text = "CERN"  # Or any value you want
+
+    # Get and remove the original <DATA_SET> template block
+    data_set_template = root.find("DATA_SET")
+    root.remove(data_set_template)
+
+    # Prepare chip-to-ROC mapping
+    chips = test_data["chip"]
+    channels = test_data["channel"]
+    adc_means = test_data["adc_mean"]
+    adc_stdds = test_data["adc_stdd"]
+    roc_names = test_data["roc_name"]
+
+    chip_to_roc = {}
+    for idx, chip in enumerate(sorted(set(chips))):
+        if idx < len(roc_names):
+            chip_to_roc[chip] = roc_names[idx]
+
+    # Group data by ROC
+    roc_grouped_data = defaultdict(list)
+    for i in range(len(channels)):
+        chip = chips[i]
+        roc = chip_to_roc.get(chip, "UNKNOWN")
+        roc_grouped_data[roc].append({
+            "channel": channels[i],
+            "adc_mean": adc_means[i],
+            "adc_stdd": adc_stdds[i]
+        })
+
+    # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
+    for roc, entries in roc_grouped_data.items():
+        # Clone the template <DATA_SET>
+        data_set = ET.fromstring(ET.tostring(data_set_template))
+
+        # Set the correct SERIAL_NUMBER
+        serial_elem = data_set.find("PART/SERIAL_NUMBER")
+        if serial_elem is not None:
+            serial_elem.text = roc
+
+        # Remove the placeholder <DATA> from template
+        for data_elem in data_set.findall("DATA"):
+            data_set.remove(data_elem)
+
+        # Add all actual data entries
+        for entry in entries:
+            data = ET.Element("DATA")
+            ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
+            ET.SubElement(data, "ADC_MEAN").text = str(entry["adc_mean"])
+            ET.SubElement(data, "ADC_STDD").text = str(entry["adc_stdd"])
+            ET.SubElement(data, "FRAC_UNC").text = "0.0"
+            ET.SubElement(data, "FLAGS").text = "0"
+            data_set.append(data)
+
+        root.append(data_set)
+
+    # Pretty-print the XML
+    rough_string = ET.tostring(root, encoding="utf-8")
+    pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
+    pretty_xml = "\n".join(line for line in pretty_xml.split("\n") if line.strip())
+
+    # Add the first two lines of xml manually
+    fixed_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
+    
+    if pretty_xml.startswith('<?xml'):
+        pretty_xml = fixed_declaration + '\n'.join(pretty_xml.split('\n')[1:])
+
+
+    # Write to output file
+    os.makedirs(output_path, exist_ok=True)
+    file_path = os.path.join(output_path, f"{test_data['module_name']}_pedestal.xml")
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(pretty_xml)
+
+    return file_path
 def duplicate_xml_children(xml_temp_path, roc_test_data, output_path):
 
     '''
@@ -194,7 +280,10 @@ async def main():
 
     try:
         test_data = await fetch_test_data(conn, date_start, date_end)
-        print(list(test_data.items())[0])
+        temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
+        output_dir = 'export_data/xmls_for_dbloader_upload/testing'
+        output_file = generate_module_pedestal_xml(test_data[list(test_data.keys())[0]], temp_dir, output_dir)
+        print(f"XML saved to: {output_file}")
         #     duplicate_xml_children(xml_temp_path, test_data, output_dir)
         
     finally:
