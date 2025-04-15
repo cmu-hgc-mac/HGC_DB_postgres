@@ -123,7 +123,7 @@ def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, 
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
-        run_info.find("RUN_NUMBER").text = "1"
+        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION)
         run_info.find("INSPECTOR").text = test_data.get("inspector", "unknown")
         run_info.find("RUN_BEGIN_TIMESTAMP").text = run_begin_timestamp
         run_info.find("LOCATION").text = LOCATION  
