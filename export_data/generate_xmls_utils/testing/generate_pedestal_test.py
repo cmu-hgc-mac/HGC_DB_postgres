@@ -64,9 +64,10 @@ def check_duplicate_combo(chip, channel):
         print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
         return False
     
-async def fetch_test_data(conn, date_start, date_end):
+async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     # Retrieve the first row of chip and channel arrays
-    query = f"""
+    if partsnamelist:
+        query = f"""
         SELECT m.module_name,
                m.chip, 
                m.channel, 
@@ -82,9 +83,29 @@ async def fetch_test_data(conn, date_start, date_end):
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
-        WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
-    """
-    rows = await conn.fetch(query)
+        WHERE m.module_name = ANY($1) AND m.date_test BETWEEN '{date_start}' AND '{date_end}'
+        """
+        rows = await conn.fetch(query, partsnamelist)
+    else:
+        query = f"""
+            SELECT m.module_name,
+                m.chip, 
+                m.channel, 
+                m.adc_mean, 
+                m.adc_stdd, 
+                m.channeltype, 
+                m.module_name, 
+                m.module_no, 
+                m.date_test, 
+                m.time_test,
+                m.inspector,
+                h.roc_name, 
+                h.roc_index
+            FROM module_pedestal_test m
+            LEFT JOIN hexaboard h ON m.module_no = h.module_no
+            WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
+        """
+        rows = await conn.fetch(query)
     
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
@@ -202,7 +223,7 @@ def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, 
     return file_path
 
 
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
     output_dir = 'export_data/xmls_for_upload/testing'
@@ -210,7 +231,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        test_data = await fetch_test_data(conn, date_start, date_end)
+        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
 
         for run_begin_timestamp in list(test_data.keys()):
             output_file = generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir)
@@ -229,7 +250,7 @@ if __name__ == "__main__":
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-
+    parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
     dbpassword = args.dbpassword
@@ -237,5 +258,6 @@ if __name__ == "__main__":
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
+    partsnamelist = args.partnameslist
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist))

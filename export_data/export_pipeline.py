@@ -66,7 +66,6 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None, parts
                         continue; 
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
-
     #Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
     completed_scripts = 0

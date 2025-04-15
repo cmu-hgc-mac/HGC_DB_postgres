@@ -4,12 +4,14 @@ hexaboard:
 - hxb_cond_xml: false
 module:
 - module_assembly_xml: false
-- module_build_xml: true
+- module_build_xml: false
 - module_cond_xml: false
 - wirebond_xml: false
 protomodule:
 - proto_assembly_xml: false
-- proto_build_xml: true
+- proto_build_xml: false
 - proto_cond_xml: false
 sensor:
 - sensor_cond_xml: false
+testing:
+- pedestal_test: true

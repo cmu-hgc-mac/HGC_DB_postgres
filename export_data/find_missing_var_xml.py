@@ -21,7 +21,7 @@ PART_TO_YAML_CATEGORIES = {
     "protomodule": ["proto_cond", "proto_assembly", "proto_build"],
     "hexaboard": ["hxb_cond", "hxb_build"],
     "baseplate": ["bp_cond", "bp_build"]
-}
+    }
 
 # Function to get XML files, with an optional time limit
 def get_xml_files(base_dir, time_limit=None):
@@ -55,10 +55,13 @@ def extract_xml_tags_and_values(xml_file):
 def get_yaml_categories(xml_file_path):
     """Determine the correct YAML sections based on the directory name."""
     part_name = Path(xml_file_path).parts[-2]  # Get directory name (e.g., 'sensor')
-    xml_type = xml_file_path.split('_')[-2] ## e.g. cond, build, assembly, wirebond
-    _yaml_cat = PART_TO_YAML_CATEGORIES[part_name]
-    yaml_cat = [item for item in _yaml_cat if item.endswith(xml_type)][0]
-    return yaml_cat
+    if part_name == 'testing':
+        return "testing"
+    else:
+        xml_type = xml_file_path.split('_')[-2] ## e.g. cond, build, assembly, wirebond
+        _yaml_cat = PART_TO_YAML_CATEGORIES[part_name]
+        yaml_cat = [item for item in _yaml_cat if item.endswith(xml_type)][0]
+        return yaml_cat
 
 # Function to find missing or empty XML tags
 def find_missing_or_empty_tags(expected_tags, xml_data):
@@ -85,27 +88,28 @@ def find_missing_var_xml(time_limit=90):
     time_limit - Set to None to get all XML files, or specify a time limit in seconds
     '''
     xml_files = get_xml_files(XMLS_DIR, time_limit=time_limit)
-    
+
     if not xml_files:
         print("No XML files found.")
 
     for xml_file in xml_files:
-        xml_data = extract_xml_tags_and_values(xml_file)
-        yaml_category = get_yaml_categories(xml_file)
+        if xml_file.split('/')[2] != 'testing':
+            xml_data = extract_xml_tags_and_values(xml_file)
+            yaml_category = get_yaml_categories(xml_file)
 
-        if yaml_category:
-            expected_tags_map = get_expected_tags(yaml_category)
-            missing_tags = find_missing_or_empty_tags(expected_tags_map, xml_data)
+            if yaml_category:
+                expected_tags_map = get_expected_tags(yaml_category)
+                missing_tags = find_missing_or_empty_tags(expected_tags_map, xml_data)
 
-            if missing_tags:
+                if missing_tags:
 
-                print(f"\n===== MISSING OR EMPTY TAGS FOUND for {xml_file.split('/')[-1]}! =====")
-                print(f"  Referencing YAML categories: {yaml_category}")
-                print("------------------------------------------------------------")
+                    print(f"\n===== MISSING OR EMPTY TAGS FOUND for {xml_file.split('/')[-1]}! =====")
+                    print(f"  Referencing YAML categories: {yaml_category}")
+                    print("------------------------------------------------------------")
 
-                for tag, (dbase_table, dbase_col) in missing_tags.items():
-                    print(f" - {tag}:\n   → dbase_table: {dbase_table}\n   → dbase_col: {dbase_col}")
-                print("============================================================")
+                    for tag, (dbase_table, dbase_col) in missing_tags.items():
+                        print(f" - {tag}:\n   → dbase_table: {dbase_table}\n   → dbase_col: {dbase_col}")
+                    print("============================================================")
 
-        else:
-            print(f"\nNo matching YAML categories found for {xml_file}. Skipping.")
+            else:
+                print(f"\nNo matching YAML categories found for {xml_file}. Skipping.")
