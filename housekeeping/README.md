@@ -5,7 +5,7 @@ For rectifying modules that were incorrectly named during production, save the o
 320MLL3W2NT0051,320MLL3WCNT0051
 ```
 
-From the `HGC_DB_postgres` directory, run the following and provide the `editor` password in the terminal:
+From the `HGC_DB_postgres` directory, run the following with the filepath of the CSV file and provide the `editor` password in the terminal:
 ```
 python3 housekeeping/rectify_part_names.py -fp <module_names_old_new.csv>
 ```
