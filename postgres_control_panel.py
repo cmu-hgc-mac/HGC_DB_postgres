@@ -221,7 +221,7 @@ def verify_shipin():
 
             def verify_components():
                 if file_entry.get().strip():
-                    subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+                    subprocess.run([sys.executable, "housekeeping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
                     popup2.destroy()  
 
             submit_fileparts_button = Button(popup2, text="Submit to DB", command=verify_components)
