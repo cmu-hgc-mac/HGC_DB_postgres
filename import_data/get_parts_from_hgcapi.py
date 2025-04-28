@@ -54,7 +54,7 @@ partTransInit = {'bp': {'apikey':'baseplates', 'dbtabname': 'baseplate', 'db_col
 
 def check_roc_count(hxb_name, roc_count):
     ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
-    roc_count_dict = {'LF': 3, 'LL': 2, 'LR': 2, 'LT': 2, 'LB': 2, 'L5': 3, 'HL': 6, 'HL': 2, 'HR': 2, 'HT': 3, 'HB': 4}
+    roc_count_dict = {'LF': 3, 'LL': 2, 'LR': 2, 'LT': 2, 'LB': 2, 'L5': 3, 'HF': 6, 'HL': 2, 'HR': 2, 'HT': 3, 'HB': 4}
     if roc_count_dict[hxb_name[4:6]] == roc_count:
         return True
     return False
