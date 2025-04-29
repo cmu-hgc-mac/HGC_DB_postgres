@@ -576,8 +576,8 @@ def record_shipout():
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                     fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
                     print("List of modules saved under ", fileout_name)
-                    webbrowser.open(f"https://int2r-shipment.web.cern.ch/shipping_add/")
-                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/shipping_add/")
+                    webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
+                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
 
             submit_button = Button(popup1, text="Record to DB", command=update_db_shipped)
             submit_button.grid(row=4+(num_entries//2), column=1, columnspan=4, pady=10)
