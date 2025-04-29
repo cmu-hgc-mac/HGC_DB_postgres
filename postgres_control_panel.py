@@ -38,7 +38,7 @@ cern_dbase = config_data.get('cern_db')
 php_port = config_data.get('php_port', '8083')
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
-php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}"
+php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
 def get_pid_result():
     try:
@@ -221,7 +221,7 @@ def verify_shipin():
 
             def verify_components():
                 if file_entry.get().strip():
-                    subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+                    subprocess.run([sys.executable, "housekeeping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
                     popup2.destroy()  
 
             submit_fileparts_button = Button(popup2, text="Submit to DB", command=verify_components)
@@ -576,8 +576,8 @@ def record_shipout():
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                     fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
                     print("List of modules saved under ", fileout_name)
-                    webbrowser.open(f"https://int2r-shipment.web.cern.ch/shipping_add/")
-                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/shipping_add/")
+                    webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
+                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
 
             submit_button = Button(popup1, text="Record to DB", command=update_db_shipped)
             submit_button.grid(row=4+(num_entries//2), column=1, columnspan=4, pady=10)

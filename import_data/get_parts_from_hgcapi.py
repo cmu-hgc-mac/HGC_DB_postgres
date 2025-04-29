@@ -4,6 +4,19 @@ from cryptography.fernet import Fernet
 from natsort import natsorted, natsort_keygen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+"""
+Logic of writing to parts tables:
+- Parts can either be inserted from the HGCAPI or by verifying shipment
+- Don't insert IF (part exists and kind has been filled)
+- Update API details if kind has NOT been filled for that part
+
+For parts verify
+- Part created if it doesn't exist
+- Date verify updated if value is null
+
+Parts are also created by LabVIEW during assembly
+"""
+
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -41,7 +54,7 @@ partTransInit = {'bp': {'apikey':'baseplates', 'dbtabname': 'baseplate', 'db_col
 
 def check_roc_count(hxb_name, roc_count):
     ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
-    roc_count_dict = {'LF': 3, 'LL': 2, 'LR': 2, 'LT': 2, 'LB': 2, 'L5': 3, 'HL': 6, 'HL': 2, 'HR': 2, 'HT': 3, 'HB': 4}
+    roc_count_dict = {'LF': 3, 'LL': 2, 'LR': 2, 'LT': 2, 'LB': 2, 'L5': 3, 'HF': 6, 'HL': 2, 'HR': 2, 'HT': 3, 'HB': 4}
     if roc_count_dict[hxb_name[4:6]] == roc_count:
         return True
     return False
