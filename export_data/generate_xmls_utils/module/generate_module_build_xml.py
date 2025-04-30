@@ -121,7 +121,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             """
                         elif dbase_table in ['hexaboard']:
                             query = f"""
-
+                            SELECT {dbase_table}.{dbase_col}
+                            FROM {dbase_table}
+                            JOIN module_assembly ON {dbase_table}.hxb_name = module_assembly.hxb_name
+                            WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}'
+                            AND module_assembly.xml_upload_success IS NULL;
                             """
                         else:
                             query = f"""
