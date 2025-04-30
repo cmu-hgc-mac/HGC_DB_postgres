@@ -340,7 +340,7 @@ def export_data():
     upload_prod_var = BooleanVar(value=True)
     upload_prod_var_entry = Checkbutton(input_window, text="Upload to CMSR (PROD-DB)", variable=upload_prod_var)
     upload_prod_var_entry.pack(pady=0)
-    deleteXML_var = BooleanVar(value=False)
+    deleteXML_var = BooleanVar(value=True)
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
     deleteXML_var_entry.pack(pady=0)
     
@@ -433,7 +433,7 @@ def export_data():
     submit_export_button = Button(input_window, text="Submit", command=submit_export)
     submit_export_button.pack(pady=10)
     bind_button_keys(submit_export_button)
-    Label(input_window, text="Only (proto)module build to CMSR currently available.", fg = 'red').pack(pady=1)
+    Label(input_window, text="Only (proto)module build, cond to CMSR.", fg = 'red').pack(pady=1)
 
 def record_shipout():
     input_window = Toplevel(root)
