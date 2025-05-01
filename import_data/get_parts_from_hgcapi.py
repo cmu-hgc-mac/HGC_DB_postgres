@@ -70,7 +70,7 @@ def get_query_write(table_name, column_names, check_conflict_col = None, db_uplo
     data_placeholder = ', '.join([f'${i+1}' for i in range(len(column_names))])
     query = f""" {pre_query} {f'{data_placeholder}'}  """
     if check_conflict_col is not None:
-        query += f" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NOT NULL); "
+        query += f" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}'); "
     return query
 
 def get_query_update(table_name, column_names, check_conflict_col = None, db_upload_data = None):
