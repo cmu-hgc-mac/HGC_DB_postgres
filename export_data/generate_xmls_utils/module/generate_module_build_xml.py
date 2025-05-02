@@ -146,9 +146,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == 'PROTOMODULE':
                             db_values[xml_var] = format_part_name(results.get('proto_name'))
                         elif xml_var == 'VERSION':
-                            roc_ver = results.get("roc_version", "")[-3:]
-                            roc_ver = roc_ver.replace(roc_ver[0], 'v')
-                            db_values[xml_var] = roc_ver
+                            roc_ver = results.get("roc_version", "")
+                            db_values[xml_var] = get_roc_version(roc_ver)
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 

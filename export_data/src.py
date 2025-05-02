@@ -349,3 +349,13 @@ def print_missing_entries(missing_entries):
     
     print("=" * 50 + "\n")
 
+def get_roc_version(roc_version):
+    rv = roc_version.lower()
+    if 'pre-series' in rv or 'preseries' in rv:
+        return 'pre-series'
+    elif 'v3b' in rv:
+        return 'v3b'
+    elif 'v3c' in rv:
+        return 'v3c'
+    else: 
+        return 'not specified'
