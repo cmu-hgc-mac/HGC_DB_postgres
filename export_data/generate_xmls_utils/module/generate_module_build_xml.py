@@ -55,6 +55,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'RUN_NUMBER':
                     db_values[xml_var] = get_run_num(LOCATION)
+                elif xml_var == 'VERSION':
+                    db_values[xml_var] = get_roc_version(module)
                 elif xml_var in ['KIND_OF_PART', 'KIND_OF_PART_PROTOMODULE', 'KIND_OF_PART_PCB']:
                     if xml_var == 'KIND_OF_PART':
                         db_values[xml_var] = get_kind_of_part(module)
@@ -145,9 +147,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = format_part_name(results.get('hxb_name'))
                         elif xml_var == 'PROTOMODULE':
                             db_values[xml_var] = format_part_name(results.get('proto_name'))
-                        elif xml_var == 'VERSION':
-                            roc_ver = results.get("roc_version", "")
-                            db_values[xml_var] = get_roc_version(roc_ver)
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
