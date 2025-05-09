@@ -432,10 +432,6 @@ module_build:
     xml_tag: SERIAL_NUMBER
     nested_query: null
   - xml_temp_val: VERSION
-    dbase_col: roc_version
-    dbase_table: hexaboard
-    xml_tag: VERSION
-    nested_query: null
 
 module_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
