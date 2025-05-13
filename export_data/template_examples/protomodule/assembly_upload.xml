@@ -46,8 +46,8 @@
 			<SNSR_TOOL_HT_CHK>{{ snsr_tool_ht_chk }}</SNSR_TOOL_HT_CHK>
 			<GLUE_TYPE>transfer tape</GLUE_TYPE>
 			<GLUE_BATCH_NUM>{{ glue_batch_num }}</GLUE_BATCH_NUM>
-			<SLVR_EPXY_TYPE>sylgard</SLVR_EPXY_TYPE>
-			<SLVR_EPXY_BATCH_NUM>{{ slvr_epxy_batch_num }}</SLVR_EPXY_BATCH_NUM>
+			<!-- <SLVR_EPXY_TYPE>{{ slvr_epxy_type }}</SLVR_EPXY_TYPE> -->
+			<!-- <SLVR_EPXY_BATCH_NUM>{{ slvr_epxy_batch_num }}</SLVR_EPXY_BATCH_NUM> -->
 			<PLT_GRADE>{{ prto_grade }}</PLT_GRADE>
 			<SNSR_TOOL_FEET_CHK>Yes</SNSR_TOOL_FEET_CHK>
 			<SNSR_STEP>{{ step_sensor }}</SNSR_STEP>
