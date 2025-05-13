@@ -47,7 +47,7 @@
 			<SLVR_EPXY_TYPE>sylgard</SLVR_EPXY_TYPE>
 			<SLVR_EPXY_BATCH_NUM>{{ slvr_epxy_batch_num }}</SLVR_EPXY_BATCH_NUM>
 			<PLT_GRADE>{{ prto_grade }}</PLT_GRADE>
-			<SNSR_TOOL_FEET_CHK>{{ snsr_tool_feet_chk }}</SNSR_TOOL_FEET_CHK>
+			<SNSR_TOOL_FEET_CHK>Yes</SNSR_TOOL_FEET_CHK>
 			<SNSR_STEP>{{ step_sensor }}</SNSR_STEP>
 		</DATA>
 	</DATA_SET>
