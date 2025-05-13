@@ -747,9 +747,15 @@ proto_assembly:
     nested_query: null
     default_value: null
   - xml_temp_val: GLUE_BATCH_NUM
-    dbase_col: glue_batch
+    dbase_col: tape_batch
     dbase_table: proto_assembly
     xml_tag: GLUE_BATCH_NUM
+    nested_query: null
+    default_value: null
+  - xml_temp_val: SLVR_EPXY_BATCH_NUM
+    dbase_col: glue_batch
+    dbase_table: proto_assembly
+    xml_tag: SLVR_EPXY_BATCH_NUM
     nested_query: null
     default_value: null
   - xml_temp_val: PRTO_GRADE
