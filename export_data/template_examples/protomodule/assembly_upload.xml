@@ -31,7 +31,9 @@
 			<PLT_ASM_ROW>{{ asm_row }}</PLT_ASM_ROW>
 			<PLT_ASM_COL>{{ asm_col }}</PLT_ASM_COL>
 			<PLT_FLTNES_MM>{{ flatness }}</PLT_FLTNES_MM>
-			<PLT_THKNES_MM>{{ thickness }}</PLT_THKNES_MM>
+			<!-- <PLT_THKNES_MM>{{ thickness }}</PLT_THKNES_MM> -->
+			<PLT_AVE_THKNS_MM>{{ ave_thickness }}</PLT_AVE_THKNS_MM>
+			<PLT_MAX_THKNS_MM>{{ max_thickness }}</PLT_MAX_THKNS_MM>
 			<COMP_TRAY_NAME>{{ comp_tray_name }}</COMP_TRAY_NAME>
 			<SNSR_SER_NUM>{{ sensor }}</SNSR_SER_NUM>
 			<SNSR_CMP_ROW>{{ asm_row }}</SNSR_CMP_ROW>

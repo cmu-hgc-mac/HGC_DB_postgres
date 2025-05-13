@@ -433,7 +433,7 @@ def export_data():
     submit_export_button = Button(input_window, text="Submit", command=submit_export)
     submit_export_button.pack(pady=10)
     bind_button_keys(submit_export_button)
-    Label(input_window, text="Only (proto)module build, cond to CMSR.", fg = 'red').pack(pady=1)
+    # Label(input_window, text="Only (proto)module build, cond to CMSR.", fg = 'red').pack(pady=1)
 
 def record_shipout():
     input_window = Toplevel(root)

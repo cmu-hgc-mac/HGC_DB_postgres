@@ -674,10 +674,16 @@ proto_assembly:
     xml_tag: PLT_FLTNES_MM
     nested_query: null
     default_value: null
-  - xml_temp_val: THICKNESS
+  - xml_temp_val: AVE_THICKNESS
     dbase_col: avg_thickness
     dbase_table: proto_inspect
-    xml_tag: PLT_THKNES_MM
+    xml_tag: PLT_AVE_THKNS_MM
+    nested_query: null
+    default_value: null
+  - xml_temp_val: MAX_THICKNESS
+    dbase_col: max_thickness
+    dbase_table: proto_inspect
+    xml_tag: PLT_MAX_THKNS_MM
     nested_query: null
     default_value: null
   - xml_temp_val: COMP_TRAY_NAME
