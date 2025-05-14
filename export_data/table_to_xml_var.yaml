@@ -892,7 +892,7 @@ sensor_cond:
     xml_tag: KIND_OF_PART
   - xml_temp_val: RUN_NUMBER
     xml_tag: RUN_NUMBER
-  - xml_temp_val: RECORD_INSERTION_USER
+  - xml_temp_val: INITIATED_BY_USER
     dbase_col: operator 
     dbase_table: proto_assembly
     xml_tag: TESTED_BY
