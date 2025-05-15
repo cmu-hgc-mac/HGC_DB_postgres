@@ -215,12 +215,13 @@ async def create_tables():
                     if duplicate_datas[j][0] == table_name:
                         try: 
                             await conn.execute(update_table_datas_trigger(*duplicate_datas[j],j))
-                            print(f'Data update trigger for {duplicate_datas[j][0]} updated column {duplicate_datas[j][1]}...')
+                            print(f'Data update trigger for {duplicate_datas[j][0]}_{j} created for column {duplicate_datas[j][1]}...')
                         except:
                             drop_data_trigger_sql = f"DROP TRIGGER IF EXISTS {duplicate_datas[j][0]}_{j}_update_data_trigger ON {duplicate_datas[j][2]};"
                             await conn.execute(drop_data_trigger_sql.format(table_name=duplicate_datas[j][0]))
+                            print(f'Data update trigger for for {duplicate_datas[j][0]}_{j} is deleted...')
                             await conn.execute(update_table_datas_trigger(*duplicate_datas[j],j))
-                            print(f'Data update trigger for {duplicate_datas[j][0]} updated column {duplicate_datas[j][1]}...')
+                            print(f'Data update trigger for {duplicate_datas[j][0]}_{j} updated for column {duplicate_datas[j][1]}...')
 
                 # Allow permissions:
                 for k in i['permission'].keys():
