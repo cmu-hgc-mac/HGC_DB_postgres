@@ -2,8 +2,8 @@
 <ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <HEADER>
     <TYPE>
-        <EXTENSION_TABLE_NAME>SI_MODULE_PEDESTAL_TEST</EXTENSION_TABLE_NAME>
-        <NAME>Si Module Pedestal Test Data</NAME>
+        <EXTENSION_TABLE_NAME>HGC_PEDESTAL_DATA</EXTENSION_TABLE_NAME>
+        <NAME>HGCROC Pedestal Data</NAME>
     </TYPE>
 
     <RUN>
@@ -21,11 +21,12 @@
         <VERSION>1</VERSION>
         <PART mode="auto">
             <SERIAL_NUMBER>{{ ROC_1 }}</SERIAL_NUMBER>
+            <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
         </PART>
         <DATA>
             <CHANNEL>{{ channel }}</CHANNEL>
-            <ADC_MEAN>{{ adc_mean }}</ADC_MEAN>
-            <ADC_STDD>{{ adc_stdd }}</ADC_STDD>
+            <MEAN>{{ adc_mean }}</MEAN>
+            <STDEV>{{ adc_stdd }}</STDEV>
             <FRAC_UNC>{{ frac_unc }}</FRAC_UNC>
             <FLAGS>{{ flags }}</FLAGS>
         </DATA>

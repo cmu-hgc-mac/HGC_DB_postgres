@@ -148,7 +148,8 @@ def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, 
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION)
         run_info.find("INITIATED_BY_USER").text = test_data.get("inspector", "unknown")
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("LOCATION").text = LOCATION  
+        run_info.find("LOCATION").text = LOCATION
+      
 
     # Get and remove the original <DATA_SET> template block
     data_set_template = root.find("DATA_SET")
@@ -179,29 +180,36 @@ def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, 
 
     # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
     for roc, entries in roc_grouped_data.items():
-        # Clone the template <DATA_SET>
-        data_set = ET.fromstring(ET.tostring(data_set_template))[0]
+        # Deep copy the template DATA_SET element
+        data_set = copy.deepcopy(data_set_template)
 
-        # Set the correct SERIAL_NUMBER
+        # Set the correct SERIAL_NUMBER inside PART
         serial_elem = data_set.find("PART/SERIAL_NUMBER")
         if serial_elem is not None:
             serial_elem.text = roc
+        kindofpart = data_set.find("PART/KIND_OF_PART")
+        if kindofpart is not None:
+            density = get_kind_of_part(test_data['module_name']).split(' ')[-2]
+            kindofpart.text = f"{density} HGCROC"
 
-        # Remove the placeholder <DATA> from template
+        # Remove placeholder DATA blocks (direct children of DATA_SET)
         for data_elem in data_set.findall("DATA"):
             data_set.remove(data_elem)
 
-        # Add all actual data entries
+        # Add actual DATA blocks under DATA_SET (NOT under PART)
         for entry in entries:
             data = ET.Element("DATA")
             ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
-            ET.SubElement(data, "ADC_MEAN").text = str(entry["adc_mean"])
-            ET.SubElement(data, "ADC_STDD").text = str(entry["adc_stdd"])
+            ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
+            ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
             ET.SubElement(data, "FRAC_UNC").text = "0.0"
             ET.SubElement(data, "FLAGS").text = "0"
-            data_set.append(data)
+            data_set.append(data)  # <== append directly under DATA_SET
 
+        # Append the completed DATA_SET to ROOT
         root.append(data_set)
+
+
 
     # Pretty-print the XML
     rough_string = ET.tostring(root, encoding="utf-8")
