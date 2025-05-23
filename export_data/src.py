@@ -201,7 +201,8 @@ async def get_kind_of_part(part_name, part=None, conn=None):
         
         if part_name[0:4] in ['320B', '320X']:
             part_id = '320' + (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
-       
+        else:
+            part_id = part_name
         query = f"""SELECT kind FROM {part_name_db[part][0]} WHERE REPLACE({part_name_db[part][1]},'-','') = '{part_id}'; """
         results = await fetch_from_db(query, conn)
 
