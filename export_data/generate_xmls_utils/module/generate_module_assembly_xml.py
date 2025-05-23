@@ -73,7 +73,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'ID':
                     db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var] = await get_kind_of_part(format_part_name(module))
+                    db_values[xml_var] = get_kind_of_part(format_part_name(module))
                 elif xml_var == 'RUN_NUMBER':
                     db_values[xml_var] = get_run_num(LOCATION)
                 elif entry['default_value']:
