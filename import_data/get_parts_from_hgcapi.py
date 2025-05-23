@@ -141,13 +141,21 @@ def form(data):
 def get_part_type(partName, partType):
     return_dict = {}
     if partType == 'bp':
-        return_dict.update({'geometry' : kop_yaml['geometry'][partName[5]]})
-        return_dict.update({'resolution' : kop_yaml['resolution'][partName[6]]})
-        return_dict.update({'bp_material' : kop_yaml['material'][partName[7]]})
+        try:
+            return_dict.update({'geometry' : kop_yaml['geometry'][partName[5]]})
+            return_dict.update({'resolution' : kop_yaml['resolution'][partName[6]]})
+            return_dict.update({'bp_material' : kop_yaml['material'][partName[7]]})
+        except:
+            None
+            # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'hxb':
-        return_dict.update({'resolution': kop_yaml['resolution'][partName[4]]})  
-        return_dict.update({'geometry': kop_yaml['geometry'][partName[5]]})  
-        return_dict.update({'roc_version': kop_yaml['roc_version'][partName[7]]})  
+        try:
+            return_dict.update({'resolution': kop_yaml['resolution'][partName[4]]})  
+            return_dict.update({'geometry': kop_yaml['geometry'][partName[5]]})  
+            return_dict.update({'roc_version': kop_yaml['roc_version'][partName[7]]})  
+        except:
+            None
+            # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'sen':
         return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
         return_dict.update({'geometry': kop_yaml['sensor_geometry'][partName[-1]]})  
@@ -177,18 +185,18 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
                     roc_names.append(child["serial_number"])
                     roc_indices.append(child["attribute"])
                     key_func = natsort_keygen()    
-            roc_indices_sorted = natsorted(roc_indices, key=key_func)
-            roc_names_sorted = natsorted(roc_names, key=key_func)
-            roc_indices_sorted = None if None in roc_indices_sorted else roc_indices_sorted
-            roc_names_sorted = None if None in roc_names_sorted else roc_names_sorted
-            db_dict = {"hxb_name": hxb_name, "roc_name": roc_names_sorted, "roc_index": roc_indices_sorted}
-            if not check_roc_count(hxb_name, roc_count = len(roc_names_sorted)):
-                print(f"Part {hxb_name} has an incomplete list of ROCs. Add manually to postgres after contacting the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
-
-            return db_dict
+            if roc_names:
+                roc_indices_sorted = natsorted(roc_indices, key=key_func)
+                roc_names_sorted = natsorted(roc_names, key=key_func)
+                roc_indices_sorted = None if None in roc_indices_sorted else roc_indices_sorted
+                roc_names_sorted = None if None in roc_names_sorted else roc_names_sorted
+                db_dict = {"hxb_name": hxb_name, "roc_name": roc_names_sorted, "roc_index": roc_indices_sorted}
+                if not check_roc_count(hxb_name, roc_count = len(roc_names_sorted)):
+                    print(f"Part {hxb_name} has an incomplete list of ROCs. Add manually to postgres after contacting the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
+                return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring ROC data from API output for {data_full['serial_number']}", e)
+        print(f"ERROR in acquiring ROC data from API output for {data_full['serial_number']}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None

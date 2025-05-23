@@ -204,12 +204,13 @@ async def get_kind_of_part(part_name, part=None, conn=None):
        
         query = f"""SELECT kind FROM {part_name_db[part][0]} WHERE REPLACE({part_name_db[part][1]},'-','') = '{part_id}'; """
         results = await fetch_from_db(query, conn)
+
         if 'kind' in results:
             if results['kind'] is None:
-                print(f"Reimport data from INT2R/CMSR for {part_name} to obtain kind_of_part." )
+                raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} to obtain kind_of_part." )
             return results['kind']
         else:
-            print(f"Reimport data from INT2R/CMSR for {part_name} if it exists.")
+            raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} if it exists.")
             return None
 
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
