@@ -59,7 +59,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         bp_name = _bp_name[0]['bp_name']
                     else:
                         bp_name = ''
-                    db_values[xml_var] = await get_kind_of_part(bp_name)
+                    db_values[xml_var] = await get_kind_of_part(bp_name, 'baseplate', conn)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
                     _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                     _sen_name = await conn.fetch(_query)
@@ -67,7 +67,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         sen_name = _sen_name[0]['sen_name']
                     else:
                         sen_name = ''
-                    db_values[xml_var] = await get_kind_of_part(sen_name)
+                    db_values[xml_var] = await get_kind_of_part(sen_name, 'sensor', conn)
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']

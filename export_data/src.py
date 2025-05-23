@@ -194,16 +194,23 @@ def get_run_num(location):
     return run_num
 
 async def get_kind_of_part(part_name, part=None, conn=None):
-    if part is not None:
+    if part_name[0:4] not in ['320M', '320P']:
         part_name_db = {'baseplate': ['baseplate', 'bp_name'],
                         'hexaboard': ['hexaboard', 'hxb_name'],
-                        'sensor': ['sensor', 'sen_name']}
-        query = f"""
-                SELECT kind FROM {part_name_db[part][0]} WHERE {part_name_db[part][1]} = '{part_name}'
-                """
-
+                        'sensor':    ['sensor', 'sen_name']}
+        
+        if part_name[0:4] in ['320B', '320X']:
+            part_id = '320' + (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
+       
+        query = f"""SELECT kind FROM {part_name_db[part][0]} WHERE REPLACE({part_name_db[part][1]},'-','') = '{part_id}'; """
         results = await fetch_from_db(query, conn)
-        return results['kind']
+        if 'kind' in results:
+            if results['kind'] is None:
+                print(f"Reimport data from INT2R/CMSR for {part_name} to obtain kind_of_part." )
+            return results['kind']
+        else:
+            print(f"Reimport data from INT2R/CMSR for {part_name} if it exists.")
+            return None
 
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
     else:
@@ -218,6 +225,8 @@ async def get_kind_of_part(part_name, part=None, conn=None):
         try:
             # Extract the information
             if part_name != '' or part_name != 'NoneType':
+                part_id = (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
+                part_type = part_type_dict[part_id[0]]
                 resolution = resolution_dict[part_id[1]]
                 geometry = geometry_dict[part_id[2]]
                 sen_thickness = thickness_dict[part_id[3]]
