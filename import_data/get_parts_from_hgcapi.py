@@ -208,6 +208,9 @@ async def main():
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-downld', '--download_dev_stat', default='False', required=False, help="Download from dev DBLoader without generate.")
     parser.add_argument('-downlp', '--download_prod_stat', default='True', required=False, help="Download from prod DBLoader without generate.")
+    parser.add_argument('-getbp', '--get_baseplate', default='True', required=False, help="Get baseplates.")
+    parser.add_argument('-gethxb', '--get_hexaboard', default='True', required=False, help="Get hexaboards.")
+    parser.add_argument('-getsen', '--get_sensor', default='True', required=False, help="Get sensors.")
     args = parser.parse_args()
 
     if args.password is None:
@@ -230,10 +233,18 @@ async def main():
     if prod_bool or (not dev_bool and not prod_bool):
         db_list.append('prod_db')
 
+    part_types_to_get = []
+    if str2bool(args.get_baseplate):
+        part_types_to_get.append('bp')
+    if str2bool(args.get_hexaboard):
+        part_types_to_get.append('hxb')
+    if str2bool(args.get_sensor):
+        part_types_to_get.append('sen')
+
     for source_db_cern in db_list:
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
-        for pt in ['bp','hxb','sen']:  #, 'pml', 'ml']:
+        for pt in part_types_to_get:  #, 'pml', 'ml']:
             print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
             parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
             if parts:
@@ -268,7 +279,7 @@ async def main():
     
     async with pool.acquire() as conn:
         try:
-            query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44-4c%'; """
+            query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44-4c%' AND (roc_version IS NULL OR roc_version <> 'HGCROCV3c'); """
             await conn.execute(query_v3c)
         except:
             print('v3c query failed')

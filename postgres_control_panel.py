@@ -268,12 +268,27 @@ def import_data():
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
     download_prod_var_entry.pack(pady=2)
 
+    baseplate_get_var = BooleanVar(value=True)
+    baseplate_get_var_entry = Checkbutton(input_window, text="Get: baseplates", variable=baseplate_get_var)
+    baseplate_get_var_entry.pack(pady=2)
+
+    hexaboard_get_var = BooleanVar(value=True)
+    hexaboard_get_var_entry = Checkbutton(input_window, text="Get: hexaboards", variable=hexaboard_get_var)
+    hexaboard_get_var_entry.pack(pady=2)
+
+    sensor_get_var = BooleanVar(value=True)
+    sensor_get_var_entry = Checkbutton(input_window, text="Get: sensors", variable=sensor_get_var)
+    sensor_get_var_entry.pack(pady=2)
+
     def submit_import():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         # lxuser_pass = lxuser_var.get()
         # lxpassword_pass = lxpassword_var.get()
         download_dev_stat = download_dev_var.get()
         download_prod_stat = download_prod_var.get()
+        basplate_get_stat = baseplate_get_var.get()
+        hexaboard_get_stat = hexaboard_get_var.get()
+        sensor_get_stat = sensor_get_var.get()
 
         if not download_prod_stat and not download_dev_stat:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nSelect a source database."):
@@ -281,7 +296,7 @@ def import_data():
         else:
             if dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
                 input_window.destroy()  
-                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat)])
+                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getsen", str(sensor_get_stat)])
                 # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
                 # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
                 show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
