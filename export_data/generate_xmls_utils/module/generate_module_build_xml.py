@@ -59,7 +59,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = get_roc_version(module)
                 elif xml_var in ['KIND_OF_PART', 'KIND_OF_PART_PROTOMODULE', 'KIND_OF_PART_PCB']:
                     if xml_var == 'KIND_OF_PART':
-                        db_values[xml_var] = get_kind_of_part(module)
+                        db_values[xml_var] = await get_kind_of_part(module)
                     elif xml_var == 'KIND_OF_PART_PROTOMODULE':
                         _query = f"SELECT REPLACE(proto_name,'-','') AS proto_name FROM module_assembly WHERE REPLACE(module_name,'-','') = '{module}';"
                         _proto_name = await conn.fetch(_query)
@@ -67,7 +67,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             proto_name = _proto_name[0]['proto_name']
                         else:
                             proto_name = ''
-                        db_values[xml_var] = get_kind_of_part(proto_name)
+                        db_values[xml_var] = await get_kind_of_part(proto_name)
                     else:
                         _query = f"SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM module_assembly WHERE REPLACE(module_name,'-','') = '{module}';"
                         _hxb_name = await conn.fetch(_query)
@@ -76,7 +76,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             hxb_name = _hxb_name[0]['hxb_name']
                         else:
                             hxb_name = ''
-                        db_values[xml_var] = get_kind_of_part(hxb_name)
+                        db_values[xml_var] = await get_kind_of_part(hxb_name, 'hexaboard', conn=conn)
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']

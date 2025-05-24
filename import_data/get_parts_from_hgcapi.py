@@ -141,13 +141,21 @@ def form(data):
 def get_part_type(partName, partType):
     return_dict = {}
     if partType == 'bp':
-        return_dict.update({'geometry' : kop_yaml['geometry'][partName[5]]})
-        return_dict.update({'resolution' : kop_yaml['resolution'][partName[6]]})
-        return_dict.update({'bp_material' : kop_yaml['material'][partName[7]]})
+        try:
+            return_dict.update({'geometry' : kop_yaml['geometry'][partName[5]]})
+            return_dict.update({'resolution' : kop_yaml['resolution'][partName[6]]})
+            return_dict.update({'bp_material' : kop_yaml['material'][partName[7]]})
+        except:
+            None
+            # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'hxb':
-        return_dict.update({'resolution': kop_yaml['resolution'][partName[4]]})  
-        return_dict.update({'geometry': kop_yaml['geometry'][partName[5]]})  
-        return_dict.update({'roc_version': kop_yaml['roc_version'][partName[7]]})  
+        try:
+            return_dict.update({'resolution': kop_yaml['resolution'][partName[4]]})  
+            return_dict.update({'geometry': kop_yaml['geometry'][partName[5]]})  
+            return_dict.update({'roc_version': kop_yaml['roc_version'][partName[7]]})  
+        except:
+            None
+            # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'sen':
         return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
         return_dict.update({'geometry': kop_yaml['sensor_geometry'][partName[-1]]})  
@@ -177,18 +185,18 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
                     roc_names.append(child["serial_number"])
                     roc_indices.append(child["attribute"])
                     key_func = natsort_keygen()    
-            roc_indices_sorted = natsorted(roc_indices, key=key_func)
-            roc_names_sorted = natsorted(roc_names, key=key_func)
-            roc_indices_sorted = None if None in roc_indices_sorted else roc_indices_sorted
-            roc_names_sorted = None if None in roc_names_sorted else roc_names_sorted
-            db_dict = {"hxb_name": hxb_name, "roc_name": roc_names_sorted, "roc_index": roc_indices_sorted}
-            if not check_roc_count(hxb_name, roc_count = len(roc_names_sorted)):
-                print(f"Part {hxb_name} has an incomplete list of ROCs. Add manually to postgres after contacting the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
-
-            return db_dict
+            if roc_names:
+                roc_indices_sorted = natsorted(roc_indices, key=key_func)
+                roc_names_sorted = natsorted(roc_names, key=key_func)
+                roc_indices_sorted = None if None in roc_indices_sorted else roc_indices_sorted
+                roc_names_sorted = None if None in roc_names_sorted else roc_names_sorted
+                db_dict = {"hxb_name": hxb_name, "roc_name": roc_names_sorted, "roc_index": roc_indices_sorted}
+                if not check_roc_count(hxb_name, roc_count = len(roc_names_sorted)):
+                    print(f"Part {hxb_name} has an incomplete list of ROCs. Add manually to postgres after contacting the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
+                return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring ROC data from API output for {data_full['serial_number']}", e)
+        print(f"ERROR in acquiring ROC data from API output for {data_full['serial_number']}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -200,6 +208,9 @@ async def main():
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-downld', '--download_dev_stat', default='False', required=False, help="Download from dev DBLoader without generate.")
     parser.add_argument('-downlp', '--download_prod_stat', default='True', required=False, help="Download from prod DBLoader without generate.")
+    parser.add_argument('-getbp', '--get_baseplate', default='True', required=False, help="Get baseplates.")
+    parser.add_argument('-gethxb', '--get_hexaboard', default='True', required=False, help="Get hexaboards.")
+    parser.add_argument('-getsen', '--get_sensor', default='True', required=False, help="Get sensors.")
     args = parser.parse_args()
 
     if args.password is None:
@@ -222,10 +233,18 @@ async def main():
     if prod_bool or (not dev_bool and not prod_bool):
         db_list.append('prod_db')
 
+    part_types_to_get = []
+    if str2bool(args.get_baseplate):
+        part_types_to_get.append('bp')
+    if str2bool(args.get_hexaboard):
+        part_types_to_get.append('hxb')
+    if str2bool(args.get_sensor):
+        part_types_to_get.append('sen')
+
     for source_db_cern in db_list:
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
-        for pt in ['bp','hxb','sen']:  #, 'pml', 'ml']:
+        for pt in part_types_to_get:  #, 'pml', 'ml']:
             print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
             parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
             if parts:
@@ -260,7 +279,7 @@ async def main():
     
     async with pool.acquire() as conn:
         try:
-            query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44-4c%'; """
+            query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44-4c%' AND (roc_version IS NULL OR roc_version <> 'HGCROCV3c'); """
             await conn.execute(query_v3c)
         except:
             print('v3c query failed')
