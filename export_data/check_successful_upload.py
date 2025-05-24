@@ -46,7 +46,7 @@ def get_part_id_fromXML(base_dir="export_data/xmls_for_upload", time_limit=90):
     
     return part_ids
 
-def check_upload(db_type):
+async def check_upload(db_type):
     '''
     We say, if serial id and kind_of_part match in API match with our xmls, then the data is successfully uploaded. 
     '''
@@ -59,7 +59,7 @@ def check_upload(db_type):
         # record_datetime = datetime.strptime(cern_data['record_insertion_time'], '%Y-%m-%d%H:%M:%S.%f')
         kind = cern_data['kind']
         part_id = cern_data['serial_number']
-        kind_of_part = get_kind_of_part(search_id)
+        kind_of_part = await get_kind_of_part(search_id)
 
         # time_diff = abs(record_datetime - today)
         if kind == kind_of_part:
