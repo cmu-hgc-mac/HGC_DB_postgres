@@ -68,10 +68,10 @@ def find_missing_or_empty_tags(expected_tags, xml_data):
     missing_or_empty = {}
     placeholder_pattern = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 
-    for tag, (dbase_table, dbase_col) in expected_tags.items():
+    for tag, (dbase_table, dbase_col, nullable) in expected_tags.items():
         value = xml_data.get(tag, None)
         if value is None or value == "" or placeholder_pattern.match(str(value)):
-            missing_or_empty[tag] = (dbase_table, dbase_col)
+            missing_or_empty[tag] = (dbase_table, dbase_col, nullable)
     return missing_or_empty
 
 # Function to get expected tags from a list of YAML categories
@@ -79,7 +79,7 @@ def get_expected_tags(category):
     expected_tags = {}
     for item in yaml_data[category]:
         if "xml_tag" in item:
-            expected_tags[item["xml_tag"]] = (item.get("dbase_table"), item.get("dbase_col"))
+            expected_tags[item["xml_tag"]] = (item.get("dbase_table"), item.get("dbase_col"), item.get("nullable"))
     return expected_tags
 
 # Main execution
@@ -107,8 +107,8 @@ def find_missing_var_xml(time_limit=90):
                     print(f"  Referencing YAML categories: {yaml_category}")
                     print("------------------------------------------------------------")
 
-                    for tag, (dbase_table, dbase_col) in missing_tags.items():
-                        print(f" - {tag}:\n   → dbase_table: {dbase_table}\n   → dbase_col: {dbase_col}")
+                    for tag, (dbase_table, dbase_col, nullable) in missing_tags.items():
+                        print(f" - {tag}:\n   → dbase_table: {dbase_table}\n   → dbase_col: {dbase_col}, nullable: {nullable}")
                     print("============================================================")
 
             else:
