@@ -76,7 +76,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             hxb_name = _hxb_name[0]['hxb_name']
                         else:
                             hxb_name = ''
-                        db_values[xml_var] = await get_kind_of_part(hxb_name)
+                        db_values[xml_var] = await get_kind_of_part(hxb_name, 'hexaboard', conn=conn)
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']

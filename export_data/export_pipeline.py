@@ -6,7 +6,7 @@
 5. if sucess, delete the generated xmls
 '''
 
-import os, sys, argparse, base64, subprocess, traceback
+import os, sys, argparse, base64, subprocess, traceback, asyncio
 import shutil, pwinput, datetime, yaml
 from cryptography.fernet import Fernet
 from src import process_xml_list
@@ -112,7 +112,7 @@ def valid_directory(path):
     else:
         raise argparse.ArgumentTypeError(f"Invalid directory: {path}")
     
-def main():
+async def main():
     # default_dir = os.path.abspath(os.path.join(os.getcwd(), "../../xmls_for_dbloader_upload"))
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     # Step 0: Get arguments
@@ -166,9 +166,9 @@ def main():
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = today, encryption_key = encryption_key, cerndb = cerndb)
         if ret:
-            check_upload(db_type)
+            await check_upload(db_type)
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
             clean_generated_xmls()
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
