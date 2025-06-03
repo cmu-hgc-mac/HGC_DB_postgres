@@ -40,6 +40,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
         print(f'--> {proto_name}...')
+        errors = []
         try:
             db_values = {}
             for entry in module_data:
@@ -57,17 +58,31 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     _bp_name = await conn.fetch(_query)
                     if _bp_name:
                         bp_name = _bp_name[0]['bp_name']
+                        correct_bp_combo = [LOCATION, bp_name]
+                        api_bp_combo = get_location_and_partid(part_id=bp_name, part_type='baseplate', cern_db_url='hgcapi-cmsr')
+
+                        if correct_bp_combo != api_bp_combo:
+                            errors.append(f"\033[91mBaseplate information mismatches with API. Submit a GitLab ticket.\nYou have {correct_bp_combo}, but the api has {api_bp_combo}.\033[0m")
+                        
                     else:
                         bp_name = ''
-                    db_values[xml_var] = await get_kind_of_part(bp_name, 'baseplate', conn)
+                    db_values[xml_var] = get_kind_of_part(bp_name)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
                     _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                     _sen_name = await conn.fetch(_query)
                     if _sen_name:
                         sen_name = _sen_name[0]['sen_name']
+                        correct_sen_combo = [LOCATION, sen_name]
+                        api_sen_combo = get_location_and_partid(part_id=sen_name, part_type='sensor', cern_db_url='hgcapi-cmsr')
+                        
+                        if correct_sen_combo != api_sen_combo:
+                            errors.append(f"\033[91mSensor information mismatches with API. Submit a GitLab ticket. \nYou have {correct_sen_combo}, but the api has {api_sen_combo}.\033[0m")
                     else:
                         sen_name = ''
+                    if errors:
+                        raise AssertionError("\n".join(errors))
                     db_values[xml_var] = await get_kind_of_part(sen_name, 'sensor', conn)
+
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -96,7 +111,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
-
+                    
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:
