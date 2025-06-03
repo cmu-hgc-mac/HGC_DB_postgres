@@ -21,7 +21,7 @@ def str2bool(boolstr):
     dictstr = {'True': True, 'False': False}
     return dictstr[boolstr]
 
-def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERATED_XMLS_DIR, encryption_key = None):
+def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERATED_XMLS_DIR, encryption_key = None, partsnamelist = None):
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     command = [
@@ -32,6 +32,8 @@ def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERAT
         '-datestart', date_start,
         '-dateend', date_end
     ]
+    if partsnamelist:
+        command += ['-pn'] + partsnamelist
 
     try:
         subprocess.run(command, check=True)
@@ -39,7 +41,7 @@ def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERAT
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
-def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
+def generate_xmls(dbpassword, date_start, date_end, encryption_key = None, partsnamelist = None):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
@@ -67,7 +69,7 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None):
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
     for script_path in scripts_to_run:
-        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end)
+        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist)
         completed_scripts += 1
         print('-'*10)
         print(f'Executed -- {script_path}.')
@@ -126,6 +128,7 @@ def main():
     parser.add_argument('-upld', '--upload_dev_stat', default='True', required=False, help="Upload to dev DBLoader without generate.")
     parser.add_argument('-uplp', '--upload_prod_stat', default='True', required=False, help="Upload to prod DBLoader without generate.")
     parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")
+    parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()
 
     dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
@@ -137,6 +140,7 @@ def main():
     encryption_key = args.encrypt_key
     upload_dev_stat = str2bool(args.upload_dev_stat)
     upload_prod_stat = str2bool(args.upload_prod_stat)
+    partsnamelist = args.partnameslist
 
     inst_code  = (yaml.safe_load(open(os.path.join('dbase_info', 'conn.yaml'), 'r'))).get('institution_abbr')
     if len(inst_code) == 0:
@@ -144,7 +148,7 @@ def main():
 
     ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
-        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end)
+        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist)
 
     ## Step 2: SCP files to central DB
 

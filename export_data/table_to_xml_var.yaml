@@ -583,22 +583,34 @@ proto_assembly:
     default_value: 'n/a'
 
 proto_build:
-  - xml_temp_val: KIND_OF_PART
-  - xml_temp_val: ID
-  - xml_temp_val: BARCODE # filled with proto_name
-  - xml_temp_val: LOCATION
-  - xml_temp_val: INSTITUTION
-  - xml_temp_val: MANUFACTURER
-  - xml_temp_val: KIND_OF_PART_BASEPLATE
-  - xml_temp_val: BASEPLATE
-    dbase_col: bp_name
-    dbase_table: proto_assembly
-    nested_query: null
-  - xml_temp_val: KIND_OF_PART_SENSOR
-  - xml_temp_val: SENSOR
-    dbase_col: sen_name
-    dbase_table: proto_assembly
-    nested_query: null
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: ID
+  xml_tag: SERIAL_NUMBER
+- xml_temp_val: BARCODE
+  xml_tag: BARCODE
+- xml_temp_val: LOCATION
+  xml_tag: LOCATION
+- xml_temp_val: INSTITUTION
+  xml_tag: INSTITUTION
+- xml_temp_val: MANUFACTURER
+  xml_tag: MANUFACTURER
+- xml_temp_val: KIND_OF_PART_BASEPLATE
+  xml_tag: KIND_OF_PART
+- xml_temp_val: BASEPLATE
+  dbase_col: bp_name
+  dbase_table: proto_assembly
+  xml_tag: SERIAL_NUMBER
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: KIND_OF_PART_SENSOR
+  xml_tag: KIND_OF_PART
+- xml_temp_val: SENSOR
+  dbase_col: sen_name
+  dbase_table: proto_assembly
+  xml_tag: SERIAL_NUMBER
+  nested_query: null
+  nullable: 'no'
 
 proto_cond:
   - xml_temp_val: RUN_BEGIN_TIMESTAMP_
