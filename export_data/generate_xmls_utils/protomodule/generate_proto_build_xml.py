@@ -129,6 +129,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
         except Exception as e:
             print('#'*15, f'ERROR for {proto_name}','#'*15 ); traceback.print_exc(); print('')
+            correct_bp_combo = [LOCATION, bp_name]
+            correct_sen_combo = [LOCATION, sen_name]
+
+            api_bp_combo = get_location_and_partid(part_id=bp_name, part_type='baseplate', cern_db_url='hgcapi-cmsr')
+            assert correct_bp_combo != api_bp_combo, "Baseplate information mismatches with API. Submit a GitLab ticket."
+            api_sen_combo = get_location_and_partid(part_id=sen_name, part_type='sensor', cern_db_url='hgcapi-cmsr')
+            assert correct_sen_combo != api_sen_combo, "Sensor information mismatches with API. Submit a GitLab ticket."
         
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
     # Configuration

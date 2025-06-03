@@ -532,7 +532,7 @@ button_download.grid(row=4, column=1, pady=5, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
-button_upload_xml.config(state='disabled')
+# button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Outgoing shipment     ", command=refresh_data, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
