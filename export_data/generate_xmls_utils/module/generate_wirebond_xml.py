@@ -151,10 +151,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             else:
                                 db_values[xml_var] = 'n'
                         elif xml_var == 'IS_TEST_BOND_MODULE':
-                            if results.get('avg_pull_strg_g') is not None:
-                                db_values[xml_var] = 'True'
-                            else:
-                                db_values[xml_var] = 'False'
+                            query = """
+                            SELECT EXISTS(
+                                SELECT 1 FROM bond_pull_test WHERE module_name = $1
+                            )
+                            """
+                            exists = await conn.fetchval(query, module)
+                            db_values[xml_var] = 'True' if exists is True else 'False'
+
                         elif xml_var == "WIREBOND_COMMENTS_CONCAT":
                             bk_comment = results.get("back_wirebond_comment", "")
                             fr_comment = results.get("front_wirebond_comment", "")
