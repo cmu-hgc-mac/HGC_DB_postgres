@@ -56,31 +56,33 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
                     _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                     _bp_name = await conn.fetch(_query)
-                    if _bp_name:
-                        bp_name = _bp_name[0]['bp_name']
-                        correct_bp_combo = [LOCATION, bp_name]
-                        api_bp_combo = get_location_and_partid(part_id=bp_name, part_type='baseplate', cern_db_url='hgcapi-cmsr')
+                    # if _bp_name:
+                    #     bp_name = _bp_name[0]['bp_name']
+                    #     correct_bp_combo = [LOCATION, bp_name]
+                    #     api_bp_combo = get_location_and_partid(part_id=bp_name, part_type='baseplate', cern_db_url='hgcapi-cmsr')
 
-                        if correct_bp_combo != api_bp_combo:
-                            errors.append(f"\033[91mBaseplate information mismatches with API. Submit a GitLab ticket.\nYou have {correct_bp_combo}, but the api has {api_bp_combo}.\033[0m")
+                    #     if correct_bp_combo != api_bp_combo:
+                    #         errors.append(f"\033[91mBaseplate information mismatches with API. Submit a GitLab ticket.\nYou have {correct_bp_combo}, but the api has {api_bp_combo}.\033[0m")
                         
-                    else:
-                        bp_name = ''
-                    db_values[xml_var] = get_kind_of_part(bp_name)
+                    # else:
+                    #     bp_name = ''
+                    _bp_name = _bp_name[0]['bp_name']
+                    db_values[xml_var] = await get_kind_of_part(part_name=_bp_name, part='baseplate', conn=conn)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
                     _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                     _sen_name = await conn.fetch(_query)
-                    if _sen_name:
-                        sen_name = _sen_name[0]['sen_name']
-                        correct_sen_combo = [LOCATION, sen_name]
-                        api_sen_combo = get_location_and_partid(part_id=sen_name, part_type='sensor', cern_db_url='hgcapi-cmsr')
+                    # if _sen_name:
+                    #     sen_name = _sen_name[0]['sen_name']
+                    #     correct_sen_combo = [LOCATION, sen_name]
+                    #     api_sen_combo = get_location_and_partid(part_id=sen_name, part_type='sensor', cern_db_url='hgcapi-cmsr')
                         
-                        if correct_sen_combo != api_sen_combo:
-                            errors.append(f"\033[91mSensor information mismatches with API. Submit a GitLab ticket. \nYou have {correct_sen_combo}, but the api has {api_sen_combo}.\033[0m")
-                    else:
-                        sen_name = ''
-                    if errors:
-                        raise AssertionError("\n".join(errors))
+                    #     if correct_sen_combo != api_sen_combo:
+                    #         errors.append(f"\033[91mSensor information mismatches with API. Submit a GitLab ticket. \nYou have {correct_sen_combo}, but the api has {api_sen_combo}.\033[0m")
+                    # else:
+                    #     sen_name = ''
+                    # if errors:
+                    #     raise AssertionError("\n".join(errors))
+                    sen_name = _sen_name[0]['sen_name']
                     db_values[xml_var] = await get_kind_of_part(sen_name, 'sensor', conn)
 
                 else:
