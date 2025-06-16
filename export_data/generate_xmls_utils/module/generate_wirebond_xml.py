@@ -128,7 +128,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             ORDER BY date_bond DESC, time_bond DESC LIMIT 1;
                             """
-                    # print(f'Executing query -- \n\t{query}')
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:
@@ -146,7 +145,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             time_end = results.get("time_bond", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
                         elif xml_var == 'BACK_ENCAP':
-                            if results.get('back_encap.date_encap') is not None:
+                            if results.get('back_encap.date_encap') is not None or not results.get('back_encap.date_encap'):
                                 db_values[xml_var] = 'y'
                             else:
                                 db_values[xml_var] = 'n'
@@ -158,6 +157,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             """
                             exists = await conn.fetchval(query, module)
                             db_values[xml_var] = 'True' if exists is True else 'False'
+                            if not exists:
+                                db_values[xml_var] = 'False'
 
                         elif xml_var == "WIREBOND_COMMENTS_CONCAT":
                             bk_comment = results.get("back_wirebond_comment", "")
@@ -167,18 +168,21 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             bk_comment = results.get("back_encap_comment", "")
                             fr_comment = results.get("front_encap_comment", "")
                             db_values[xml_var] = f"{bk_comment}-{fr_comment}"
+                        elif xml_var == 'BOND_PULL_USER':
+                            db_values[xml_var] = results.get('technician', '') if not None else ''
                         elif xml_var == 'BOND_PULL_AVG':
-                            db_values[xml_var] = str(round(float(results.get('avg_pull_strg_g', '')), 3))
+                            db_values[xml_var] = str(round(float(results.get('avg_pull_strg_g', '')), 3)) if not None else ''
                         elif xml_var == 'BOND_PULL_STDDEV':
-                            db_values[xml_var] = str(round(float(results.get('std_pull_strg_g', '')), 3))
+                            db_values[xml_var] = str(round(float(results.get('std_pull_strg_g', '')), 3)) if not None else ''
                         elif xml_var == 'BACK_UNBONDED':
                             bond_count_for_mbite = results.get("bond_count_for_mbite", "")
                             unbonded_count = bond_count_for_mbite.count(0)
                             db_values[xml_var] = unbonded_count
-
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-
+            if 'IS_TEST_BOND_MODULE' not in db_values:
+                db_values['IS_TEST_BOND_MODULE'] = 'False'
+                
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
