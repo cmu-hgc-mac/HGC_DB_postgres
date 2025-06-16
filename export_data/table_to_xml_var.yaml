@@ -1123,3 +1123,93 @@ pedestal_test:
   xml_tag: STDEV
   nested_query: null
   nullable: 'no'
+
+module_iv:
+- xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  dbase_col: date_test, time_test
+  dbase_table: module_pedestal_test
+  xml_tag: RUN_BEGIN_TIMESTAMP
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: RUN_END_TIMESTAMP_
+  dbase_col: date_test, time_test
+  dbase_table: module_pedestal_test
+  xml_tag: RUN_END_TIMESTAMP
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: INSPECTOR
+  dbase_col: inspector
+  dbase_table: module_pedestal_test
+  xml_tag: INSPECTOR
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: LOCATION
+  xml_tag: LOCATION
+- xml_temp_val: RUN_NUMBER
+  xml_tag: RUN_NUMBER
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: ID
+  xml_tag: SERIAL_NUMBER
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: STATUS
+  dbase_col: status
+  dbase_table: module_iv_test
+  xml_tag: STATUS
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: STATUS_desc
+  dbase_col: status_desc
+  dbase_table: module_iv_test
+  xml_tag: STATUS_desc
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: REF_VOLT_A
+  dbase_col: ratio_at_vs #ratio_at_vs[0]
+  dbase_table: module_iv_test
+  xml_tag: REF_VOLT_A
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: REF_VOLT_B
+  dbase_col: ratio_at_vs #ratio_at_vs[1]
+  dbase_table: module_iv_test
+  xml_tag: REF_VOLT_B
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: CURRENT_AMPS_AT_VOLT_A
+  dbase_col: ### fill this
+  dbase_table: module_iv_test
+  xml_tag: CURRENT_AMPS_AT_VOLT_A
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: CURRENT_RATIO_B_OVER_A
+  dbase_col: ratio_i_at_vs
+  dbase_table: module_iv_test
+  xml_tag: CURRENT_RATIO_B_OVER_A
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: DATA_POINT_COUNT
+  dbase_col: ### fill this
+  dbase_table: module_iv_test
+  xml_tag: DATA_POINT_COUNT
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: DATA_POINTS_JSON
+  dbase_col: ### fill this
+  dbase_table: module_iv_test
+  xml_tag: DATA_POINTS_JSON
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: GRADE
+  dbase_col: grade
+  dbase_table: module_iv_test
+  xml_tag: GRADE
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: COMMENTS
+  dbase_col: comment
+  dbase_table: module_iv_test
+  xml_tag: COMMENTS
+  nested_query: null
+  nullable: 'yes'
