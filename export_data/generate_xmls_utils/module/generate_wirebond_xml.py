@@ -65,8 +65,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = await get_kind_of_part(module)
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
                 elif entry['default_value']:
                     db_values[xml_var] = entry['default_value']
 
@@ -144,6 +142,17 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("date_bond", "")
                             time_end = results.get("time_bond", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
+                        elif xml_var == 'RUN_NUMBER':
+                            run_date = results.get("date_bond", "")
+                            time_begin = results.get("time_bond", "")
+                            combined_str = f"{run_date} {time_begin}"
+                
+                            try:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
+                            except ValueError:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+                            
+                            db_values[xml_var] = get_run_num(LOCATION, dt_obj)
                         elif xml_var == 'BACK_ENCAP':
                             if results.get('back_encap.date_encap') is not None or not results.get('back_encap.date_encap'):
                                 db_values[xml_var] = 'y'

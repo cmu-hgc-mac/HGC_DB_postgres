@@ -30,6 +30,11 @@ module_assembly:
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
   xml_tag: RUN_NUMBER
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: module_assembly
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
@@ -208,6 +213,11 @@ wirebond:
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
   xml_tag: RUN_NUMBER
+  dbase_col: date_bond, time_bond
+  dbase_table: back_wirebond
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
@@ -497,14 +507,14 @@ module_build:
 - xml_temp_val: VERSION
 module_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
-  dbase_col: ass_run_date, ass_time_begin
+  dbase_col: ass_run_date, ass_time_end
   dbase_table: module_assembly
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
-  dbase_col: ass_run_date, ass_time_end
-  dbase_table: module_assembly
+  dbase_col: date_inspect, time_inspect
+  dbase_table: module_inspect
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
@@ -518,6 +528,11 @@ module_cond:
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
   xml_tag: RUN_NUMBER
+  dbase_col: date_inspect, time_inspect
+  dbase_table: module_inspect
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
@@ -580,6 +595,10 @@ bp_cond:
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
   xml_tag: RUN_NUMBER
+  dbase_col: date_inspect, time_inspect
+  dbase_table: bp_inspect
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: KIND_OF_PART
@@ -647,6 +666,12 @@ hxb_cond:
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
+  xml_tag: RUN_NUMBER
+  dbase_col: date_inspect, time_inspect
+  dbase_table: hxb_inspect
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: KIND_OF_PART
@@ -698,7 +723,7 @@ hxb_cond:
   dbase_table: hxb_inspect
   xml_tag: COMMENTS
   nested_query: null
-  default_value: n/a
+  default_value: null
   nullable: 'no'
 proto_assembly:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
@@ -726,6 +751,11 @@ proto_assembly:
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
   xml_tag: RUN_NUMBER
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: proto_assembly
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
@@ -936,6 +966,10 @@ proto_cond:
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
   xml_tag: RUN_NUMBER
+  dbase_col: date_inspect, time_inspect
+  dbase_table: proto_inspect
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: KIND_OF_PART
@@ -1009,6 +1043,11 @@ sensor_cond:
   xml_tag: KIND_OF_PART
 - xml_temp_val: RUN_NUMBER
   xml_tag: RUN_NUMBER
+  dbase_col: date_inspect, time_inspect
+  dbase_table: sensor
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   dbase_col: operator
   dbase_table: proto_assembly

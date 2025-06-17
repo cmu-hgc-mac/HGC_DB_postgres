@@ -54,8 +54,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = format_part_name(hxb_name)
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = await get_kind_of_part(hxb_name, 'hexaboard', conn)
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
                 elif entry['default_value']:## something is wrong 
                     db_values[xml_var] = entry['default_value']
                 else:
@@ -113,6 +111,17 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == "RUN_BEGIN_DATE_":
                             run_date = results.get("date_inspect", "")
                             db_values[xml_var] = f"{run_date}"
+                        elif xml_var == 'RUN_NUMBER':
+                            run_date = results.get("date_inspect", "")
+                            time_begin = results.get("time_inspect", "")
+                            combined_str = f"{run_date} {time_begin}"
+                
+                            try:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
+                            except ValueError:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+                            
+                            db_values[xml_var] = get_run_num(LOCATION, dt_obj)
                         elif xml_var == "THICKNESS":
                             db_values['THICKNESS'] = str(round(float(results.get("thickness")), 3))
                         elif xml_var == "FLATNESS":

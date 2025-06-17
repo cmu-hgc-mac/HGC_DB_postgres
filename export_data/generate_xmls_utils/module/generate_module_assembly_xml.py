@@ -74,8 +74,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = await get_kind_of_part(format_part_name(module))
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
                 elif entry['default_value']:
                     db_values[xml_var] = entry['default_value']
                 else:
@@ -118,12 +116,22 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("ass_run_date", "")
                             time_begin = results.get("ass_time_begin", "")
                             db_values[xml_var] = format_datetime(run_date, time_begin)
-
                         elif xml_var == "RUN_END_TIMESTAMP_":
                             # Fetching both ass_run_date and ass_time_end
                             run_date = results.get("ass_run_date", "")
                             time_end = results.get("ass_time_end", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
+                        elif xml_var == 'RUN_NUMBER':
+                            run_date = results.get("ass_run_date", "")
+                            time_begin = results.get("ass_time_begin", "")
+                            combined_str = f"{run_date} {time_begin}"
+                
+                            try:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
+                            except ValueError:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+                            
+                            db_values[xml_var] = get_run_num(LOCATION, dt_obj)
                         elif xml_var == 'PCB':
                             db_values[xml_var] = format_part_name(results.get('hxb_name'))
                         elif xml_var == 'PROTOMODULE':

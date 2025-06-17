@@ -56,8 +56,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = await get_kind_of_part(module)
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -126,12 +124,23 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         if xml_var == "RUN_BEGIN_TIMESTAMP_":
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("ass_run_date", "")
-                            time_begin = results.get("ass_time_begin", "")
+                            time_begin = results.get("ass_time_end", "")
                             db_values[xml_var] = format_datetime(run_date, time_begin)
                         elif xml_var == "RUN_END_TIMESTAMP_":
-                            run_date = results.get("ass_run_date", "")
-                            time_end = results.get("ass_time_end", "")
+                            run_date = results.get("date_inspect", "")
+                            time_end = results.get("time_inspect", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
+                        elif xml_var == 'RUN_NUMBER':
+                            run_date = results.get("date_inspect", "")
+                            time_begin = results.get("time_inspect", "")
+                            combined_str = f"{run_date} {time_begin}"
+                
+                            try:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
+                            except ValueError:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+                            
+                            db_values[xml_var] = get_run_num(LOCATION, dt_obj)
                         elif xml_var == "CURE_BEGIN_TIMESTAMP_":
                             run_date = results.get("ass_run_date", "")
                             time_begin = results.get("ass_time_end", "")

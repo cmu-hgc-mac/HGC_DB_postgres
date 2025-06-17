@@ -54,8 +54,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = INSTITUTION
                 elif xml_var in ['ID', 'BARCODE']:
                     db_values[xml_var] = format_part_name(module)
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
                 elif xml_var == 'VERSION':
                     db_values[xml_var] = get_roc_version(module)
                 elif xml_var in ['KIND_OF_PART', 'KIND_OF_PART_PROTOMODULE', 'KIND_OF_PART_PCB']:

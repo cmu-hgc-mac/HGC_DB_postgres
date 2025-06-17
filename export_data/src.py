@@ -209,12 +209,11 @@ def format_part_name(part_name):
     part_name = ('320' + part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
     return part_name
 
-def get_run_num(location):
+def get_run_num(location, timestamp):
     ##  format: SSSSYYMMDDTTTTTT
     shipping_code = shipping_loc_yaml[location]
-    timestamp = datetime.datetime.now()
     formatted_timestamp = timestamp.strftime('%y%m%d%S%f')[:12]
-    run_num = str(shipping_code) + formatted_timestamp
+    run_num = f"{shipping_code}{formatted_timestamp}"
     return run_num
 
 async def get_kind_of_part(part_name, part=None, conn=None):
