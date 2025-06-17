@@ -711,3 +711,29 @@ sensor_cond:
     dbase_table: sensor
     nested_query: null
     default_value: null
+env_data:
+  - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
+  - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+    xml_tag: RUN_BEGIN_TIMESTAMP
+  - xml_temp_val: RUN_END_TIMESTAMP_
+    xml_tag: RUN_END_TIMESTAMP
+  - xml_temp_val: INITIATED_BY_USER
+    xml_tag: INITIATED_BY_USER
+    nested_query: 
+  - xml_temp_val: LOCATION
+    xml_tag: LOCATION
+  - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
+  - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
+  - xml_temp_val: MeasurementTime
+    xml_tag: MeasurementTime
+  - xml_temp_val: TEMP_C
+    xml_tag: TEMP_C
+  - xml_temp_val: HUMIDITY_REL
+    xml_tag: HUMIDITY_REL
+  - xml_temp_val: TEMPSENSOR_ID
+    xml_tag: TEMPSENSOR_ID
+  - xml_temp_val: COMMENTS_UPLOAD
+    xml_tag: COMMENTS
