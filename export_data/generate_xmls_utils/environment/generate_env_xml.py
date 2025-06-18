@@ -10,11 +10,6 @@ from export_data.src import *
 
 yaml_file = 'export_data/table_to_xml_var.yaml'
 
-DBHostname = 'cmsmac04.phys.cmu.edu'
-DBDatabase = 'hgcdb'
-DBUsername = 'viewer'
-DBPassword = 'hgcal'
-
 # Define the database tables and their columns to be exported
 db_dict = {
     "module_assembly": ["ass_run_date", "ass_time_begin", "temp_c", "rel_hum"],
