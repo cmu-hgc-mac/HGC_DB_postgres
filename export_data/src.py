@@ -232,7 +232,7 @@ async def get_kind_of_part(part_name, part=None, conn=None):
         if 'kind' in results:
             if results['kind'] is None:
                 raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} to obtain kind_of_part." )
-            return results['kind']
+            return f"{results['kind']} {part_name}"
         else:
             raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} if it exists.")
             return None
@@ -262,7 +262,7 @@ async def get_kind_of_part(part_name, part=None, conn=None):
                 elif bp_material in ['Ti', 'CF']:
                     module_type = 'HAD'
 
-                kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
+                kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry} {part_name}'
                 return kind_of_part
         except Exception as e:
                 raise
