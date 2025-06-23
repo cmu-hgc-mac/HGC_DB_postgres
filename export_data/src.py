@@ -262,7 +262,7 @@ async def get_kind_of_part(part_name, part=None, conn=None):
                 elif bp_material in ['Ti', 'CF']:
                     module_type = 'HAD'
 
-                kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry} {part_name}'
+                kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
                 return kind_of_part
         except Exception as e:
                 raise

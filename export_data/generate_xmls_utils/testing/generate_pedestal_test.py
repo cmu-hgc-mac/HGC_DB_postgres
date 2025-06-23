@@ -125,6 +125,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
             check_duplicate_combo(_chip, channel)
 
             test_data[run_begin_timestamp] = {
+                'test_timestamp': f"{row['date_test']} {row['time_test']}",
                 'module_name': row['module_name'],
                 'module_no': row['module_no'],
                 'inspector': row['inspector'],
@@ -138,15 +139,17 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     return test_data
 
 
-def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path):
+async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path):
     tree = ET.parse(template_path)
     root = tree.getroot()
+    test_timestamp = test_data['test_timestamp']
+    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
 
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
-        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION)
-        run_info.find("INITIATED_BY_USER").text = test_data.get("inspector", "unknown")
+        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+        # run_info.find("INITIATED_BY_USER").text = test_data.get("inspector", "unknown")
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
       
@@ -189,8 +192,8 @@ def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, 
             serial_elem.text = roc
         kindofpart = data_set.find("PART/KIND_OF_PART")
         if kindofpart is not None:
-            density = get_kind_of_part(test_data['module_name']).split(' ')[-2]
-            kindofpart.text = f"{density} HGCROC"
+            tempo_kop = await get_kind_of_part(test_data['module_name'])
+            kindofpart.text = tempo_kop
 
         # Remove placeholder DATA blocks (direct children of DATA_SET)
         for data_elem in data_set.findall("DATA"):
@@ -245,7 +248,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     try:
         test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for run_begin_timestamp in tqdm(list(test_data.keys())):
-            output_file = generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir)
+            output_file = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir)
     finally:
         await conn.close()
 
