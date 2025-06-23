@@ -1,4 +1,5 @@
-import os, yaml, base64, sys, threading, atexit, signal
+import os, yaml, base64, sys, threading, atexit, signal, csv
+from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
 import subprocess, webbrowser, zipfile, urllib.request, traceback
@@ -6,11 +7,14 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
+from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync
 
 def run_git_pull_seq():
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
     if result.returncode == 0:
         print("Git pull successful ..."); print(result.stdout)
+        if "Already up to date." not in result.stdout:
+            print("Re-run postgres_control_panel.py with new updates."); exit()
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
@@ -32,7 +36,9 @@ dbase_name = config_data.get('dbname')
 db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
 php_port = config_data.get('php_port', '8083')
-php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}"
+max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
+max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
+php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
 def get_pid_result():
     try:
@@ -163,21 +169,22 @@ def verify_shipin():
     
     Label(input_window, text="Please physically verify the reception of each component at your MAC.", fg="red",wraplength=270).pack(pady=5)
 
-    def enter_part_barcodes():
+    def enter_part_barcodes_in():
         entries = []
         abspath = os.path.dirname(os.path.abspath(__file__))
-        temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries.txt"))
+        temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
             popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
             def verify_components():
                 popup1.destroy() 
-                subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+                subprocess.run([sys.executable, "housekeeping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
 
             def save_entries():
-                with open("shipping/temporary_part_entries.txt", "w") as file:
-                    for entry in entries:
-                        text = entry.get().strip()
+                os.makedirs('shipping', exist_ok=True)
+                with open("shipping/temporary_part_entries_in.txt", "w") as file:
+                    list_to_write = [entry.get().strip() for entry in entries]
+                    for text in natsorted(list_to_write):
                         if text: file.write(text + "\n")
                 verify_components()
 
@@ -194,7 +201,7 @@ def verify_shipin():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
-    def upload_file_with_part():
+    def upload_file_with_part_in():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
             popup2 = Toplevel()
@@ -214,7 +221,7 @@ def verify_shipin():
 
             def verify_components():
                 if file_entry.get().strip():
-                    subprocess.run([sys.executable, "shipping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
+                    subprocess.run([sys.executable, "housekeeping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(file_entry.get()), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
                     popup2.destroy()  
 
             submit_fileparts_button = Button(popup2, text="Submit to DB", command=verify_components)
@@ -224,12 +231,12 @@ def verify_shipin():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
-    enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes)
+    enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes_in)
     enter_verify_button.pack(pady=10, padx=0)
     bind_button_keys(enter_verify_button)
     # enter_verify_button.config(state='disabled')
     Label(input_window, text="Or").pack(pady=5)
-    upload_verfile_button = Button(input_window, text="Upload text/csv file with part barcodes", command=upload_file_with_part)
+    upload_verfile_button = Button(input_window, text="Upload text/csv file with part barcodes", command=upload_file_with_part_in)
     upload_verfile_button.pack(pady=10)
     bind_button_keys(upload_verfile_button)
     
@@ -255,11 +262,23 @@ def import_data():
     # lxpassword_entry.pack(pady=5)
 
     download_dev_var = BooleanVar(value=False)
-    download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
-    download_dev_var_entry.pack(pady=5)
+    # download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
+    # download_dev_var_entry.pack(pady=5)
     download_prod_var = BooleanVar(value=True)
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
     download_prod_var_entry.pack(pady=2)
+
+    baseplate_get_var = BooleanVar(value=True)
+    baseplate_get_var_entry = Checkbutton(input_window, text="Get: baseplates", variable=baseplate_get_var)
+    baseplate_get_var_entry.pack(pady=2)
+
+    hexaboard_get_var = BooleanVar(value=True)
+    hexaboard_get_var_entry = Checkbutton(input_window, text="Get: hexaboards", variable=hexaboard_get_var)
+    hexaboard_get_var_entry.pack(pady=2)
+
+    sensor_get_var = BooleanVar(value=True)
+    sensor_get_var_entry = Checkbutton(input_window, text="Get: sensors", variable=sensor_get_var)
+    sensor_get_var_entry.pack(pady=2)
 
     def submit_import():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
@@ -267,6 +286,9 @@ def import_data():
         # lxpassword_pass = lxpassword_var.get()
         download_dev_stat = download_dev_var.get()
         download_prod_stat = download_prod_var.get()
+        basplate_get_stat = baseplate_get_var.get()
+        hexaboard_get_stat = hexaboard_get_var.get()
+        sensor_get_stat = sensor_get_var.get()
 
         if not download_prod_stat and not download_dev_stat:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nSelect a source database."):
@@ -274,7 +296,7 @@ def import_data():
         else:
             if dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
                 input_window.destroy()  
-                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat)])
+                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getsen", str(sensor_get_stat)])
                 # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
                 # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
                 show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
@@ -294,18 +316,25 @@ def export_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    Label(input_window, text="**Enter local DB USER password:**").pack(pady=5)
+    Label(input_window, text="**Enter local DB USER password:**").pack(pady=1)
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    shipper_var_entry.pack(pady=5)
-    Label(input_window, text="**Enter LXPLUS username:**").pack(pady=5)
+    shipper_var_entry.pack(pady=0)
+    Label(input_window, text="**Enter LXPLUS username:**").pack(pady=1)
     lxuser_var = StringVar()
     lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    lxuser_var_entry.pack(pady=5)
-    Label(input_window, text="**Enter LXPLUS password:**").pack(pady=5)
+    lxuser_var_entry.pack(pady=0)
+    Label(input_window, text="**Enter LXPLUS password:**").pack(pady=1)
     lxpassword_var = StringVar()
     lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    lxpassword_entry.pack(pady=5)
+    lxpassword_entry.pack(pady=(0,25))
+
+    Label(input_window, text="Comma-separated parts names (optional)").pack(pady=1)
+    partsname_var_entry = Text(input_window, width=40, height=4, wrap="word", bd=1.5, highlightbackground="black", highlightthickness=1)
+    partsname_var_entry.pack(pady=0)
+    partsname_var_entry.bind("<Tab>", focus_next_widget)
+
+    Label(input_window, text="OR").pack(pady=2)
 
     Label(input_window, text="Comma-separated parts names (optional)").pack(pady=1)
     partsname_var_entry = Text(input_window, width=40, height=4, wrap="word", bd=1.5, highlightbackground="black", highlightthickness=1)
@@ -315,27 +344,27 @@ def export_data():
     Label(input_window, text="OR").pack(pady=2)
 
     today_date = datetime.now()
-    Label(input_window, text="Start date").pack(pady=5)
+    Label(input_window, text="Start date").pack(pady=0)
     startdate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
     startdate_var_entry = Entry(input_window, textvariable=startdate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    startdate_var_entry.pack(pady=5)
-    Label(input_window, text="End date").pack(pady=5)
+    startdate_var_entry.pack(pady=0)
+    Label(input_window, text="End date").pack(pady=0)
     enddate_var = StringVar(master=input_window, value=today_date.strftime("%Y-%m-%d"))
     enddate_var_entry = Entry(input_window, textvariable=enddate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    enddate_var_entry.pack(pady=5)
+    enddate_var_entry.pack(pady=(0,25))
 
     generate_var = BooleanVar(value=True)
     generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
-    generate_var_entry.pack(pady=5)
-    upload_dev_var = BooleanVar(value=True)
+    generate_var_entry.pack(pady=0)
+    upload_dev_var = BooleanVar(value=False)
     upload_dev_var_entry = Checkbutton(input_window, text="Upload to INT2R (DEV-DB)", variable=upload_dev_var)
-    upload_dev_var_entry.pack(pady=5)
-    upload_prod_var = BooleanVar(value=False)
+    upload_dev_var_entry.pack(pady=0)
+    upload_prod_var = BooleanVar(value=True)
     upload_prod_var_entry = Checkbutton(input_window, text="Upload to CMSR (PROD-DB)", variable=upload_prod_var)
-    upload_prod_var_entry.pack(pady=2)
-    deleteXML_var = BooleanVar(value=False)
+    upload_prod_var_entry.pack(pady=0)
+    deleteXML_var = BooleanVar(value=True)
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
-    deleteXML_var_entry.pack(pady=5)
+    deleteXML_var_entry.pack(pady=0)
     
     def select_specific():
         popup = Toplevel()
@@ -426,6 +455,168 @@ def export_data():
     submit_export_button = Button(input_window, text="Submit", command=submit_export)
     submit_export_button.pack(pady=10)
     bind_button_keys(submit_export_button)
+    # Label(input_window, text="Only (proto)module build, cond to CMSR.", fg = 'red').pack(pady=1)
+
+def record_shipout():
+    input_window = Toplevel(root)
+    input_window.title("Record outgoing shipment")
+    Label(input_window, text="Enter local db USER password:").pack(pady=5)
+    shipper_var = StringVar()
+    shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    shipper_var_entry.pack(pady=5)
+    Label(input_window, wraplength = 200, text="Modify tables prior to creating shipments for the first time.", fg="red").pack(pady=5)
+
+    def enter_part_barcodes_out():
+        lines_from_file = []
+        def upload_file_with_part_out():
+            dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+            if dbshipper_pass.strip():
+                popup2 = Toplevel()
+                popup2.title("Upload text/csv file with component names")
+                file_entry = None
+                
+                def browse_file():
+                    file_path = filedialog.askopenfilename(title="Select a File")
+                    if file_path:
+                        file_entry.delete(0, 'end')  # Clear the current entry
+                        file_entry.insert(0, file_path)
+
+                browse_button = Button(popup2, text="Browse", command=browse_file)
+                browse_button.pack(pady=10)
+                file_entry = Entry(popup2, width=50, bd=2)
+                file_entry.pack(pady=10)
+
+                def enter_partnames_in_window():
+                    if file_entry.get().strip():
+                        file_path = file_entry.get().strip()
+                        if file_path.endswith(".csv"):
+                            with open(file_path, newline="", encoding="utf-8") as file:
+                                reader = csv.reader(file)
+                                lines_from_file = [row[0] for row in reader if row]  
+                        else:
+                            with open(file_path, "r", encoding="utf-8") as file:
+                                lines_from_file = [line.strip() for line in file.readlines()]  
+                    
+                    if len(lines_from_file) < len(entries):
+                        popup2.destroy()
+                        for i in range(len(lines_from_file)):
+                            input_window.destroy()  
+                            entries[i].insert(0, lines_from_file[i])
+                    else:
+                        messagebox.showerror("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
+
+
+                submit_fileparts_button = Button(popup2, text="Load module barcodes", command=enter_partnames_in_window)
+                submit_fileparts_button.pack(pady=10)
+                bind_button_keys(submit_fileparts_button)
+            else:
+                if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                    input_window.destroy()  
+
+        entries = []
+        abspath = os.path.dirname(os.path.abspath(__file__))
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+        if dbshipper_pass.strip():
+            popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
+            
+            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
+            datetime_now_label.grid(row=0, column=2, columnspan=1, pady=10)
+
+            datetime_now_var = StringVar(master=popup1, value=datetime_now)
+            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+            datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
+
+            label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to record shipments.")
+            label.grid(row=1, column=1, columnspan=4, pady=10)
+            upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
+            upload_from_file_button.grid(row=0, column=1, columnspan=1, pady=10)
+
+            num_entries, cols = int(max_mod_per_box), 2
+            for i in range(num_entries):
+                row, col = 3 + i // cols, i % cols
+                listlabel = Label(popup1, text=f"{i + 1}:")
+                listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
+                entry = Entry(popup1, width=30)
+                entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
+                entries.append(entry)
+
+            export_var = IntVar()
+            export_var.set(1)
+            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...csv)', variable=export_var)
+            export_checkbox.grid(row=3+(num_entries//2), column=1, columnspan=1, pady=10)
+
+            def update_db_packed():
+                module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
+                popup1.destroy()
+                if len(module_update_pack) > 0 :
+                    if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
+                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
+                    update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj, savetofile=bool(export_var.get()))
+
+            submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
+            submit_button.grid(row=3+(num_entries//2), column=2, columnspan=2, pady=10)
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                input_window.destroy()  
+
+    def enter_shipment_contents_out():
+        entries = []
+        abspath = os.path.dirname(os.path.abspath(__file__))
+        # temptextfileout = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
+        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
+        if dbshipper_pass.strip():
+            popup1 = Toplevel(); popup1.title("Enter containers in this shipment")
+
+            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
+            datetime_now_label.grid(row=0, column=2, columnspan=1, pady=10)
+
+            datetime_now_var = StringVar(master=popup1, value=datetime_now)
+            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+            datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
+
+            label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
+            label1.grid(row=1, column=0, columnspan=4, pady=10)
+            instruction_label = Label(popup1, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
+            instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
+
+            num_entries, cols = int(max_box_per_shipment), 2
+            for i in range(num_entries):
+                row, col = 4 + i % int(num_entries//cols), i // int(num_entries//cols)
+                listlabel = Label(popup1, text=f"{i + 1}:")
+                listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
+                entry = Entry(popup1, width=30)
+                entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
+                entries.append(entry)
+
+            def update_db_shipped():
+                module_update_ship = [entry.get() for entry in entries if entry.get().strip() != ""]
+                popup1.destroy()
+                if len(module_update_ship) > 0:
+                    if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
+                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
+                    fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
+                    print("List of modules saved under ", fileout_name)
+                    webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
+                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+
+            submit_button = Button(popup1, text="Record to DB", command=update_db_shipped)
+            submit_button.grid(row=4+(num_entries//2), column=1, columnspan=4, pady=10)
+        else:
+            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+                input_window.destroy()  
+
+    single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out)
+    single_pack_button.pack(pady=10)
+    bind_button_keys(single_pack_button)
+
+    record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=enter_shipment_contents_out)
+    record_crate_button.pack(pady=10)
+    bind_button_keys(record_crate_button)
+
+
+
 
 def refresh_data():
     # run_git_pull_seq()
@@ -551,9 +742,8 @@ button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=expo
 button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
 # button_upload_xml.config(state='disabled')
 
-button_shipout = Button(frame, text="   Outgoing shipment     ", command=refresh_data, width=button_width, height=button_height)
+button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
-button_shipout.config(state="disabled")
 
 button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=button_height)  
 button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')

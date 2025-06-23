@@ -6,7 +6,8 @@
 		<NAME>HGC Sensor Flatness Data</NAME>
     </TYPE>
     <RUN>
-        <RUN_NAME>Flatness measurement</RUN_NAME>
+        <!-- <RUN_NAME>Flatness measurement</RUN_NAME> -->
+        <RUN_TYPE>MAC sensor visual inspection</RUN_TYPE>
         <RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
@@ -26,7 +27,7 @@
         </PART>
 
         <DATA>
-			<TESTED_BY>{{ record_insertion_user }}</TESTED_BY>
+			<TESTED_BY>{{ tester }}</TESTED_BY>
 			<TEST_DATE>{{ run_begin_date_ }}</TEST_DATE>
 			<STATUS>n/a</STATUS>
 			<VISUAL_INSPECTION>{{ visual_inspection }}</VISUAL_INSPECTION>

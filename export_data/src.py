@@ -25,6 +25,17 @@ with open(resource_yaml, 'r') as file:
     kind_of_part_yaml = yaml_content['kind_of_part']
     shipping_loc_yaml = yaml_content['shipping_location']
 
+loc = 'dbase_info'
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
+db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
+max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
+resource_yaml = 'export_data/resource.yaml'
+with open(resource_yaml, 'r') as file:
+    yaml_content = yaml.safe_load(file)
+    kind_of_part_yaml = yaml_content['kind_of_part']
+    shipping_loc_yaml = yaml_content['shipping_location']
+
 db_params = {
     'database': conn_info.get('dbname'),
     'user': 'editor',
@@ -62,10 +73,22 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
             return True
         return xml_list
     
+    def set_build_to_true(xml_list):
+        if isinstance(xml_list, dict):
+            for key in xml_list:
+                if not ("build" in key or "proto_cond"in key or "module_cond" in key or "bp_cond" in key or "hxb_cond" in key or "module_assembly" in key or "wirebond" in key):
+                    xml_list[key] = set_build_to_true(xml_list[key])
+        elif isinstance(xml_list, list):
+            xml_list = [set_build_to_true(item) for item in xml_list]
+        elif isinstance(xml_list, bool):
+            return False  ## Change this to True in the nominal case; False when doing development
+        return xml_list
+    
     if xml_list is None:
         with open(list_of_xmls_yaml, "r") as file:
             xml_list = yaml.safe_load(file)
         xml_list = set_all_to_true(xml_list)
+        xml_list = set_build_to_true(xml_list)
 
     with open(list_of_xmls_yaml, "w") as file:
         yaml.dump(xml_list, file, default_flow_style=False)
@@ -191,95 +214,63 @@ def format_part_name(part_name):
     part_name = ('320' + part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
     return part_name
 
-def get_run_num(location):
+def get_run_num(location, timestamp):
     ##  format: SSSSYYMMDDTTTTTT
     shipping_code = shipping_loc_yaml[location]
-    timestamp = datetime.datetime.now()
     formatted_timestamp = timestamp.strftime('%y%m%d%S%f')[:12]
-    run_num = str(shipping_code) + formatted_timestamp
+    run_num = f"{shipping_code}{formatted_timestamp}"
     return run_num
 
-def get_kind_of_part(part_name):
+async def get_kind_of_part(part_name, part=None, conn=None):
+    if part_name[0:4] not in ['320M', '320P']:
+        part_name_db = {'baseplate': ['baseplate', 'bp_name'],
+                        'hexaboard': ['hexaboard', 'hxb_name'],
+                        'sensor':    ['sensor', 'sen_name']}
+        
+        if part_name[0:4] in ['320B', '320X']:
+            part_id = '320' + (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
+        else:
+            part_id = part_name
+        query = f"""SELECT kind FROM {part_name_db[part][0]} WHERE REPLACE({part_name_db[part][1]},'-','') = '{part_id}'; """
+        results = await fetch_from_db(query, conn)
+
+        if 'kind' in results:
+            if results['kind'] is None:
+                raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} to obtain kind_of_part." )
+            return f"{results['kind']}"
+        else:
+            raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} if it exists.")
+            return None
+
     ## part_name can be module_name, hxb_name, proto_name, sen_name, bp_name and so on. 
-    
-    part_type_dict = kind_of_part_yaml['part_type']
-    resolution_dict = kind_of_part_yaml['resolution']
-    geometry_dict = kind_of_part_yaml['geometry']
-    thickness_dict = kind_of_part_yaml['sensor_thickness']
-    material_dict = kind_of_part_yaml['material']
-    sen_dict = kind_of_part_yaml['sensor']
-    sen_geo_dict = kind_of_part_yaml['sensor_geometry']
+    else:
+        part_type_dict = kind_of_part_yaml['part_type']
+        resolution_dict = kind_of_part_yaml['resolution']
+        geometry_dict = kind_of_part_yaml['geometry']
+        thickness_dict = kind_of_part_yaml['sensor_thickness']
+        material_dict = kind_of_part_yaml['material']
+        sen_dict = kind_of_part_yaml['sensor']
+        sen_geo_dict = kind_of_part_yaml['sensor_geometry']
 
-    try:
-        # Extract the information
-        if part_name != '' or part_name != 'NoneType':
-            if part_name.replace('_', '').isdigit() == True:
-                ## this is for sensor. 
-                ## 2) convension v2
-                ## TXXXXX_N: [thickness / resolution]XXXXX_[geometry]
-                part_id = part_name
-                sen_thickness = sen_dict[part_id[0]][0]
-                resolution = sen_dict[part_id[0]][1]
-                sen_geometry = sen_geo_dict[part_id[-1]]
-                part_type = 'Sensor'
-                kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {sen_geometry}'  
-
-            else:
+        try:
+            # Extract the information
+            if part_name != '' or part_name != 'NoneType':
                 part_id = (part_name[0:3].replace('320', '') + part_name[3:]).replace('-', '')
                 part_type = part_type_dict[part_id[0]]
-                if part_type == 'Hexaboard':
-                    ## below is updated version (rev.4.0)
-                    ## eg. 320-XL-F03-PN-00063
-                    resolution = resolution_dict[part_id[1]]
-                    geometry = geometry_dict[part_id[2]]
-                    kind_of_part = f'Hexaboard {resolution} {geometry}'  
+                resolution = resolution_dict[part_id[1]]
+                geometry = geometry_dict[part_id[2]]
+                sen_thickness = thickness_dict[part_id[3]]
+                bp_material = material_dict[part_id[4]]
+                module_type = ''
+                if bp_material == 'CuW':
+                    module_type = 'EM'
+                elif bp_material in ['Ti', 'CF']:
+                    module_type = 'HAD'
 
-                elif part_type == 'Baseplate':
-                    ## 320-BA-TTT-VB-NNNN
-                    ### TTT: [geometry][resolution][bp_material]
-                    ## below is updated version (rev.4.0)
-                    geometry = geometry_dict[part_id[2]]
-                    resolution = resolution_dict[part_id[3]]
-                    bp_material = material_dict[part_id[4]]
-                    module_type = ''
-                    if bp_material == 'CuW':
-                        module_type = 'EM'
-                    elif bp_material in ['Ti', 'CF']:
-                        module_type = 'HAD'
-                    kind_of_part = f'{bp_material}/Kapton {part_type} {resolution} {geometry}'  
-
-                elif part_type == 'Sensor':
-                    '''
-                    As soon as sensor id is updated to 6-digit, please comment out the following and uncomment the above. 
-                    '''
-                    ## 1) convension v1
-                    ## 320-ST-TTT-NNNNNN
-                    ### T-TTT: [resolution]-[sen_thickness][geometry][sensor structure]
-                    resolution = resolution_dict[part_id[1]]
-                    sen_thickness = thickness_dict[part_id[2]]
-                    geometry = geometry_dict[part_id[3]]
-                    # sen_structure = sen_structure_dict[part_id[4:6]]
-                    kind_of_part = f'{sen_thickness}um Si {part_type} {resolution} {geometry}'  
-
-
-                else:
-                    resolution = resolution_dict[part_id[1]]
-                    geometry = geometry_dict[part_id[2]]
-                    sen_thickness = thickness_dict[part_id[3]]
-                    bp_material = material_dict[part_id[4]]
-                    module_type = ''
-                    if bp_material == 'CuW':
-                        module_type = 'EM'
-                    elif bp_material in ['Ti', 'CF']:
-                        module_type = 'HAD'
-
-                    kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
-
-        else:
-            kind_of_part = ''
-        return kind_of_part
-    except Exception as e:
-        raise
+                kind_of_part = f'{module_type} {sen_thickness}um Si {part_type} {resolution} {geometry}'
+                return kind_of_part
+        except Exception as e:
+                raise
 
 def format_datetime(input_date, input_time):
     local_timezone = pytz.timezone(str(tzlocal.get_localzone()))
@@ -354,6 +345,18 @@ def print_missing_entries(missing_entries):
         print(f"{entry['xml_temp_val']:<20} | {entry['dbase_col']:<20} | {entry['dbase_table']}")
     
     print("=" * 50 + "\n")
+
+def get_roc_version(module_name):
+    identifier = module_name[-7]
+    if identifier == 'X':
+        return 'PRE_SERIES'
+    elif identifier in ['2', '4']:
+        return 'v3B'
+    elif identifier == 'C':
+        return 'v3C'
+    else:
+        return 'not specified'
+    
 
 ################################################################################
 ### Below is for checking part exisistence and combination with location ###

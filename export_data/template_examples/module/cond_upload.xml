@@ -26,8 +26,8 @@
 		</PART>
 		<DATA>
 			<CURING_TIME_HRS>{{ curing_time_hrs }}</CURING_TIME_HRS>
-			<TIME_START>{{ run_begin_timestamp_ }}</TIME_START>
-			<TIME_STOP>{{ run_end_timestamp_ }}</TIME_STOP>
+			<TIME_START>{{ cure_begin_timestamp_ }}</TIME_START>
+			<TIME_STOP>{{ cure_end_timestamp_ }}</TIME_STOP>
 			<TEMP_DEGC>{{ temp_degc }}</TEMP_DEGC>
 			<HUMIDITY_PRCNT>{{ humidity_prcnt }}</HUMIDITY_PRCNT>
 		</DATA>

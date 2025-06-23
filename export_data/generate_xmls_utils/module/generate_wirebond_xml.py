@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, partsnamelist=None):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -24,22 +24,28 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     module_tables = ['module_assembly', 'mod_hxb_other_test', 'module_info', 'module_inspect', 'module_iv_test', 'module_pedestal_test', 'module_pedestal_plots', 'module_qc_summary']
     
     module_list = set()
+
     # Get the unique module names for the specified date
     for dbase_table in db_tables:
-        if dbase_table.endswith(('_wirebond', '_test')):
-            module_query = f"""
-            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
-            FROM {dbase_table}
-            WHERE date_bond BETWEEN '{date_start}' AND '{date_end}' 
-            """
-        elif dbase_table.endswith('_encap'):
-            module_query = f"""
-            SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
-            FROM {dbase_table}
-            WHERE date_encap BETWEEN '{date_start}' AND '{date_end}' 
-            """
+        if partsnamelist:
+            query = f"""SELECT REPLACE(module_name,'-','') AS module_name FROM {dbase_table} WHERE module_name = ANY($1)"""
+            results = await conn.fetch(query, partsnamelist)
+        else:
+            if dbase_table.endswith(('_wirebond', '_test')):
+                module_query = f"""
+                SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
+                FROM {dbase_table}
+                WHERE date_bond BETWEEN '{date_start}' AND '{date_end}' 
+                """
+            elif dbase_table.endswith('_encap'):
+                module_query = f"""
+                SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
+                FROM {dbase_table}
+                WHERE date_encap BETWEEN '{date_start}' AND '{date_end}' 
+                """
 
-        results = await conn.fetch(module_query)
+            results = await conn.fetch(module_query)
+    
         module_list.update(row['module_name'] for row in results if 'module_name' in row)
 
     for module in module_list:
@@ -58,9 +64,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'ID':
                     db_values[xml_var] = format_part_name(module)
                 elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var] = get_kind_of_part(module)
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
+                    db_values[xml_var] = await get_kind_of_part(module)
+                elif entry['default_value']:
+                    db_values[xml_var] = entry['default_value']
+
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -106,7 +113,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             ORDER BY date_encap DESC, time_encap DESC
                             LIMIT 1;
                             """
-                        elif dbase_table == 'module_info':
+                        elif dbase_table in ['module_info', 'module_inspect']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE REPLACE(module_name,'-','') = '{module}'
@@ -119,7 +126,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             ORDER BY date_bond DESC, time_bond DESC LIMIT 1;
                             """
-                    # print(f'Executing query -- \n\t{query}')
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:
@@ -136,6 +142,33 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("date_bond", "")
                             time_end = results.get("time_bond", "")
                             db_values[xml_var] = format_datetime(run_date, time_end)
+                        elif xml_var == 'RUN_NUMBER':
+                            run_date = results.get("date_bond", "")
+                            time_begin = results.get("time_bond", "")
+                            combined_str = f"{run_date} {time_begin}"
+                
+                            try:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
+                            except ValueError:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+                            
+                            db_values[xml_var] = get_run_num(LOCATION, dt_obj)
+                        elif xml_var == 'BACK_ENCAP':
+                            if results.get('back_encap.date_encap') is not None or not results.get('back_encap.date_encap'):
+                                db_values[xml_var] = 'y'
+                            else:
+                                db_values[xml_var] = 'n'
+                        elif xml_var == 'IS_TEST_BOND_MODULE':
+                            query = """
+                            SELECT EXISTS(
+                                SELECT 1 FROM bond_pull_test WHERE module_name = $1
+                            )
+                            """
+                            exists = await conn.fetchval(query, module)
+                            db_values[xml_var] = 'True' if exists is True else 'False'
+                            if not exists:
+                                db_values[xml_var] = 'False'
+
                         elif xml_var == "WIREBOND_COMMENTS_CONCAT":
                             bk_comment = results.get("back_wirebond_comment", "")
                             fr_comment = results.get("front_wirebond_comment", "")
@@ -144,20 +177,24 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             bk_comment = results.get("back_encap_comment", "")
                             fr_comment = results.get("front_encap_comment", "")
                             db_values[xml_var] = f"{bk_comment}-{fr_comment}"
+                        elif xml_var == 'BOND_PULL_USER':
+                            db_values[xml_var] = results.get('technician', '') if not None else ''
+                        elif xml_var == 'BOND_PULL_AVG':
+                            db_values[xml_var] = str(round(float(results.get('avg_pull_strg_g', '')), 3)) if not None else ''
+                        elif xml_var == 'BOND_PULL_STDDEV':
+                            db_values[xml_var] = str(round(float(results.get('std_pull_strg_g', '')), 3)) if not None else ''
+                        elif xml_var == 'BACK_UNBONDED':
+                            bond_count_for_mbite = results.get("bond_count_for_mbite", "")
+                            unbonded_count = bond_count_for_mbite.count(0)
+                            db_values[xml_var] = unbonded_count
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-                    
-                        if 'BOND_PULL_AVG' in list(db_values.keys()):
-                            db_values['BOND_PULL_AVG'] = str(round(float(db_values['BOND_PULL_AVG']), 3))
-                        if 'BOND_PULL_STDDEV' in list(db_values.keys()):
-                            db_values['BOND_PULL_STDDEV'] = str(round(float(db_values['BOND_PULL_STDDEV']), 3))
-
+            if 'IS_TEST_BOND_MODULE' not in db_values:
+                db_values['IS_TEST_BOND_MODULE'] = 'False'
+                
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            missing_entries = get_missing_db_mappings(yaml_data=wb_data, filled_xml_file=output_file_path)
-            print_missing_entries(missing_entries)
-
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,
@@ -170,7 +207,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
 
         
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/module/wirebond_upload.xml'# XML template file path
@@ -180,7 +217,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key = No
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, partsnamelist)
     finally:
         await conn.close()
 
@@ -194,7 +231,7 @@ if __name__ == "__main__":
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-
+    parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
     dbpassword = args.dbpassword
@@ -202,5 +239,6 @@ if __name__ == "__main__":
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
+    partsnamelist = args.partnameslist
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist))

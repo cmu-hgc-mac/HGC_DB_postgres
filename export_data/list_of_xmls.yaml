@@ -8,8 +8,10 @@ module:
 - module_cond_xml: true
 - wirebond_xml: true
 protomodule:
-- proto_assembly_xml: true
+- proto_assembly_xml: false
 - proto_build_xml: true
 - proto_cond_xml: true
 sensor:
-- sensor_cond_xml: true
+- sensor_cond_xml: false
+testing:
+- pedestal_test: false

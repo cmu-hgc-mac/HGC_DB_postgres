@@ -34,11 +34,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
         """
         results = await conn.fetch(module_query)
+        
     proto_list.update(row['proto_name'] for row in results if 'proto_name' in row)
 
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
         print(f'--> {proto_name}...')
+        errors = []
         try:
             db_values = {}
             for entry in module_data:
@@ -50,22 +52,22 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var in ['ID', 'BARCODE']:
                     db_values[xml_var] = proto_name
                 elif xml_var == 'KIND_OF_PART':
-                    continue
-                #     db_values[xml_var] = get_kind_of_part(proto_name)
+                    db_values[xml_var] = await get_kind_of_part(proto_name)
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
                     _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                     _bp_name = await conn.fetch(_query)
-                    
                     if _bp_name:
                         bp_name = _bp_name[0]['bp_name']
                         correct_bp_combo = [LOCATION, bp_name]
                         api_bp_combo = get_location_and_partid(part_id=bp_name, part_type='baseplate', cern_db_url='hgcapi-cmsr')
-                        assert correct_bp_combo == api_bp_combo, "\033[91mBaseplate information mismatches with API. Submit a GitLab ticket.\033[0m"
 
+                        if correct_bp_combo != api_bp_combo:
+                            errors.append(f"\033[91mBaseplate information mismatches with API. Submit a GitLab ticket.\nYou have {correct_bp_combo}, but the api has {api_bp_combo}.\033[0m")
+                        
                     else:
                         bp_name = ''
-                    continue
-                    # db_values[xml_var] = get_kind_of_part(bp_name)
+                    _bp_name = _bp_name[0]['bp_name']
+                    db_values[xml_var] = await get_kind_of_part(part_name=_bp_name, part='baseplate', conn=conn)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
                     _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                     _sen_name = await conn.fetch(_query)
@@ -107,7 +109,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
-
+                    
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:
@@ -134,8 +136,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            missing_entries = get_missing_db_mappings(yaml_data=module_data, filled_xml_file=output_file_path)
-            print_missing_entries(missing_entries)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,
@@ -145,7 +145,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
         except Exception as e:
             print('#'*15, f'ERROR for {proto_name}','#'*15 ); traceback.print_exc(); print('')
-            
+        
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file

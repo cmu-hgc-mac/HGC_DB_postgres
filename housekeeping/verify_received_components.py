@@ -34,13 +34,14 @@ async def write_to_db(partType=None, part_id_list=None, date_verified=None, batc
     part_id_col = pk_dict[partType]
     conn = await asyncpg.connect(**db_params)
     for pi, part_id in enumerate(part_id_list):
-        query = get_query_write(table_name = partType, part_id_col = part_id_col)
-        await conn.execute(query, part_id)
-        query = get_query_update(table_name = partType, part_id_col = part_id_col)
-        if partType == "sensor":
-            await conn.execute(query, part_id, date_verified, batch_ID_list[pi])
-        else:
-            await conn.execute(query, part_id, date_verified)
+        if part_id.strip():
+            query = get_query_write(table_name = partType, part_id_col = part_id_col)
+            await conn.execute(query, part_id)
+            query = get_query_update(table_name = partType, part_id_col = part_id_col)
+            if partType == "sensor":
+                await conn.execute(query, part_id, date_verified, batch_ID_list[pi])
+            else:
+                await conn.execute(query, part_id, date_verified)
     await conn.close()
 
 def read_parts_from_file(filename):
@@ -50,10 +51,12 @@ def read_parts_from_file(filename):
         if file_extension == '.csv':
             reader = csv.reader(file)
             for line in reader:
-                part_names.append(line[0].strip())
+                if line[0].strip():
+                    part_names.append(line[0].strip())
         elif file_extension == '.txt':
             for line in file:
-                part_names.append(line.strip())
+                if line.strip():
+                    part_names.append(line.strip())
     return part_names
 
 async def main():

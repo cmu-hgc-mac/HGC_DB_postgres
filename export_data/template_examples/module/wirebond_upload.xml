@@ -12,7 +12,7 @@
 		<LOCATION>{{ location }}</LOCATION>
 		<RUN_BEGIN_TIMESTAMP>{{ back_bonds_date }}</RUN_BEGIN_TIMESTAMP>
 		<RUN_END_TIMESTAMP>{{ front_bonds_date }}</RUN_END_TIMESTAMP>
-		<INITIATED_BY_USER>{{ bond_pull_user }}</INITIATED_BY_USER>
+		<INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
 		<COMMENT_DESCRIPTION>Wirebonding data</COMMENT_DESCRIPTION>
 	</RUN>
 </HEADER>

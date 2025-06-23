@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, partsnamelist=None):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -25,17 +25,23 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
     # get applicable modules based on the specified time range
     module_list = set()
-    module_query = f"""
-    SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
-    FROM module_assembly
-    WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
-    """
-    results = await conn.fetch(module_query)
+    if partsnamelist:
+        query = f"""SELECT REPLACE(module_name,'-','') AS module_name FROM module_assembly WHERE module_name = ANY($1)"""
+        results = await conn.fetch(query, partsnamelist)
+    else:
+        module_query = f"""
+        SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
+        FROM module_assembly
+        WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
+        """
+        results = await conn.fetch(module_query)
+    
     module_list.update(row['module_name'] for row in results if 'module_name' in row)
     
     for module in module_list:
         # Fetch database values for the XML template variables
         print(f'--> {module}...')
+        errors = []
         try:
             db_values = {}
 
@@ -48,11 +54,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = INSTITUTION
                 elif xml_var in ['ID', 'BARCODE']:
                     db_values[xml_var] = format_part_name(module)
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
+                elif xml_var == 'VERSION':
+                    db_values[xml_var] = get_roc_version(module)
                 elif xml_var in ['KIND_OF_PART', 'KIND_OF_PART_PROTOMODULE', 'KIND_OF_PART_PCB']:
                     if xml_var == 'KIND_OF_PART':
-                        db_values[xml_var] = get_kind_of_part(module)
+                        db_values[xml_var] = await get_kind_of_part(module)
                     elif xml_var == 'KIND_OF_PART_PROTOMODULE':
                         _query = f"SELECT REPLACE(proto_name,'-','') AS proto_name FROM module_assembly WHERE REPLACE(module_name,'-','') = '{module}';"
                         _proto_name = await conn.fetch(_query)
@@ -60,16 +66,23 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             proto_name = _proto_name[0]['proto_name']
                         else:
                             proto_name = ''
-                        db_values[xml_var] = get_kind_of_part(proto_name)
+                        db_values[xml_var] = await get_kind_of_part(proto_name)
                     else:
                         _query = f"SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM module_assembly WHERE REPLACE(module_name,'-','') = '{module}';"
                         _hxb_name = await conn.fetch(_query)
 
                         if _hxb_name:
                             hxb_name = _hxb_name[0]['hxb_name']
+                            correct_hxb_combo = [LOCATION, hxb_name]
+                            api_hxb_combo = get_location_and_partid(part_id=hxb_name, part_type='hexaboard', cern_db_url='hgcapi-cmsr')
+
+                            if correct_hxb_combo != api_hxb_combo:
+                                errors.append(f"\033[91mHexaboard information mismatches with API. Submit a GitLab ticket.\nYou have {correct_hxb_combo}, but the api has {api_hxb_combo}.\033[0m")
+                                if errors:
+                                    raise AssertionError("\n".join(errors))
                         else:
                             hxb_name = ''
-                        db_values[xml_var] = get_kind_of_part(hxb_name)
+                        db_values[xml_var] = await get_kind_of_part(hxb_name, 'hexaboard', conn=conn)
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -116,7 +129,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             """
                         elif dbase_table in ['hexaboard']:
                             query = f"""
-
+                            SELECT {dbase_table}.{dbase_col}
+                            FROM {dbase_table}
+                            JOIN module_assembly ON {dbase_table}.hxb_name = module_assembly.hxb_name
+                            WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}'
+                            AND module_assembly.xml_upload_success IS NULL;
                             """
                         else:
                             query = f"""
@@ -132,20 +149,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         print('ERROR:', e)
 
                     if results:
-                        if xml_var == "RUN_BEGIN_TIMESTAMP_":
-                            # Fetching both ass_run_date and ass_time_begin
-                            run_date = results.get("ass_run_date", "")
-                            time_begin = results.get("ass_time_begin", "")
-                            if time_begin is None:
-                                time_begin = datetime.datetime.now().time()
-                            db_values[xml_var] = f"{run_date} {time_begin}"
-                        elif xml_var == "RUN_END_TIMESTAMP_":
-                            run_date = results.get("ass_run_date", "")
-                            time_end = results.get("ass_time_end", "")
-                            if time_end is None:
-                                time_end = datetime.datetime.now().time()
-                            db_values[xml_var] = f"{run_date} {time_end}"
-                        elif xml_var == 'PCB':
+                        if xml_var == 'PCB':
                             db_values[xml_var] = format_part_name(results.get('hxb_name'))
                         elif xml_var == 'PROTOMODULE':
                             db_values[xml_var] = format_part_name(results.get('proto_name'))
@@ -155,8 +159,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            missing_entries = get_missing_db_mappings(yaml_data=xml_data, filled_xml_file=output_file_path)
-            print_missing_entries(missing_entries)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,
@@ -169,7 +171,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
         
 
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/module/build_upload.xml'# XML template file path
@@ -179,7 +181,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key = No
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, partsnamelist)
     finally:
         await conn.close()
 
@@ -192,7 +194,7 @@ if __name__ == "__main__":
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-
+    parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
     dbpassword = args.dbpassword
@@ -200,5 +202,6 @@ if __name__ == "__main__":
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
+    partsnamelist = args.partnameslist
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist))
