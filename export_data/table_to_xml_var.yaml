@@ -1027,13 +1027,13 @@ sensor_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: operator
-#   dbase_table: proto_assembly
-#   xml_tag: TESTED_BY
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: TESTER
+  dbase_col: operator
+  dbase_table: proto_assembly
+  xml_tag: TESTED_BY
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: RUN_BEGIN_DATE_
   dbase_col: ass_run_date
   dbase_table: proto_assembly

@@ -27,7 +27,7 @@
         </PART>
 
         <DATA>
-			<TESTED_BY>{{ initiated_by_user }}</TESTED_BY>
+			<TESTED_BY>{{ tester }}</TESTED_BY>
 			<TEST_DATE>{{ run_begin_date_ }}</TEST_DATE>
 			<STATUS>n/a</STATUS>
 			<VISUAL_INSPECTION>{{ visual_inspection }}</VISUAL_INSPECTION>
