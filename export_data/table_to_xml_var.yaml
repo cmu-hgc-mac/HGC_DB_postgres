@@ -202,13 +202,13 @@ wirebond:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: BOND_PULL_USER
-  dbase_col: technician
-  dbase_table: bond_pull_test
-  xml_tag: INITIATED_BY_USER
-  nested_query: null
-  default_value: null
-  nullable: 'no'
+# - xml_temp_val: BOND_PULL_USER
+#   dbase_col: technician
+#   dbase_table: bond_pull_test
+#   xml_tag: INITIATED_BY_USER
+#   nested_query: null
+#   default_value: null
+#   nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -1110,12 +1110,12 @@ pedestal_test:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-- xml_temp_val: INSPECTOR
-  dbase_col: inspector
-  dbase_table: module_pedestal_test
-  xml_tag: INSPECTOR
-  nested_query: null
-  nullable: 'no'
+# - xml_temp_val: INSPECTOR
+#   dbase_col: inspector
+#   dbase_table: module_pedestal_test
+#   xml_tag: INSPECTOR
+#   nested_query: null
+#   nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
