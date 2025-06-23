@@ -173,7 +173,7 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: THICKNESS
+- xml_temp_val: AVE_THICKNESS
   dbase_col: avg_thickness
   dbase_table: module_inspect
   xml_tag: MOD_THKNS_MM
@@ -865,20 +865,6 @@ proto_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: SNSR_TOOL_HT_SET
-  dbase_col: null
-  dbase_table: null
-  xml_tag: SNSR_TOOL_HT_SET
-  nested_query: null
-  default_value: '0'
-  nullable: 'no'
-- xml_temp_val: SNSR_TOOL_HT_CHK
-  dbase_col: null
-  dbase_table: null
-  xml_tag: SNSR_TOOL_HT_CHK
-  nested_query: null
-  default_value: '0'
-  nullable: 'no'
 - xml_temp_val: GLUE_TYPE
   dbase_col: adhesive
   dbase_table: proto_assembly
@@ -893,26 +879,19 @@ proto_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
+- xml_temp_val: TRANSFER_TAPE_BATCH_NUM
+  dbase_col: table_batch
+  dbase_table: proto_assembly
+  xml_tag: TRANSFER_TAPE_BATCH_NUM
+  nested_query: null
+  default_value: null
+  nullable: 'yes'
 - xml_temp_val: PRTO_GRADE
   dbase_col: grade
   dbase_table: proto_inspect
   xml_tag: PLT_GRADE
   nested_query: null
   default_value: null
-  nullable: 'no'
-- xml_temp_val: SNSR_TOOL_FEET_CHK
-  dbase_col: null
-  dbase_table: null
-  xml_tag: SNSR_TOOL_FEET_CHK
-  nested_query: null
-  default_value: 'True'
-  nullable: 'no'
-- xml_temp_val: STEP_SENSOR
-  dbase_col: null
-  dbase_table: null
-  xml_tag: SNSR_STEP
-  nested_query: null
-  default_value: n/a
   nullable: 'no'
 proto_build:
 - xml_temp_val: KIND_OF_PART
