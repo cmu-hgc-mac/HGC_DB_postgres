@@ -232,7 +232,7 @@ async def get_kind_of_part(part_name, part=None, conn=None):
         if 'kind' in results:
             if results['kind'] is None:
                 raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} to obtain kind_of_part." )
-            return f"{results['kind']} {part_name}"
+            return f"{results['kind']}"
         else:
             raise ValueError(f"Reimport data from INT2R/CMSR for {part_name} if it exists.")
             return None
