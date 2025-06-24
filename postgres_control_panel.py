@@ -425,7 +425,7 @@ def export_data():
         if dbshipper_pass.strip() and lxp_username.strip(): 
             if not upload_dev_stat and not upload_prod_stat:
                 lxp_password = 'na'
-            if lxp_username.strip():
+            if lxp_password.strip():
                 input_window.destroy()  
                 subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
                 subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
