@@ -16,6 +16,7 @@
 		<PART mode="auto">
 			<KIND_OF_PART>{{ kind_of_part_pcb }}</KIND_OF_PART>
 			<SERIAL_NUMBER>{{ pcb }}</SERIAL_NUMBER>
+			<VERSION>{{ version }}</VERSION>
 		</PART>
 		</CHILDREN>
 		</PART>

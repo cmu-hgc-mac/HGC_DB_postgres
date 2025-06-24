@@ -2,13 +2,13 @@ import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, os, base64, sys, argparse, traceback, datetime
+import yaml, os, base64, sys, argparse, traceback, datetime, tzlocal, pytz
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from export_data.define_global_var import LOCATION
-from export_data.src import get_conn, fetch_from_db, update_xml_with_db_values, get_parts_name, get_kind_of_part, update_timestamp_col, format_part_name, get_run_num
+from export_data.define_global_var import LOCATION, INSTITUTION
+from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, partsnamelist = None):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -23,12 +23,18 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
     hxb_tables = ['hexaboard', 'hxb_inspect', 'hxb_pedestal_test']
     hxb_list = set()
-    module_query = f"""
-    SELECT DISTINCT REPLACE(hxb_name,'-','') AS hxb_name
-    FROM hxb_inspect
-    WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}'
-    """
-    results = await conn.fetch(module_query)
+
+    if partsnamelist:
+        query = f"""SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM hxb_inspect WHERE hxb_name = ANY($1)"""
+        results = await conn.fetch(query, partsnamelist)
+    else:    
+        module_query = f"""
+        SELECT DISTINCT REPLACE(hxb_name,'-','') AS hxb_name
+        FROM hxb_inspect
+        WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}'
+        """
+        results = await conn.fetch(module_query)
+    
     hxb_list.update(row['hxb_name'] for row in results if 'hxb_name' in row)
 
     for hxb_name in hxb_list:
@@ -40,14 +46,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             for entry in wb_data:
                 xml_var = entry['xml_temp_val']
 
-                if xml_var in ['LOCATION', 'INSTITUTION']:
+                if xml_var in ['LOCATION']:
                     db_values[xml_var] = LOCATION
+                elif xml_var == 'INSTITUTION':
+                    db_values[xml_var] = INSTITUTION
                 elif xml_var == 'ID':
                     db_values[xml_var] = format_part_name(hxb_name)
                 elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var] = get_kind_of_part(hxb_name)
-                elif xml_var == 'RUN_NUMBER':
-                    db_values[xml_var] = get_run_num(LOCATION)
+                    db_values[xml_var] = await get_kind_of_part(hxb_name, 'hexaboard', conn)
+                elif entry['default_value']:## something is wrong 
+                    db_values[xml_var] = entry['default_value']
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -71,6 +79,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             -- AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
+                        elif dbase_table in ['hxb_pedestal_test']:
+                            query = f"""
+                            SELECT {dbase_col} FROM {dbase_table} 
+                            WHERE REPLACE(hxb_name,'-','') = '{hxb_name}'
+                            ORDER BY date_test DESC, time_test DESC LIMIT 1;
+                            """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
@@ -89,9 +103,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_inspect", "")
                             time_begin = results.get("time_inspect", "")
-                            if time_begin is None:
-                                time_begin = datetime.datetime.now().time()
-                            db_values[xml_var] = f"{run_date} {time_begin}"
+                            db_values[xml_var] = format_datetime(run_date, time_begin)
                         elif xml_var == "RUN_END_TIMESTAMP_":
                             db_values[xml_var] = db_values["RUN_BEGIN_TIMESTAMP_"]
                             # run_date = results.get("ass_run_date", "")
@@ -99,6 +111,17 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == "RUN_BEGIN_DATE_":
                             run_date = results.get("date_inspect", "")
                             db_values[xml_var] = f"{run_date}"
+                        elif xml_var == 'RUN_NUMBER':
+                            run_date = results.get("date_inspect", "")
+                            time_begin = results.get("time_inspect", "")
+                            combined_str = f"{run_date} {time_begin}"
+                
+                            try:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
+                            except ValueError:
+                                dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+                            
+                            db_values[xml_var] = get_run_num(LOCATION, dt_obj)
                         elif xml_var == "THICKNESS":
                             db_values['THICKNESS'] = str(round(float(results.get("thickness")), 3))
                         elif xml_var == "FLATNESS":
@@ -122,7 +145,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
 
 
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/hexaboard/cond_upload.xml'# XML template file path
@@ -133,7 +156,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key = No
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, partsnamelist)
     finally:
         await conn.close()
 
@@ -147,7 +170,7 @@ if __name__ == "__main__":
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-
+    parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
     dbpassword = args.dbpassword
@@ -155,5 +178,6 @@ if __name__ == "__main__":
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
+    partsnamelist = args.partnameslist
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist))

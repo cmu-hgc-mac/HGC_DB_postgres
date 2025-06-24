@@ -87,3 +87,8 @@ async def update_foreign_key():
     print('Foreign keys updated.')
 
 asyncio.run(update_foreign_key())
+
+
+### SELECT setval('your_table_id_seq', (SELECT MAX(id) FROM your_table));
+### SELECT setval('module_info_module_no_seq', (SELECT MAX(module_no) FROM module_info));
+### SELECT setval('module_assembly_module_ass_seq', (SELECT MAX(module_ass) FROM module_assembly));

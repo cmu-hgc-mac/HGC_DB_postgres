@@ -20,9 +20,13 @@ cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'},
 def get_selected_type_files(files_found_all):
     files_selected = []
     for fi in files_found_all:
+        parent_directory = str(Path(fi).parent.name)
         parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]
         if parent_directory == 'sensor':
             file_type = file_type.split('_',1)[1] ## since sensor name has extra _
+        elif parent_directory == 'testing':
+            file_type = file_type.split('_')[1].split('.')[0]
+
         for xmlt in list(xml_list[parent_directory].keys()):
             if xml_list[parent_directory][xmlt] and file_type in xmlt:
                 files_selected.append(fi)
@@ -65,6 +69,16 @@ def get_build_files(files_list):
             other_files.append(fname)
     return build_files, other_files
 
+def get_proto_module_files(files_list):
+    protomodule_files, module_files, other_files = [],[],[]
+    for fname in files_list:
+        if 'protomodule' in fname.lower(): 
+            protomodule_files.append(fname)
+        elif 'module' in fname.lower(): 
+            module_files.append(fname)
+        else:
+            other_files.append(fname)
+    return protomodule_files, module_files, other_files
 
 def scp_to_dbloader(dbl_username, dbl_password, fname, encryption_key = None, cern_dbname = ''):
     ssh_server1 = paramiko.SSHClient()
@@ -126,19 +140,22 @@ def main(): #dbl_username, dbl_password, directory_to_search, search_date, encry
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
     files_found_all = find_files_by_date(directory_to_search, search_date)
     files_found = get_selected_type_files(files_found_all)
-    
+
     if files_found:
         print("Files found: ")
         for file in files_found: print(file)
         print('\n')
         build_files, other_files = get_build_files(files_found)
+        protomodule_build_files, module_build_files, other_build_files = get_proto_module_files(build_files)
         # dbl_username = input('LXPLUS Username: ')
         # dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
-        print(f"Uploading 'build' files to {cern_dbname}...")
-        for fname in tqdm(build_files):
+        print(f"Uploading protomodule 'build' files to {cern_dbname}...")
+        for fname in tqdm(protomodule_build_files):
             scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
-
+        print(f"Uploading module 'build' files to {cern_dbname}...")
+        for fname in tqdm(module_build_files):
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
         print(f"Uploading other files to {cern_dbname}...")
         for fname in tqdm(other_files):
             scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname=cern_dbname)
