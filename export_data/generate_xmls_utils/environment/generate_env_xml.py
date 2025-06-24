@@ -29,13 +29,14 @@ async def fetch_temp_humidity_data(conn, time):
     LIMIT 1;
     """
     return await conn.fetchrow(query)
-async def main():
-    conn = await asyncpg.connect(
-        host=DBHostname,
-        database=DBDatabase,
-        user=DBUsername,
-        password=DBPassword
-    )
+
+async def main(conn):
+    # conn = await asyncpg.connect(
+    #     host=DBHostname,
+    #     database=DBDatabase,
+    #     user=DBUsername,
+    #     password=DBPassword
+    # )
 
     # Load the table_to_xml_var.yaml file:
     with open(yaml_file, 'r') as file:
@@ -46,7 +47,7 @@ async def main():
         print("No data found in YAML file")
         return
 
-    table = "module_iv_test"
+    table = "module_pedestal_test"
     partname = table.split("_")[0] + "_name"
 
     query = f"""
@@ -59,6 +60,7 @@ async def main():
     print(f"\nTesting part: {test_part}\n")
 
     db_values = {}
+
     # Run the query just once
     try:
         query = f"""
@@ -89,7 +91,7 @@ async def main():
             db_values[xml_var] = INSTITUTION
 
         elif xml_var == 'ID':
-            db_values[xml_var] = format_part_name(partname)
+            db_values[xml_var] = format_part_name(test_part)
 
         elif xml_var == 'KIND_OF_PART':
             db_values[xml_var] = await get_kind_of_part(test_part, table, conn)
@@ -98,15 +100,18 @@ async def main():
             db_values[xml_var] = get_run_num(LOCATION)
 
         elif xml_var == 'TEMPSENSOR_ID':
-            db_values[xml_var] = "NULL"
-        elif xml_var == 'COMMENTS_UPLOAD':
-            db_values[xml_var] = "NULL"
+            if temp_humidity_data:
+                db_values[xml_var] = temp_humidity_data.get("temp_sensor_id", "NULL") 
+            else:
+                db_values[xml_var] = "NULL"
+
         elif xml_var == "RUN_BEGIN_TIMESTAMP_":
             db_values[xml_var] = format_datetime(run_date, time_begin)
+
         elif xml_var == "RUN_END_TIMESTAMP_":
             db_values[xml_var] = format_datetime(run_date, time_begin)
-        elif xml_var == "MeasurementTime":
-            print(" >>>>  MeasurementTime fetching.....")
+
+        elif xml_var == "Measurement_Time":
             if temp_humidity_data and temp_humidity_data.get("log_timestamp"):
                 db_values[xml_var] = format_datetime(temp_humidity_data["log_timestamp"])
             else:

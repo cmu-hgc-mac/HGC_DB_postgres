@@ -19,13 +19,10 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: operator
-#   dbase_table: module_assembly
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -202,13 +199,10 @@ wirebond:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: BOND_PULL_USER
-#   dbase_col: technician
-#   dbase_table: bond_pull_test
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -518,12 +512,10 @@ module_cond:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: module_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -585,12 +577,10 @@ bp_cond:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: bp_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -656,13 +646,10 @@ hxb_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: hxb_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -740,13 +727,10 @@ proto_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: operator
-#   dbase_table: proto_assembly
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -908,6 +892,8 @@ proto_build:
   xml_tag: MANUFACTURER
 - xml_temp_val: KIND_OF_PART_BASEPLATE
   xml_tag: KIND_OF_PART
+- xml_temp_val: RECORD_INSERTION_USER
+  xml_tag: RECORD_INSERTION_USER
 - xml_temp_val: BASEPLATE
   dbase_col: bp_name
   dbase_table: proto_assembly
@@ -935,12 +921,10 @@ proto_cond:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: proto_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -1007,13 +991,10 @@ sensor_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: operator
-#   dbase_table: proto_assembly
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: ID
