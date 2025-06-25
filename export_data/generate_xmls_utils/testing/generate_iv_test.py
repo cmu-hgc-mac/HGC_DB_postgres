@@ -105,10 +105,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = len(_prog_v)
                         elif xml_var == 'CURRENT_AMPS_AT_VOLT_A':
                             prog_v = np.array(results.get('program_v', ""))
-                            ref_volt_a = results.get('ratio_at_vs', "")[0]
-                            ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()
+                            ratio_at_vs = results.get('ratio_at_vs', "")
+                            ref_volt_a = ratio_at_vs[0]
+                            if max(prog_v) < ref_volt_a:
+                                ind_volt_a = np.argmax(prog_v)
+                            else:
+                                ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()
                             meas_i = np.array(results.get('meas_i', ""))
-                            db_values[xml_var] = meas_i[ind_volt_a][0]
+                            db_values[xml_var] = meas_i[ind_volt_a]
                         elif xml_var == 'DATA_POINTS_JSON':
                             prog_v = results.get('program_v', "")
                             meas_i = results.get('meas_i', "")
@@ -137,7 +141,7 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/testing/module_iv.xml'# XML template file path
     xml_output_dir = output_dir + '/testing/iv'  # Directory to save the updated XML
-    
+
     conn = await get_conn(dbpassword, encryption_key)
     try:
         await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
