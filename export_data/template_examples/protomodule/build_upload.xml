@@ -7,7 +7,7 @@
 			<BARCODE>{{ barcode }}</BARCODE>
 			<LOCATION>{{ location }}</LOCATION>
 			<INSTITUTION>{{ institution }}</INSTITUTION>
-			<!-- <RECORD_INSERTION_USER>{{ record_insertion_user }}</RECORD_INSERTION_USER> -->
+			<RECORD_INSERTION_USER>{{ record_insertion_user }}</RECORD_INSERTION_USER>
 			<MANUFACTURER>{{ manufacturer }}</MANUFACTURER>
 			<CHILDREN>
 				<PART mode="auto">

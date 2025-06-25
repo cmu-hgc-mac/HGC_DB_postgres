@@ -19,13 +19,8 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: operator
-#   dbase_table: module_assembly
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -202,13 +197,8 @@ wirebond:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: BOND_PULL_USER
-#   dbase_col: technician
-#   dbase_table: bond_pull_test
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -518,12 +508,8 @@ module_cond:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: module_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -585,12 +571,8 @@ bp_cond:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: bp_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -631,7 +613,7 @@ bp_cond:
   dbase_table: bp_inspect
   xml_tag: COMMENTS
   nested_query: null
-  nullable: 'no'
+  nullable: 'yes'
 hxb_build:
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -656,13 +638,8 @@ hxb_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: hxb_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -740,13 +717,8 @@ proto_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: operator
-#   dbase_table: proto_assembly
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -880,7 +852,7 @@ proto_assembly:
   default_value: null
   nullable: 'no'
 - xml_temp_val: TRANSFER_TAPE_BATCH_NUM
-  dbase_col: table_batch
+  dbase_col: tape_batch
   dbase_table: proto_assembly
   xml_tag: TRANSFER_TAPE_BATCH_NUM
   nested_query: null
@@ -904,6 +876,8 @@ proto_build:
   xml_tag: LOCATION
 - xml_temp_val: INSTITUTION
   xml_tag: INSTITUTION
+- xml_temp_val: RECORD_INSERTION_USER
+  xml_tag: RECORD_INSERTION_USER
 - xml_temp_val: MANUFACTURER
   xml_tag: MANUFACTURER
 - xml_temp_val: KIND_OF_PART_BASEPLATE
@@ -935,12 +909,8 @@ proto_cond:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: inspector
-#   dbase_table: proto_inspect
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -1007,13 +977,8 @@ sensor_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-# - xml_temp_val: INITIATED_BY_USER
-#   dbase_col: operator
-#   dbase_table: proto_assembly
-#   xml_tag: INITIATED_BY_USER
-#   nested_query: null
-#   default_value: null
-#   nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: ID

@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, partsnamelist=None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -53,6 +53,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = proto_name
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = await get_kind_of_part(proto_name)
+                elif xml_var == 'RECORD_INSERTION_USER':
+                    db_values[xml_var] = lxplus_username
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
                     _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                     _bp_name = await conn.fetch(_query)
@@ -150,7 +152,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         except Exception as e:
             print('#'*15, f'ERROR for {proto_name}','#'*15 ); traceback.print_exc(); print('')
         
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None, partsnamelist=None):
+async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/protomodule/build_upload.xml'# XML template file path
@@ -161,7 +163,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key = No
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, partsnamelist)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
     finally:
         await conn.close()
 
@@ -170,6 +172,7 @@ if __name__ == "__main__":
     today = datetime.datetime.today().strftime('%Y-%m-%d')
 
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
+    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
@@ -178,6 +181,7 @@ if __name__ == "__main__":
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
+    lxplus_username = args.dbl_username
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
@@ -185,4 +189,4 @@ if __name__ == "__main__":
     date_end = args.date_end
     partsnamelist = args.partnameslist
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist))

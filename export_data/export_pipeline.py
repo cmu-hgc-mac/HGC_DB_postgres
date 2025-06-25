@@ -23,7 +23,7 @@ def str2bool(boolstr):
     dictstr = {'True': True, 'False': False}
     return dictstr[boolstr]
 
-def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERATED_XMLS_DIR, encryption_key = None, partsnamelist = None):
+def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, output_dir=GENERATED_XMLS_DIR, encryption_key = None, partsnamelist = None):
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     command = [
@@ -32,8 +32,8 @@ def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERAT
         '-dir', output_dir,
         '-k', encryption_key,
         '-datestart', date_start,
-        '-dateend', date_end]
-    
+        '-dateend', date_end,
+        '-lxu', lxplus_username]
     if partsnamelist:
         command += ['-pn'] + partsnamelist
 
@@ -43,7 +43,7 @@ def run_script(script_path, dbpassword, date_start, date_end, output_dir=GENERAT
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
-def generate_xmls(dbpassword, date_start, date_end, encryption_key = None, partsnamelist = None):
+def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist = None):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
@@ -70,7 +70,7 @@ def generate_xmls(dbpassword, date_start, date_end, encryption_key = None, parts
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
     for script_path in scripts_to_run:
-        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist)
+        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist)
         completed_scripts += 1
         print('-'*10)
         print(f'Executed -- {script_path}.')
@@ -144,13 +144,14 @@ async def main():
     upload_prod_stat = str2bool(args.upload_prod_stat)
     partsnamelist = args.partnameslist
 
+
     inst_code  = (yaml.safe_load(open(os.path.join('dbase_info', 'conn.yaml'), 'r'))).get('institution_abbr')
     if len(inst_code) == 0:
         print("Check institution abbreviation in conn.py"); exit()
 
     ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
-        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist)
+        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist)
         find_missing_var_xml(time_limit=90)
     ## Step 2: SCP files to central DB
 
