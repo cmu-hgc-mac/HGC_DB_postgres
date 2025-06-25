@@ -1120,22 +1120,29 @@ module_iv:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-- xml_temp_val: INSPECTOR
-  dbase_col: inspector
-  dbase_table: module_pedestal_test
-  xml_tag: INSPECTOR
-  nested_query: null
-  nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
+  dbase_col: date_test, time_test
+  dbase_table: module_iv_test
   xml_tag: RUN_NUMBER
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
+- xml_temp_val: TESTER
+  dbase_col: inspector
+  dbase_table: module_iv_test
+  xml_tag: TESTER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: STATUS
   dbase_col: status
   dbase_table: module_iv_test
@@ -1161,7 +1168,7 @@ module_iv:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: CURRENT_AMPS_AT_VOLT_A
-  dbase_col: ### fill this
+  dbase_col: program_v, meas_i, ratio_at_vs 
   dbase_table: module_iv_test
   xml_tag: CURRENT_AMPS_AT_VOLT_A
   nested_query: null
@@ -1173,16 +1180,15 @@ module_iv:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: DATA_POINT_COUNT
-  dbase_col: ### fill this
+  dbase_col: program_v ## get the length of this list
   dbase_table: module_iv_test
   xml_tag: DATA_POINT_COUNT
   nested_query: null
   nullable: 'no'
 - xml_temp_val: DATA_POINTS_JSON
-  dbase_col: ### fill this
+  dbase_col: program_v, meas_i, meas_v, meas_r
   dbase_table: module_iv_test
   xml_tag: DATA_POINTS_JSON
-  nested_query: null
   nullable: 'no'
 - xml_temp_val: GRADE
   dbase_col: grade

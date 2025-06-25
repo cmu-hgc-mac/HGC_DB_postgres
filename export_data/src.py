@@ -12,6 +12,7 @@ import tzlocal
 import pytz
 import re
 import requests
+import json
 # from zoneinfo import ZoneInfo
 
 resource_yaml = 'export_data/resource.yaml'
@@ -140,9 +141,12 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
                     # Replace the placeholder with the actual value, or empty string if None
                     if value is None:
                         value = ""  # Default to an empty string for None values
-
+                    elif isinstance(value, dict):
+                        value = json.dumps(value, separators=(',', ':'))
+                        element.text = element.text.replace(f"{{{{ {xml_var} }}}}", value)
                     # Replace the placeholder text
-                    element.text = element.text.replace(f"{{{{ {xml_var} }}}}", str(value))
+                    else:
+                        element.text = element.text.replace(f"{{{{ {xml_var} }}}}", str(value))
 
         # Handle the 'ID' placeholder separately (case-sensitive)
         if 'ID' in db_values:

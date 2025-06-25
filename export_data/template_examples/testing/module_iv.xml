@@ -7,12 +7,12 @@
     </TYPE>
     <RUN>
         <!-- <RUN_NAME>Current/voltage measurements</RUN_NAME> -->
-        <!-- <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
-        <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP> -->
         <RUN_TYPE>Si module current-voltage test</RUN_TYPE>
+        <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
+        <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
-        <!-- <LOCATION>{{ location }}</LOCATION> -->
+        <LOCATION>{{ location }}</LOCATION>
         <COMMENT_DESCRIPTION>Measured IV test data</COMMENT_DESCRIPTION>
     </RUN>
 
@@ -35,7 +35,7 @@
             <MEAS_V>{{ meas_v }}</MEAS_V>
             <MEAS_I>{{ meas_i }}</MEAS_I>
             <MEAS_R>{{ meas_r }}</MEAS_R> -->
-            
+            <TESTER>{{ tester }}</TESTER>
             <STATUS>{{ status }}</STATUS>
             <STATUS_DESC>{{ status_desc }}</STATUS_DESC>
             <REF_VOLT_A>{{ ref_volt_a }}</REF_VOLT_A>
