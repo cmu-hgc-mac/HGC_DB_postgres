@@ -139,7 +139,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = 'export_data/template_examples/testing/module_iv.xml'# XML template file path
+    xml_file_path = 'export_data/template_examples/testing/module_iv_test.xml'# XML template file path
     xml_output_dir = output_dir + '/testing/iv'  # Directory to save the updated XML
 
     conn = await get_conn(dbpassword, encryption_key)

@@ -2,7 +2,7 @@
 <ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <HEADER>
     <TYPE>
-        <EXTENSION_TABLE_NAME>SI_MODULE_IV_TEST</EXTENSION_TABLE_NAME>
+        <EXTENSION_TABLE_NAME>HGC_SI_MODULE_BIAS_SCAN</EXTENSION_TABLE_NAME>
         <NAME>Si Module IV Test Data</NAME>
     </TYPE>
     <RUN>
@@ -35,7 +35,8 @@
             <MEAS_V>{{ meas_v }}</MEAS_V>
             <MEAS_I>{{ meas_i }}</MEAS_I>
             <MEAS_R>{{ meas_r }}</MEAS_R> -->
-            <TESTER>{{ tester }}</TESTER>
+
+            <!-- <TESTER>{{ tester }}</TESTER> -->
             <STATUS>{{ status }}</STATUS>
             <STATUS_DESC>{{ status_desc }}</STATUS_DESC>
             <REF_VOLT_A>{{ ref_volt_a }}</REF_VOLT_A>

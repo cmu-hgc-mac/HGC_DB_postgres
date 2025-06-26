@@ -241,7 +241,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
-    output_dir = 'export_data/xmls_for_upload/testing'
+    output_dir = 'export_data/xmls_for_upload/testing/pedestal'
 
     conn = await get_conn(dbpassword, encryption_key)
 
