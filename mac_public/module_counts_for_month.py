@@ -2,7 +2,9 @@ import asyncpg, asyncio, argparse
 from tabulate import tabulate  
 
 async def fetch_unique_counts(month, year, macid):
-    mac_dict = {'CMU': {'host': 'cmsmac04.phys.cmu.edu', 'dbname':'hgcdb'}, 'UCSB':{'host': 'gut.physics.ucsb.edu', 'dbname':'hgcdb'}}
+    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'dbname':'hgcdb'}, 
+                'UCSB': {'host': 'gut.physics.ucsb.edu',    'dbname':'hgcdb'}, 
+                'TTU' : {'host': '129.118.107.198',         'dbname':'ttu_mac_local'},}
     conn = await asyncpg.connect(
         user='viewer',
         database=mac_dict[macid]['dbname'],
