@@ -88,7 +88,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
       'shipper':  'SELECT, UPDATE'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
@@ -101,7 +101,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
       'shipper':  'SELECT, UPDATE'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
@@ -114,7 +114,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
       'shipper':  'SELECT, UPDATE'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
@@ -127,7 +127,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
       'shipper':  'SELECT, UPDATE'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
@@ -309,7 +309,7 @@ tables:
       'viewer': 'SELECT'
       'wirebond_user':  'SELECT'
       'encap_user':  'SELECT'
-      'teststand_user':  'INSERT, SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
       'shipper':  'SELECT, UPDATE'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
