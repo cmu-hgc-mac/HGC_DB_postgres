@@ -3,10 +3,10 @@
 <HEADER>
     <TYPE>
         <EXTENSION_TABLE_NAME>HGC_SI_MODULE_BIAS_SCAN</EXTENSION_TABLE_NAME>
-        <NAME>Si Module IV Test Data</NAME>
+        <NAME>Silicon module bias scan</NAME>
+</TYPE>
     </TYPE>
     <RUN>
-        <!-- <RUN_NAME>Current/voltage measurements</RUN_NAME> -->
         <RUN_TYPE>Si module current-voltage test</RUN_TYPE>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
@@ -26,16 +26,6 @@
             <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
         </PART>
         <DATA>
-            <!-- This goes to the env table -->
-            <!-- <REL_HUM>{{ rel_hum }}</REL_HUM> -->
-            <!-- <TEMP_C>{{ temp_c }}</TEMP_C> -->
-            
-            <!-- This goes to the json file -->
-            <!-- <PROG_V>{{ prog_v }}</PROG_V>
-            <MEAS_V>{{ meas_v }}</MEAS_V>
-            <MEAS_I>{{ meas_i }}</MEAS_I>
-            <MEAS_R>{{ meas_r }}</MEAS_R> -->
-
             <!-- <TESTER>{{ tester }}</TESTER> -->
             <STATUS>{{ status }}</STATUS>
             <STATUS_DESC>{{ status_desc }}</STATUS_DESC>
