@@ -10,7 +10,7 @@
         <RUN_TYPE>Si module pedestal and noise</RUN_TYPE>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
-        <INITIATED_BY_USER>{{ inspector }}</INITIATED_BY_USER>
+        <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
         <LOCATION>{{ location }}</LOCATION>
         <COMMENT_DESCRIPTION>Measured pedestal test data</COMMENT_DESCRIPTION>
     </RUN>
