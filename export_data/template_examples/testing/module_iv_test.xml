@@ -4,7 +4,6 @@
     <TYPE>
         <EXTENSION_TABLE_NAME>HGC_SI_MODULE_BIAS_SCAN</EXTENSION_TABLE_NAME>
         <NAME>Silicon module bias scan</NAME>
-</TYPE>
     </TYPE>
     <RUN>
         <RUN_TYPE>Si module current-voltage test</RUN_TYPE>
