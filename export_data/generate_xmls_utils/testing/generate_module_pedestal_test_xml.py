@@ -312,7 +312,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     # Write to output file
     os.makedirs(output_path, exist_ok=True)
     temp = str(run_begin_timestamp).replace(":","").split('.')[0]
-    file_path = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal.xml")
+    file_path = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal_test.xml")
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml)
     file_path_env = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal_cond.xml")

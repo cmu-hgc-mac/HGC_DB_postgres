@@ -17,3 +17,5 @@ sensor:
 testing:
 - module_pedestal_test_xml: false
 - module_iv_test_xml: false
+- module_pedestal_cond_xml: false
+- module_iv_cond_xml: false
