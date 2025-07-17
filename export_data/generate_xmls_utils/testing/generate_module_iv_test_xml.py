@@ -75,7 +75,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             print('ERROR:', e)
                     
                     if results:
-                        
+                        ref_volt_a, ref_volt_b = 400, 500
                         if xml_var == "RUN_BEGIN_TIMESTAMP_":
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_test", "")
@@ -89,7 +89,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("date_test", "")
                             time_begin = results.get("time_test", "")
                             combined_str = f"{run_date} {time_begin}"
-                
+                            print(combined_str)
                             try:
                                 dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
                             except ValueError:
@@ -97,22 +97,37 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             
                             db_values[xml_var] = get_run_num(LOCATION, dt_obj)
                         elif xml_var == 'REF_VOLT_A':
-                            db_values[xml_var] = results.get("ratio_at_vs", "")[0]
+                            db_values[xml_var] = ref_volt_a  #results.get("ratio_at_vs", "")[0]
                         elif xml_var == 'REF_VOLT_B':
-                            db_values[xml_var] = results.get("ratio_at_vs", "")[1]
+                            db_values[xml_var] = ref_volt_b #results.get("ratio_at_vs", "")[1]
                         elif xml_var == 'DATA_POINT_COUNT':
                             _prog_v = results.get('program_v', "")
                             db_values[xml_var] = len(_prog_v)
                         elif xml_var == 'CURRENT_AMPS_AT_VOLT_A':
                             prog_v = np.array(results.get('program_v', ""))
-                            ratio_at_vs = results.get('ratio_at_vs', "")
-                            ref_volt_a = ratio_at_vs[0]
+                            # ratio_at_vs = results.get('ratio_at_vs', "")
+                            # ref_volt_a = ratio_at_vs[0]
                             if max(prog_v) < ref_volt_a:
                                 ind_volt_a = np.argmax(prog_v)
                             else:
-                                ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()
+                                ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()[0]
                             meas_i = np.array(results.get('meas_i', ""))
                             db_values[xml_var] = meas_i[ind_volt_a]
+                        elif xml_var == 'CURRENT_RATIO_B_OVER_A':
+                            prog_v = np.array(results.get('program_v', ""))
+                            # ratio_at_vs = results.get('ratio_at_vs', "")
+                            # ref_volt_a = ratio_at_vs[0]
+                            # ref_volt_b = ratio_at_vs[1]
+                            if max(prog_v) < ref_volt_a:
+                                ind_volt_a = np.argmax(prog_v)
+                            else:
+                                ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()[0]
+                            if max(prog_v) < ref_volt_b:
+                                ind_volt_b = np.argmax(prog_v)
+                            else:
+                                ind_volt_b = np.argwhere(prog_v == ref_volt_b).flatten()[0]
+                            meas_i = np.array(results.get('meas_i', ""))
+                            db_values[xml_var] = meas_i[ind_volt_b]/meas_i[ind_volt_a]
                         elif xml_var == 'DATA_POINTS_JSON':
                             prog_v = results.get('program_v', "")
                             meas_i = results.get('meas_i', "")
