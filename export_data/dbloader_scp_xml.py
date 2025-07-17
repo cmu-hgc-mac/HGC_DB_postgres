@@ -25,13 +25,10 @@ def get_selected_type_files(files_found_all):
 
         if parent_directory == 'sensor':
             file_type = file_type.split('_',2)[2] ## since sensor name has extra _
-        elif parent_directory == 'iv':
+        elif parent_directory == 'iv' or parent_directory == 'pedestal':
+            # file_type = 'module' + (file_type[file_type.index('_'+ parent_directory):]).replace('.xml', '')
+            file_type = f"module_{parent_directory}_test_xml"
             parent_directory = 'testing'
-            file_type = 'module' + (file_type[file_type.index('_iv'):]).replace('.xml', '')
-        elif parent_directory == 'pedestal':
-            parent_directory = 'testing'
-            file_type = 'module' + (file_type[file_type.index('_pedestal'):]).replace('.xml', '')
-            print(file_type)
         else:
             parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]
         
