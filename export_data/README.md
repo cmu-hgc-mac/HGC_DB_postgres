@@ -1,6 +1,9 @@
 # Manual upload to hgcal-dbloader-spool
 Replace `username` in two places and provide the path of the XML file.
 ```
+scp -o ProxyJump=username@lxplus.cern.ch /directory_to_the_xml_file/xxx.xml username@dbloader-hgcal:/home/dbspool/spool/hgc/int2r/
+```
+```
 scp -o ProxyJump=username@lxplus.cern.ch /directory_to_the_xml_file/xxx.xml username@dbloader-hgcal:/home/dbspool/spool/hgc/cmsr/
 ```
 
