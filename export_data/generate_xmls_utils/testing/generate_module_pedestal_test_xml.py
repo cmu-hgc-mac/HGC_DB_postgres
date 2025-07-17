@@ -80,11 +80,13 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.date_test, 
                m.time_test,
                m.inspector,
+               m.temp_c,
+               m.rel_hum,
                h.roc_name, 
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
-        WHERE m.module_name = ANY($1)
+        WHERE m.module_name = ANY($1) LIMIT 1
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         rows = await conn.fetch(query, partsnamelist)
     else:
@@ -100,6 +102,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.date_test, 
                 m.time_test,
                 m.inspector,
+                m.temp_c,
+                m.rel_hum,
                 h.roc_name, 
                 h.roc_index
             FROM module_pedestal_test m
@@ -111,7 +115,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
-    test_data = {}
+    test_data, test_data_env = {}, {}
     for row in rows:
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
@@ -136,10 +140,20 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'adc_stdd': row['adc_stdd'],
                 'roc_name': row['roc_name']
             }
-    return test_data
+
+            test_data_env[run_begin_timestamp] = {
+                'test_timestamp': f"{row['date_test']} {row['time_test']}",
+                'module_name': row['module_name'],
+                'module_no': row['module_no'],
+                'inspector': row['inspector'],
+                'rel_hum': row['rel_hum'],
+                'temp_c': row['temp_c'],
+                'roc_name': row['roc_name']
+            }
+    return test_data, test_data_env
 
 
-async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path):
+async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None):
     tree = ET.parse(template_path)
     root = tree.getroot()
     test_timestamp = test_data['test_timestamp']
@@ -151,6 +165,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
         # run_info.find("INITIATED_BY_USER").text = test_data.get("inspector", "unknown")
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
       
 
@@ -192,8 +207,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
             serial_elem.text = roc
         kindofpart = data_set.find("PART/KIND_OF_PART")
         if kindofpart is not None:
-            tempo_kop = await get_kind_of_part(test_data['module_name'])
-            kindofpart.text = tempo_kop
+            kindofpart.text = f"{test_data['module_name'][4]}D HGCROC"
 
         # Remove placeholder DATA blocks (direct children of DATA_SET)
         for data_elem in data_set.findall("DATA"):
@@ -212,8 +226,6 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         # Append the completed DATA_SET to ROOT
         root.append(data_set)
 
-
-
     # Pretty-print the XML
     rough_string = ET.tostring(root, encoding="utf-8")
     pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
@@ -229,12 +241,83 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     if pretty_xml.startswith('<?xml'):
         pretty_xml = fixed_declaration + '\n'.join(pretty_xml.split('\n')[1:])
 
+    ### DO the same for the enviromental conditions data
+    tree = ET.parse(template_path_env)
+    root = tree.getroot()
+    test_timestamp = test_data_env['test_timestamp']
+    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+
+    # === Fill in <RUN> metadata ===
+    run_info = root.find("HEADER/RUN")
+    if run_info is not None:
+        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+        # run_info.find("INITIATED_BY_USER").text = test_data_env.get("inspector", "unknown")
+        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("LOCATION").text = LOCATION
+      
+
+    # Get and remove the original <DATA_SET> template block
+    data_set_template = root.find("DATA_SET")
+    root.remove(data_set_template)
+    roc_names = test_data_env["roc_name"]
+
+    # Group data by ROC
+    roc_grouped_data = defaultdict(list)
+    
+    # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
+    for roc in roc_names:
+        # Deep copy the template DATA_SET element
+        data_set = copy.deepcopy(data_set_template)
+
+        # Set the correct SERIAL_NUMBER inside PART
+        serial_elem = data_set.find("PART/SERIAL_NUMBER")
+        if serial_elem is not None:
+            serial_elem.text = roc
+        
+        kindofpart = data_set.find("PART/KIND_OF_PART")
+        if kindofpart is not None:
+            kindofpart.text = f"{test_data_env['module_name'][4]}D HGCROC"
+
+        # Remove placeholder DATA blocks (direct children of DATA_SET)
+        for data_elem in data_set.findall("DATA"):
+            data_set.remove(data_elem)
+
+        # Add actual DATA blocks under DATA_SET (NOT under PART)
+        data = ET.Element("DATA")
+        ET.SubElement(data, "TEMP_C").text = test_data_env['temp_c']
+        ET.SubElement(data, "HUMIDITY_REL").text = test_data_env['rel_hum']
+        ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        ET.SubElement(data, "TEMPSENSOR_ID").text = "0"
+        data_set.append(data)  # <== append directly under DATA_SET
+
+        # Append the completed DATA_SET to ROOT
+        root.append(data_set)
+
+    # Pretty-print the XML COND
+    rough_string = ET.tostring(root, encoding="utf-8")
+    pretty_xml_env = minidom.parseString(rough_string).toprettyxml(indent="\t")
+    pretty_xml_env = "\n".join(line for line in pretty_xml_env.split("\n") if line.strip())
+    
+    # delete the first <ROOT> for formatting
+    lines = pretty_xml_env.splitlines()
+    if lines[1].strip().startswith("<ROOT"):
+        lines.pop(1)
+    pretty_xml_env = "\n".join(lines)
+    fixed_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
+    
+    if pretty_xml_env.startswith('<?xml'):
+        pretty_xml_env = fixed_declaration + '\n'.join(pretty_xml_env.split('\n')[1:])
+
     # Write to output file
     os.makedirs(output_path, exist_ok=True)
     temp = str(run_begin_timestamp).replace(":","").split('.')[0]
     file_path = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal.xml")
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml)
+    file_path_env = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal_cond.xml")
+    with open(file_path_env, "w", encoding="utf-8") as f:
+        f.write(pretty_xml_env)
 
     return file_path
 
@@ -242,14 +325,15 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
+    temp_dir_env = 'export_data/template_examples/testing/qc_env_cond.xml'
     output_dir = 'export_data/xmls_for_upload/testing/pedestal'
 
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
+        test_data, test_data_env = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for run_begin_timestamp in tqdm(list(test_data.keys())):
-            output_file = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir)
+            output_file     = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp])
     finally:
         await conn.close()
 

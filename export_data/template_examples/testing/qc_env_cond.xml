@@ -16,7 +16,7 @@
     </RUN>
 </HEADER>
     <DATA_SET>
-        <COMMENT_DESCRIPTION>Upload measured data</COMMENT_DESCRIPTION>
+        <COMMENT_DESCRIPTION>Temp and humidity measurements</COMMENT_DESCRIPTION>
         <VERSION>1</VERSION>
         <PART mode="auto">
             <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
