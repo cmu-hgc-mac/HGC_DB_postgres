@@ -288,7 +288,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         ET.SubElement(data, "TEMP_C").text = test_data_env['temp_c']
         ET.SubElement(data, "HUMIDITY_REL").text = test_data_env['rel_hum']
         ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        ET.SubElement(data, "TEMPSENSOR_ID").text = "0"
+        # ET.SubElement(data, "TEMPSENSOR_ID").text = "0"
         data_set.append(data)  # <== append directly under DATA_SET
 
         # Append the completed DATA_SET to ROOT

@@ -26,7 +26,7 @@
             <MEASUREMENT_TIME>{{ run_begin_timestamp_ }}</MEASUREMENT_TIME>
             <TEMP_C>{{ temp_c }}</TEMP_C>
             <HUMIDITY_REL>{{ humidity_rel }}</HUMIDITY_REL>
-            <TEMPSENSOR_ID>{{ tempsensor_id }}</TEMPSENSOR_ID>
+            <!-- <TEMPSENSOR_ID>{{ tempsensor_id }}</TEMPSENSOR_ID> -->
         </DATA>
     </DATA_SET>
 </ROOT>
