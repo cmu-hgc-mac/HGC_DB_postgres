@@ -25,23 +25,22 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     module_list = set()
     if partsnamelist:
         query = """
-            SELECT module_name, status
+            SELECT module_name, status, mod_ivtest_no
             FROM module_iv_test
             WHERE module_name = ANY($1)
         """
         results = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
-            SELECT module_name, status
+            SELECT module_name, status, mod_ivtest_no
             FROM module_iv_test
             WHERE module_iv_test.date_test BETWEEN '{date_start}' AND '{date_end}'
         """
         results = await conn.fetch(query)
 
-    module_status_list = set((row['module_name'], row['status']) for row in results if 'module_name' in row and 'status' in row)
-
-    for module_name, status in module_status_list:
-        print(f'--> {module_name} with status {status}...')
+    module_status_list = set((row['module_name'], row['status'], row['mod_ivtest_no']) for row in results if 'module_name' in row and 'status' in row)
+    for module_name, status, mod_ivtest_no in module_status_list:
+        print(f'--> {module_name} with mod_ivtest_no {mod_ivtest_no}...')
         try:
             db_values = {}
             for entry in xml_data:
@@ -66,7 +65,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         continue
                 
                     query = f"""
-                    SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module_name}' AND status = {status}
+                    SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module_name}' AND mod_ivtest_no = {mod_ivtest_no}
                     """
                     try:
                         results = await fetch_from_db(query, conn)
@@ -89,7 +88,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             run_date = results.get("date_test", "")
                             time_begin = results.get("time_test", "")
                             combined_str = f"{run_date} {time_begin}"
-                            print(combined_str)
+
                             try:
                                 dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S.%f")
                             except ValueError:
@@ -138,7 +137,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = results.get(dbase_col, '')
 
             # Update the XML with the database values
-            output_file_name = f'{module_name}_status{status}_{os.path.basename(xml_file_path)}'
+            combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]
+            output_file_name = f"{module_name}_{combined_str_mod}_iv.xml"
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
             await update_timestamp_col(conn,

@@ -84,8 +84,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
-        WHERE m.module_name = ANY($1) OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
-        """
+        WHERE m.module_name = ANY($1)
+        """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         rows = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
@@ -231,7 +231,8 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
 
     # Write to output file
     os.makedirs(output_path, exist_ok=True)
-    file_path = os.path.join(output_path, f"{test_data['module_name']}_{run_begin_timestamp}_pedestal.xml")
+    temp = str(run_begin_timestamp).replace(":","").split('.')[0]
+    file_path = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal.xml")
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml)
 
