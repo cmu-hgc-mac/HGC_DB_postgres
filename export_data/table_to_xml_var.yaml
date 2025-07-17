@@ -1110,13 +1110,13 @@ pedestal_test:
 module_iv:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: date_test, time_test
-  dbase_table: module_pedestal_test
+  dbase_table: module_iv_test
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: date_test, time_test
-  dbase_table: module_pedestal_test
+  dbase_table: module_iv_test
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
@@ -1174,7 +1174,7 @@ module_iv:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: CURRENT_RATIO_B_OVER_A
-  dbase_col: ratio_i_at_vs
+  dbase_col: program_v, meas_i, ratio_at_vs 
   dbase_table: module_iv_test
   xml_tag: CURRENT_RATIO_B_OVER_A
   nested_query: null
