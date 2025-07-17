@@ -369,8 +369,8 @@ def export_data():
         def create_checkboxes(xml_list, parent):
             if isinstance(xml_list, dict):
                 for key, value in xml_list.items():
-                    frame = LabelFrame(parent, text=key, padx=5, pady=5)
-                    frame.pack(fill="x", expand=True, padx=10, pady=5)
+                    frame = LabelFrame(parent, text=key, padx=5, pady=0.5)
+                    frame.pack(fill="x", expand=True, padx=10, pady=0.5)
                     checkbox_vars[key] = create_checkboxes(value, frame)
             elif isinstance(xml_list, list):
                 vars_list = []
@@ -378,7 +378,7 @@ def export_data():
                     for key, value in item.items():
                         var = IntVar(value=1 if value else 0)
                         checkbox = Checkbutton(parent, text=key, variable=var)
-                        checkbox.pack(anchor="w", padx=10, pady=2)
+                        checkbox.pack(anchor="w", padx=10, pady=0.5)
                         vars_list.append({key: var})
                 return vars_list
             return {}
@@ -402,7 +402,7 @@ def export_data():
             apply_toggle(checkbox_vars)
 
         toggle_all_button = Button(popup, text="(De)Select All", command=toggle_all)
-        toggle_all_button.pack(pady=10)
+        toggle_all_button.pack(pady=2)
 
         def submit_selection():
             updated_data = update_yaml_with_checkboxes(xml_list = xml_list, checkbox_vars=checkbox_vars)
@@ -410,7 +410,7 @@ def export_data():
             popup.destroy()
         
         submit_select_button = Button(popup, text="Submit", command=submit_selection)
-        submit_select_button.pack(pady=10)
+        submit_select_button.pack(pady=8)
         
     def submit_export():
         lxp_username = lxuser_var.get()
