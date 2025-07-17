@@ -86,7 +86,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
-        WHERE m.module_name = ANY($1) LIMIT 1
+        WHERE m.module_name = ANY($1)
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         rows = await conn.fetch(query, partsnamelist)
     else:
@@ -163,7 +163,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        run_info.find("INITIATED_BY_USER").text = lxplus_username
+        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
@@ -251,7 +251,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        run_info.find("INITIATED_BY_USER").text = lxplus_username
+        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
@@ -333,7 +333,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     try:
         test_data, test_data_env = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for run_begin_timestamp in tqdm(list(test_data.keys())):
-            output_file     = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp])
+            output_file     = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp], lxplus_username=lxplus_username)
     finally:
         await conn.close()
 
