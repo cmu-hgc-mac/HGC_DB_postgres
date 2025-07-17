@@ -1202,3 +1202,51 @@ module_iv:
   xml_tag: COMMENTS
   nested_query: null
   nullable: 'yes'
+
+module_iv_cond:
+- xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  dbase_col: date_test, time_test
+  dbase_table: module_iv_test
+  xml_tag: RUN_BEGIN_TIMESTAMP
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: RUN_END_TIMESTAMP_
+  dbase_col: date_test, time_test
+  dbase_table: module_iv_test
+  xml_tag: RUN_END_TIMESTAMP
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+- xml_temp_val: LOCATION
+  xml_tag: LOCATION
+- xml_temp_val: RUN_NUMBER
+  dbase_col: date_test, time_test
+  dbase_table: module_iv_test
+  xml_tag: RUN_NUMBER
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: ID
+  xml_tag: SERIAL_NUMBER
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: TEMP_C
+  dbase_col: temp_c
+  dbase_table: module_iv_test
+  xml_tag: TEMP_C
+  nullable: 'no'
+- xml_temp_val: HUMIDITY_REL
+  dbase_col: rel_hum
+  dbase_table: module_iv_test
+  xml_tag: HUMIDITY_REL
+  nested_query: null
+  nullable: 'yes'
+- xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  dbase_col: date_test, time_test
+  dbase_table: module_iv_test
+  xml_tag: MEASUREMENT_TIME
+  nested_query: null
+  nullable: 'no'

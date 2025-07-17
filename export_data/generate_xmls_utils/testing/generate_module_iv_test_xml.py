@@ -16,10 +16,16 @@ def fetch_module_iv_data(prog_v, meas_v, meas_i, meas_r):
         'meas_r': meas_r
     }
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, xml_file_path_env = None):
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
-    xml_data = yaml_data['module_iv']
+    xml_data_iv  = yaml_data['module_iv']
+    xml_data_env = yaml_data['module_iv_cond']
+    for val in xml_data_iv:
+        val['xml_type'] = 'iv'
+    for val in xml_data_env:
+        val['xml_type'] = 'env'
+    xml_data = xml_data_iv + xml_data_env
 
     ## list module_names that we want to generate xmls
     module_list = set()
@@ -42,20 +48,20 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     for module_name, status, mod_ivtest_no in module_status_list:
         print(f'--> {module_name} with mod_ivtest_no {mod_ivtest_no}...')
         try:
-            db_values = {}
+            db_values, db_values_iv, db_values_env = {}, {}, {}
             for entry in xml_data:
-                xml_var = entry['xml_temp_val']
+                xml_var, xml_type = entry['xml_temp_val'], entry['xml_type']
 
                 if xml_var == 'LOCATION':
-                    db_values[xml_var] = LOCATION
+                    db_values[xml_var]     = LOCATION 
                 elif xml_var == 'INSTITUTION':
                     db_values[xml_var] = INSTITUTION
                 elif xml_var == 'ID':
-                    db_values[xml_var] = module_name
+                    db_values[xml_var]     = module_name
                 elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var] = await get_kind_of_part(module_name, 'module', conn)
+                    db_values[xml_var]     = await get_kind_of_part(module_name, 'module', conn)
                 elif xml_var == 'INITIATED_BY_USER':
-                    db_values[xml_var] = lxplus_username
+                    db_values[xml_var]     = lxplus_username
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -79,11 +85,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_test", "")
                             time_begin = results.get("time_test", "")
-                            db_values[xml_var] = format_datetime(run_date, time_begin)
+                            db_values[xml_var]     = format_datetime(run_date, time_begin)
                         elif xml_var == "RUN_END_TIMESTAMP_":
                             run_date = results.get("date_test", "")
                             time_end = results.get("time_test", "")
-                            db_values[xml_var] = format_datetime(run_date, time_end)
+                            db_values[xml_var]     = format_datetime(run_date, time_end)
                         elif xml_var == 'RUN_NUMBER':
                             run_date = results.get("date_test", "")
                             time_begin = results.get("time_test", "")
@@ -94,7 +100,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             except ValueError:
                                 dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
                             
-                            db_values[xml_var] = get_run_num(LOCATION, dt_obj)
+                            db_values[xml_var]     = get_run_num(LOCATION, dt_obj)
                         elif xml_var == 'REF_VOLT_A':
                             db_values[xml_var] = ref_volt_a  #results.get("ratio_at_vs", "")[0]
                         elif xml_var == 'REF_VOLT_B':
@@ -136,11 +142,19 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '')
 
+                if xml_type == 'iv':
+                    db_values_iv[xml_var] = db_values[xml_var]
+                elif xml_type == 'env':
+                    db_values_env[xml_var] = db_values[xml_var]
+
             # Update the XML with the database values
             combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]
-            output_file_name = f"{module_name}_{combined_str_mod}_iv.xml"
-            output_file_path = os.path.join(output_dir, output_file_name)
-            await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+            output_file_name_iv = f"{module_name}_{combined_str_mod}_iv.xml"
+            output_file_path_iv = os.path.join(output_dir, output_file_name_iv)
+            output_file_name_env = f"{module_name}_{combined_str_mod}_iv_cond.xml"
+            output_file_path_env = os.path.join(output_dir, output_file_name_env)
+            await update_xml_with_db_values(xml_file_path,     output_file_path_iv,  db_values_iv)
+            await update_xml_with_db_values(xml_file_path_env, output_file_path_env, db_values_env)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=['module_iv_test'],
@@ -154,12 +168,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = 'export_data/template_examples/testing/module_iv_test.xml'# XML template file path
+    xml_file_path     = 'export_data/template_examples/testing/module_iv_test.xml'# XML template file path
+    xml_file_path_env = 'export_data/template_examples/testing/qc_env_cond.xml'# XML template file path
     xml_output_dir = output_dir + '/testing/iv'  # Directory to save the updated XML
 
     conn = await get_conn(dbpassword, encryption_key)
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, xml_file_path_env=xml_file_path_env)
     finally:
         await conn.close()
 
