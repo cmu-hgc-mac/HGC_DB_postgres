@@ -155,15 +155,15 @@ def main(): #dbl_username, dbl_password, directory_to_search, search_date, encry
         # dbl_username = input('LXPLUS Username: ')
         # dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
-        # print(f"Uploading protomodule 'build' files to {cern_dbname}...")
-        # for fname in tqdm(protomodule_build_files):
-        #     scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
-        # print(f"Uploading module 'build' files to {cern_dbname}...")
-        # for fname in tqdm(module_build_files):
-        #     scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
-        # print(f"Uploading other files to {cern_dbname}...")
-        # for fname in tqdm(other_files):
-        #     scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname=cern_dbname)
+        print(f"Uploading protomodule 'build' files to {cern_dbname}...")
+        for fname in tqdm(protomodule_build_files):
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
+        print(f"Uploading module 'build' files to {cern_dbname}...")
+        for fname in tqdm(module_build_files):
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
+        print(f"Uploading other files to {cern_dbname}...")
+        for fname in tqdm(other_files):
+            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname=cern_dbname)
     else:
         print("No files found for the given date.")
 
