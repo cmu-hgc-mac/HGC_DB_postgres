@@ -27,7 +27,7 @@ def get_selected_type_files(files_found_all):
             file_type = file_type.split('_',2)[2] ## since sensor name has extra _
         elif parent_directory == 'iv' or parent_directory == 'pedestal':
             # file_type = 'module' + (file_type[file_type.index('_'+ parent_directory):]).replace('.xml', '')
-            file_type = f"module_{parent_directory}_test_xml"
+            file_type = f"module_{parent_directory}_xml"
             parent_directory = 'testing'
         else:
             parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]
@@ -155,15 +155,15 @@ def main(): #dbl_username, dbl_password, directory_to_search, search_date, encry
         # dbl_username = input('LXPLUS Username: ')
         # dbl_password = pwinput.pwinput(prompt='LXPLUS Password: ', mask='*')
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
-        print(f"Uploading protomodule 'build' files to {cern_dbname}...")
-        for fname in tqdm(protomodule_build_files):
-            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
-        print(f"Uploading module 'build' files to {cern_dbname}...")
-        for fname in tqdm(module_build_files):
-            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
-        print(f"Uploading other files to {cern_dbname}...")
-        for fname in tqdm(other_files):
-            scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname=cern_dbname)
+        # print(f"Uploading protomodule 'build' files to {cern_dbname}...")
+        # for fname in tqdm(protomodule_build_files):
+        #     scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
+        # print(f"Uploading module 'build' files to {cern_dbname}...")
+        # for fname in tqdm(module_build_files):
+        #     scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname = cern_dbname)
+        # print(f"Uploading other files to {cern_dbname}...")
+        # for fname in tqdm(other_files):
+        #     scp_to_dbloader(dbl_username = dbl_username, dbl_password = dbl_password, fname = fname, encryption_key = encryption_key, cern_dbname=cern_dbname)
     else:
         print("No files found for the given date.")
 
