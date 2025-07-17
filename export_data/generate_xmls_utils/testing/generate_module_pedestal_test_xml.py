@@ -153,7 +153,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     return test_data, test_data_env
 
 
-async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None):
+async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None, lxplus_username = None):
     tree = ET.parse(template_path)
     root = tree.getroot()
     test_timestamp = test_data['test_timestamp']
@@ -163,7 +163,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        # run_info.find("INITIATED_BY_USER").text = test_data.get("inspector", "unknown")
+        run_info.find("INITIATED_BY_USER").text = lxplus_username
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
@@ -251,7 +251,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        # run_info.find("INITIATED_BY_USER").text = test_data_env.get("inspector", "unknown")
+        run_info.find("INITIATED_BY_USER").text = lxplus_username
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
@@ -322,7 +322,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     return file_path
 
 
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
     temp_dir_env = 'export_data/template_examples/testing/qc_env_cond.xml'
@@ -360,4 +360,4 @@ if __name__ == "__main__":
     date_end = args.date_end
     partsnamelist = args.partnameslist
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist, lxplus_username = lxplus_username))
