@@ -1250,3 +1250,9 @@ module_iv_cond:
   xml_tag: MEASUREMENT_TIME
   nested_query: null
   nullable: 'no'
+- xml_temp_val: TEMPSENSOR_ID
+  dbase_col: null
+  dbase_table: null
+  xml_tag: TEMPSENSOR_ID
+  nested_query: null
+  default_value: 0
