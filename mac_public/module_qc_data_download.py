@@ -32,7 +32,7 @@ async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dt', '--data_type', default=None, required=True, help="mod_iv, mod_ped, mod_qc")
     # parser.add_argument('-pfp', '--module_filepath', default=None, required=True, help="mod_iv, mod_ped, mod_qc")
-    parser.add_argument('-mn', '--module_names', nargs='+', default=None, required=False, help='List of module names')
+    parser.add_argument('-mn', '--module_names', nargs='+', default=None, required=False, help='Module name(s) separated by spaces')
     parser.add_argument('-mac', '--mac', default=None, required=True, help="MAC: CMU, UCSB")
     args = parser.parse_args()
     module_names = ['ALL'] if not args.module_names else [mn.upper() for mn in args.module_names]
