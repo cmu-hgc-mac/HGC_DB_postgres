@@ -12,7 +12,7 @@ This has been implemented for CMU, UCSB where it outputs the module summary for 
 python mac_public/module_counts_for_month.py -m 3 -y 2025 -mac UCSB
 ```
 
-# Access data from other MACs
+# Read with custom queries (from other MACs, FNAL)
 
 IP adrresses of the six MACs are in [mac_public/macs_db_conn.yaml](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/mac_public/macs_db_conn.yaml).
 
