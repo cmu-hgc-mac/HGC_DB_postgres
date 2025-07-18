@@ -27,3 +27,11 @@ This has been implemented for CMU, UCSB where it outputs the module summary for 
 ```
 python mac_public/module_counts_for_month.py -m 3 -y 2025 -mac UCSB
 ```
+
+# Download module testing & QC data
+This is a standalone script that has been implemented for CMU, UCSB where it saves the module testing data from the MAC. Examples - 
+```
+python module_qc_data_download.py -mac CMU -dt mod_ped -mn 320MLF2CXCM0001 320MLF2CXCM0002
+python module_qc_data_download.py -mac CMU -dt mod_iv
+python module_qc_data_download.py -mac CMU -dt mod_qcs -mn 320MLF3TCCM0116
+```
