@@ -1,5 +1,5 @@
 # Download module testing & QC data
-This is a standalone script that has been implemented for CMU, UCSB where it saves the module testing data from the MAC. Examples - 
+A standalone script [`module_qc_data_download`](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/mac_public/module_qc_data_download.py) has been implemented for CMU, UCSB where it saves the module testing data from the MAC. Examples - 
 ```
 python module_qc_data_download.py -mac CMU -dt mod_ped -mn 320MLF2CXCM0001 320MLF2CXCM0002
 python module_qc_data_download.py -mac CMU -dt mod_iv
