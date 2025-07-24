@@ -6,13 +6,13 @@
         <NAME>Environmental conditions</NAME>
     </TYPE>
     <RUN>
-        <RUN_TYPE>MAC Environmental Condition</RUN_TYPE>
+        <RUN_TYPE>{{ run_type }}</RUN_TYPE>
         <RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
         <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
         <LOCATION>{{ location }}</LOCATION>
-        <COMMENT_DESCRIPTION>Measured environmental data</COMMENT_DESCRIPTION>
+        <COMMENT_DESCRIPTION>{{ comment_description }}</COMMENT_DESCRIPTION>
     </RUN>
 </HEADER>
     <DATA_SET>

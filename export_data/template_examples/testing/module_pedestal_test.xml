@@ -13,7 +13,7 @@
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
         <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
         <LOCATION>{{ location }}</LOCATION>
-        <COMMENT_DESCRIPTION>Measured pedestal test data</COMMENT_DESCRIPTION>
+        <COMMENT_DESCRIPTION>{{ comment_description }}</COMMENT_DESCRIPTION>
     </RUN>
 
 </HEADER>
