@@ -27,7 +27,7 @@ def get_selected_type_files(files_found_all):
             file_type = file_type.split('_',2)[2] ## since sensor name has extra _
         elif parent_directory == 'iv' or parent_directory == 'pedestal':
             # file_type = 'module' + (file_type[file_type.index('_'+ parent_directory):]).replace('.xml', '')
-            file_type = f"module_{parent_directory}_xml"
+            file_type = f"module_{parent_directory}_xml" if "320M" in str(fi) else f"hxb_{parent_directory}_xml"
             parent_directory = 'testing'
         else:
             parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]

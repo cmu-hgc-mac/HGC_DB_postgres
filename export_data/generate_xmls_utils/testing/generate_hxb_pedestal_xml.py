@@ -21,30 +21,6 @@ with open(resource_yaml, 'r') as file:
     yaml_content = yaml.safe_load(file)
     kind_of_part_yaml = yaml_content['kind_of_part']
     
-async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
-    '''
-    1. Get a geometry of a module (=hxb)
-    2. get a corresponding chip number and name from yaml using the geometry
-    3. get a ROC-ID from hxb table 
-    '''
-    part_id = (module_name[0:3].replace('320', '') + module_name[3:]).replace('-', '')
-    resolution_dict = kind_of_part_yaml['resolution']
-    geometry_dict = kind_of_part_yaml['geometry']
-    resolution = resolution_dict[part_id[1]]
-    geometry = geometry_dict[part_id[2]]
-    chip_idx_data = chip_idx_yaml[f'{resolution} {geometry}']
-    chip_names = [item['name'] for item in chip_idx_data] ##i.e., [M1, M2, M3]
-
-    query = f'''
-    SELECT roc_name, roc_index FROM hexaboard where module_no = {module_num} 
-    '''
-    roc_name, roc_index = await conn.fetchrow(query)
-    if roc_index == chip_names:
-        return roc_name## i.e., ['SU02-0124-001061', 'SU02-0124-001067', 'SU02-0124-001076']
-    else:
-        print('roc_index unmatched. No ROC was found')
-        return False
-
 def remap_channels(channel, channel_type):
     for i in range(len(channel)):
         if channel_type[i] == 1:
@@ -69,8 +45,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     # Retrieve the first row of chip and channel arrays
     if partsnamelist:
         query = f"""
-        SELECT m.module_name,
-               m.module_no, 
+        SELECT m.hxb_name,
+               m.hxb_no, 
                m.chip, 
                m.channel, 
                m.adc_mean, 
@@ -83,15 +59,15 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.rel_hum,
                h.roc_name, 
                h.roc_index
-        FROM module_pedestal_test m
-        LEFT JOIN hexaboard h ON m.module_no = h.module_no
-        WHERE m.module_name = ANY($1)
+        FROM hxb_pedestal_test m
+        LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
+        WHERE m.hxb_name = ANY($1)
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         rows = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
-            SELECT m.module_name,
-                m.module_no, 
+            SELECT m.hxb_name,
+                m.hxb_no, 
                 m.chip, 
                 m.channel, 
                 m.adc_mean, 
@@ -104,8 +80,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.rel_hum,
                 h.roc_name, 
                 h.roc_index
-            FROM module_pedestal_test m
-            LEFT JOIN hexaboard h ON m.module_no = h.module_no
+            FROM hxb_pedestal_test m
+            LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
         """
         rows = await conn.fetch(query)
@@ -128,8 +104,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
 
             test_data[run_begin_timestamp] = {
                 'test_timestamp': f"{row['date_test']} {row['time_test']}",
-                'module_name': row['module_name'],
-                'module_no': row['module_no'],
+                'hxb_name': row['hxb_name'],
+                'hxb_no': row['hxb_no'],
                 'inspector': row['inspector'],
                 'chip': _chip,
                 'channel': channel,
@@ -141,8 +117,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
 
             test_data_env[run_begin_timestamp] = {
                 'test_timestamp': f"{row['date_test']} {row['time_test']}",
-                'module_name': row['module_name'],
-                'module_no': row['module_no'],
+                'hxb_name': row['hxb_name'],
+                'hxb_no': row['hxb_no'],
                 'inspector': row['inspector'],
                 'rel_hum': row['rel_hum'],
                 'temp_c': row['temp_c'],
@@ -151,7 +127,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     return test_data, test_data_env
 
 
-async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None, lxplus_username = None):
+async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None, lxplus_username = None):
     tree = ET.parse(template_path)
     root = tree.getroot()
     test_timestamp = test_data['test_timestamp']
@@ -160,13 +136,14 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
-        run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
+        run_info.find("RUN_TYPE").text = "MAC hexaboard pedestal and noise"
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
         run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
+        run_info.find("COMMENT_DESCRIPTION").text = f"MAC pedestal and noise data for {test_data['hxb_name']}"
+        
       
 
     # Get and remove the original <DATA_SET> template block
@@ -207,7 +184,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
             serial_elem.text = roc
         kindofpart = data_set.find("PART/KIND_OF_PART")
         if kindofpart is not None:
-            kindofpart.text = f"{test_data['module_name'][4]}D HGCROC"
+            kindofpart.text = f"{test_data['hxb_name'][4]}D HGCROC"
 
         # Remove placeholder DATA blocks (direct children of DATA_SET)
         for data_elem in data_set.findall("DATA"):
@@ -250,13 +227,13 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
-        run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
+        run_info.find("RUN_TYPE").text = "MAC hexaboard pedestal and noise"
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
         run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
+        run_info.find("COMMENT_DESCRIPTION").text = f"MAC pedestal and noise data for {test_data['hxb_name']}"
 
     # Get and remove the original <DATA_SET> template block
     data_set_template = root.find("DATA_SET")
@@ -278,7 +255,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         
         kindofpart = data_set.find("PART/KIND_OF_PART")
         if kindofpart is not None:
-            kindofpart.text = f"{test_data_env['module_name'][4]}D HGCROC"
+            kindofpart.text = f"{test_data_env['hxb_name'][4]}D HGCROC"
 
         # Remove placeholder DATA blocks (direct children of DATA_SET)
         for data_elem in data_set.findall("DATA"):
@@ -313,10 +290,10 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     # Write to output file
     os.makedirs(output_path, exist_ok=True)
     temp = str(run_begin_timestamp).replace(":","").split('.')[0]
-    file_path = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal.xml")
+    file_path = os.path.join(output_path, f"{test_data['hxb_name']}_{temp}_pedestal.xml")
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml)
-    file_path_env = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal_cond.xml")
+    file_path_env = os.path.join(output_path, f"{test_data['hxb_name']}_{temp}_pedestal_cond.xml")
     with open(file_path_env, "w", encoding="utf-8") as f:
         f.write(pretty_xml_env)
 
@@ -334,7 +311,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     try:
         test_data, test_data_env = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for run_begin_timestamp in tqdm(list(test_data.keys())):
-            output_file     = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp], lxplus_username=lxplus_username)
+            output_file     = await generate_hxb_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp], lxplus_username=lxplus_username)
     finally:
         await conn.close()
 

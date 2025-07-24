@@ -15,4 +15,5 @@ sensor:
 - sensor_cond_xml: false
 testing:
 - module_pedestal_xml: true
+- hxb_pedestal_xml: true
 - module_iv_xml: true
