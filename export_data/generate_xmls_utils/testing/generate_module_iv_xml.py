@@ -143,7 +143,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = results.get(dbase_col, '')
                 
                 db_values['RUN_TYPE'] = "Si module current-voltage test"
-                db_values['COMMENT_DESCRIPTION'] = "Si module current-voltage test"
+                db_values['COMMENT_DESCRIPTION'] = f"MAC current-voltage test for {module_name}"
                 if xml_type == 'iv':
                     db_values_iv[xml_var] = db_values[xml_var]
                 elif xml_type == 'env':

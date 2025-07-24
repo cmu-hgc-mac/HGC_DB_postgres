@@ -70,13 +70,12 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     if partsnamelist:
         query = f"""
         SELECT m.module_name,
+               m.module_no, 
                m.chip, 
                m.channel, 
                m.adc_mean, 
                m.adc_stdd, 
                m.channeltype, 
-               m.module_name, 
-               m.module_no, 
                m.date_test, 
                m.time_test,
                m.inspector,
@@ -92,13 +91,12 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     else:
         query = f"""
             SELECT m.module_name,
+                m.module_no, 
                 m.chip, 
                 m.channel, 
                 m.adc_mean, 
                 m.adc_stdd, 
                 m.channeltype, 
-                m.module_name, 
-                m.module_no, 
                 m.date_test, 
                 m.time_test,
                 m.inspector,
@@ -168,7 +166,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION") = "Si module pedestal and noise data"
+        run_info.find("COMMENT_DESCRIPTION") = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
       
 
     # Get and remove the original <DATA_SET> template block
@@ -258,7 +256,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION") = "Si module pedestal and noise data"
+        run_info.find("COMMENT_DESCRIPTION") = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
 
     # Get and remove the original <DATA_SET> template block
     data_set_template = root.find("DATA_SET")
