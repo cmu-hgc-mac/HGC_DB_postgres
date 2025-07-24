@@ -7,7 +7,7 @@
     </TYPE>
 
     <RUN>
-        <RUN_TYPE>Si module pedestal and noise</RUN_TYPE>
+        <RUN_TYPE>{{ run_type }}</RUN_TYPE>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
         <RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
