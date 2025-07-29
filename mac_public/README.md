@@ -4,6 +4,7 @@ A standalone script [`module_qc_data_download`](https://github.com/cmu-hgc-mac/H
 python module_qc_data_download.py -mac CMU -dt mod_ped -mn 320MLF2CXCM0001 320MLF2CXCM0002
 python module_qc_data_download.py -mac CMU -dt mod_iv
 python module_qc_data_download.py -mac CMU -dt mod_qcs -mn 320MLF3TCCM0116
+python module_qc_data_download.py -mac UCSB -dt mod_iv -mn 320MHF1T4SB0015
 ```
 
 # Get monthly module summary
