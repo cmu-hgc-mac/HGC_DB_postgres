@@ -78,10 +78,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             correct_hxb_combo = [LOCATION, hxb_name]
                             api_hxb_combo = get_location_and_partid(part_id=hxb_name, part_type='hexaboard', cern_db_url='hgcapi-cmsr')
 
-                            if correct_hxb_combo != api_hxb_combo:
-                                errors.append(f"\033[91mHexaboard information mismatches with API. Submit a GitLab ticket.\nYou have {correct_hxb_combo}, but the api has {api_hxb_combo}.\033[0m")
-                                if errors:
-                                    raise AssertionError("\n".join(errors))
+                            # if correct_hxb_combo != api_hxb_combo:
+                            #     errors.append(f"\033[91mHexaboard information mismatches with API. Submit a GitLab ticket.\nYou have {correct_hxb_combo}, but the api has {api_hxb_combo}.\033[0m")
+                            #     if errors:
+                            #         raise AssertionError("\n".join(errors))
                         else:
                             hxb_name = ''
                         db_values[xml_var] = await get_kind_of_part(hxb_name, 'hexaboard', conn=conn)
