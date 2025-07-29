@@ -462,7 +462,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 #             f"{dbl_username}@dbloader-hgcal")
                 # subprocess.run(["xterm", "-hold", "-e", ssh_cmd])  # BLOCKS until xterm closes
 
-                ssh_cmd = ("ssh -MNf "
+                ssh_cmd = ("ssh -MN "
                            "-o ControlMaster=yes "
                            "-o ControlPath=~/.ssh/scp-%r@%h:%p "
                            f"-o ControlPersist={scp_persist_minutes}m "
@@ -470,6 +470,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                            f"{dbl_username}@dbloader-hgcal")
                 # xterm will close if ssh is successful, but will stay open if there’s an error
                 xterm_cmd = f"bash -c '{ssh_cmd} || {{ echo \"SSH failed – check your password or settings.\"; read -p \"Press Enter to close...\"; }}'"
+                xterm_cmd = f"bash -c '{ssh_cmd} && echo \"Tunnel established. Press Enter to close.\" && read'"
                 subprocess.run(["xterm", "-e", xterm_cmd])
 
         except Exception as e:
