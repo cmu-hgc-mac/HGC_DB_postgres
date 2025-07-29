@@ -14,6 +14,8 @@ def get_api_data(search_id, db_type):
 
     try:
         response = requests.get(url, headers=headers)
+        if  response.status_code==404: 
+            return None
         response.raise_for_status()  # Raise an HTTPError for bad responses
         if not response.text.strip():  # Check if the response is empty
             print("Error: API response is empty.")
@@ -56,16 +58,18 @@ async def check_upload(db_type):
         print(f'------ checking {search_id} upload ------')
 
         cern_data = get_api_data(search_id, db_type)
-        # record_datetime = datetime.strptime(cern_data['record_insertion_time'], '%Y-%m-%d%H:%M:%S.%f')
-        kind = cern_data['kind']
-        part_id = cern_data['serial_number']
-        kind_of_part = await get_kind_of_part(search_id)
+        if cern_data:
+            # record_datetime = datetime.strptime(cern_data['record_insertion_time'], '%Y-%m-%d%H:%M:%S.%f')
+            kind = cern_data['kind']
+            part_id = cern_data['serial_number']
+            kind_of_part = await get_kind_of_part(search_id)
 
-        # time_diff = abs(record_datetime - today)
-        if kind == kind_of_part:
-            if part_id == search_id:
-                # print('Data matched, Upload successful')
-                return True
-            else:
-                print('Data unmatched, Upload failed')
-
+            # time_diff = abs(record_datetime - today)
+            if kind == kind_of_part:
+                if part_id == search_id:
+                    # print('Data matched, Upload successful')
+                    return True
+                else:
+                    print('Data unmatched, Upload failed')
+        else:
+            print("Presponse empty, part didn't upload")
