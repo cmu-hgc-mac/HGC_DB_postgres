@@ -462,19 +462,40 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 #             f"{dbl_username}@dbloader-hgcal")
                 # subprocess.run(["xterm", "-hold", "-e", ssh_cmd])  # BLOCKS until xterm closes
 
+                # ssh_cmd = (
+                #             "nohup ssh -MNf "
+                #             "-o ControlMaster=yes "
+                #             "-o ControlPath=~/.ssh/scp-%r@%h:%p "
+                #             f"-o ControlPersist={scp_persist_minutes}m "
+                #             f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
+                #             f"{dbl_username}@dbloader-hgcal > /dev/null 2>&1 &")
+                # # xterm will close if ssh is successful, but will stay open if there’s an error
+                # xterm_cmd = f"bash -c '{ssh_cmd} || {{ echo \"SSH failed – check your password or settings.\"; read -p \"Press Enter to close...\"; }}'"
+                # xterm_cmd = f"bash -c '{ssh_cmd} && echo \"Tunnel established. Press Enter to close.\" && read'"
+                # xterm_cmd = f"bash -c '{ssh_cmd}; echo \"Tunnel established. Press Enter to close.\"; read'"
+                # subprocess.run(["xterm", "-e", xterm_cmd])
                 ssh_cmd = (
-                            "nohup ssh -MNf "
-                            "-o ControlMaster=yes "
-                            "-o ControlPath=~/.ssh/scp-%r@%h:%p "
-                            f"-o ControlPersist={scp_persist_minutes}m "
-                            f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
-                            f"{dbl_username}@dbloader-hgcal > /dev/null 2>&1 &")
-                # xterm will close if ssh is successful, but will stay open if there’s an error
-                xterm_cmd = f"bash -c '{ssh_cmd} || {{ echo \"SSH failed – check your password or settings.\"; read -p \"Press Enter to close...\"; }}'"
-                xterm_cmd = f"bash -c '{ssh_cmd} && echo \"Tunnel established. Press Enter to close.\" && read'"
-                xterm_cmd = f"bash -c '{ssh_cmd}; echo \"Tunnel established. Press Enter to close.\"; read'"
+                    "ssh -MN "  # <-- NOTICE: no -f here yet
+                    "-o ControlMaster=yes "
+                    "-o ControlPath=~/.ssh/scp-%r@%h:%p "
+                    f"-o ControlPersist={scp_persist_minutes}m "
+                    f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
+                    f"{dbl_username}@dbloader-hgcal"
+                )
 
-                subprocess.run(["xterm", "-e", xterm_cmd])
+                # Keep xterm open long enough for password entry, then background + disown ssh
+                xterm_script = f"""
+                    bash -c '
+                    {ssh_cmd} &
+                    pid=$!
+                    disown $pid
+                    echo "SSH tunnel started (PID $pid)."
+                    echo "You can now close this window."
+                    read -p "Press Enter to close..."
+                    '
+                """
+
+                subprocess.run(["xterm", "-e", xterm_script])
 
         except Exception as e:
             print(f"Failed to create control file.")
