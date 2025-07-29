@@ -433,6 +433,9 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 tell application "Terminal"
                     do script "{ssh_cmd}; exit"
                     activate
+                    repeat until not (exists window 1)
+                        delay 1
+                    end repeat
                 end tell
                 '''
                 subprocess.run(["osascript", "-e", osascript_cmd])
@@ -442,24 +445,34 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 ssh_cmd = f'ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_minutes}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal'
                 subprocess.Popen(['start', 'cmd', '/c', ssh_cmd], shell=True) ### `/c` means run command then close
 
+                ssh_cmd = (f'ssh -MNf -o ControlMaster=yes '
+                            f'-o ControlPath=~/.ssh/scp-%r@%h:%p '
+                            f'-o ControlPersist={scp_persist_minutes}m '
+                            f'-o ProxyJump={dbl_username}@lxplus.cern.ch '
+                            f'{dbl_username}@dbloader-hgcal')
+                subprocess.run(ssh_cmd, shell=True) # Run synchronously — block until finished
+            
             else: ## platform.system() == "Linux":
                 print(f"Running on {platform.system()}")
-                ssh_cmd = (
-                            "ssh -MNf "
+                ssh_cmd = ("ssh -MNf "
                             "-o ControlMaster=yes "
                             "-o ControlPath=~/.ssh/scp-%r@%h:%p "
                             f"-o ControlPersist={scp_persist_minutes}m "
                             f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
-                            f"{dbl_username}@dbloader-hgcal"
-                        )
-                subprocess.Popen(["xterm", "-e", ssh_cmd]) ### xterm will close after the ssh command exits
+                            f"{dbl_username}@dbloader-hgcal")
+                subprocess.run(["xterm", "-hold", "-e", ssh_cmd])  # BLOCKS until xterm closes
 
         except Exception as e:
             print(f"Failed to create control file.")
             traceback.print_exc()
     
-
     result = subprocess.run(test_cmd, capture_output=True, text=True)
-    print("Control master process alive.")
+    if result.returncode == 0:
+        print("Control master process alive.")
+    else:
+        print("Something went wrong.")
+    ### ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal ## To kill process
+    return result.returncode
+    
     # print(result.stdout)
     # print(result.stderr)
