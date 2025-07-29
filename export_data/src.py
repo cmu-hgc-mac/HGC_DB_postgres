@@ -408,7 +408,7 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         return []
 
 
-def open_scp_connection(dbl_username = None, scp_persist_min = 240):
+def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
     test_cmd = ["ssh", 
                 "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
                 "-O", "check",     # <-- ask the master process if it’s alive
@@ -428,7 +428,7 @@ def open_scp_connection(dbl_username = None, scp_persist_min = 240):
         try:
             if platform.system() == "Darwin":
                 print("Running on macOS")
-                ssh_cmd = f"ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_min}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal"
+                ssh_cmd = f"ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_minutes}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal"
                 osascript_cmd = f'''
                 tell application "Terminal"
                     do script "{ssh_cmd}; exit"
@@ -439,7 +439,7 @@ def open_scp_connection(dbl_username = None, scp_persist_min = 240):
 
             elif platform.system() == "Windows":
                 print("Running on Windows")
-                ssh_cmd = f'ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_min}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal'
+                ssh_cmd = f'ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_minutes}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal'
                 subprocess.Popen(['start', 'cmd', '/c', ssh_cmd], shell=True) ### `/c` means run command then close
 
             else: ## platform.system() == "Linux":
@@ -448,7 +448,7 @@ def open_scp_connection(dbl_username = None, scp_persist_min = 240):
                             "ssh -MNf "
                             "-o ControlMaster=yes "
                             "-o ControlPath=~/.ssh/scp-%r@%h:%p "
-                            f"-o ControlPersist={scp_persist_min}m "
+                            f"-o ControlPersist={scp_persist_minutes}m "
                             f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
                             f"{dbl_username}@dbloader-hgcal"
                         )
