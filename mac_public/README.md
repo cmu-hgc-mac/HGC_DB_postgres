@@ -2,7 +2,7 @@
 A standalone script [`module_qc_data_download`](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/mac_public/module_qc_data_download.py) has been implemented for CMU, UCSB where it saves the module testing data from the MAC into a CSV file. Examples - 
 ```
 python module_qc_data_download.py -mac CMU  -dt mod_ped -mn 320MLF2CXCM0001 320MLF2CXCM0002
-python module_qc_data_download.py -mac CMU  -dt mod_iv
+python module_qc_data_download.py -mac CMU  -dt mod_iv   ##### Saves all available data
 python module_qc_data_download.py -mac CMU  -dt mod_qcs -mn 320MLF3TCCM0116
 python module_qc_data_download.py -mac UCSB -dt mod_iv  -mn 320MHF1T4SB0015
 ```
