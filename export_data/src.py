@@ -2,7 +2,7 @@ import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, sys, argparse, base64, os
+import yaml, sys, base64, os, platform, subprocess, glob
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from datetime import datetime
 from cryptography.fernet import Fernet
@@ -408,3 +408,58 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         return []
 
 
+def open_scp_connection(dbl_username = None, scp_persist_min = 240):
+    test_cmd = ["ssh", 
+                "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
+                "-O", "check",     # <-- ask the master process if it’s alive
+                f"{dbl_username}@dbloader-hgcal"]
+
+    result = subprocess.run(test_cmd, capture_output=True, text=True)
+    if result.returncode != 0 and dbl_username:
+        pattern = os.path.expanduser(f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:*") ## f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:22"
+        controlfiles =  glob.glob(pattern)
+        if len(controlfiles) > 0:
+            try:
+                for cf in controlfiles:
+                    os.remove(cf)
+                    print(f"Removed existing control file: {cf}")
+            except:
+                print(f"Failed to remove control files: {controlfiles}")
+        try:
+            if platform.system() == "Darwin":
+                print("Running on macOS")
+                ssh_cmd = f"ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_min}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal"
+                osascript_cmd = f'''
+                tell application "Terminal"
+                    do script "{ssh_cmd}; exit"
+                    activate
+                end tell
+                '''
+                subprocess.run(["osascript", "-e", osascript_cmd])
+
+            elif platform.system() == "Windows":
+                print("Running on Windows")
+                ssh_cmd = f'ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_min}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal'
+                subprocess.Popen(['start', 'cmd', '/c', ssh_cmd], shell=True) ### `/c` means run command then close
+
+            else: ## platform.system() == "Linux":
+                print(f"Running on {platform.system()}")
+                ssh_cmd = (
+                            "ssh -MNf "
+                            "-o ControlMaster=yes "
+                            "-o ControlPath=~/.ssh/scp-%r@%h:%p "
+                            f"-o ControlPersist={scp_persist_min}m "
+                            f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
+                            f"{dbl_username}@dbloader-hgcal"
+                        )
+                subprocess.Popen(["xterm", "-e", ssh_cmd]) ### xterm will close after the ssh command exits
+
+        except Exception as e:
+            print(f"Failed to create control file.")
+            traceback.print_exc()
+    
+
+    result = subprocess.run(test_cmd, capture_output=True, text=True)
+    print("Control master process alive.")
+    # print(result.stdout)
+    # print(result.stderr)
