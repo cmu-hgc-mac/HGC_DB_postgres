@@ -8,3 +8,5 @@ max_mod_per_box: 10
 max_box_per_shipment: 24
 max_cern_db_request: 1000
 scp_persist_minutes: 240
+scp_force_quit: True
+scp_ssh_port: 22

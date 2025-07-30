@@ -408,13 +408,26 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         return []
 
 
-def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
+def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, scp_ssh_port = 22):
+
     test_cmd = ["ssh", 
                 "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
                 "-O", "check",     # <-- ask the master process if it’s alive
                 f"{dbl_username}@dbloader-hgcal"]
 
-    result = subprocess.run(test_cmd, capture_output=True, text=True)
+    if scp_force_quit:
+        quit_cmd = ["ssh", "-O", "exit",
+                    "-o", f"ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:{scp_ssh_port}", f"{dbl_username}@dbloader-hgcal"]
+        subprocess.run(quit_cmd, check=True)
+        result = subprocess.run(test_cmd, capture_output=True, text=True)
+        if result.returncode != 255: ## or result.returncode == 0:
+            print("Failed to close ControlMaster Process. Do it manually.")
+            print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
+        else:
+            print("ControlMaster process closed.")
+        return result.returncode
+
+    result = subprocess.run(test_cmd, capture_output=True, text=True)    
     if result.returncode != 0 and dbl_username:
         pattern = os.path.expanduser(f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:*") ## f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:22"
         controlfiles =  glob.glob(pattern)
@@ -434,19 +447,11 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 print("https://learn.microsoft.com/en-us/windows/wsl/install")
                 webbrowser.open(f"https://learn.microsoft.com/en-us/windows/wsl/install")
                
-                # ssh_cmd = ["ssh", "-MNf",
-                #            "-o", "ControlMaster=yes",
-                #            "-o", "ControlPath=C:/Users/%USERNAME%/.ssh/scp-%r@%h-%p",
-                #            "-o", f"ControlPersist={scp_persist_minutes}m",
-                #            "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
-                #            f"{dbl_username}@dbloader-hgcal"]
-                
-                # subprocess.run(ssh_cmd, shell=True, check=True) 
-            
             else: ## platform.system() == "Linux" or platform.system() == "Darwin" 
                 print("****************************************")
                 print("******* LXPLUS LOGIN CREDENTIALS *******")
                 print("****************************************")
+                print("")
                 ssh_cmd = ["ssh", "-MNf",
                        "-o", "ControlMaster=yes",
                        "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
@@ -465,12 +470,14 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
     
     result = subprocess.run(test_cmd, capture_output=True, text=True)
     if result.returncode == 0:
+        print("")
         print("************* PLEASE NOTE **************")
         print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
-        print(f"This allows password-less SCP to your LXPLUS for {scp_persist_minutes} minutes.")
-        print(f"This can be controlled from dbase_info/conn.yaml by defining 'scp_persist_minutes: 240'.")
-        print(f"To force close this open connection manually, do this in your terminal:")
-        print(f"ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal")
+        print(f"To change this, in dbase_info/conn.yaml, define 'scp_persist_minutes: 240'.")
+        print(f"To allow password-less SCP to your LXPLUS for {scp_persist_minutes} minutes....")
+        print(f"in dbase_info/conn.yaml, define 'scp_force_quit: False'.")
+        print(f"To force close this open connection manually, run below command in your terminal:")
+        print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
         print("****************************************")
         print("")
     else:

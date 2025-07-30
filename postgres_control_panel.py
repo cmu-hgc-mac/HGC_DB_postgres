@@ -38,6 +38,8 @@ db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db')
 php_port = config_data.get('php_port', '8083')
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
+scp_force_quit = config_data.get('scp_force_quit', True)
+scp_ssh_port = config_data.get('scp_ssh_port', 22)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
@@ -414,15 +416,16 @@ def export_data():
             
             if upload_dev_stat or upload_prod_stat:
                 show_message(f"Check terminal to enter LXPLUS credentials.")
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
             
-            upload_dev_stat  = True if scp_status == 0 else False
-            upload_prod_stat = True if scp_status == 0 else False
+            upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
+            upload_prod_stat = upload_prod_stat if scp_status == 0 else False
             export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
             if partslistpre.strip():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
+            scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, scp_ssh_port=scp_ssh_port)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
             
         else:
