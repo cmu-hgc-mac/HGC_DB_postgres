@@ -458,13 +458,21 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 print("** SSH ControlMaster session started. **")
                 print("****************************************")
 
+
         except Exception as e:
             print(f"Failed to create control file.")
             traceback.print_exc()
     
     result = subprocess.run(test_cmd, capture_output=True, text=True)
     if result.returncode == 0:
-        print("ControlMaster process alive.")
+        print("************* PLEASE NOTE **************")
+        print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
+        print(f"This allows password-less SCP to your LXPLUS for {scp_persist_minutes} minutes.")
+        print(f"This can be controlled from dbase_info/conn.yaml by defining 'scp_persist_minutes: 240'.")
+        print(f"To force close this open connection manually, do this in your terminal:")
+        print(f"ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal")
+        print("****************************************")
+        print("")
     else:
         print("ControlMaster process failed.")
     ### ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal ## To kill process
