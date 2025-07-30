@@ -417,7 +417,8 @@ def export_data():
                 export_command_list += ['-pn', ] + partslist
             
             show_message(f"Check terminal to enter LXPLUS credentials.")
-            scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
+            if upload_dev_stat or upload_prod_stat:
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
             subprocess.run(export_command_list)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
             
