@@ -493,24 +493,29 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
 
                 # subprocess.run(["xterm", "-e", xterm_script])
 
-                ssh_script = f"""
-                echo '>>> Starting SSH ControlMaster session...'
-                ssh -M -N -f \\
-                -o ControlMaster=yes \\
-                -o ControlPath=~/.ssh/scp-%r@%h:%p \\
-                -o ControlPersist={scp_persist_minutes}m \\
-                -o ProxyJump={dbl_username}@lxplus.cern.ch \\
-                {dbl_username}@dbloader-hgcal
+                ssh_cmd = (
+                    f"ssh -M -N -f "
+                    f"-o ControlMaster=yes "
+                    f"-o ControlPath=~/.ssh/scp-%r@%h:%p "
+                    f"-o ControlPersist={scp_persist_minutes}m "
+                    f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
+                    f"{dbl_username}@dbloader-hgcal"
+                )
 
-                echo '✅ SSH ControlMaster is now running in the background.'
-                echo 'You can safely close this xterm window.'
-                read -p 'Press Enter to close this window...'
-                """
+                # All in one line for safety
+                bash_line = (
+                    f"echo '>>> Starting SSH ControlMaster session...' && "
+                    f"{ssh_cmd} && "
+                    f"echo '✅ SSH ControlMaster is now running in the background.' && "
+                    f"echo 'You can safely close this xterm window.' && "
+                    f"read -p 'Press Enter to close this window...'"
+                )
 
-                # Run xterm and block until the window closes
+                # Run xterm, blocking until the user closes it
                 subprocess.run([
-                    "xterm", "-hold", "-e", f"bash -c '{ssh_script}'"
+                    "xterm", "-hold", "-e", "bash", "-c", bash_line
                 ])
+
 
         except Exception as e:
             print(f"Failed to create control file.")
