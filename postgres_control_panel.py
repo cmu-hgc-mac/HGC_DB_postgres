@@ -408,7 +408,7 @@ def export_data():
         partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if dbshipper_pass.strip() and lxp_username.strip(): 
-            input_window.destroy()  
+            input_window.destroy(); input_window.update()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
@@ -416,6 +416,7 @@ def export_data():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
             
+            show_message(f"Check terminal to enter LXPLUS credentials.")
             scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
             subprocess.run(export_command_list)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
