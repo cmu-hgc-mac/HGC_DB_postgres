@@ -416,8 +416,8 @@ def export_data():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
             
-            show_message(f"Check terminal to enter LXPLUS credentials.")
             if upload_dev_stat or upload_prod_stat:
+                show_message(f"Check terminal to enter LXPLUS credentials.")
                 scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
             subprocess.run(export_command_list)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
