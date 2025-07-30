@@ -12,7 +12,7 @@ import tzlocal
 import pytz
 import re
 import requests
-import json
+import json, webbrowser
 # from zoneinfo import ZoneInfo
 
 resource_yaml = 'export_data/resource.yaml'
@@ -428,14 +428,18 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
         try:
             print(f"Running on {platform.system()}")
             if platform.system() == "Windows":
-                ssh_cmd = ["ssh", "-MNf",
-                           "-o", "ControlMaster=yes",
-                           "-o", "ControlPath=C:/Users/%USERNAME%/.ssh/scp-%r@%h-%p",
-                           "-o", f"ControlPersist={scp_persist_minutes}m",
-                           "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
-                           f"{dbl_username}@dbloader-hgcal"]
+                print("SSH ControlMaster unavailabele for Windows.")
+                print("Install Windows Subsystem for Linux (WSL) and reclone this repository in a Linux space.")
+                print("https://learn.microsoft.com/en-us/windows/wsl/install")
+                webbrowser.open(f"https://learn.microsoft.com/en-us/windows/wsl/install")
+                # ssh_cmd = ["ssh", "-MNf",
+                #            "-o", "ControlMaster=yes",
+                #            "-o", "ControlPath=C:/Users/%USERNAME%/.ssh/scp-%r@%h-%p",
+                #            "-o", f"ControlPersist={scp_persist_minutes}m",
+                #            "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
+                #            f"{dbl_username}@dbloader-hgcal"]
                 
-                subprocess.run(ssh_cmd, shell=True, check=True) 
+                # subprocess.run(ssh_cmd, shell=True, check=True) 
             
             else: ## platform.system() == "Linux" or platform.system() == "Darwin" 
                 ssh_cmd = ["ssh", "-MNf",
@@ -456,7 +460,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
     if result.returncode == 0:
         print("ControlMaster process alive.")
     else:
-        print("Something went wrong.")
+        print("ControlMaster process failed.")
     ### ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal ## To kill process
     return result.returncode
     
