@@ -441,13 +441,17 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
         try:
             print(f"Running on {platform.system()}")
             if platform.system() == "Windows":
+                print("")
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 print("SSH ControlMaster unavailabele for Windows.")
                 print("Install Windows Subsystem for Linux (WSL) and reclone this repository in a Linux space.")
                 print("https://learn.microsoft.com/en-us/windows/wsl/install")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("")
                 webbrowser.open(f"https://learn.microsoft.com/en-us/windows/wsl/install")
                
             else: ## platform.system() == "Linux" or platform.system() == "Darwin" 
+                print("")
                 print("****************************************")
                 print("******* LXPLUS LOGIN CREDENTIALS *******")
                 print("****************************************")
@@ -462,6 +466,16 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
 
                 print("** SSH ControlMaster session started. **")
                 print("****************************************")
+                print("")
+                print("************* PLEASE NOTE **************")
+                print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
+                print(f"To change this, define 'scp_persist_minutes: 240' in dbase_info/conn.yaml.")
+                print(f"To allow password-free SCP to your LXPLUS for {scp_persist_minutes} minutes...")
+                print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
+                print(f"To force quit this open connection manually, run below command in your terminal:")
+                print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
+                print("****************************************")
+                print("")
 
 
         except Exception as e:
@@ -470,16 +484,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
     
     result = subprocess.run(test_cmd, capture_output=True, text=True)
     if result.returncode == 0:
-        print("")
-        print("************* PLEASE NOTE **************")
-        print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
-        print(f"To change this, in dbase_info/conn.yaml, define 'scp_persist_minutes: 240'.")
-        print(f"To allow password-less SCP to your LXPLUS for {scp_persist_minutes} minutes....")
-        print(f"in dbase_info/conn.yaml, define 'scp_force_quit: False'.")
-        print(f"To force close this open connection manually, run below command in your terminal:")
-        print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
-        print("****************************************")
-        print("")
+        print("ControlMaster process alive.")
     else:
         print("ControlMaster process failed.")
     ### ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal ## To kill process

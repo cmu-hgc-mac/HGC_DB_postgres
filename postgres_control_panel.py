@@ -425,7 +425,8 @@ def export_data():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
-            scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, scp_ssh_port=scp_ssh_port)
+            if scp_force_quit:
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, scp_ssh_port=scp_ssh_port)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
             
         else:
