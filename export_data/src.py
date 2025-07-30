@@ -432,6 +432,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 print("Install Windows Subsystem for Linux (WSL) and reclone this repository in a Linux space.")
                 print("https://learn.microsoft.com/en-us/windows/wsl/install")
                 webbrowser.open(f"https://learn.microsoft.com/en-us/windows/wsl/install")
+               
                 # ssh_cmd = ["ssh", "-MNf",
                 #            "-o", "ControlMaster=yes",
                 #            "-o", "ControlPath=C:/Users/%USERNAME%/.ssh/scp-%r@%h-%p",
@@ -450,7 +451,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                        f"{dbl_username}@dbloader-hgcal"]    
                 subprocess.run(ssh_cmd, check=True)
 
-            print("SSH ControlMaster session started.")
+                print("SSH ControlMaster session started.")
 
         except Exception as e:
             print(f"Failed to create control file.")
