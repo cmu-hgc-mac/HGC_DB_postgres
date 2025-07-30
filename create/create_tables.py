@@ -172,6 +172,7 @@ async def create_tables():
                 IF EXISTS (
                     SELECT 1 FROM {target_table}
                     WHERE REPLACE({replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                        AND {target_table}.{target_col} IS NULL
                 ) THEN
                     UPDATE {target_table}
                     SET {target_col} = NEW.{source_col}
