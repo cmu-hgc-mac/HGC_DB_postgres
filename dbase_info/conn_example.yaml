@@ -10,3 +10,4 @@ max_cern_db_request: 1000
 scp_persist_minutes: 240
 scp_force_quit: True
 scp_ssh_port: 22
+delete_xmls: True
