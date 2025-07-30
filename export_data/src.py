@@ -426,96 +426,27 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
             except:
                 print(f"Failed to remove control files: {controlfiles}")
         try:
-            if platform.system() == "Darwin":
-                print("Running on macOS")
-                ssh_cmd = f"ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_minutes}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal"
-                osascript_cmd = f'''
-                tell application "Terminal"
-                    do script "{ssh_cmd}; exit"
-                    activate
-                    repeat until not (exists window 1)
-                        delay 1
-                    end repeat
-                end tell
-                '''
-                subprocess.run(["osascript", "-e", osascript_cmd])
-
-            elif platform.system() == "Windows":
-                print("Running on Windows")
-                ssh_cmd = f'ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist={scp_persist_minutes}m -o ProxyJump={dbl_username}@lxplus.cern.ch {dbl_username}@dbloader-hgcal'
-                subprocess.Popen(['start', 'cmd', '/c', ssh_cmd], shell=True) ### `/c` means run command then close
-
-                ssh_cmd = (f'ssh -MNf -o ControlMaster=yes '
-                            f'-o ControlPath=~/.ssh/scp-%r@%h:%p '
-                            f'-o ControlPersist={scp_persist_minutes}m '
-                            f'-o ProxyJump={dbl_username}@lxplus.cern.ch '
-                            f'{dbl_username}@dbloader-hgcal')
-                subprocess.run(ssh_cmd, shell=True) # Run synchronously — block until finished
+            print(f"Running on {platform.system()}")
+            if platform.system() == "Windows":
+                ssh_cmd = ["ssh", "-MNf",
+                           "-o", "ControlMaster=yes",
+                           "-o", "ControlPath=C:/Users/%USERNAME%/.ssh/scp-%r@%h-%p",
+                           "-o", f"ControlPersist={scp_persist_minutes}m",
+                           "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
+                           f"{dbl_username}@dbloader-hgcal"]
+                
+                subprocess.run(ssh_cmd, shell=True, check=True) 
             
-            else: ## platform.system() == "Linux":
-                print(f"Running on {platform.system()}")
-                # ssh_cmd = ("ssh -MNf "
-                #             "-o ControlMaster=yes "
-                #             "-o ControlPath=~/.ssh/scp-%r@%h:%p "
-                #             f"-o ControlPersist={scp_persist_minutes}m "
-                #             f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
-                #             f"{dbl_username}@dbloader-hgcal")
-                # subprocess.run(["xterm", "-hold", "-e", ssh_cmd])  # BLOCKS until xterm closes
+            else: ## platform.system() == "Linux" or platform.system() == "Darwin" 
+                ssh_cmd = ["ssh", "-MNf",
+                       "-o", "ControlMaster=yes",
+                       "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
+                       "-o", f"ControlPersist={scp_persist_minutes}m",
+                       "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
+                       f"{dbl_username}@dbloader-hgcal"]    
+                subprocess.run(ssh_cmd, check=True)
 
-                # ssh_cmd = (
-                #             "nohup ssh -MNf "
-                #             "-o ControlMaster=yes "
-                #             "-o ControlPath=~/.ssh/scp-%r@%h:%p "
-                #             f"-o ControlPersist={scp_persist_minutes}m "
-                #             f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
-                #             f"{dbl_username}@dbloader-hgcal > /dev/null 2>&1 &")
-                # # xterm will close if ssh is successful, but will stay open if there’s an error
-                # xterm_cmd = f"bash -c '{ssh_cmd} || {{ echo \"SSH failed – check your password or settings.\"; read -p \"Press Enter to close...\"; }}'"
-                # xterm_cmd = f"bash -c '{ssh_cmd} && echo \"Tunnel established. Press Enter to close.\" && read'"
-                # xterm_cmd = f"bash -c '{ssh_cmd}; echo \"Tunnel established. Press Enter to close.\"; read'"
-                # subprocess.run(["xterm", "-e", xterm_cmd])
-                # ssh_cmd = (
-                #     "ssh -MN "  # no -f!
-                #     "-o ControlMaster=yes "
-                #     "-o ControlPath=~/.ssh/scp-%r@%h:%p "
-                #     f"-o ControlPersist={scp_persist_minutes}m "
-                #     f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
-                #     f"{dbl_username}@dbloader-hgcal"
-                # )
-
-                # xterm_script = f"""
-                #     bash -c '
-                #     {ssh_cmd}
-                #     echo "SSH tunnel closed or failed."
-                #     read -p "Press Enter to close..."
-                #     '
-                # """
-
-                # subprocess.run(["xterm", "-e", xterm_script])
-
-                ssh_cmd = (
-                    f"ssh -M -N -f "
-                    f"-o ControlMaster=yes "
-                    f"-o ControlPath=~/.ssh/scp-%r@%h:%p "
-                    f"-o ControlPersist={scp_persist_minutes}m "
-                    f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
-                    f"{dbl_username}@dbloader-hgcal"
-                )
-
-                # All in one line for safety
-                bash_line = (
-                    f"echo '>>> Starting SSH ControlMaster session...' && "
-                    f"{ssh_cmd} && "
-                    f"echo '✅ SSH ControlMaster is now running in the background.' && "
-                    f"echo 'You can safely close this xterm window.' && "
-                    f"read -p 'Press Enter to close this window...'"
-                )
-
-                # Run xterm, blocking until the user closes it
-                subprocess.run([
-                    "xterm", "-hold", "-e", "bash", "-c", bash_line
-                ])
-
+            print("SSH ControlMaster session started.")
 
         except Exception as e:
             print(f"Failed to create control file.")
@@ -523,7 +454,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
     
     result = subprocess.run(test_cmd, capture_output=True, text=True)
     if result.returncode == 0:
-        print("Control master process alive.")
+        print("ControlMaster process alive.")
     else:
         print("Something went wrong.")
     ### ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal ## To kill process
