@@ -428,6 +428,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
         try:
             print(f"Running on {platform.system()}")
             if platform.system() == "Windows":
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 print("SSH ControlMaster unavailabele for Windows.")
                 print("Install Windows Subsystem for Linux (WSL) and reclone this repository in a Linux space.")
                 print("https://learn.microsoft.com/en-us/windows/wsl/install")
@@ -443,6 +444,9 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 # subprocess.run(ssh_cmd, shell=True, check=True) 
             
             else: ## platform.system() == "Linux" or platform.system() == "Darwin" 
+                print("****************************************")
+                print("******* LXPLUS LOGIN CREDENTIALS *******")
+                print("****************************************")
                 ssh_cmd = ["ssh", "-MNf",
                        "-o", "ControlMaster=yes",
                        "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
@@ -451,7 +455,8 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                        f"{dbl_username}@dbloader-hgcal"]    
                 subprocess.run(ssh_cmd, check=True)
 
-                print("SSH ControlMaster session started.")
+                print("** SSH ControlMaster session started. **")
+                print("****************************************")
 
         except Exception as e:
             print(f"Failed to create control file.")
