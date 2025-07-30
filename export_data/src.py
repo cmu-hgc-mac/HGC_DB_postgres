@@ -474,24 +474,40 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240):
                 # xterm_cmd = f"bash -c '{ssh_cmd} && echo \"Tunnel established. Press Enter to close.\" && read'"
                 # xterm_cmd = f"bash -c '{ssh_cmd}; echo \"Tunnel established. Press Enter to close.\"; read'"
                 # subprocess.run(["xterm", "-e", xterm_cmd])
+                # ssh_cmd = (
+                #     "ssh -MN "  # no -f!
+                #     "-o ControlMaster=yes "
+                #     "-o ControlPath=~/.ssh/scp-%r@%h:%p "
+                #     f"-o ControlPersist={scp_persist_minutes}m "
+                #     f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
+                #     f"{dbl_username}@dbloader-hgcal"
+                # )
+
+                # xterm_script = f"""
+                #     bash -c '
+                #     {ssh_cmd}
+                #     echo "SSH tunnel closed or failed."
+                #     read -p "Press Enter to close..."
+                #     '
+                # """
+
+                # subprocess.run(["xterm", "-e", xterm_script])
+
                 ssh_cmd = (
-                    "ssh -MN "  # no -f!
-                    "-o ControlMaster=yes "
-                    "-o ControlPath=~/.ssh/scp-%r@%h:%p "
+                    f"ssh -MNf "
+                    f"-o ControlMaster=yes "
+                    f"-o ControlPath=~/.ssh/scp-%r@%h:%p "
                     f"-o ControlPersist={scp_persist_minutes}m "
                     f"-o ProxyJump={dbl_username}@lxplus.cern.ch "
                     f"{dbl_username}@dbloader-hgcal"
                 )
 
-                xterm_script = f"""
-                    bash -c '
-                    {ssh_cmd}
-                    echo "SSH tunnel closed or failed."
-                    read -p "Press Enter to close..."
-                    '
-                """
+                
+                terminal_cmd = [
+                    "xterm", "--", "bash", "-c", f"{ssh_cmd}; exec bash"
+                ]
 
-                subprocess.run(["xterm", "-e", xterm_script])
+                subprocess.Popen(terminal_cmd)
 
         except Exception as e:
             print(f"Failed to create control file.")
