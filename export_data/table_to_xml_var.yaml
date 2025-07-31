@@ -592,13 +592,13 @@ bp_cond:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: THICKNESS
-  dbase_col: thickness
+  dbase_col: avg_thickness
   dbase_table: bp_inspect
   xml_tag: THICKNESS
   nested_query: null
   nullable: 'no'
 - xml_temp_val: WEIGHT
-  dbase_col: weight
+  dbase_col: weight_grams
   dbase_table: bp_inspect
   nested_query: null
   nullable: 'no'
@@ -682,7 +682,7 @@ hxb_cond:
   default_value: null
   nullable: 'no'
 - xml_temp_val: THICKNESS
-  dbase_col: thickness
+  dbase_col: avg_thickness
   dbase_table: hxb_inspect
   xml_tag: THICKNESS
   nested_query: null
