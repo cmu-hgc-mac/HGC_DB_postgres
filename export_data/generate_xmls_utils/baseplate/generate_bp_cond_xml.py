@@ -129,7 +129,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             time_end = results.get("cure_time_end", "")
                             db_values[xml_var] = f"{run_date} {time_end}"
                         elif xml_var == "THICKNESS":
-                            db_values['THICKNESS'] = str(round(float(results.get("thickness")), 3))
+                            db_values['THICKNESS'] = str(round(float(results.get("avg_thickness")), 3))
                         elif xml_var == "FLATNESS":
                             db_values['FLATNESS'] = str(round(float(results.get("flatness")), 3))
 

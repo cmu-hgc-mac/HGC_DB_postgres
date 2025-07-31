@@ -62,6 +62,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var]     = await get_kind_of_part(module_name, 'module', conn)
                 elif xml_var == 'INITIATED_BY_USER':
                     db_values[xml_var]     = lxplus_username
+                elif xml_var == "RUN_TYPE":
+                    db_values[xml_var] = "Si module current-voltage test"
+                elif xml_var == "COMMENT_DESCRIPTION":
+                    db_values[xml_var] = f"MAC current-voltage test for {module_name}"
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
@@ -142,8 +146,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '')
                 
-                db_values['RUN_TYPE'] = "Si module current-voltage test"
-                db_values['COMMENT_DESCRIPTION'] = f"MAC current-voltage test for {module_name}"
+                
                 if xml_type == 'iv':
                     db_values_iv[xml_var] = db_values[xml_var]
                 elif xml_type == 'env':
