@@ -252,6 +252,8 @@ def import_data():
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
 
+    Label(input_window, wraplength = 200, text="Run 'Modify tables' to create updated QC columns prior to importing parts.", fg="red").pack(pady=5)
+
     # Label(input_window, text="Enter lxplus username:").pack(pady=5)
     # lxuser_var = StringVar()
     # lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
