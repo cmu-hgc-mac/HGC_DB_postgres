@@ -100,6 +100,11 @@ async def update_module_info():
             SELECT MIN(module_pedestal_test.date_test) FROM module_pedestal_test
             WHERE module_pedestal_test.module_name = module_info.module_name) WHERE module_info.test_ped IS NULL;"""
         
+        update_hxb_inspect_thickness1 = """UPDATE hxb_inspect SET avg_thickness = thickness WHERE thickness IS NOT NULL AND avg_thickness IS NULL;"""
+        update_hxb_inspect_thickness2 = """UPDATE hxb_inspect SET thickness = avg_thickness WHERE avg_thickness IS NOT NULL AND thickness IS NULL;"""
+        update_bp_inspect_thickness1 = """UPDATE bp_inspect SET avg_thickness = thickness WHERE thickness IS NOT NULL AND avg_thickness IS NULL;"""
+        update_bp_inspect_thickness2 = """UPDATE bp_inspect SET thickness = avg_thickness WHERE avg_thickness IS NOT NULL AND thickness IS NULL;"""
+            
         result = await conn.execute(update_query_mod)
         print(f"Updated proto_name, hxb_name columns in module_info table")
         result = await conn.execute(update_query_proto)
@@ -115,6 +120,14 @@ async def update_module_info():
         result = await conn.execute(update_module_encapbk_info)
         result = await conn.execute(update_module_testiv_info)
         result = await conn.execute(update_module_testped_info)
+        try:
+            print('Duplicating thickness, avg_thickness')
+            result = await conn.execute(update_hxb_inspect_thickness1)
+            result = await conn.execute(update_bp_inspect_thickness1)
+            result = await conn.execute(update_hxb_inspect_thickness2)
+            result = await conn.execute(update_bp_inspect_thickness2)
+        except:
+             print("Either thickness or avg_thickness columns doesn't exist. This is a tempirary feature till all MAC DBs are updated.")
         
     except Exception as e:
         print(f"An error occurred: {e}")
