@@ -12,7 +12,8 @@ import tzlocal
 import pytz
 import re
 import requests
-import json, webbrowser
+import json
+import webbrowser
 # from zoneinfo import ZoneInfo
 
 resource_yaml = 'export_data/resource.yaml'
@@ -408,12 +409,15 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         return []
 
 
-def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, scp_ssh_port = 22):
+def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, scp_ssh_port = 22, get_scp_status = False):
 
     test_cmd = ["ssh", 
                 "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
                 "-O", "check",     # <-- ask the master process if it’s alive
                 f"{dbl_username}@dbloader-hgcal"]
+    if get_scp_status:
+        result = subprocess.run(test_cmd, capture_output=True, text=True)
+        return result.returncode
 
     if scp_force_quit:
         quit_cmd = ["ssh", "-O", "exit",
@@ -429,6 +433,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
 
     result = subprocess.run(test_cmd, capture_output=True, text=True)    
     if result.returncode != 0 and dbl_username:
+        ### Process is not alive but residual files exist that need to be deletes
         pattern = os.path.expanduser(f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:*") ## f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:22"
         controlfiles =  glob.glob(pattern)
         if len(controlfiles) > 0:
