@@ -56,7 +56,7 @@ bp_qc_cols = {'qc_cols': {'tolerance_grade': 'tolerance_grade',
                   'flatness_grade': 'flatness_grade',
                   'height_lam_avg': 'avg_thickness_init',
                   'height_lam_max': 'max_thickness_init',
-                  'flatness_lam': 'flatness',
+                  'flatness_lam': 'flatness_init',
                   'weight_lam': 'weight_grams',
                   'diameter_hole_passed':'diameter_hole_passed',
                   "notch_size_passed": "notch_size_passed",
@@ -225,12 +225,16 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
 def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols = None):
     try:
         data_full = read_from_cern_db(partID = bp_name, cern_db_url=cern_db_url)
-        db_dict = {"bp_name": bp_name}
+        db_dict = None
         if data_full:
-            child_list, bp_name = data_full["qc"]["baseplate_raw"], data_full["serial_number"]
-            for qck in part_qc_cols:
-                db_dict.update({part_qc_cols[qck]: child_list[qck]})
-            return db_dict
+            if "baseplate_raw" in data_full["qc"]:
+                db_dict = {"bp_name": bp_name}
+                child_dict, bp_name = data_full["qc"]["baseplate_raw"], data_full["serial_number"]
+                for qck in part_qc_cols.keys():
+                    child_dict_val = child_dict[qck]
+                    db_val = bool(child_dict_val) if child_dict_val in [0,1] else child_dict_val
+                    db_dict.update({part_qc_cols[qck]: db_val})
+        return db_dict
     except Exception as e:
         traceback.print_exc()
         print(f"ERROR in acquiring baseplate QC data from API output for {data_full['serial_number']}: ", e)
@@ -303,13 +307,13 @@ async def main():
                 secondary_upload = await get_missing_roc_hxb(pool)
             elif pt == 'bp':
                 secondary_upload = await get_missing_qc_bp(pool)
+                part_qc_cols = partTransInit[pt]['qc_cols']
             if secondary_upload:
                 for p in secondary_upload:
                     try:
                         if pt == 'hxb':
                             db_dict_secondary = get_roc_dict_for_db_upload(p, cern_db_url = cern_db_url)
                         elif pt == 'bp':
-                            part_qc_cols = partTransInit[pt]['qc_cols']
                             db_dict_secondary = get_bp_qc_for_db_upload(p, cern_db_url = cern_db_url, part_qc_cols = part_qc_cols)
                         if db_dict_secondary is not None:
                             try:
