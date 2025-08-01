@@ -1,7 +1,7 @@
 hxb_pedtest_no,serial PRIMARY KEY,fk_name,parent_table,comment
 hxb_no,INT,fk_hxb_ped,hexaboard,
 hxb_name,TEXT,fk_identifier,,
-status,INT,,,
+status,INT,,,"see status_desc for definition"
 status_desc,TEXT,,,
 trim_bias_voltage,REAL,,,
 count_bad_cells,SMALLINT,,,
