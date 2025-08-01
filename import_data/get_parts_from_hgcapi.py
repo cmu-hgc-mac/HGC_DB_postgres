@@ -40,17 +40,26 @@ def str2bool(boolstr):
     dictstr = {'True': True, 'False': False}
     return dictstr[boolstr]
 
-partTrans = {'bp' :{'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 'bp_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
-             'sen':{'apikey':'sensors', 'dbtabname': 'sensor', 'db_col': 'sen_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment'}},
-             'hxb':{'apikey':'pcbs', 'dbtabname': 'hxb_inspect', 'db_col': 'hxb_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
+partTrans = {'bp' :{'apikey':'baseplates',   'dbtabname': 'bp_inspect', 'db_col': 'bp_name',  'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
+             'sen':{'apikey':'sensors',      'dbtabname': 'sensor',     'db_col': 'sen_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment'}},
+             'hxb':{'apikey':'pcbs',         'dbtabname': 'hxb_inspect','db_col': 'hxb_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
              'pml':{'apikey':'protomodules', 'dbtabname': 'proto_inspect', 'db_col': 'proto_name' ,'qc_cols':  {'prto_grade': 'grade', 'prto_thkns_mm': 'avg_thickness', "prto_thkns_mm": 'max_thickness', 'prto_fltns_mm': 'flatness', "snsr_x_offst": 'x_offset_mu', "snsr_y_offst": 'y_offset_mu',"snsr_ang_offst": 'ang_offset_deg'}},
              'ml' :{'apikey':'modules', 'dbtabname': 'module_inspect', 'db_col': 'module_name', 'qc_cols':  {'mod_grade': 'grade', 'mod_ave_thkns_mm': 'avg_thickness', "mod_max_thkns_mm": 'max_thickness', 'mod_fltns_mm': 'flatness', "pcb_plcment_x_offset": 'x_offset_mu', "pcb_plcment_y_offset": 'y_offset_mu',"pcb_plcment_ang_offset": 'ang_offset_deg'}},
             }
 
-partTransInit = {'bp': {'apikey':'baseplates', 'dbtabname': 'baseplate', 'db_cols': {'serial_number': 'bp_name', 'kind': 'kind', 'comment_description': 'comment'}},
+partTransInit = {'bp': {'apikey':'baseplates', 'dbtabname': 'baseplate', 'db_cols': {'serial_number': 'bp_name',  'kind': 'kind', 'comment_description': 'comment'}},
                 'sen': {'apikey':'sensors',    'dbtabname': 'sensor',    'db_cols': {'serial_number': 'sen_name', 'kind': 'kind', 'comment_description': 'comment'}},
                 'hxb': {'apikey':'pcbs',       'dbtabname': 'hexaboard', 'db_cols': {'serial_number': 'hxb_name', 'kind': 'kind', 'comment_description': 'comment'}},
             }
+
+bp_qc_cols = {'qc_cols': {'tolerance_grade': 'tolerance_grade',
+                  'flatness_grade': 'flatness_grade',
+                  'height_lam_avg': 'avg_thickness_init',
+                  'height_lam_max': 'max_thickness_init',
+                  'flatness_lam': 'flatness_init',
+                  'weight_lam': 'weight_grams',  }}
+
+partTransInit['bp'].update(bp_qc_cols)
 
 def check_roc_count(hxb_name, roc_count):
     ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
@@ -65,6 +74,12 @@ async def get_missing_roc_hxb(pool):
         rows = await conn.fetch(get_missing_roc_hxb_query)
     return [row['hxb_name'] for row in rows]
 
+async def get_missing_qc_bp(pool):
+    get_missing_qc_bp_query = """SELECT REPLACE(bp_name,'-','') AS bp_name FROM baseplate WHERE tolerance_grade IS NULL OR flatness_grade IS NULL;"""
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(get_missing_qc_bp_query)
+    return [row['bp_name'] for row in rows]
+
 def get_query_write(table_name, column_names, check_conflict_col = None, db_upload_data = None):
     pre_query = f""" INSERT INTO {table_name} ({', '.join(column_names)}) SELECT """
     data_placeholder = ', '.join([f'${i+1}' for i in range(len(column_names))])
@@ -78,7 +93,7 @@ def get_query_update(table_name, column_names, check_conflict_col = None, db_upl
     query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
     return query
 
-def get_query_update_roc(table_name, column_names, check_conflict_col = None, db_upload_data = None):
+def get_query_update_secondary(table_name, column_names, check_conflict_col = None, db_upload_data = None):
     update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
     query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}';"""
     return query
@@ -97,10 +112,10 @@ async def write_to_db(pool, db_upload_data, partType = None, check_conflict_col=
         query = get_query_update(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
         await conn.execute(query, *db_upload_data.values())
 
-async def write_to_db_roc(pool, db_upload_data, partType = None, check_conflict_col=None):
+async def write_to_db_secondary(pool, db_upload_data, partType = None, check_conflict_col=None):
     table_name = partTransInit[partType]["dbtabname"]
     async with pool.acquire() as conn:
-        query = get_query_update_roc(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
+        query = get_query_update_secondary(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
         await conn.execute(query, *db_upload_data.values())
 
 def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-cmsr'):
@@ -201,6 +216,29 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
         # print('*'*100)
         return None
 
+def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols = None):
+    """
+    According to Jay Mathew Lawhorn, (ETP):
+    We will not send you any parts for installation that have any of the booleans false (and if we send you rejected baseplates as dummies, the tolerance grade will be a C).
+    Tolerance grade and flatness grade are separate, with tolerance grade covering everything except flatness. We thought the flatness grading might change, so we kept it separate.
+    """
+    try:
+        data_full = read_from_cern_db(partID = bp_name, cern_db_url=cern_db_url)
+        db_dict = None
+        if data_full:
+            if "baseplate_raw" in data_full["qc"]:
+                db_dict = {"bp_name": bp_name}
+                child_dict, bp_name = data_full["qc"]["baseplate_raw"], data_full["serial_number"]
+                for qck in part_qc_cols.keys():
+                    db_dict.update({part_qc_cols[qck]: child_dict[qck]})
+        return db_dict
+    except Exception as e:
+        traceback.print_exc()
+        print(f"ERROR in acquiring baseplate QC data from API output for {data_full['serial_number']}: ", e)
+        # print(json.dumps(data_full, indent=2))
+        # print('*'*100)
+        return None
+
 async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
@@ -260,23 +298,34 @@ async def main():
                                 print('Dictionary:', (db_dict))
                     except:
                         traceback.print_exc()
+
+            secondary_upload, db_dict_secondary = None, None
             if pt == 'hxb':
-                hxb_names_for_roc = await get_missing_roc_hxb(pool)
-                for p in hxb_names_for_roc:
+                secondary_upload = await get_missing_roc_hxb(pool)
+            elif pt == 'bp':
+                secondary_upload = await get_missing_qc_bp(pool)
+                part_qc_cols = partTransInit[pt]['qc_cols']
+            if secondary_upload:
+                for p in secondary_upload:
                     try:
-                        db_dict = get_roc_dict_for_db_upload(p, cern_db_url = cern_db_url)
-                        if db_dict is not None:
+                        if pt == 'hxb':
+                            db_dict_secondary = get_roc_dict_for_db_upload(p, cern_db_url = cern_db_url)
+                        elif pt == 'bp':
+                            db_dict_secondary = get_bp_qc_for_db_upload(p, cern_db_url = cern_db_url, part_qc_cols = part_qc_cols)
+                        if db_dict_secondary is not None:
                             try:
-                                await write_to_db_roc(pool, db_dict, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
+                                await write_to_db_secondary(pool, db_dict_secondary, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
                             except Exception as e:
                                 print(f"ERROR for single part upload for {p['serial_number']}", e)
                                 traceback.print_exc()
-                                print('Dictionary:', (db_dict))
+                                print('Dictionary:', (db_dict_secondary))
                     except:
                         traceback.print_exc()
+                
                 print(f'Writing {partTrans[pt]["apikey"]} to postgres from {cern_db_url.upper()} complete.')
                 print('-'*40); print('\n')
-    
+
+                            
     async with pool.acquire() as conn:
         try:
             query_v3c = f"""UPDATE hexaboard SET roc_version = 'HGCROCV3c' WHERE comment LIKE '%44-4c%' AND (roc_version IS NULL OR roc_version <> 'HGCROCV3c'); """

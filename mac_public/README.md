@@ -36,7 +36,11 @@ from HGC_DB_postgres.mac_public.get_macs_data import get_macs_data
 my_query = """SELECT module_name, hxb_name FROM module_info"""
 data_list = get_macs_data(query = my_query, macs_conn_file = 'HGC_DB_postgres/mac_public/macs_db_conn.yaml')
 ```
-To allow access from FNAL/LPC, MACs will need to include the below line in their pg_hba.conf file ([Instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pg_hba_documentation.md#example)). 
+
+# Allow access from FNAL/LPC
+To allow access from FNAL/LPC, MACs will need to include the below lines in their pg_hba.conf file ([Instructions](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/pg_hba_documentation.md#example)). 
 ```
+host    all    viewer    188.184.0.0/15    trust    ## CERN datacenter LCG
+host    all    viewer    128.142.0.0/16    trust    ## CERN datacenter LCG
 host    all    viewer    131.225.0.0/16    trust    ## Viewer w/o password on FNAL network
 ```
