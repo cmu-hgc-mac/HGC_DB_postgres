@@ -253,17 +253,7 @@ def import_data():
     shipper_var_entry.pack(pady=5)
 
     Label(input_window, wraplength = 200, text="Run 'Modify tables' to create updated QC columns prior to importing parts.", fg="red").pack(pady=5)
-
-    # Label(input_window, text="Enter lxplus username:").pack(pady=5)
-    # lxuser_var = StringVar()
-    # lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    # lxuser_var_entry.pack(pady=5)
-
-    # Label(input_window, text="Enter lxplus password:").pack(pady=5)
-    # lxpassword_var = StringVar()
-    # lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    # lxpassword_entry.pack(pady=5)
-
+    
     download_dev_var = BooleanVar(value=False)
     # download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
     # download_dev_var_entry.pack(pady=5)
