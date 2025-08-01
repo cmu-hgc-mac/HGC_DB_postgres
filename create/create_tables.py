@@ -20,10 +20,11 @@ db_params = {
     'database': conn_info.get('dbname'),
     'user': 'postgres',
     'host': conn_info.get('db_hostname'),
-    'port': conn_info.get('port'),}
+    'port': conn_info.get('port'),
+    'password': 'hgcal'}
 
 if args.password is None:
-        dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+    dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
 else:
     if args.encrypt_key is None:
         print("Encryption key not provided. Exiting..."); exit()
@@ -47,11 +48,14 @@ async def create_tables():
             rows = []
             for row in csvFile:
                 rows.append(row)
+            fk_name_ind, parent_table_ind = rows[0].index('fk_name'), rows[0].index('parent_table')
+            rows[0][fk_name_ind],rows[0][parent_table_ind] = "", "" ## need to get rid of this as well
             columns = np.array(rows).T
+            comment_columns = columns[2] ### need to swap their order
             fk = columns[0][(np.where(columns[-1] != ''))]
             fk_ref = columns[-2][(np.where(columns[-1] != ''))]
             fk_tab = columns[-1][(np.where(columns[-1] != ''))]
-            return fname.split('.csv')[0], columns[0], columns[1], fk, fk_ref, fk_tab  ### fk, fk_tab are returned as lists
+            return fname.split('.csv')[0], columns[0], columns[1], fk, fk_ref, fk_tab, comment_columns  ### fk, fk_tab are returned as lists
 
     def get_column_names(col1_list, col2_list, fk_name, fk_ref, parent_table):
         combined_list = []
@@ -122,7 +126,8 @@ async def create_tables():
             for i in data.get('tables'):
                 fname = f"{(i['fname'])}"
                 print(f'Getting info from {fname}...')
-                table_name, table_header, dat_type, fk_name, fk_ref, parent_table = get_table_info(loc, tables_subdir, fname)
+                table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, fname)
+                exit()
                 table_columns = get_column_names(table_header, dat_type, fk_name, fk_ref, parent_table)
                 await create_table(table_name, table_columns)
                 pk_seq = f'{table_name}_{table_header[0]}_seq'
