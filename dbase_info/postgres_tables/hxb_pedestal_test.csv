@@ -8,14 +8,14 @@ count_bad_cells,SMALLINT,,,
 list_dead_cells,SMALLINT[],,,
 list_noisy_cells,SMALLINT[],,,
 comment,TEXT,,,
-pedestal_config_json,TEXT,,,
+pedestal_config_json,TEXT,,,"yaml output from testing software"
 rel_hum,TEXT,,,
 temp_c,TEXT,,,
 date_test,DATE,,,
 time_test,TIME,,,
 inspector,TEXT,,,
 chip,SMALLINT[],,,
-channel,SMALLINT[],,,
+channel,SMALLINT[],,,"channel on the corresponding chip"
 channeltype,SMALLINT[],,,
 adc_median,REAL[],,,
 adc_iqr,REAL[],,,
@@ -33,10 +33,10 @@ tot_efficiency,REAL[],,,
 tot_efficiency_error,REAL[],,,
 toa_efficiency,REAL[],,,
 toa_efficiency_error,REAL[],,,
-inverse_sqrt_n,NUMERIC,,,
-cell,SMALLINT[],,,
-x,REAL[],,,
-y,REAL[],,,
+inverse_sqrt_n,NUMERIC,,,"frac_uncertainty; n = number of events; often n=10032"
+cell,SMALLINT[],,,"cell number on the hexaboard"
+x,REAL[],,,"x-position of cell; for plotting"
+y,REAL[],,,"y-position of cell; for plotting"
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
