@@ -57,13 +57,7 @@ bp_qc_cols = {'qc_cols': {'tolerance_grade': 'tolerance_grade',
                   'height_lam_avg': 'avg_thickness_init',
                   'height_lam_max': 'max_thickness_init',
                   'flatness_lam': 'flatness_init',
-                  'weight_lam': 'weight_grams',
-                  'diameter_hole_passed':'diameter_hole_passed',
-                  "notch_size_passed": "notch_size_passed",
-                  "width_slot_passed": "width_slot_passed",
-                  "kapton_align_passed": "kapton_align_passed",
-                  "notch_align_passed": "notch_align_passed",
-                  }}
+                  'weight_lam': 'weight_grams',  }}
 
 partTransInit['bp'].update(bp_qc_cols)
 
@@ -223,6 +217,11 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
         return None
 
 def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols = None):
+    """
+    According to Jay Mathew Lawhorn, (ETP):
+    We will not send you any parts for installation that have any of the booleans false (and if we send you rejected baseplates as dummies, the tolerance grade will be a C).
+    Tolerance grade and flatness grade are separate, with tolerance grade covering everything except flatness. We thought the flatness grading might change, so we kept it separate.
+    """
     try:
         data_full = read_from_cern_db(partID = bp_name, cern_db_url=cern_db_url)
         db_dict = None
@@ -231,9 +230,7 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols =
                 db_dict = {"bp_name": bp_name}
                 child_dict, bp_name = data_full["qc"]["baseplate_raw"], data_full["serial_number"]
                 for qck in part_qc_cols.keys():
-                    child_dict_val = child_dict[qck]
-                    db_val = bool(child_dict_val) if child_dict_val in [0,1] else child_dict_val
-                    db_dict.update({part_qc_cols[qck]: db_val})
+                    db_dict.update({part_qc_cols[qck]: child_dict[qck]})
         return db_dict
     except Exception as e:
         traceback.print_exc()
