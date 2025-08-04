@@ -100,16 +100,7 @@ def load_image(image_path):
 def create_database():
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    # Field 1: Database Name
-    Label(input_window, text="Set initial: VIEWER password (only read):").pack(pady=5)
-    viewer_var = StringVar()
-    viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    viewer_var_entry.pack(pady=5)
-    # Field 2: Username
-    Label(input_window, text="Set initial: USER password (write access):").pack(pady=5)
-    user_var = StringVar()
-    user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    user_var_entry.pack(pady=5)
+    
     # Field 3: Password (hidden input)
     Label(input_window, text="**Enter postgres password:** (for modifications)").pack(pady=5)
     password_var = StringVar()
@@ -135,6 +126,19 @@ def create_database():
     submit_create_button.pack(pady=10)
     bind_button_keys(submit_create_button)
 
+    Label(input_window, text="Provide below fields if creating the database for the first time.", fg="green",wraplength=270).pack(pady=5)
+    
+    # Field 1: Database Name
+    Label(input_window, text="Set initial: VIEWER password (only read):").pack(pady=5)
+    viewer_var = StringVar()
+    viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    viewer_var_entry.pack(pady=5)
+    # Field 2: Username
+    Label(input_window, text="Set initial: USER password (write access):").pack(pady=5)
+    user_var = StringVar()
+    user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    user_var_entry.pack(pady=5)
+    
 def verify_shipin():
     input_window = Toplevel(root)
     input_window.title("Verify received components")
