@@ -6,22 +6,22 @@ bp_material,TEXT,,,
 sen_thickness,REAL,,,
 roc_version,TEXT,,,
 assembled,DATE,,,
-inspected,DATE,,,
-wb_front,DATE,,,
-wb_back,DATE,,,
-encap_front,DATE,,,
-encap_back,DATE,,,
+inspected,DATE,,,"same as module_inspect.date_inspect"
+wb_front,DATE,,,"same as front_wirebond.date_bond"
+wb_back,DATE,,,"same as back_wirebond.date_bond"
+encap_front,DATE,,,"same as front_encap.date_encap"
+encap_back,DATE,,,"same as back_encap.date_encap"
 inspect_sec,DATE,,,
-test_iv,DATE,,,
-test_ped,DATE,,,
+test_iv,DATE,,,"same as module_iv_test.date_test"
+test_ped,DATE,,,"same as module_pedestal_test.date_test"
 list_ground_pad,SMALLINT[],,,
 packed_datetime,TIMESTAMP,,,
 institution,TEXT,,,
 comment,TEXT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
-hxb_name,TEXT,,,
-bp_name,TEXT,,,
-sen_name,TEXT,,,
-proto_name,TEXT,,,
+hxb_name,TEXT,,,"same as module_assembly.hxb_name"
+bp_name,TEXT,,,"same as proto_assembly.bp_name"
+sen_name,TEXT,,,"same as proto_assembly.sen_name"
+proto_name,TEXT,,,"same as module_assembly.proto_name"
 shipped_datetime,TIMESTAMP,,,

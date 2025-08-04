@@ -19,4 +19,4 @@ module_no,INT,fk_mod_hxb,module_info,
 comment,TEXT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
-date_verify_received,DATE,,,
+date_verify_received,DATE,,,"will be filled if the hexaboard is not verified and is being tested/inspected/assembled"
