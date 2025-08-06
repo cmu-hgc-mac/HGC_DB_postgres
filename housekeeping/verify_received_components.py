@@ -25,8 +25,6 @@ def get_query_write(table_name, part_id_col = None):
 
 def get_query_update(table_name, part_id_col = None):
     query = f"""UPDATE {table_name} SET date_verify_received = $2 WHERE {part_id_col} = $1 AND date_verify_received IS NULL;"""
-    if table_name == "sensor":
-        query = f"""UPDATE {table_name} SET date_verify_received = $2 WHERE {part_id_col} = $1 AND date_verify_received IS NULL;"""
     return query
 
 async def write_to_db(partType=None, part_id_list=None, date_verified=None):
