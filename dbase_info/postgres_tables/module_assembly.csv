@@ -15,7 +15,7 @@ tape_batch,TEXT,,,"n/a if manufactuing batch unknown"
 tape_pattern,TEXT,,,"EDMS pattern version number; nullable; for MAC records"
 glue_batch,TEXT,,,
 glue_pattern,TEXT,,,"EDMS pattern version number; nullable; for MAC records"
-adhesive,TEXT,,,"hybrid or transfer tape only or glue only"
+adhesive,TEXT,,,"Hybrid / Transfer tape only / Epoxy only"
 ass_run_date,DATE,,,
 ass_time_begin,TIME,,,
 ass_time_end,TIME,,,

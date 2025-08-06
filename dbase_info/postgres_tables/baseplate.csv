@@ -1,18 +1,18 @@
 bp_no,serial PRIMARY KEY,fk_name,parent_table,comment
-bp_name,TEXT,fk_identifier,,
+bp_name,TEXT,fk_identifier,,"baseplate serial number"
 bp_material,TEXT,,,
 kind,TEXT,,,
 geometry,TEXT,,,
 resolution,TEXT,,,
-flatness_init,REAL,,,
-avg_thickness_init,REAL,,,
-max_thickness_init,REAL,,,
-tolerance_grade,TEXT,,,"covers everything except flatness"
-flatness_grade,TEXT,,,"may change over time"
-weight_grams,REAL,,,
+flatness_init,REAL,,,"imported from CMSR HGCAPI"
+avg_thickness_init,REAL,,,"imported from CMSR HGCAPI"
+max_thickness_init,REAL,,,"imported from CMSR HGCAPI"
+tolerance_grade,TEXT,,,"covers everything except flatness; imported from CMSR HGCAPI"
+flatness_grade,TEXT,,,"imported from CMSR HGCAPI"
+weight_grams,REAL,,,"imported from CMSR HGCAPI"
 bp_inspected,DATE,,,
-proto_no,INT,fk_pm_bp,proto_assembly,
+proto_no,INT,fk_pm_bp,proto_assembly,"primary key in proto_assembly table"
 comment,TEXT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
-date_verify_received,DATE,,,
+date_verify_received,DATE,,,"filled during MAC intake and if is being inspected/assembled without verification"
