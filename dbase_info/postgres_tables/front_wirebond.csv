@@ -3,11 +3,11 @@ module_name,TEXT,fk_identifier,,
 list_grounded_cells,SMALLINT[],,,
 list_unbonded_cells,SMALLINT[],,,
 cell_no,SMALLINT[],,,
-bond_count_for_cell,SMALLINT[],,,
+bond_count_for_cell,SMALLINT[],,,"number of bonds at this cell_no; recorded by wbGUI only if fewer than 3"
 bond_type,CHAR[],,,"signal channel = S; needs to be grounded = N; has been grounded = G; N has bond_count_for_cell by default set to 3 (should this be changed?)"
 wedge_id,TEXT,,,
 spool_batch,TEXT,,,
-wb_fr_marked_done,BOOLEAN DEFAULT FALSE,,,
+wb_fr_marked_done,BOOLEAN DEFAULT FALSE,,,"if marked TRUE, rebonding will not be attempted"
 temp_c,TEXT,,,
 rel_hum,TEXT,,,
 date_bond,DATE,,,
