@@ -7,7 +7,7 @@
 '''
 
 import os, sys, argparse, base64, subprocess, traceback, asyncio
-import shutil, pwinput, datetime, yaml
+import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
 from src import process_xml_list
 from find_missing_var_xml import find_missing_var_xml
@@ -164,6 +164,8 @@ async def main():
         db_type = 'int2r'
     
     if upload_dev_stat or upload_prod_stat:
+        print("Wait 3 seconds ...")
+        time.sleep(3) ### XMLs take a few seconds to get saved
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = today, encryption_key = encryption_key, cerndb = cerndb)
         # if ret:

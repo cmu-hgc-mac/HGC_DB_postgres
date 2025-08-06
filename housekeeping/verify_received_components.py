@@ -25,11 +25,9 @@ def get_query_write(table_name, part_id_col = None):
 
 def get_query_update(table_name, part_id_col = None):
     query = f"""UPDATE {table_name} SET date_verify_received = $2 WHERE {part_id_col} = $1 AND date_verify_received IS NULL;"""
-    if table_name == "sensor":
-        query = f"""UPDATE {table_name} SET date_verify_received = $2, sen_batch_id = $3 WHERE {part_id_col} = $1 AND date_verify_received IS NULL;"""
     return query
 
-async def write_to_db(partType=None, part_id_list=None, date_verified=None, batch_ID_list=None):
+async def write_to_db(partType=None, part_id_list=None, date_verified=None):
     pk_dict = {'baseplate': 'bp_name', 'sensor':'sen_name', 'hexaboard':'hxb_name'}
     part_id_col = pk_dict[partType]
     conn = await asyncpg.connect(**db_params)
@@ -39,7 +37,7 @@ async def write_to_db(partType=None, part_id_list=None, date_verified=None, batc
             await conn.execute(query, part_id)
             query = get_query_update(table_name = partType, part_id_col = part_id_col)
             if partType == "sensor":
-                await conn.execute(query, part_id, date_verified, batch_ID_list[pi])
+                await conn.execute(query, part_id, date_verified)
             else:
                 await conn.execute(query, part_id, date_verified)
     await conn.close()
@@ -83,14 +81,14 @@ async def main():
         db_params.update({'password': dbpassword})
 
     part_names = read_parts_from_file(args.file_path)
-    batchIDs = [None for i in part_names]
+    # batchIDs = [None for i in part_names]
     
     if partType == 'sensor':
         barcodes = part_names
-        batchIDs = [f"{b.split('_')[0][0:-6]}" for b in barcodes]
+        # batchIDs = [f"{b.split('_')[0][0:-6]}" for b in barcodes]
         part_names = [f"{b.split('_')[0][-6:]}_{sensor_type_dict[args.geometry]}" for b in barcodes]
 
-    await write_to_db(partType=partType, part_id_list=part_names, date_verified=date_verified, batch_ID_list = batchIDs)
+    await write_to_db(partType=partType, part_id_list=part_names, date_verified=date_verified)
     print(f"--> {len(part_names)} {args.partType}(s) marked as verified.")
     
 

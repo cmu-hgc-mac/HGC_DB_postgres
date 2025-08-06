@@ -2,6 +2,7 @@ import requests, json, yaml, os, argparse, datetime, sys
 import pwinput, asyncio, asyncpg, base64, traceback
 from cryptography.fernet import Fernet
 from natsort import natsorted, natsort_keygen
+from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 """
@@ -48,7 +49,7 @@ partTrans = {'bp' :{'apikey':'baseplates',   'dbtabname': 'bp_inspect', 'db_col'
             }
 
 partTransInit = {'bp': {'apikey':'baseplates', 'dbtabname': 'baseplate', 'db_cols': {'serial_number': 'bp_name',  'kind': 'kind', 'comment_description': 'comment'}},
-                'sen': {'apikey':'sensors',    'dbtabname': 'sensor',    'db_cols': {'serial_number': 'sen_name', 'kind': 'kind', 'comment_description': 'comment'}},
+                'sen': {'apikey':'sensors',    'dbtabname': 'sensor',    'db_cols': {'serial_number': 'sen_name', 'kind': 'kind', 'comment_description': 'comment', 'batch_number': 'sen_batch_id'}},
                 'hxb': {'apikey':'pcbs',       'dbtabname': 'hexaboard', 'db_cols': {'serial_number': 'hxb_name', 'kind': 'kind', 'comment_description': 'comment'}},
             }
 
@@ -79,6 +80,12 @@ async def get_missing_qc_bp(pool):
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_missing_qc_bp_query)
     return [row['bp_name'] for row in rows]
+
+async def get_missing_batch_sen(pool):
+    get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE sen_batch_id IS NULL OR sen_batch_id = '';"""
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(get_missing_batch_sen_query)
+    return [row['sen_name'] for row in rows]
 
 def get_query_write(table_name, column_names, check_conflict_col = None, db_upload_data = None):
     pre_query = f""" INSERT INTO {table_name} ({', '.join(column_names)}) SELECT """
@@ -239,6 +246,20 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols =
         # print('*'*100)
         return None
 
+def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi-cmsr'):
+    try:
+        data_full = read_from_cern_db(partID = sen_name, cern_db_url=cern_db_url)
+        db_dict = None
+        if data_full:
+            db_dict = {"sen_name": sen_name,'sen_batch_id': data_full["batch_number"]}
+        return db_dict
+    except Exception as e:
+        traceback.print_exc()
+        print(f"ERROR in acquiring sensor batch data from API output for {data_full['serial_number']}: ", e)
+        # print(json.dumps(data_full, indent=2))
+        # print('*'*100)
+        return None
+
 async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
@@ -286,7 +307,7 @@ async def main():
             print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
             parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
             if parts:
-                for p in parts['parts']:
+                for p in tqdm(parts['parts']):
                     try:
                         db_dict = get_dict_for_db_upload(p, partType = pt)
                         if db_dict is not None:
@@ -305,13 +326,18 @@ async def main():
             elif pt == 'bp':
                 secondary_upload = await get_missing_qc_bp(pool)
                 part_qc_cols = partTransInit[pt]['qc_cols']
+            elif pt == 'sen':
+                secondary_upload = await get_missing_batch_sen(pool)
             if secondary_upload:
-                for p in secondary_upload:
+                print(f"Fetching other necessary {partTrans[pt]["apikey"]} data ...")
+                for p in tqdm(secondary_upload):
                     try:
                         if pt == 'hxb':
                             db_dict_secondary = get_roc_dict_for_db_upload(p, cern_db_url = cern_db_url)
                         elif pt == 'bp':
                             db_dict_secondary = get_bp_qc_for_db_upload(p, cern_db_url = cern_db_url, part_qc_cols = part_qc_cols)
+                        elif pt == 'sen':
+                            db_dict_secondary = get_sen_batch_for_db_upload(p, cern_db_url = cern_db_url)
                         if db_dict_secondary is not None:
                             try:
                                 await write_to_db_secondary(pool, db_dict_secondary, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
