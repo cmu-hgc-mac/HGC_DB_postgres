@@ -1,5 +1,5 @@
 bp_no,serial PRIMARY KEY,fk_name,parent_table,comment
-bp_name,TEXT,fk_identifier,,
+bp_name,TEXT,fk_identifier,,"baseplate serial number"
 bp_material,TEXT,,,
 kind,TEXT,,,
 geometry,TEXT,,,
