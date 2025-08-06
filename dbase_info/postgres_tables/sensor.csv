@@ -1,5 +1,5 @@
 sen_no,serial PRIMARY KEY,fk_name,parent_table,comment
-sen_name,TEXT,fk_identifier,,
+sen_name,TEXT,fk_identifier,,"primary key in proto_assembly table"
 kind,TEXT,,,
 sen_batch_id,TEXT,,,
 geometry,TEXT,,,
@@ -11,7 +11,7 @@ list_dead_cell_init,DOUBLE PRECISION[],,,
 plots,BYTEA[],,,
 grade,TEXT,,,
 comment,TEXT,,,
-proto_no,INT,fk_pm_si,proto_assembly,
+proto_no,INT,fk_pm_si,proto_assembly,"primary key in proto_assembly table"
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
 date_inspect,DATE,,,

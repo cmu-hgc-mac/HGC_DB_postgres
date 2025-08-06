@@ -1,5 +1,5 @@
 mod_other_test_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_no,INT,fk_mod_other_test,module_info,"Internal DB Module number"
+module_no,INT,fk_mod_other_test,module_info,""primary key in module_info table but also stores hxb tests""
 module_name,TEXT,,,"Module serial number (no dashes) i.e. 320MLF2W2CM0001"
 status,INT,,,"see status_desc for definition"
 status_desc,TEXT,,,"Module status i.e. Completely Encapsulated"

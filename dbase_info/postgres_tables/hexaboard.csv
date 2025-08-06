@@ -15,7 +15,7 @@ roc_name,TEXT[],,,
 roc_index,TEXT[],,,
 hxb_inspected,DATE,,,
 hxb_tested,DATE,,,
-module_no,INT,fk_mod_hxb,module_info,
+module_no,INT,fk_mod_hxb,module_info,"primary key in module_info table"
 comment,TEXT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,

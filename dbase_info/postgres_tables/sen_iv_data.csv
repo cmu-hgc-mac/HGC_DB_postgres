@@ -1,5 +1,5 @@
 sen_iv_no,serial PRIMARY KEY,fk_name,parent_table,comment
-sen_no,INT,fk_sen_iv,sensor,
+sen_no,INT,fk_sen_iv,sensor,"primary key in sensor table"
 sen_name,TEXT,fk_identifier,,
 sensor_id,TEXT,,,
 scratchpad_id,TEXT,,,

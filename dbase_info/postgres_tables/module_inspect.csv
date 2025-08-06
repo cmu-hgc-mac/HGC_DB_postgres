@@ -1,5 +1,5 @@
 module_row_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_no,INT,fk_mod_insp,module_info,
+module_no,INT,fk_mod_insp,module_info,"primary key in module_info table"
 module_name,TEXT,fk_identifier,,
 grade,TEXT,,,
 flatness,REAL,,,

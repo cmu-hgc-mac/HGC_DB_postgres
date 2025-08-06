@@ -1,5 +1,5 @@
 proto_row_no,serial PRIMARY KEY,fk_name,parent_table,comment
-proto_no,INT,fk_pm_insp,proto_assembly,
+proto_no,INT,fk_pm_insp,proto_assembly,"primary key in proto_assembly table"
 proto_name,TEXT,fk_identifier,,
 grade,TEXT,,,
 flatness,REAL,,,

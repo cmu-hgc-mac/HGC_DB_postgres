@@ -1,5 +1,5 @@
 hxb_pedtest_no,serial PRIMARY KEY,fk_name,parent_table,comment
-hxb_no,INT,fk_hxb_ped,hexaboard,"Internal DB hexaboard number"
+hxb_no,INT,fk_hxb_ped,hexaboard,""primary key in hexaboard table""
 hxb_name,TEXT,fk_identifier,,"Hexaboard serial number (no dashes) i.e. 320XLF42QH00001"
 status,INT,,,"see status_desc for definition"
 status_desc,TEXT,,,"Hexaboard status i.e. Taped"

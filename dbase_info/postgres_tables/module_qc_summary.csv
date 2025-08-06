@@ -1,5 +1,5 @@
 mod_qc_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_no,INT,fk_mod_pedtest,module_info,"Internal DB Module number"
+module_no,INT,fk_mod_pedtest,module_info,"primary key in module_info table"
 module_name,TEXT,fk_identifier,,"Module serial number (no dashes) i.e. 320MLF2W2CM0001"
 final_grade,TEXT,,,"Overall grade (A, B, C) minimum of subset grades"
 final_grade_def,TEXT,,,"String to describe how final grade is decided"

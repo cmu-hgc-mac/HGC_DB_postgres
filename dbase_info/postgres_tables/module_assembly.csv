@@ -1,5 +1,5 @@
 module_ass,serial PRIMARY KEY,fk_name,parent_table,comment
-module_name,TEXT,fk_identifier,,
+module_name,TEXT,fk_identifier,,"primary key in module_info table"
 geometry,TEXT,,,
 resolution,TEXT,,,
 proto_name,TEXT,,,

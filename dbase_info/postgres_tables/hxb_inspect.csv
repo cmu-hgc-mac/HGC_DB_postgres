@@ -1,5 +1,5 @@
 hxb_row_no,serial PRIMARY KEY,fk_name,parent_table,comment
-hxb_no,INT,fk_hxb_insp,hexaboard,
+hxb_no,INT,fk_hxb_insp,hexaboard,"primary key in hexaboard table"
 hxb_name,TEXT,fk_identifier,,
 grade,TEXT,,,
 flatness,REAL,,,
