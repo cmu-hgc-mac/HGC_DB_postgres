@@ -1,11 +1,11 @@
 module_no,serial PRIMARY KEY,fk_name,parent_table,comment
 module_name,TEXT,,,
-geometry,TEXT,,,
-resolution,TEXT,,,
-bp_material,TEXT,,,
-sen_thickness,REAL,,,
-roc_version,TEXT,,,
-assembled,DATE,,,
+geometry,TEXT,,,"populated during assembly"
+resolution,TEXT,,,"populated during assembly"
+bp_material,TEXT,,,"populated during assembly"
+sen_thickness,REAL,,,"populated during assembly"
+roc_version,TEXT,,,"populated during assembly"
+assembled,DATE,,,"same as module_assembly.ass_run_date"
 inspected,DATE,,,"same as module_inspect.date_inspect"
 wb_front,DATE,,,"same as front_wirebond.date_bond"
 wb_back,DATE,,,"same as back_wirebond.date_bond"
@@ -15,7 +15,7 @@ inspect_sec,DATE,,,
 test_iv,DATE,,,"same as module_iv_test.date_test"
 test_ped,DATE,,,"same as module_pedestal_test.date_test"
 list_ground_pad,SMALLINT[],,,
-packed_datetime,TIMESTAMP,,,
+packed_datetime,TIMESTAMP,,,"timestamp when module is packed in a box; tracks contents of a single box"
 institution,TEXT,,,
 comment,TEXT,,,
 xml_gen_datetime,TIMESTAMP,,,
@@ -24,4 +24,4 @@ hxb_name,TEXT,,,"same as module_assembly.hxb_name"
 bp_name,TEXT,,,"same as proto_assembly.bp_name"
 sen_name,TEXT,,,"same as proto_assembly.sen_name"
 proto_name,TEXT,,,"same as module_assembly.proto_name"
-shipped_datetime,TIMESTAMP,,,
+shipped_datetime,TIMESTAMP,,,"timestamp when box with this module is packed in a container for shipping; tracks contents of a single shipment"
