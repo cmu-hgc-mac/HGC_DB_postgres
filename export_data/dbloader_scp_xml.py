@@ -85,10 +85,13 @@ def get_proto_module_files(files_list):
             other_files.append(fname)
     return protomodule_files, module_files, other_files
 
+
+## https://security.web.cern.ch/recommendations/en/ssh_tunneling.shtml
+## https://cern.service-now.com/service-portal?id=kb_article&n=KB0008504
 def scp_to_dbloader(dbl_username, fname, cern_dbname = ''):
-    ## f"scp -o ProxyJump={dbl_username}@lxplus.cern.ch -o ControlPath=~/.ssh/scp-%r@%h:%p {fname} {dbl_username}@dbloader-hgcal:/home/dbspool/spool/hgc/{cern_dbname}"
+    ## f"scp -o ProxyJump={dbl_username}@lxtunnel.cern.ch -o ControlPath=~/.ssh/scp-%r@%h:%p {fname} {dbl_username}@dbloader-hgcal:/home/dbspool/spool/hgc/{cern_dbname}"
     scp_cmd = ["scp",
-                f"-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
+                f"-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
                 f"-o", f"ControlPath=~/.ssh/scp-%r@%h:%p",
                 fname,
                 f"{dbl_username}@dbloader-hgcal:/home/dbspool/spool/hgc/{cern_dbname}"]
