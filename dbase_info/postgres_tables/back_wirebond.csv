@@ -1,11 +1,11 @@
 bkwirebond_no,serial PRIMARY KEY,fk_name,parent_table,comment
 module_name,TEXT,fk_identifier,,
 bond_count,SMALLINT,,,
-mbite_no,SMALLINT[],,,
-bond_count_for_mbite,SMALLINT[],,,
+mbite_no,SMALLINT[],,,"mouse-bite number"
+bond_count_for_mbite,SMALLINT[],,,"number of bonds at this mbite_no; recorded by wbGUI only if fewer than 3"
 wedge_id,TEXT,,,
 spool_batch,TEXT,,,
-wb_bk_marked_done,BOOLEAN DEFAULT FALSE,,,
+wb_bk_marked_done,BOOLEAN DEFAULT FALSE,,,"if marked TRUE, rebonding will not be attempted"
 temp_c,TEXT,,,
 rel_hum,TEXT,,,
 date_bond,DATE,,,
