@@ -2,6 +2,7 @@ import requests, json, yaml, os, argparse, datetime, sys
 import pwinput, asyncio, asyncpg, base64, traceback
 from cryptography.fernet import Fernet
 from natsort import natsorted, natsort_keygen
+from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 """
@@ -306,7 +307,7 @@ async def main():
             print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
             parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
             if parts:
-                for p in parts['parts']:
+                for p in tqdm(parts['parts']):
                     try:
                         db_dict = get_dict_for_db_upload(p, partType = pt)
                         if db_dict is not None:
@@ -328,7 +329,8 @@ async def main():
             elif pt == 'sen':
                 secondary_upload = await get_missing_batch_sen(pool)
             if secondary_upload:
-                for p in secondary_upload:
+                print(f"Fetching other necessary {partTrans[pt]["apikey"]} data ...")
+                for p in tqdm(secondary_upload):
                     try:
                         if pt == 'hxb':
                             db_dict_secondary = get_roc_dict_for_db_upload(p, cern_db_url = cern_db_url)
