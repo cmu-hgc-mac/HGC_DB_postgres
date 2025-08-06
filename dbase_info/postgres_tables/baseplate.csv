@@ -5,7 +5,7 @@ kind,TEXT,,,
 geometry,TEXT,,,
 resolution,TEXT,,,
 flatness_init,REAL,,,"imported from CMSR HGCAPI"
-avg_thickness_init,REAL,,,"imported from CMSR HGCAPI" 
+avg_thickness_init,REAL,,,"imported from CMSR HGCAPI"
 max_thickness_init,REAL,,,"imported from CMSR HGCAPI"
 tolerance_grade,TEXT,,,"covers everything except flatness; imported from CMSR HGCAPI"
 flatness_grade,TEXT,,,"imported from CMSR HGCAPI"
