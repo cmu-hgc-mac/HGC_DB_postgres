@@ -1,5 +1,5 @@
 hxb_no,serial PRIMARY KEY,fk_name,parent_table,comment
-hxb_name,TEXT,fk_identifier,,
+hxb_name,TEXT,fk_identifier,,"hexaboard serial number"
 kind,TEXT,,,
 geometry,TEXT,,,
 resolution,TEXT,,,
