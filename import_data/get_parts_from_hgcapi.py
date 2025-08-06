@@ -81,7 +81,7 @@ async def get_missing_qc_bp(pool):
     return [row['bp_name'] for row in rows]
 
 async def get_missing_batch_sen(pool):
-    get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE batch_number IS NULL OR batch_number = '';"""
+    get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE sen_batch_id IS NULL OR sen_batch_id = '';"""
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_missing_batch_sen_query)
     return [row['sen_name'] for row in rows]
@@ -250,7 +250,7 @@ def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi-cmsr'):
         data_full = read_from_cern_db(partID = sen_name, cern_db_url=cern_db_url)
         db_dict = None
         if data_full:
-            db_dict = {"sen_name": sen_name,'sen_batch_is': data_full["batch_number"]}
+            db_dict = {"sen_name": sen_name,'sen_batch_id': data_full["batch_number"]}
         return db_dict
     except Exception as e:
         traceback.print_exc()
