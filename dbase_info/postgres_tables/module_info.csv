@@ -1,5 +1,5 @@
 module_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_name,TEXT,,,
+module_name,TEXT,,,"module serial number"
 geometry,TEXT,,,"populated during assembly"
 resolution,TEXT,,,"populated during assembly"
 bp_material,TEXT,,,"populated during assembly"
