@@ -1,15 +1,15 @@
-mod_plottest_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_no,INT,fk_mod_pedtest,module_info,"primary key in module_info table"
-module_name,TEXT,fk_identifier,,"Module serial number (no dashes) i.e. 320MLF2W2CM0001"
-status,INT,,,"see status_desc for definition"
-status_desc,TEXT,,,"Module status i.e. Completely Encapsulated"
-trim_bias_voltage,REAL,,,"Bias voltage at which module was trimmed (usually 300V)"
-adc_mean_hexmap,BYTEA,,,"Bytearray of hexmap plot of ADC mean (that is, pedestal)"
-adc_std_hexmap,BYTEA,,,"Bytearray of hexmap plot of ADC stdev (that is, noise)"
-noise_channel_chip,BYTEA[],,,"Noise vs channel scatterplot, one for each chip"
-pedestal_channel_chip,BYTEA[],,,"Pedestal vs channel scatterplot, one for each chip"
-total_noise_chip,BYTEA[],,,"Noise histogram, one for each chip"
-inspector,TEXT,,,"User who did the test (CERN username if possible)"
+mod_plottest_no,serial PRIMARY KEY,comment,fk_name,parent_table
+module_no,INT,primary key in module_info table,fk_mod_pedtest,module_info
+module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001,fk_identifier,
+status,INT,see status_desc for definition,,
+status_desc,TEXT,Module status i.e. Completely Encapsulated,,
+trim_bias_voltage,REAL,Bias voltage at which module was trimmed (usually 300V),,
+adc_mean_hexmap,BYTEA,"Bytearray of hexmap plot of ADC mean (that is, pedestal)",,
+adc_std_hexmap,BYTEA,"Bytearray of hexmap plot of ADC stdev (that is, noise)",,
+noise_channel_chip,BYTEA[],"Noise vs channel scatterplot, one for each chip",,
+pedestal_channel_chip,BYTEA[],"Pedestal vs channel scatterplot, one for each chip",,
+total_noise_chip,BYTEA[],"Noise histogram, one for each chip",,
+inspector,TEXT,User who did the test (CERN username if possible),,
 comment_plot_test,TEXT,,,
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,

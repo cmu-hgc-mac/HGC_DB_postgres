@@ -1,29 +1,29 @@
-module_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_name,TEXT,,,"module serial number"
-geometry,TEXT,,,"populated during assembly"
-resolution,TEXT,,,"populated during assembly"
-bp_material,TEXT,,,"populated during assembly"
-sen_thickness,REAL,,,"populated during assembly"
-roc_version,TEXT,,,"populated during assembly"
-assembled,DATE,,,"same as module_assembly.ass_run_date"
-inspected,DATE,,,"same as module_inspect.date_inspect"
-wb_front,DATE,,,"same as front_wirebond.date_bond"
-wb_back,DATE,,,"same as back_wirebond.date_bond"
-encap_front,DATE,,,"same as front_encap.date_encap"
-encap_back,DATE,,,"same as back_encap.date_encap"
+module_no,serial PRIMARY KEY,comment,fk_name,parent_table
+module_name,TEXT,module serial number,,
+geometry,TEXT,populated during assembly,,
+resolution,TEXT,populated during assembly,,
+bp_material,TEXT,populated during assembly,,
+sen_thickness,REAL,populated during assembly,,
+roc_version,TEXT,populated during assembly,,
+assembled,DATE,same as module_assembly.ass_run_date,,
+inspected,DATE,same as module_inspect.date_inspect,,
+wb_front,DATE,same as front_wirebond.date_bond,,
+wb_back,DATE,same as back_wirebond.date_bond,,
+encap_front,DATE,same as front_encap.date_encap,,
+encap_back,DATE,same as back_encap.date_encap,,
 inspect_sec,DATE,,,
-test_iv,DATE,,,"same as module_iv_test.date_test"
-test_ped,DATE,,,"same as module_pedestal_test.date_test"
-packed_datetime,TIMESTAMP,,,"timestamp when module is packed in a box; tracks contents of a single box"
+test_iv,DATE,same as module_iv_test.date_test,,
+test_ped,DATE,same as module_pedestal_test.date_test,,
+packed_datetime,TIMESTAMP,timestamp when module is packed in a box; tracks contents of a single box,,
 institution,TEXT,,,
 comment,TEXT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
-hxb_name,TEXT,,,"same as module_assembly.hxb_name"
-bp_name,TEXT,,,"same as proto_assembly.bp_name"
-sen_name,TEXT,,,"same as proto_assembly.sen_name"
-proto_name,TEXT,,,"same as module_assembly.proto_name"
-shipped_datetime,TIMESTAMP,,,"timestamp when box with this module is packed in a container for shipping; tracks contents of a single shipment"
-dead_pad_to_be_ground,SMALLINT[],,,"aggregate from the module pedestal tests based on criteria defined in the testing software"
-noisy_pad_to_be_ground,SMALLINT[],,,"aggregate from the module pedestal tests based on criteria defined in the testing software"
-pad_to_attempt_rebond,SMALLINT[],,,"aggregate from the module pedestal tests based on criteria defined in the testing software"
+hxb_name,TEXT,same as module_assembly.hxb_name,,
+bp_name,TEXT,same as proto_assembly.bp_name,,
+sen_name,TEXT,same as proto_assembly.sen_name,,
+proto_name,TEXT,same as module_assembly.proto_name,,
+shipped_datetime,TIMESTAMP,timestamp when box with this module is packed in a container for shipping; tracks contents of a single shipment,,
+dead_pad_to_be_ground,SMALLINT[],aggregate from the module pedestal tests based on criteria defined in the testing software,,
+noisy_pad_to_be_ground,SMALLINT[],aggregate from the module pedestal tests based on criteria defined in the testing software,,
+pad_to_attempt_rebond,SMALLINT[],aggregate from the module pedestal tests based on criteria defined in the testing software,,

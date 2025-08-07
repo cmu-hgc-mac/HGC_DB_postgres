@@ -1,5 +1,5 @@
-frencap_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_name,TEXT,fk_identifier,,
+frencap_no,serial PRIMARY KEY,comment,fk_name,parent_table
+module_name,TEXT,,fk_identifier,
 cure_temp_c,REAL,,,
 cure_start,TIMESTAMP WITHOUT TIME ZONE,,,
 cure_end,TIMESTAMP WITHOUT TIME ZONE,,,
@@ -10,7 +10,7 @@ date_encap,DATE,,,
 time_encap,TIME,,,
 technician,TEXT,,,
 comment,TEXT,,,
-module_no,INT,fk_mod_frontencap,module_info,
+module_no,INT,,fk_mod_frontencap,module_info
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,

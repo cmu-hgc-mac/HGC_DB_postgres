@@ -1,4 +1,4 @@
-log_no,serial PRIMARY KEY,fk_name,parent_table,comment
+log_no,serial PRIMARY KEY,comment,fk_name,parent_table
 log_timestamp,TIMESTAMP,,,
 log_location,TEXT,,,
 device_name,TEXT,,,

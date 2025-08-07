@@ -1,42 +1,42 @@
-mod_qc_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_no,INT,fk_mod_pedtest,module_info,"primary key in module_info table"
-module_name,TEXT,fk_identifier,,"Module serial number (no dashes) i.e. 320MLF2W2CM0001"
-final_grade,TEXT,,,"Overall grade (A, B, C) minimum of subset grades"
-final_grade_def,TEXT,,,"String to describe how final grade is decided"
-comments_all,TEXT,,,"Collection of comments from all parts of module assembly"
-proto_flatness,REAL,,,"Protomodule flatness"
-proto_avg_thickness,REAL,,,"Protomodule avg thickness"
-proto_max_thickness,REAL,,,"Protomodule max thickness"
-proto_x_offset,REAL,,,"Protomodule x offset in microns"
-proto_y_offset,REAL,,,"Protomodule y offset in microns"
-proto_ang_offset,REAL,,,"Protomodule angular offset in degrees"
-proto_grade,TEXT,,,"Protomodule assembly grade"
-proto_grade_def,TEXT,,,"Definition of protomodule assembly grade criteria"
-module_flatness,REAL,,,"Module flatness"
-module_avg_thickness,REAL,,,"Module avg thickness"
-module_max_thickness,REAL,,,"Module max thickness"
-module_x_offset,REAL,,,"Module x offset in microns"
-module_y_offset,REAL,,,"Module y offset in microns"
-module_ang_offset,REAL,,,"Module angular offset in degrees"
-module_grade,TEXT,,,"Module assembly grade"
-module_grade_def,TEXT,,,"Module assembly grade criteria"
-module_weight,REAL,,,"Weight of module"
-count_back_unbonded,SMALLINT,,,"Count of number of missed bonds on module backside"
-front_pull_avg,REAL,,,"Module front bond pulltest average"
-front_pull_std,REAL,,,"Module front bond pulltest stdev"
-list_cells_unbonded,SMALLINT[],,,"List of unbonded cells from pedestal tests"
-list_cells_grounded,SMALLINT[],,,"List of grounded cells from wirebonding"
-count_bad_cells,SMALLINT,,,"Total number of bad cells (grounded, unbonded, dead, noisy)"
-list_noisy_cells,SMALLINT[],,,"List of noisy cells from pedestal tests"
-list_dead_cells,SMALLINT[],,,"List of dead cells from pedestal tests"
-iv_grade,TEXT,,,"IV test grade"
-iv_grade_def,TEXT,,,"IV grade criteria"
-readout_grade,TEXT,,,"Readout test (pedestal tests, mostly) grade"
-readout_grade_def,TEXT,,,"Readout grade criteria"
-i_ratio_ref_b_over_a,REAL,,,"Ratio of currents at ref voltage B over ref voltage A; used for grading"
-ref_volt_a,REAL,,,"Reference voltage A"
-ref_volt_b,REAL,,,"Reference voltage B"
-i_at_ref_a,REAL,,,"Current at reference voltage A; used for grading"
+mod_qc_no,serial PRIMARY KEY,comment,fk_name,parent_table
+module_no,INT,primary key in module_info table,fk_mod_pedtest,module_info
+module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001,fk_identifier,
+final_grade,TEXT,"Overall grade (A, B, C) minimum of subset grades",,
+final_grade_def,TEXT,String to describe how final grade is decided,,
+comments_all,TEXT,Collection of comments from all parts of module assembly,,
+proto_flatness,REAL,Protomodule flatness,,
+proto_avg_thickness,REAL,Protomodule avg thickness,,
+proto_max_thickness,REAL,Protomodule max thickness,,
+proto_x_offset,REAL,Protomodule x offset in microns,,
+proto_y_offset,REAL,Protomodule y offset in microns,,
+proto_ang_offset,REAL,Protomodule angular offset in degrees,,
+proto_grade,TEXT,Protomodule assembly grade,,
+proto_grade_def,TEXT,Definition of protomodule assembly grade criteria,,
+module_flatness,REAL,Module flatness,,
+module_avg_thickness,REAL,Module avg thickness,,
+module_max_thickness,REAL,Module max thickness,,
+module_x_offset,REAL,Module x offset in microns,,
+module_y_offset,REAL,Module y offset in microns,,
+module_ang_offset,REAL,Module angular offset in degrees,,
+module_grade,TEXT,Module assembly grade,,
+module_grade_def,TEXT,Module assembly grade criteria,,
+module_weight,REAL,Weight of module,,
+count_back_unbonded,SMALLINT,Count of number of missed bonds on module backside,,
+front_pull_avg,REAL,Module front bond pulltest average,,
+front_pull_std,REAL,Module front bond pulltest stdev,,
+list_cells_unbonded,SMALLINT[],List of unbonded cells from pedestal tests,,
+list_cells_grounded,SMALLINT[],List of grounded cells from wirebonding,,
+count_bad_cells,SMALLINT,"Total number of bad cells (grounded, unbonded, dead, noisy)",,
+list_noisy_cells,SMALLINT[],List of noisy cells from pedestal tests,,
+list_dead_cells,SMALLINT[],List of dead cells from pedestal tests,,
+iv_grade,TEXT,IV test grade,,
+iv_grade_def,TEXT,IV grade criteria,,
+readout_grade,TEXT,"Readout test (pedestal tests, mostly) grade",,
+readout_grade_def,TEXT,Readout grade criteria,,
+i_ratio_ref_b_over_a,REAL,Ratio of currents at ref voltage B over ref voltage A; used for grading,,
+ref_volt_a,REAL,Reference voltage A,,
+ref_volt_b,REAL,Reference voltage B,,
+i_at_ref_a,REAL,Current at reference voltage A; used for grading,,
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,

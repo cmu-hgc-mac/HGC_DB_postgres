@@ -1,18 +1,18 @@
-bp_no,serial PRIMARY KEY,fk_name,parent_table,comment
-bp_name,TEXT,fk_identifier,,"baseplate serial number"
-bp_material,TEXT,,,"derived from hxb_name; see HGC_DB_postgres/export_data/resource.yaml"
-kind,TEXT,,,"imported from CMSR HGCAPI"
-geometry,TEXT,,,"derived from bp_name; see HGC_DB_postgres/export_data/resource.yaml"
-resolution,TEXT,,,"derived from bp_name; see HGC_DB_postgres/export_data/resource.yaml"
-flatness_init,REAL,,,"imported from CMSR HGCAPI"
-avg_thickness_init,REAL,,,"imported from CMSR HGCAPI"
-max_thickness_init,REAL,,,"imported from CMSR HGCAPI"
-tolerance_grade,TEXT,,,"covers everything except flatness; imported from CMSR HGCAPI"
-flatness_grade,TEXT,,,"imported from CMSR HGCAPI"
-weight_grams,REAL,,,"imported from CMSR HGCAPI"
+bp_no,serial PRIMARY KEY,comment,fk_name,parent_table
+bp_name,TEXT,baseplate serial number,fk_identifier,
+bp_material,TEXT,derived from hxb_name; see HGC_DB_postgres/export_data/resource.yaml,,
+kind,TEXT,imported from CMSR HGCAPI,,
+geometry,TEXT,derived from bp_name; see HGC_DB_postgres/export_data/resource.yaml,,
+resolution,TEXT,derived from bp_name; see HGC_DB_postgres/export_data/resource.yaml,,
+flatness_init,REAL,imported from CMSR HGCAPI,,
+avg_thickness_init,REAL,imported from CMSR HGCAPI,,
+max_thickness_init,REAL,imported from CMSR HGCAPI,,
+tolerance_grade,TEXT,covers everything except flatness; imported from CMSR HGCAPI,,
+flatness_grade,TEXT,imported from CMSR HGCAPI,,
+weight_grams,REAL,imported from CMSR HGCAPI,,
 bp_inspected,DATE,,,
-proto_no,INT,fk_pm_bp,proto_assembly,"primary key in proto_assembly table"
-comment,TEXT,,,"imported from CMSR HGCAPI"
+proto_no,INT,primary key in proto_assembly table,fk_pm_bp,proto_assembly
+comment,TEXT,imported from CMSR HGCAPI,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
-date_verify_received,DATE,,,"filled during MAC intake and if is being inspected/assembled without verification"
+date_verify_received,DATE,filled during MAC intake and if is being inspected/assembled without verification,,

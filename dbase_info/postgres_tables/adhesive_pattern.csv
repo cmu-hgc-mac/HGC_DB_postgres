@@ -1,4 +1,4 @@
-pattern_no,serial PRIMARY KEY,fk_name,parent_table,comment
+pattern_no,serial PRIMARY KEY,comment,fk_name,parent_table
 adhesive_type,TEXT,,,
 date,DATE,,,
 pattern_version,INT,,,

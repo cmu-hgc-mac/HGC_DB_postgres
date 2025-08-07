@@ -1,6 +1,6 @@
-bp_row_no,serial PRIMARY KEY,fk_name,parent_table,comment
-bp_no,INT,fk_bp_insp,baseplate,
-bp_name,TEXT,fk_identifier,,
+bp_row_no,serial PRIMARY KEY,comment,fk_name,parent_table
+bp_no,INT,,fk_bp_insp,baseplate
+bp_name,TEXT,,fk_identifier,
 grade,TEXT,,,
 flatness,REAL,,,
 avg_thickness,REAL,,,

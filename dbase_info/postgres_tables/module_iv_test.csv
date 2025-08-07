@@ -1,21 +1,21 @@
-mod_ivtest_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_no,INT,fk_mod_pedtest,module_info,"primary key in module_info table"
-module_name,TEXT,fk_identifier,,"Module serial number (no dashes) i.e. 320MLF2W2CM0001"
-status,INT,,,"see status_desc for definition"
-status_desc,TEXT,,,"Module status i.e. Completely Encapsulated"
-grade,TEXT,,,"IV grade for this IV curve (A, B, C)"
-ratio_i_at_vs,REAL,,,"Ratio of current between two voltages in ratio_at_vs, used for grading"
-ratio_at_vs,REAL[],,,"Two voltages at which current ratio is stored"
+mod_ivtest_no,serial PRIMARY KEY,comment,fk_name,parent_table
+module_no,INT,primary key in module_info table,fk_mod_pedtest,module_info
+module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001,fk_identifier,
+status,INT,see status_desc for definition,,
+status_desc,TEXT,Module status i.e. Completely Encapsulated,,
+grade,TEXT,"IV grade for this IV curve (A, B, C)",,
+ratio_i_at_vs,REAL,"Ratio of current between two voltages in ratio_at_vs, used for grading",,
+ratio_at_vs,REAL[],Two voltages at which current ratio is stored,,
 comment,TEXT,,,
-rel_hum,TEXT,,,"Relative humidity measured inside test box"
-temp_c,TEXT,,,"Temperature measured inside test box"
+rel_hum,TEXT,Relative humidity measured inside test box,,
+temp_c,TEXT,Temperature measured inside test box,,
 date_test,DATE,,,
 time_test,TIME,,,
-inspector,TEXT,,,"User who did the test (CERN username if possible)"
-program_v,REAL[],,,"input voltage in V"
-meas_v,REAL[],,,"measured voltage in V"
-meas_i,REAL[],,,"measured current in A"
-meas_r,REAL[],,,"calulated resistance meas_v/meas_i"
+inspector,TEXT,User who did the test (CERN username if possible),,
+program_v,REAL[],input voltage in V,,
+meas_v,REAL[],measured voltage in V,,
+meas_i,REAL[],measured current in A,,
+meas_r,REAL[],calulated resistance meas_v/meas_i,,
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,

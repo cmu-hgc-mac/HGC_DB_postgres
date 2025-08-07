@@ -1,5 +1,5 @@
-pulltest_no,serial PRIMARY KEY,fk_name,parent_table,comment
-module_name,TEXT,fk_identifier,,
+pulltest_no,serial PRIMARY KEY,comment,fk_name,parent_table
+module_name,TEXT,,fk_identifier,
 avg_pull_strg_g,REAL,,,
 std_pull_strg_g,REAL,,,
 wedge_id,TEXT,,,
@@ -10,7 +10,7 @@ date_bond,DATE,,,
 time_bond,TIME,,,
 technician,TEXT,,,
 comment,TEXT,,,
-module_no,INT,fk_mod_pulltest,module_info,
+module_no,INT,,fk_mod_pulltest,module_info
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
