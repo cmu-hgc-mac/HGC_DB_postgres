@@ -127,11 +127,11 @@ async def write_to_db_secondary(pool, db_upload_data, partType = None, check_con
 
 def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-cmsr'):
     if partID is not None:
-        return f'https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full'
+        return f"https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full"
     elif partType is not None:
         if macID is not None:
-            return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}&location={macID}'
-        return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}'
+            return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}&location={macID}"
+        return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}"
     return
 
 def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi-cmsr'):
@@ -142,14 +142,14 @@ def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url
 #         print(json.dumps(data, indent=2))
         return data
     elif response.status_code == 500:
-        print(f'Internal Server ERROR for {cern_db_url.upper()}. Try again later.')
+        print(f"Internal Server ERROR for {cern_db_url.upper()}. Try again later.")
     elif response.status_code == 404:
-        print(f'Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.')
+        print(f"Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
     else:
         if partType:
-            print(f'ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}')
+            print(f"ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}")
         if partID:
-            print(f'ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}')
+            print(f"ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}")
         return None
 
 def form(data):
@@ -304,7 +304,7 @@ async def main():
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
         for pt in part_types_to_get:  #, 'pml', 'ml']:
-            print(f'Reading {partTrans[pt]["apikey"]} from {cern_db_url.upper()} ...' )
+            print(f"Reading {partTrans[pt]['apikey']} from {cern_db_url.upper()} ..." )
             parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
             if parts:
                 for p in tqdm(parts['parts']):
@@ -329,7 +329,7 @@ async def main():
             elif pt == 'sen':
                 secondary_upload = await get_missing_batch_sen(pool)
             if secondary_upload:
-                print(f"Fetching other necessary {partTrans[pt]["apikey"]} data ...")
+                print(f"Fetching other necessary {partTrans[pt]['apikey']} data ...")
                 for p in tqdm(secondary_upload):
                     try:
                         if pt == 'hxb':
@@ -348,7 +348,7 @@ async def main():
                     except:
                         traceback.print_exc()
                 
-                print(f'Writing {partTrans[pt]["apikey"]} to postgres from {cern_db_url.upper()} complete.')
+                print(f"Writing {partTrans[pt]['apikey']} to postgres from {cern_db_url.upper()} complete.")
                 print('-'*40); print('\n')
 
                             
