@@ -1,16 +1,16 @@
 sen_no,serial PRIMARY KEY,fk_name,parent_table,comment
 sen_name,TEXT,fk_identifier,,"primary key in proto_assembly table"
-kind,TEXT,,,
-sen_batch_id,TEXT,,,
-geometry,TEXT,,,
-resolution,TEXT,,,
-thickness,INT,,,
+kind,TEXT,,,"imported from CMSR HGCAPI"
+sen_batch_id,TEXT,,,"sensor batch_number; imported from CMSR"
+geometry,TEXT,,,"derived from _X digit; see sensor_geometry HGC_DB_postgres/export_data/resource.yaml"
+resolution,TEXT,,,"derived from first digit; see sensor HGC_DB_postgres/export_data/resource.yaml for thickness, resolution, shape"
+thickness,INT,,,"derived from first digit; see sensor HGC_DB_postgres/export_data/resource.yaml for thickness, resolution, shape"
 tolerance_grade,TEXT,,,
 count_dead_chan_init,DOUBLE PRECISION,,,
 list_dead_cell_init,DOUBLE PRECISION[],,,
 plots,BYTEA[],,,
 grade,TEXT,,,
-comment,TEXT,,,
+comment,TEXT,,,"imported from CMSR HGCAPI"
 proto_no,INT,fk_pm_si,proto_assembly,"primary key in proto_assembly table"
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,

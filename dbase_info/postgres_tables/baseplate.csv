@@ -1,7 +1,7 @@
 bp_no,serial PRIMARY KEY,fk_name,parent_table,comment
 bp_name,TEXT,fk_identifier,,"baseplate serial number"
 bp_material,TEXT,,,
-kind,TEXT,,,
+kind,TEXT,,,"imported from CMSR HGCAPI"
 geometry,TEXT,,,
 resolution,TEXT,,,
 flatness_init,REAL,,,"imported from CMSR HGCAPI"
@@ -12,7 +12,7 @@ flatness_grade,TEXT,,,"imported from CMSR HGCAPI"
 weight_grams,REAL,,,"imported from CMSR HGCAPI"
 bp_inspected,DATE,,,
 proto_no,INT,fk_pm_bp,proto_assembly,"primary key in proto_assembly table"
-comment,TEXT,,,
+comment,TEXT,,,"imported from CMSR HGCAPI"
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
 date_verify_received,DATE,,,"filled during MAC intake and if is being inspected/assembled without verification"
