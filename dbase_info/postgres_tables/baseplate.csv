@@ -1,4 +1,4 @@
-bp_no,serial PRIMARY KEY,primary key,,
+bp_no,serial PRIMARY KEY,"primary key",,
 bp_name,TEXT,baseplate serial number,fk_identifier,
 bp_material,TEXT,derived from hxb_name; see HGC_DB_postgres/export_data/resource.yaml,,
 kind,TEXT,imported from CMSR HGCAPI,,

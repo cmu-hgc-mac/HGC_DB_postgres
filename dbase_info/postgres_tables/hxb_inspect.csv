@@ -1,4 +1,4 @@
-hxb_row_no,serial PRIMARY KEY,primary key,,
+hxb_row_no,serial PRIMARY KEY,"primary key",,
 hxb_no,INT,primary key in hexaboard table,fk_hxb_insp,hexaboard
 hxb_name,TEXT,,fk_identifier,
 grade,TEXT,,,

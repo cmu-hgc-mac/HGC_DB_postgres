@@ -1,4 +1,4 @@
-module_no,serial PRIMARY KEY,primary key,,
+module_no,serial PRIMARY KEY,"primary key",,
 module_name,TEXT,module serial number,,
 geometry,TEXT,populated during assembly,,
 resolution,TEXT,populated during assembly,,

@@ -5,6 +5,7 @@ from cryptography.fernet import Fernet
 sys.path.append('../')
 import pwinput
 import numpy as np
+from create_tables import get_table_info
 
 '''
 logic:
@@ -14,28 +15,12 @@ logic:
 4. Apply the changes
 '''
 
-def get_table_info(loc, tables_subdir, fname):
-    with open(os.path.join(loc, tables_subdir, fname) , mode='r') as file:
-        csvFile = csv.reader(file, quotechar='"')
-        rows = []
-        for row in csvFile:
-            rows.append(row)
-        fk_name_ind, parent_table_ind = rows[0].index('fk_name'), rows[0].index('parent_table')
-        rows[0][fk_name_ind],rows[0][parent_table_ind] = "", "" ## need to get rid of this as well
-        columns = np.array(rows).T
-        comment_columns = columns[2] 
-        fk = columns[0][(np.where(columns[-1] != ''))]
-        fk_ref = columns[-2][(np.where(columns[-1] != ''))]
-        fk_tab = columns[-1][(np.where(columns[-1] != ''))]
-        return fname.split('.csv')[0], columns[0], columns[1], fk, fk_ref, fk_tab, comment_columns  ### fk, fk_tab are returned as lists
-
-# await set_table_col_comments(table_name, table_columns, comment_columns)
 async def set_table_col_comments(conn, table_name, table_columns, comment_columns):
     table_exists = True
     if table_exists:
         for t in range(len(table_columns)):
-            set_comment_query = f"""COMMENT ON COLUMN {table_name}.{table_columns[t]} IS '{comment_columns[t]}';"""
-            await conn.execute(set_comment_query)
+            set_comment_query = f"COMMENT ON COLUMN {table_name}.{table_columns[t]} IS '{comment_columns[t]}';"
+            await conn.execute(set_comment_query) 
         print(f"Table '{table_name}' column comments updated.")
     else:
         print(f"Table '{table_name}' does not exist.")
@@ -259,6 +244,14 @@ async def main():
             print('##############################')
             print('\n')
         
+        table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, f"{table_name}.csv")
+        
+        # print(len(table_header), len(comment_columns))
+        # print((table_header), (comment_columns))
+        # for t in range(len(table_header)):
+        #     print(table_header[t], comment_columns[t])
+        await set_table_col_comments(conn, table_name, table_header, comment_columns)
+
     await conn.close()
 
 asyncio.run(main())

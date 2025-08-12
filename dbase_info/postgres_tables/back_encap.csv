@@ -1,4 +1,4 @@
-bkencap_no,serial PRIMARY KEY,primary key,,
+bkencap_no,serial PRIMARY KEY,"primary key",,
 module_name,TEXT,,fk_identifier,
 cure_temp_c,REAL,,,
 cure_start,TIMESTAMP WITHOUT TIME ZONE,,,

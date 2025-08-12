@@ -1,9 +1,9 @@
 hxb_pedtest_no,serial PRIMARY KEY,primary key,,
-hxb_no,INT,"primary key in hexaboard table""""",fk_hxb_ped,hexaboard
+hxb_no,INT,"primary key in hexaboard table",fk_hxb_ped,hexaboard
 hxb_name,TEXT,Hexaboard serial number (no dashes) i.e. 320XLF42QH00001,fk_identifier,
 status,INT,see status_desc for definition,,
 status_desc,TEXT,Hexaboard status i.e. Taped,,
-trim_bias_voltage,REAL,"If hxb was trimmed (called 'bias vol' for consistency with modules, but this will always be a boolean)",,
+trim_bias_voltage,REAL,"If hxb was trimmed (called `bias vol` for consistency with modules, but this will always be a boolean)",,
 count_bad_cells,SMALLINT,"Number of bad (dead, noisy) cells for just this test",,
 list_dead_cells,SMALLINT[],List of dead cells (dead is noise == 0),,
 list_noisy_cells,SMALLINT[],"List of noisy cells (for now, noisy is noise > median noise + 2 ADC counts)",,

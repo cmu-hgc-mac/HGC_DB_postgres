@@ -1,4 +1,4 @@
-mod_other_test_no,serial PRIMARY KEY,primary key,,
+mod_other_test_no,serial PRIMARY KEY,"primary key",,
 module_no,INT,"primary key in module_info table but also stores hxb tests""""",fk_mod_other_test,module_info
 module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001,,
 status,INT,see status_desc for definition,,

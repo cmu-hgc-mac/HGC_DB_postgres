@@ -1,4 +1,4 @@
-bp_row_no,serial PRIMARY KEY,primary key,,
+bp_row_no,serial PRIMARY KEY,"primary key",,
 bp_no,INT,,fk_bp_insp,baseplate
 bp_name,TEXT,,fk_identifier,
 grade,TEXT,,,

@@ -1,4 +1,4 @@
-frwirebond_no,serial PRIMARY KEY,primary key,,
+frwirebond_no,serial PRIMARY KEY,"primary key",,
 module_name,TEXT,,fk_identifier,
 list_grounded_cells,SMALLINT[],,,
 list_unbonded_cells,SMALLINT[],,,

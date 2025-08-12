@@ -1,4 +1,4 @@
-pulltest_no,serial PRIMARY KEY,primary key,,
+pulltest_no,serial PRIMARY KEY,"primary key",,
 module_name,TEXT,,fk_identifier,
 avg_pull_strg_g,REAL,,,
 std_pull_strg_g,REAL,,,

@@ -9,7 +9,7 @@ tolerance_grade,TEXT,imported from CMSR HGCAPI,,
 count_dead_chan_init,DOUBLE PRECISION,imported from CMSR HGCAPI,,
 list_dead_cell_init,DOUBLE PRECISION[],imported from CMSR HGCAPI,,
 plots,BYTEA[],,,
-grade,TEXT,graded during assembly; default grade 'A',,
+grade,TEXT,graded during assembly; default grade `A`,,
 comment,TEXT,imported from CMSR HGCAPI,,
 proto_no,INT,primary key in proto_assembly table,fk_pm_si,proto_assembly
 xml_gen_datetime,TIMESTAMP,,,

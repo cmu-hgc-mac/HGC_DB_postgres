@@ -1,4 +1,4 @@
-hxb_no,serial PRIMARY KEY,primary key,,
+hxb_no,serial PRIMARY KEY,"primary key",,
 hxb_name,TEXT,hexaboard serial number,fk_identifier,
 kind,TEXT,imported from CMSR HGCAPI,,
 geometry,TEXT,derived from hxb_name; see HGC_DB_postgres/export_data/resource.yaml,,
