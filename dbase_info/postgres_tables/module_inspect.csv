@@ -1,4 +1,4 @@
-module_row_no,serial PRIMARY KEY,comment,fk_name,parent_table
+module_row_no,serial PRIMARY KEY,primary key,,
 module_no,INT,primary key in module_info table,fk_mod_insp,module_info
 module_name,TEXT,,fk_identifier,
 grade,TEXT,,,

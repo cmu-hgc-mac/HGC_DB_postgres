@@ -1,4 +1,4 @@
-hxb_pedtest_no,serial PRIMARY KEY,comment,fk_name,parent_table
+hxb_pedtest_no,serial PRIMARY KEY,primary key,,
 hxb_no,INT,"primary key in hexaboard table""""",fk_hxb_ped,hexaboard
 hxb_name,TEXT,Hexaboard serial number (no dashes) i.e. 320XLF42QH00001,fk_identifier,
 status,INT,see status_desc for definition,,

@@ -1,4 +1,4 @@
-tray_no,serial PRIMARY KEY,comment,fk_name,parent_table
+tray_no,serial PRIMARY KEY,primary key,,
 tray_name,TEXT,,,
 module_geoms,TEXT[],,,
 tray_fiducial_xy,REAL[],,,

@@ -1,6 +1,6 @@
 mod_plottest_no,serial PRIMARY KEY,comment,fk_name,parent_table
 module_no,INT,primary key in module_info table,fk_mod_pedtest,module_info
-module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001,fk_identifier,
+module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001; also storing hxb plots,fk_identifier,
 status,INT,see status_desc for definition,,
 status_desc,TEXT,Module status i.e. Completely Encapsulated,,
 trim_bias_voltage,REAL,Bias voltage at which module was trimmed (usually 300V),,

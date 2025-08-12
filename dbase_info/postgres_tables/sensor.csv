@@ -1,4 +1,4 @@
-sen_no,serial PRIMARY KEY,comment,fk_name,parent_table
+sen_no,serial PRIMARY KEY,primary key,,
 sen_name,TEXT,primary key in proto_assembly table,fk_identifier,
 kind,TEXT,imported from CMSR HGCAPI,,
 sen_batch_id,TEXT,sensor batch_number; imported from CMSR,,

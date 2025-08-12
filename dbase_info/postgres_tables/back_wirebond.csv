@@ -1,4 +1,4 @@
-bkwirebond_no,serial PRIMARY KEY,comment,fk_name,parent_table
+bkwirebond_no,serial PRIMARY KEY,primary key,,
 module_name,TEXT,,fk_identifier,
 bond_count,SMALLINT,,,
 mbite_no,SMALLINT[],mouse-bite number,,

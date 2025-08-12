@@ -1,4 +1,4 @@
-proto_no,serial PRIMARY KEY,comment,fk_name,parent_table
+proto_no,serial PRIMARY KEY,primary key,,
 proto_name,TEXT,primary key in proto_assembly table,fk_identifier,
 geometry,TEXT,,,
 resolution,TEXT,,,

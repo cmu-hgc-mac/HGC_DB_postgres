@@ -1,4 +1,4 @@
-sen_iv_no,serial PRIMARY KEY,comment,fk_name,parent_table
+sen_iv_no,serial PRIMARY KEY,primary key,,
 sen_no,INT,primary key in sensor table,fk_sen_iv,sensor
 sen_name,TEXT,,fk_identifier,
 sensor_id,TEXT,,,

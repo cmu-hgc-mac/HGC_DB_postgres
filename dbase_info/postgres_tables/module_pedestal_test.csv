@@ -1,4 +1,4 @@
-mod_pedtest_no,serial PRIMARY KEY,comment,fk_name,parent_table
+mod_pedtest_no,serial PRIMARY KEY,primary key,,
 module_no,INT,primary key in module_info table,fk_mod_pedtest,module_info
 module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001,fk_identifier,
 status,INT,see status_desc for definition,,
