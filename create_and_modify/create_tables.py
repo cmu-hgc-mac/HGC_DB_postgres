@@ -77,17 +77,6 @@ async def create_tables_sequence():
         else:
             print(f"Table '{table_name}' already exists.")
 
-    async def set_table_col_comments(table_name, table_columns, comment_columns):
-        table_exists_query = f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2);"
-        table_exists = await conn.fetchval(table_exists_query, schema_name, table_name)
-        if table_exists:
-            for t in range(len(table_columns)):
-                set_comment_query = f"""COMMENT ON COLUMN {table_name}.{table_columns[t]} IS '{comment_columns[t]}';"""
-                await conn.execute(set_comment_query)
-            print(f"Table '{table_name}' column comments updated.")
-        else:
-            print(f"Table '{table_name}' does not exist.")
-
     async def allow_perm(table_name, permission, user):
         await conn.execute(f"GRANT {permission} ON {table_name} TO {user};")
         print(f"Table '{table_name}' has {permission} access granted to {user}.")
@@ -140,10 +129,8 @@ async def create_tables_sequence():
                 table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, fname)
                 table_columns = get_column_names(table_header, dat_type, fk_name, fk_ref, parent_table)
                 await create_table(table_name, table_columns)
-                await set_table_col_comments(table_name, table_columns, comment_columns)
                 pk_seq = f'{table_name}_{table_header[0]}_seq'
                 
-
                 try:
                     create_trigger_sql = create_trigger_sql_template.format(table_name=table_name)
                     await conn.execute(create_trigger_sql)
