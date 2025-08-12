@@ -4,6 +4,8 @@ import yaml, csv
 from cryptography.fernet import Fernet
 sys.path.append('../')
 import pwinput
+import numpy as np
+from create_tables import get_table_info
 
 '''
 logic:
@@ -12,6 +14,16 @@ logic:
 3. Compare 1 and 2
 4. Apply the changes
 '''
+
+async def set_table_col_comments(conn, table_name, table_columns, comment_columns):
+    table_exists = True
+    if table_exists:
+        for t in range(len(table_columns)):
+            set_comment_query = f"COMMENT ON COLUMN {table_name}.{table_columns[t]} IS '{comment_columns[t]}';"
+            await conn.execute(set_comment_query) 
+        print(f"Table '{table_name}' column comments updated.")
+    else:
+        print(f"Table '{table_name}' does not exist.")
 
 # 1. extract the existing table schema
 async def get_existing_table_schema(conn, table_name: str):
@@ -203,9 +215,9 @@ async def main():
     # Establish a connection with database
     conn = await asyncpg.connect(**db_params)
 
-    ## temporary function to correct the ave_thickness fiasco
-    for table_name in ['proto_inspect', 'module_inspect']:
-        await correct_avg_thickness_col(conn, table_name)
+    # ## temporary function to correct the ave_thickness fiasco
+    # for table_name in ['proto_inspect', 'module_inspect']:
+    #     await correct_avg_thickness_col(conn, table_name)
     
     # retrieve all table names from csv files
     all_table_names = []
@@ -232,6 +244,14 @@ async def main():
             print('##############################')
             print('\n')
         
+        table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, f"{table_name}.csv")
+        
+        # print(len(table_header), len(comment_columns))
+        # print((table_header), (comment_columns))
+        # for t in range(len(table_header)):
+        #     print(table_header[t], comment_columns[t])
+        await set_table_col_comments(conn, table_name, table_header, comment_columns)
+
     await conn.close()
 
 asyncio.run(main())

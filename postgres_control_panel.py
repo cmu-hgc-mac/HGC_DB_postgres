@@ -114,9 +114,9 @@ def create_database():
         if db_pass.strip():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
-            subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/create_tables.py", "-p", db_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"Check terminal for PostgreSQL database tables. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
