@@ -592,13 +592,13 @@ bp_cond:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: THICKNESS
-  dbase_col: thickness
+  dbase_col: avg_thickness
   dbase_table: bp_inspect
   xml_tag: THICKNESS
   nested_query: null
   nullable: 'no'
 - xml_temp_val: WEIGHT
-  dbase_col: weight
+  dbase_col: weight_grams
   dbase_table: bp_inspect
   nested_query: null
   nullable: 'no'
@@ -682,7 +682,7 @@ hxb_cond:
   default_value: null
   nullable: 'no'
 - xml_temp_val: THICKNESS
-  dbase_col: thickness
+  dbase_col: avg_thickness
   dbase_table: hxb_inspect
   xml_tag: THICKNESS
   nested_query: null
@@ -1124,6 +1124,16 @@ module_iv:
   xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
+- xml_temp_val: RUN_TYPE
+  xml_tag: RUN_TYPE
+  dbase_col: null
+  dbase_table: null
+  default_value: "Si module current-voltage test"
+  nullable: 'no'
+- xml_temp_val: COMMENT_DESCRIPTION
+  xml_tag: COMMENT_DESCRIPTION
+  dbase_col: null
+  dbase_table: null
 - xml_temp_val: RUN_NUMBER
   dbase_col: date_test, time_test
   dbase_table: module_iv_test
@@ -1218,6 +1228,16 @@ module_iv_cond:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+- xml_temp_val: RUN_TYPE
+  xml_tag: RUN_TYPE
+  dbase_col: null
+  dbase_table: null
+  default_value: "Si module current-voltage test"
+  nullable: 'no'
+- xml_temp_val: COMMENT_DESCRIPTION
+  xml_tag: COMMENT_DESCRIPTION
+  dbase_col: null
+  dbase_table: null
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER

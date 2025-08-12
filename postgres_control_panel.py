@@ -34,7 +34,8 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 dbase_name = config_data.get('dbname')
 db_hostname = config_data.get('db_hostname')
-cern_dbase = config_data.get('cern_db')
+cern_dbase = config_data.get('cern_db', 'prod_db') ## 'dev_db'
+delete_xmls = config_data.get('delete_xmls', True)
 php_port = config_data.get('php_port', '8083')
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
@@ -95,16 +96,7 @@ def load_image(image_path):
 def create_database():
     input_window = Toplevel(root)
     input_window.title("Input Required")
-    # Field 1: Database Name
-    Label(input_window, text="Set initial: VIEWER password (only read):").pack(pady=5)
-    viewer_var = StringVar()
-    viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    viewer_var_entry.pack(pady=5)
-    # Field 2: Username
-    Label(input_window, text="Set initial: USER password (write access):").pack(pady=5)
-    user_var = StringVar()
-    user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    user_var_entry.pack(pady=5)
+    
     # Field 3: Password (hidden input)
     Label(input_window, text="**Enter postgres password:** (for modifications)").pack(pady=5)
     password_var = StringVar()
@@ -118,9 +110,9 @@ def create_database():
         if db_pass.strip():
             input_window.destroy()  # Close the input window
             # Run the subprocess command
-            subprocess.run([sys.executable, "create/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "create/create_tables.py", "-p", db_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/create_tables.py", "-p", db_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"Check terminal for PostgreSQL database tables. Refresh pgAdmin4.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
@@ -130,6 +122,19 @@ def create_database():
     submit_create_button.pack(pady=10)
     bind_button_keys(submit_create_button)
 
+    Label(input_window, text="Provide below fields if creating the database for the first time.", fg="green",wraplength=270).pack(pady=5)
+    
+    # Field 1: Database Name
+    Label(input_window, text="Set initial: VIEWER password (only read):").pack(pady=5)
+    viewer_var = StringVar()
+    viewer_var_entry = Entry(input_window, textvariable=viewer_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    viewer_var_entry.pack(pady=5)
+    # Field 2: Username
+    Label(input_window, text="Set initial: USER password (write access):").pack(pady=5)
+    user_var = StringVar()
+    user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    user_var_entry.pack(pady=5)
+    
 def verify_shipin():
     input_window = Toplevel(root)
     input_window.title("Verify received components")
@@ -251,16 +256,8 @@ def import_data():
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
 
-    # Label(input_window, text="Enter lxplus username:").pack(pady=5)
-    # lxuser_var = StringVar()
-    # lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    # lxuser_var_entry.pack(pady=5)
-
-    # Label(input_window, text="Enter lxplus password:").pack(pady=5)
-    # lxpassword_var = StringVar()
-    # lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    # lxpassword_entry.pack(pady=5)
-
+    Label(input_window, wraplength = 200, text="Run 'Modify tables' to create updated QC columns prior to importing parts.", fg="red").pack(pady=5)
+    
     download_dev_var = BooleanVar(value=False)
     # download_dev_var_entry = Checkbutton(input_window, text="download from INT2R (DEV-DB)", variable=download_dev_var)
     # download_dev_var_entry.pack(pady=5)
@@ -349,13 +346,13 @@ def export_data():
     generate_var = BooleanVar(value=True)
     generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
     generate_var_entry.pack(pady=0)
-    upload_dev_var = BooleanVar(value=False)
+    upload_dev_var = BooleanVar(value=True) if cern_dbase == 'dev_db' else BooleanVar(value=False)
     upload_dev_var_entry = Checkbutton(input_window, text="Upload to INT2R (DEV-DB)", variable=upload_dev_var)
     upload_dev_var_entry.pack(pady=0)
-    upload_prod_var = BooleanVar(value=True)
+    upload_prod_var = BooleanVar(value=True) if cern_dbase == 'prod_db' else BooleanVar(value=False)
     upload_prod_var_entry = Checkbutton(input_window, text="Upload to CMSR (PROD-DB)", variable=upload_prod_var)
     upload_prod_var_entry.pack(pady=0)
-    deleteXML_var = BooleanVar(value=True)
+    deleteXML_var = BooleanVar(value=delete_xmls)
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
     deleteXML_var_entry.pack(pady=0)
     
