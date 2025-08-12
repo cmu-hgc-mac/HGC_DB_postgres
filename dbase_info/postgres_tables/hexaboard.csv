@@ -1,6 +1,6 @@
 hxb_no,serial PRIMARY KEY,"primary key",,
 hxb_name,TEXT,hexaboard serial number,fk_identifier,
-kind,TEXT,imported from CMSR HGCAPI,,
+kind,TEXT,imported from CMSR HGCAPI `kind_of_part`,,
 geometry,TEXT,derived from hxb_name; see HGC_DB_postgres/export_data/resource.yaml,,
 resolution,TEXT,derived from hxb_name; see HGC_DB_postgres/export_data/resource.yaml,,
 flatness_init,REAL,imported from CMSR HGCAPI,,
