@@ -147,7 +147,11 @@ async def create_tables_sequence():
                         print(f'Permission {k} already exist.')
                 
                 print('\n')
-    
+
+        print("Granting UPDATE permission to teststand_user for front_wirebond.wb_fr_marked_done.")
+        front_wirebond_done_query = "GRANT UPDATE (wb_fr_marked_done) ON front_wirebond TO teststand_user;"
+        await conn.execute(front_wirebond_done_query)
+
     except asyncpg.PostgresError as e:
         print("Error:", e)
         traceback.print_exc()
