@@ -267,7 +267,7 @@ async def create_tables_sequence():
                         print(f' >> Foreign key trigger for {target_table} updated.')
 
                 # Create the trigger for updating data:
-                duplicate_datas = get_table_info_data('create', 'duplicate_data.csv')
+                duplicate_datas = get_table_info_data('create_and_modify', 'duplicate_data.csv')
                 for j in range(len(duplicate_datas)):
                     if duplicate_datas[j][0] == table_name:
                         try: 
