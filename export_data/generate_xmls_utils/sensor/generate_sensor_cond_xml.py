@@ -113,12 +113,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
                             
                             db_values[xml_var] = get_run_num(LOCATION, dt_obj)
-                        elif xml_var == 'VISUAL_INSPECTION':
-                            grade = results.get("grade", "")
-                            if grade == 'A':
-                                db_values[xml_var] = 'pass'
-                            else:
-                                db_values[xml_var] = 'fail'
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
