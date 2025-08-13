@@ -161,7 +161,7 @@ async def main():
         db_type = 'int2r'
     
     if upload_dev_stat or upload_prod_stat:
-        print("Wait 3 seconds ...")
+        print("Waiting 3 seconds ...")
         time.sleep(3) ### XMLs take a few seconds to get saved
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)

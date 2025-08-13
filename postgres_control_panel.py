@@ -341,7 +341,7 @@ def export_data():
     enddate_var_entry = Entry(input_window, textvariable=enddate_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     enddate_var_entry.pack(pady=(0,25))
 
-    generate_var = BooleanVar(value=False)
+    generate_var = BooleanVar(value=True)
     generate_var_entry = Checkbutton(input_window, text="Generate XML files", variable=generate_var)
     generate_var_entry.pack(pady=0)
     upload_dev_var = BooleanVar(value=True) if cern_dbase == 'dev_db' else BooleanVar(value=False)
