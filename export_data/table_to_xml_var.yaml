@@ -992,13 +992,6 @@ sensor_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: TESTER
-  dbase_col: operator
-  dbase_table: proto_assembly
-  xml_tag: TESTED_BY
-  nested_query: null
-  default_value: null
-  nullable: 'no'
 - xml_temp_val: RUN_BEGIN_DATE_
   dbase_col: ass_run_date
   dbase_table: proto_assembly
@@ -1006,38 +999,17 @@ sensor_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: VISUAL_INSPECTION
+- xml_temp_val: MAC_GRADE
   dbase_col: grade
   dbase_table: sensor
-  xml_tag: VISUAL_INSPECTION
+  xml_tag: MAC_GRADE
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: FLATNESS
-  dbase_col: null
-  dbase_table: null
-  xml_tag: FLATNESS
-  nested_query: null
-  default_value: None
-  nullable: 'no'
-- xml_temp_val: THICKNESS
-  dbase_col: thickness
-  dbase_table: sensor
-  xml_tag: THICKNESS
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: GRADE
-  dbase_col: grade
-  dbase_table: sensor
-  xml_tag: GRADE
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: COMMENTS_UPLOAD
+- xml_temp_val: COMMENT_DESCRIPTION
+  xml_tag: COMMENT_DESCRIPTION
   dbase_col: comment
   dbase_table: sensor
-  xml_tag: COMMENTS
   nested_query: null
   default_value: null
   nullable: 'no'
