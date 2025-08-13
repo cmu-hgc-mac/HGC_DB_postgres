@@ -73,7 +73,7 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
     def set_build_to_true(xml_list):
         if isinstance(xml_list, dict):
             for key in xml_list:
-                if not ("build" in key or "proto_cond"in key or "module_cond" in key or "bp_cond" in key or "hxb_cond" in key or "module_assembly" in key or "proto_assembly" in key):
+                if not ("build" in key or "proto_cond"in key or "module_cond" in key or "bp_cond" in key or "hxb_cond" in key or "module_assembly" in key or "proto_assembly" in key or "wirebond" in key):
                     xml_list[key] = set_build_to_true(xml_list[key])
         elif isinstance(xml_list, list):
             xml_list = [set_build_to_true(item) for item in xml_list]
