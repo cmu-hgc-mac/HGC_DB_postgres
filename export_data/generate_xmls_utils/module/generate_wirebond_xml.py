@@ -191,11 +191,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = unbonded_count
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-            if 'IS_TEST_BOND_MODULE' not in db_values:
-                db_values['IS_TEST_BOND_MODULE'] = 'False'
-                
+            
+            
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
+            if 'IS_TEST_BOND_MODULE' not in db_values:
+                db_values['IS_TEST_BOND_MODULE'] = 'False'
+                xml_file_path = xml_file_path.replace("wirebond_upload.xml","wirebond_upload_no_pull_test.xml")
+            
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
             await update_timestamp_col(conn,
                                     update_flag=True,
