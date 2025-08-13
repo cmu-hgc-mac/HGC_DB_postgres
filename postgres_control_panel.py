@@ -421,6 +421,7 @@ def export_data():
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             
+            scp_status = 0
             if upload_dev_stat or upload_prod_stat:
                 if open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, get_scp_status=True) != 0:
                     show_message(f"Check terminal to enter LXPLUS credentials.")
