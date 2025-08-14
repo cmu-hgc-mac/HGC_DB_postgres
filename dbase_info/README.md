@@ -18,16 +18,9 @@ See [`tables.yaml`](tables.yaml#L3) for table permissions and description. Name 
     - hxb_inspect
     - hxb_pedestal_test
 
+## Note to developers
+The comments in the CSV files in `dbase_info/postgres_tables` do not accept single or double quotes but the backtick \` symbol is okay. For example, \`A` is allowed but \'A' and \"A" are not allowed in the comments. Each row should have four commas. And if it doesn't render properly on GitHub as a table, that is an indication that we screwed up the entries in a row.
   
-    
-  
-  
-  
-
-  
-
-
-
 ## Table hierarchy generated from pgAdmin4
 To view chart in pgAdmin4, right-click on the name of the database and select 'ERD for Database'.
 
