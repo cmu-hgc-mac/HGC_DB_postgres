@@ -146,12 +146,17 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '')
                 
+                if 'TEMP_C' not in db_values:
+                    db_values['TEMP_C'] = 999
+                elif 'HUMIDITY_REL' not in db_values:
+                    db_values['HUMIDITY_REL'] = 999
                 
                 if xml_type == 'iv':
                     db_values_iv[xml_var] = db_values[xml_var]
                 elif xml_type == 'env':
                     db_values_env[xml_var] = db_values[xml_var]
 
+                       
             # Update the XML with the database values
             # db_values_env['tempsensor_id'] = 'null' ## change this to Null in the future   
             combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]

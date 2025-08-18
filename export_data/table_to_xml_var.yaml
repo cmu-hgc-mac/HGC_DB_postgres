@@ -701,7 +701,7 @@ hxb_cond:
   xml_tag: COMMENTS
   nested_query: null
   default_value: null
-  nullable: 'no'
+  nullable: 'yes'
 proto_assembly:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
