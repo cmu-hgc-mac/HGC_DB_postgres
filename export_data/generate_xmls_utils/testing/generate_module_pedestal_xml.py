@@ -159,42 +159,42 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
 
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
-    if run_info is not None:
-        run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
-        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
-        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
+    # if run_info is not None:
+    #     run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
+    #     run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+    #     run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
+    #     run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+    #     run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+    #     run_info.find("LOCATION").text = LOCATION
+    #     run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
       
 
     # Get and remove the original <DATA_SET> template block
     data_set_template = root.find("DATA_SET")
     root.remove(data_set_template)
 
-    # Prepare chip-to-ROC mapping
-    chips = test_data["chip"]
-    channels = test_data["channel"]
-    adc_means = test_data["adc_mean"]
-    adc_stdds = test_data["adc_stdd"]
-    roc_names = test_data["roc_name"]
+    # # Prepare chip-to-ROC mapping
+    # chips = test_data["chip"]
+    # channels = test_data["channel"]
+    # adc_means = test_data["adc_mean"]
+    # adc_stdds = test_data["adc_stdd"]
+    # roc_names = test_data["roc_name"]
 
-    chip_to_roc = {}
-    for idx, chip in enumerate(sorted(set(chips))):
-        if idx < len(roc_names):
-            chip_to_roc[chip] = roc_names[idx]
+    # chip_to_roc = {}
+    # for idx, chip in enumerate(sorted(set(chips))):
+    #     if idx < len(roc_names):
+    #         chip_to_roc[chip] = roc_names[idx]
 
     # Group data by ROC
-    roc_grouped_data = defaultdict(list)
-    for i in range(len(channels)):
-        chip = chips[i]
-        roc = chip_to_roc.get(chip, "UNKNOWN")
-        roc_grouped_data[roc].append({
-            "channel": channels[i],
-            "adc_mean": adc_means[i],
-            "adc_stdd": adc_stdds[i]
-        })
+    # roc_grouped_data = defaultdict(list)
+    # for i in range(len(channels)):
+    #     chip = chips[i]
+    #     roc = chip_to_roc.get(chip, "UNKNOWN")
+    #     roc_grouped_data[roc].append({
+    #         "channel": channels[i],
+    #         "adc_mean": adc_means[i],
+    #         "adc_stdd": adc_stdds[i]
+    #     })
 
     # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
     for roc, entries in roc_grouped_data.items():
@@ -242,43 +242,43 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         pretty_xml = fixed_declaration + '\n'.join(pretty_xml.split('\n')[1:])
 
     ### DO the same for the enviromental conditions data
-    tree = ET.parse(template_path_env)
-    root = tree.getroot()
-    test_timestamp = test_data_env['test_timestamp']
-    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    # tree = ET.parse(template_path_env)
+    # root = tree.getroot()
+    # test_timestamp = test_data_env['test_timestamp']
+    # test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
 
     # === Fill in <RUN> metadata ===
-    run_info = root.find("HEADER/RUN")
-    if run_info is not None:
-        run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
-        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
-        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
+    # run_info = root.find("HEADER/RUN")
+    # if run_info is not None:
+    #     run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
+    #     run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+    #     run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
+    #     run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+    #     run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+    #     run_info.find("LOCATION").text = LOCATION
+    #     run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
 
-    # Get and remove the original <DATA_SET> template block
-    data_set_template = root.find("DATA_SET")
-    root.remove(data_set_template)
-    roc_names = test_data_env["roc_name"]
+    # # Get and remove the original <DATA_SET> template block
+    # data_set_template = root.find("DATA_SET")
+    # root.remove(data_set_template)
+    # roc_names = test_data_env["roc_name"]
 
-    # Group data by ROC
-    roc_grouped_data = defaultdict(list)
+    # # Group data by ROC
+    # roc_grouped_data = defaultdict(list)
     
-    # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
-    for roc in roc_names:
-        # Deep copy the template DATA_SET element
-        data_set = copy.deepcopy(data_set_template)
+    # # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
+    # for roc in roc_names:
+    #     # Deep copy the template DATA_SET element
+    #     data_set = copy.deepcopy(data_set_template)
 
-        # Set the correct SERIAL_NUMBER inside PART
-        serial_elem = data_set.find("PART/SERIAL_NUMBER")
-        if serial_elem is not None:
-            serial_elem.text = roc
+    #     # Set the correct SERIAL_NUMBER inside PART
+    #     serial_elem = data_set.find("PART/SERIAL_NUMBER")
+    #     if serial_elem is not None:
+    #         serial_elem.text = roc
         
-        kindofpart = data_set.find("PART/KIND_OF_PART")
-        if kindofpart is not None:
-            kindofpart.text = f"{test_data_env['module_name'][4]}D HGCROC"
+    #     kindofpart = data_set.find("PART/KIND_OF_PART")
+    #     if kindofpart is not None:
+    #         kindofpart.text = f"{test_data_env['module_name'][4]}D HGCROC"
 
         # Remove placeholder DATA blocks (direct children of DATA_SET)
         for data_elem in data_set.findall("DATA"):
@@ -288,7 +288,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         data = ET.Element("DATA")
         ET.SubElement(data, "TEMP_C").text = test_data_env['temp_c']
         ET.SubElement(data, "HUMIDITY_REL").text = test_data_env['rel_hum']
-        ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        # ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         # ET.SubElement(data, "TEMPSENSOR_ID").text = "0"
         data_set.append(data)  # <== append directly under DATA_SET
 
@@ -338,8 +338,12 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
             raise ValueError("You cannot upload any test data when humidity or temperature is null.")
         else:
             for run_begin_timestamp in tqdm(list(test_data.keys())):
-                output_file     = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp], lxplus_username=lxplus_username)
+                output_file = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp], lxplus_username=lxplus_username)
     
+    except (ValueError, KeyError) as e:
+        RED = '\033[91m'
+        RESET = '\033[0m'
+        print(f"{RED}A ValueError occurred: {e}. You cannot upload any test data when humidity or temperature is null.{RESET}")
     finally:
         await conn.close()
 
