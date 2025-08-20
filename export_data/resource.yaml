@@ -33,6 +33,7 @@ kind_of_part:
     '2': 'HGCROCV3b-2'
     '4': 'HGCROCV3b-4'
     'C': 'HGCROCV3c'
+    'D': 'HGCROCV3d'
   sensor: ## thickness, resolution, shape
     '1': ['300','LD', 'Wafer']
     '2': ['200', 'LD', 'Wafer']
