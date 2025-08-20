@@ -64,17 +64,17 @@ kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895
     '4': 'Right'
     '5': 'Five'
 roc_count_for_res_geom: ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
-    'LF': 3
-    'LL': 2
-    'LR': 2
-    'LT': 2
-    'LB': 2
-    'L5': 3
-    'HF': 6
-    'HL': 2
-    'HR': 2
-    'HT': 3
-    'HB': 4
+  'LF': 3
+  'LL': 2
+  'LR': 2
+  'LT': 2
+  'LB': 2
+  'L5': 3
+  'HF': 6
+  'HL': 2
+  'HR': 2
+  'HT': 3
+  'HB': 4
 shipping_location:
   Alabama: 2401
   Assembled: 8001
