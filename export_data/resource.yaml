@@ -1,15 +1,15 @@
-kind_of_part:
-  part_type:
+kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895:101675895:subDocs
+  part_type: ## 320(_)XXXXXIINNNN
     'P': 'ProtoModule'
     'M': 'Module'
     'S': 'Sensor'
     'B': 'Baseplate'
     'X': 'Hexaboard'
-  resolution:
+  resolution: ## 320X(_)XXXXIINNNN
     'L': 'LD'
     'H': 'HD'
     '0': ''
-  geometry:
+  geometry: ## 320XX(_)XXXIINNNN
     'F': 'Full'
     'T': 'Top' 
     'B': 'Bottom'
@@ -18,23 +18,42 @@ kind_of_part:
     '5': 'Five'
     'S': 'Whole'
     'M': 'Half-moons'
-  sensor_thickness:
+  sensor_thickness: ## 320XXX(_)XXIINNNN
     '1': '120'
     '2': '200' 
     '3': '300'
-  material:
+  material: ## 320XXXX(_)XIINNNN
     'W': 'CuW'
     'T': 'Ti'
     'C': 'CF'
     'P': 'PCB'
     'X': ''
-  roc_version:
+  roc_version: ## 320XXXXX(_)IINNNN
     'X': 'preseries'
     '2': 'HGCROCV3b-2'
     '4': 'HGCROCV3b-4'
     'C': 'HGCROCV3c'
     'D': 'HGCROCV3d'
-  sensor: ## thickness, resolution, shape
+  mod_manufacturer: ## 320XXXXXX(__)NNNN
+    'CM': 'CMU'
+    'TT': 'TTU'
+    'IH': 'IHEP'
+    'TI': 'TIFR'
+    'NT': 'NTU'
+    'SB': 'UCSB'
+  roc_count_for_res_geom: ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
+    'LF': 3
+    'LL': 2
+    'LR': 2
+    'LT': 2
+    'LB': 2
+    'L5': 3
+    'HF': 6
+    'HL': 2
+    'HR': 2
+    'HT': 3
+    'HB': 4
+  sensor: ## thickness, resolution, shape -- first digit(s) of XXXXXX_N
     '1': ['300','LD', 'Wafer']
     '2': ['200', 'LD', 'Wafer']
     '3': ['120','HD', 'Wafer']
@@ -42,7 +61,7 @@ kind_of_part:
     '4': ['300', 'LD', 'Partial']
     '5': ['200', 'LD', 'Partial']
     '6': ['120', 'HD', 'Partial']
-  sensor_geometry:
+  sensor_geometry: ## corresponsd to N in XXXXXX_N
     'XX': 'Whole'
     'TP': 'Top-Half-Moon'
     'BT': 'Bottom-Half-Moon'
