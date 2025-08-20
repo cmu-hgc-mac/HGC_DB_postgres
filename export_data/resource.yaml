@@ -49,7 +49,7 @@ kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895
     '4': ['300', 'LD', 'Partial']
     '5': ['200', 'LD', 'Partial']
     '6': ['120', 'HD', 'Partial']
-  sensor_geometry: ## corresponsd to N in XXXXXX_N
+  sensor_geometry: ## corresponds to N in XXXXXX_N
     'XX': 'Whole'
     'TP': 'Top-Half-Moon'
     'BT': 'Bottom-Half-Moon'
