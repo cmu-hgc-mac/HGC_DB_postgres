@@ -29,7 +29,7 @@ process_xml_list()
 
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
-adminer_process_button_face = " Search/Edit Data  "
+adminer_process_button_face = " Search/Edit Postgres Data  "
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -43,6 +43,7 @@ scp_force_quit = config_data.get('scp_force_quit', True)
 scp_ssh_port = config_data.get('scp_ssh_port', 22)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
+institution_abbr = config_data.get('institution_abbr')
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
 def get_pid_result():
@@ -459,7 +460,7 @@ def record_shipout():
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
-    Label(input_window, wraplength = 200, text="Modify tables prior to creating shipments for the first time.", fg="red").pack(pady=5)
+    # Label(input_window, wraplength = 200, text="Modify tables prior to creating shipments for the first time.", fg="red").pack(pady=5)
 
     def enter_part_barcodes_out():
         lines_from_file = []
@@ -602,6 +603,12 @@ def record_shipout():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
+    def launch_stt_form_webbrowser():
+        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+    
+    def see_my_shipments_cmsr():
+        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
+
     single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out)
     single_pack_button.pack(pady=10)
     bind_button_keys(single_pack_button)
@@ -610,8 +617,13 @@ def record_shipout():
     record_crate_button.pack(pady=10)
     bind_button_keys(record_crate_button)
 
+    launch_stt_form_button = Button(input_window, text="Launch CMSR Shipment Tracking Tool", command=launch_stt_form_webbrowser)
+    launch_stt_form_button.pack(pady=10)
+    bind_button_keys(launch_stt_form_button)
 
-
+    launch_stt_button = Button(input_window, text=f"See all {institution_abbr} shipments", command=see_my_shipments_cmsr)
+    launch_stt_button.pack(pady=10)
+    bind_button_keys(launch_stt_button)
 
 def refresh_data():
     # run_git_pull_seq()
@@ -681,7 +693,8 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
         close_adminer_process()
         button_search_data.config(text=adminer_process_button_face, fg="black")    
     
-
+def open_stt_stock():
+    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/stock/")
 
 # Create a helper function to handle button clicks
 def handle_button_click(action):
@@ -745,6 +758,9 @@ button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
 
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
 button_search_data.grid(row=8, column=1, pady=5, sticky='ew')
+
+button_stock_stt = Button(frame, text=" Check stock on CMSR STT", command=open_stt_stock, width=button_width, height=button_height) 
+button_stock_stt.grid(row=9, column=1, pady=5, sticky='ew')
 
 for pid in get_pid_result().stdout.strip().split("\n"):
     if pid.isdigit():
