@@ -616,13 +616,24 @@ def record_shipout():
     record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=enter_shipment_contents_out)
     record_crate_button.pack(pady=10)
     bind_button_keys(record_crate_button)
+    
+    Label(input_window, text="-------------------------------------").pack(pady=5)
+    Label(input_window, text="Procedure:", fg="blue",wraplength=270).pack(pady=1)
+    Label(input_window, text="(0) Upload the (proto)modules data to CMSR", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(1) Record the contents of a single box", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(2) Then record the boxes in a single shipment", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(3) Create a new shipment in the STT", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(4) Upload the generated .CSV from step (2) here.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+
+    Label(input_window, text="-------------------------------------").pack(pady=5)
+    Label(input_window, text="CMSR Shipment Tools").pack(pady=5)
 
     launch_stt_form_button = Button(input_window, text="Launch CMSR Shipment Tracking Tool", command=launch_stt_form_webbrowser)
-    launch_stt_form_button.pack(pady=10)
+    launch_stt_form_button.pack(pady=3)
     bind_button_keys(launch_stt_form_button)
 
     launch_stt_button = Button(input_window, text=f"See all {institution_abbr} shipments", command=see_my_shipments_cmsr)
-    launch_stt_button.pack(pady=10)
+    launch_stt_button.pack(pady=3)
     bind_button_keys(launch_stt_button)
 
 def refresh_data():
