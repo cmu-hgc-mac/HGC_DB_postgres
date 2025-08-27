@@ -1,13 +1,13 @@
 dbname: 'hgcdb'
 port: '5432'
 db_hostname: 'localhost' 
-institution_abbr: '' ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB
-cern_db: 'prod_db' ## dev_db vs prod_db
+institution_abbr: ''         ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB
+cern_db: 'prod_db'           ## default upload database: dev_db vs prod_db; controls postgres panel 
 php_port: 8083
-max_mod_per_box: 10
-max_box_per_shipment: 24
-max_cern_db_request: 1000
-scp_persist_minutes: 240
-scp_force_quit: True
-scp_ssh_port: 22
-delete_xmls: True
+max_mod_per_box: 10          ## maximum number of modules per box; controls postgres panel 
+max_box_per_shipment: 24     ## maximum number of boxes per shipment (crate); controls postgres panel 
+max_cern_db_request: 1000    ## maximum number of parts requested from HGCAPI during data import
+scp_persist_minutes: 240     ## duration for which the scp connection is open; important when transferring large number of files
+scp_force_quit: True         ## If False, scp connection will be open without password as long as the panel is open. Set True for shared computers.
+scp_ssh_port: 22             
+delete_xmls: False           ## If true, deletes local xmls after upload; controls postgres panel
