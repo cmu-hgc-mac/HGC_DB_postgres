@@ -131,15 +131,17 @@ def main():
         for fname in tqdm(protomodule_build_files):
             scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
         
-        print("Waiting 10 seconds after protomodule upload...")
-        time.sleep(10) ### DBLoader has some latency
+        if len(protomodule_build_files) > 0:
+            print("Waiting 10 seconds after protomodule upload...")
+            time.sleep(10) ### DBLoader has some latency
 
         print(f"Uploading module 'build' files to {cern_dbname}...")
         for fname in tqdm(module_build_files):
             scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
         
-        print("Waiting 10 seconds after module upload...")
-        time.sleep(10) ## DBLoader has some latency
+        if len(module_build_files) > 0:
+            print("Waiting 10 seconds after module upload...")
+            time.sleep(10) ## DBLoader has some latency
 
         print(f"Uploading other files to {cern_dbname}...")
         for fname in tqdm(other_files):
