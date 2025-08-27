@@ -3,7 +3,7 @@ from pathlib import Path
 from scp import SCPClient
 from src import process_xml_list
 import numpy as np
-import datetime, yaml, paramiko, pwinput, sys
+import datetime, time, yaml, paramiko, pwinput, sys
 from tqdm import tqdm
 import traceback
 
@@ -130,9 +130,17 @@ def main():
         print(f"Uploading protomodule 'build' files to {cern_dbname}...")
         for fname in tqdm(protomodule_build_files):
             scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
+        
+        print("Waiting 10 seconds after protomodule upload...")
+        time.sleep(10) ### DBLoader has some latency
+
         print(f"Uploading module 'build' files to {cern_dbname}...")
         for fname in tqdm(module_build_files):
             scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
+        
+        print("Waiting 10 seconds after module upload...")
+        time.sleep(10) ## DBLoader has some latency
+
         print(f"Uploading other files to {cern_dbname}...")
         for fname in tqdm(other_files):
             scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
