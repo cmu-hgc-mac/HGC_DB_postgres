@@ -62,6 +62,10 @@ host    all             all             $$$.$$$.$$$.$$$/$$          scram-sha-25
 host    all             all             mycomp1.phys.school.edu     md5            ## Test stand
 host    all             all             192.168.0.1/32              scram-sha-256  ## Shipping
 host    all             all             0.0.0.0/0                   scram-sha-256  ## From anywhere w/ password -- Not recommended
+
+host    all             viewer          188.184.0.0/15    trust    ## CERN datacenter LCG
+host    all             viewer          128.142.0.0/16    trust    ## CERN datacenter LCG
+host    all             viewer          131.225.0.0/16    trust    ## Viewer w/o password on FNAL network
 ```
 
 How to read above example --
