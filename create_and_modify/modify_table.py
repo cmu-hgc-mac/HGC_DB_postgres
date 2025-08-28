@@ -242,7 +242,7 @@ async def main():
             print('\n')
         
         table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, f"{table_name}.csv")
-        table_exists_query = """SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = public AND table_name = $1);"""
+        table_exists_query = """SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1);"""
         table_exists = await conn.fetchval(table_exists_query, table_name)
         if table_exists:
             await set_table_col_comments(conn, table_name, table_header, comment_columns)
