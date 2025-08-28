@@ -1,4 +1,4 @@
-trophy_and_mezzanine_boards,serial PRIMARY KEY,primary key,,
+record_no,serial PRIMARY KEY,primary key,,
 trophy_name,TEXT,"Trophy serial number; connects mezzanine to module and will be replaced frequently",,
 mezzanine_name,TEXT,Mezzanine serial number; connects trophy and hexacontroller,,
 station_name,TEXT,Station ID,,
