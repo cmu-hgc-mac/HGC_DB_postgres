@@ -144,8 +144,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'module_name': row['module_name'],
                 'module_no': row['module_no'],
                 'inspector': row['inspector'],
-                'rel_hum': row['rel_hum'],
-                'temp_c': row['temp_c'],
+                'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
+                'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
                 'roc_name': row['roc_name']
             }
     return test_data, test_data_env
@@ -333,8 +333,16 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
 
     try:
         test_data, test_data_env = await fetch_test_data(conn, date_start, date_end, partsnamelist)
-        for run_begin_timestamp in tqdm(list(test_data.keys())):
-            output_file     = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env = temp_dir_env, test_data_env = test_data_env[run_begin_timestamp], lxplus_username=lxplus_username)
+        if test_data_env['rel_hum'] is None or test_data_env['temp_c'] is None:
+            raise ValueError("You cannot upload any test data when humidity or temperature is null.")
+        else:
+            for run_begin_timestamp in tqdm(list(test_data.keys())):
+                output_file = await generate_module_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, temp_dir, output_dir, template_path_env=temp_dir_env, test_data_env=test_data_env[run_begin_timestamp], lxplus_username=lxplus_username)
+
+    except Exception as e:
+        RED = '\033[91m'
+        RESET = '\033[0m'
+        print(f"{RED}An error occurred: {e}. You cannot upload any test data when humidity or temperature is null.{RESET}")
     finally:
         await conn.close()
 

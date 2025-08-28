@@ -120,8 +120,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'hxb_name': row['hxb_name'],
                 'hxb_no': row['hxb_no'],
                 'inspector': row['inspector'],
-                'rel_hum': row['rel_hum'],
-                'temp_c': row['temp_c'],
+                'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
+                'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
                 'roc_name': row['roc_name']
             }
     return test_data, test_data_env

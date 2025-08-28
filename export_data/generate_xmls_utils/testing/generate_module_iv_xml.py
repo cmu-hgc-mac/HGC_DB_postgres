@@ -84,7 +84,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             print('ERROR:', e)
                     
                     if results:
-                        ref_volt_a, ref_volt_b = 400, 500
+                        # ref_volt_a, ref_volt_b = 400, 500
                         if xml_var == "RUN_BEGIN_TIMESTAMP_":
                             # Fetching both ass_run_date and ass_time_begin
                             run_date = results.get("date_test", "")
@@ -105,38 +105,38 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
                             
                             db_values[xml_var]     = get_run_num(LOCATION, dt_obj)
-                        elif xml_var == 'REF_VOLT_A':
-                            db_values[xml_var] = ref_volt_a  #results.get("ratio_at_vs", "")[0]
-                        elif xml_var == 'REF_VOLT_B':
-                            db_values[xml_var] = ref_volt_b #results.get("ratio_at_vs", "")[1]
+                        # elif xml_var == 'REF_VOLT_A':
+                        #     db_values[xml_var] = ref_volt_a  #results.get("ratio_at_vs", "")[0]
+                        # elif xml_var == 'REF_VOLT_B':
+                        #     db_values[xml_var] = ref_volt_b #results.get("ratio_at_vs", "")[1]
+                        # elif xml_var == 'CURRENT_AMPS_AT_VOLT_A':
+                        #     prog_v = np.array(results.get('program_v', ""))
+                        #     # ratio_at_vs = results.get('ratio_at_vs', "")
+                        #     # ref_volt_a = ratio_at_vs[0]
+                        #     if max(prog_v) < ref_volt_a:
+                        #         ind_volt_a = np.argmax(prog_v)
+                        #     else:
+                        #         ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()[0]
+                        #     meas_i = np.array(results.get('meas_i', ""))
+                        #     db_values[xml_var] = meas_i[ind_volt_a]
+                        # elif xml_var == 'CURRENT_RATIO_B_OVER_A':
+                        #     prog_v = np.array(results.get('program_v', ""))
+                        #     # ratio_at_vs = results.get('ratio_at_vs', "")
+                        #     # ref_volt_a = ratio_at_vs[0]
+                        #     # ref_volt_b = ratio_at_vs[1]
+                        #     if max(prog_v) < ref_volt_a:
+                        #         ind_volt_a = np.argmax(prog_v)
+                        #     else:
+                        #         ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()[0]
+                        #     if max(prog_v) < ref_volt_b:
+                        #         ind_volt_b = np.argmax(prog_v)
+                        #     else:
+                        #         ind_volt_b = np.argwhere(prog_v == ref_volt_b).flatten()[0]
+                        #     meas_i = np.array(results.get('meas_i', ""))
+                        #     db_values[xml_var] = meas_i[ind_volt_b]/meas_i[ind_volt_a]
                         elif xml_var == 'DATA_POINT_COUNT':
                             _prog_v = results.get('program_v', "")
                             db_values[xml_var] = len(_prog_v)
-                        elif xml_var == 'CURRENT_AMPS_AT_VOLT_A':
-                            prog_v = np.array(results.get('program_v', ""))
-                            # ratio_at_vs = results.get('ratio_at_vs', "")
-                            # ref_volt_a = ratio_at_vs[0]
-                            if max(prog_v) < ref_volt_a:
-                                ind_volt_a = np.argmax(prog_v)
-                            else:
-                                ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()[0]
-                            meas_i = np.array(results.get('meas_i', ""))
-                            db_values[xml_var] = meas_i[ind_volt_a]
-                        elif xml_var == 'CURRENT_RATIO_B_OVER_A':
-                            prog_v = np.array(results.get('program_v', ""))
-                            # ratio_at_vs = results.get('ratio_at_vs', "")
-                            # ref_volt_a = ratio_at_vs[0]
-                            # ref_volt_b = ratio_at_vs[1]
-                            if max(prog_v) < ref_volt_a:
-                                ind_volt_a = np.argmax(prog_v)
-                            else:
-                                ind_volt_a = np.argwhere(prog_v == ref_volt_a).flatten()[0]
-                            if max(prog_v) < ref_volt_b:
-                                ind_volt_b = np.argmax(prog_v)
-                            else:
-                                ind_volt_b = np.argwhere(prog_v == ref_volt_b).flatten()[0]
-                            meas_i = np.array(results.get('meas_i', ""))
-                            db_values[xml_var] = meas_i[ind_volt_b]/meas_i[ind_volt_a]
                         elif xml_var == 'DATA_POINTS_JSON':
                             prog_v = results.get('program_v', "")
                             meas_i = results.get('meas_i', "")
@@ -146,12 +146,17 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '')
                 
+                if 'TEMP_C' not in db_values:
+                    db_values['TEMP_C'] = 999
+                elif 'HUMIDITY_REL' not in db_values:
+                    db_values['HUMIDITY_REL'] = 999
                 
                 if xml_type == 'iv':
                     db_values_iv[xml_var] = db_values[xml_var]
                 elif xml_type == 'env':
                     db_values_env[xml_var] = db_values[xml_var]
 
+                       
             # Update the XML with the database values
             # db_values_env['tempsensor_id'] = 'null' ## change this to Null in the future   
             combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]

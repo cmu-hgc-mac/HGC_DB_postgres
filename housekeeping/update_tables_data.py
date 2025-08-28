@@ -127,7 +127,7 @@ async def update_module_info():
             result = await conn.execute(update_hxb_inspect_thickness2)
             result = await conn.execute(update_bp_inspect_thickness2)
         except:
-             print("Either thickness or avg_thickness columns doesn't exist. This is a tempirary feature till all MAC DBs are updated.")
+             print("Either thickness or avg_thickness columns doesn't exist. This is a temporary feature till all MAC DBs are updated.")
         
     except Exception as e:
         print(f"An error occurred: {e}")
