@@ -8,6 +8,7 @@ from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel,
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
 from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync
+from export_data.src import open_scp_connection
 
 def run_git_pull_seq():
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
@@ -28,17 +29,21 @@ process_xml_list()
 
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
-adminer_process_button_face = " Search/Edit Data  "
+adminer_process_button_face = " Search/Edit Postgres Data  "
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 dbase_name = config_data.get('dbname')
 db_hostname = config_data.get('db_hostname')
 cern_dbase = config_data.get('cern_db', 'prod_db') ## 'dev_db'
-delete_xmls = config_data.get('delete_xmls', True)
+delete_xmls = config_data.get('delete_xmls', False)
 php_port = config_data.get('php_port', '8083')
+scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
+scp_force_quit = config_data.get('scp_force_quit', True)
+scp_ssh_port = config_data.get('scp_ssh_port', 22)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
+institution_abbr = config_data.get('institution_abbr')
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
 def get_pid_result():
@@ -279,8 +284,6 @@ def import_data():
 
     def submit_import():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
-        # lxuser_pass = lxuser_var.get()
-        # lxpassword_pass = lxpassword_var.get()
         download_dev_stat = download_dev_var.get()
         download_prod_stat = download_prod_var.get()
         basplate_get_stat = baseplate_get_var.get()
@@ -321,10 +324,6 @@ def export_data():
     lxuser_var = StringVar()
     lxuser_var_entry = Entry(input_window, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     lxuser_var_entry.pack(pady=0)
-    Label(input_window, text="**Enter LXPLUS password:**").pack(pady=1)
-    lxpassword_var = StringVar()
-    lxpassword_entry = Entry(input_window, textvariable=lxpassword_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-    lxpassword_entry.pack(pady=(0,25))
 
     Label(input_window, text="Comma-separated parts names (optional)").pack(pady=1)
     partsname_var_entry = Text(input_window, width=40, height=4, wrap="word", bd=1.5, highlightbackground="black", highlightthickness=1)
@@ -412,7 +411,6 @@ def export_data():
     def submit_export():
         lxp_username = lxuser_var.get()
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
-        lxp_password = base64.urlsafe_b64encode( cipher_suite.encrypt( (lxpassword_var.get()).encode()) ).decode() if lxpassword_var.get().strip() else "" ## Encrypt password and then convert to base64
         generate_stat = generate_var.get()
         upload_dev_stat = upload_dev_var.get()
         upload_prod_stat = upload_prod_var.get()
@@ -420,22 +418,27 @@ def export_data():
         partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if dbshipper_pass.strip() and lxp_username.strip(): 
-            if not upload_dev_stat and not upload_prod_stat:
-                lxp_password = 'na'
-            if lxp_password.strip():
-                input_window.destroy()  
-                # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
-                # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-                export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-lxp", lxp_password, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
-                if partslistpre.strip():
-                    partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
-                    export_command_list += ['-pn', ] + partslist
-                
-                subprocess.run(export_command_list)
-                show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
-            else:
-                if messagebox.askyesno("Input Error", "Do you want to cancel?\nLXPlus password cannot be empty."):
-                    input_window.destroy()  
+            input_window.destroy(); input_window.update()  
+            # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+            
+            scp_status = 0
+            if upload_dev_stat or upload_prod_stat:
+                if open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, get_scp_status=True) != 0:
+                    show_message(f"Check terminal to enter LXPLUS credentials.")
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+            
+            upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
+            upload_prod_stat = upload_prod_stat if scp_status == 0 else False
+            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
+            if partslistpre.strip():
+                partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
+                export_command_list += ['-pn', ] + partslist
+            subprocess.run(export_command_list)
+            if scp_force_quit:
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, scp_ssh_port=scp_ssh_port)
+            show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
+            
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
                 input_window.destroy()  
@@ -457,7 +460,7 @@ def record_shipout():
     shipper_var = StringVar()
     shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     shipper_var_entry.pack(pady=5)
-    Label(input_window, wraplength = 200, text="Modify tables prior to creating shipments for the first time.", fg="red").pack(pady=5)
+    # Label(input_window, wraplength = 200, text="Modify tables prior to creating shipments for the first time.", fg="red").pack(pady=5)
 
     def enter_part_barcodes_out():
         lines_from_file = []
@@ -591,7 +594,7 @@ def record_shipout():
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                     fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
                     print("List of modules saved under ", fileout_name)
-                    webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
+                    # webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
                     webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
 
             submit_button = Button(popup1, text="Record to DB", command=update_db_shipped)
@@ -600,6 +603,12 @@ def record_shipout():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
+    def launch_stt_form_webbrowser():
+        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+    
+    def see_my_shipments_cmsr():
+        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
+
     single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out)
     single_pack_button.pack(pady=10)
     bind_button_keys(single_pack_button)
@@ -607,9 +616,25 @@ def record_shipout():
     record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=enter_shipment_contents_out)
     record_crate_button.pack(pady=10)
     bind_button_keys(record_crate_button)
+    
+    Label(input_window, text="-------------------------------------").pack(pady=5)
+    Label(input_window, text="Procedure:", fg="blue",wraplength=270).pack(pady=1)
+    Label(input_window, text="(0) Upload the (proto)modules data to CMSR", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(1) Record the contents of a single box", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(2) Then record the boxes in a single shipment", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(3) Create a new shipment in the STT", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(4) Upload the generated .CSV from step (2) here.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
 
+    Label(input_window, text="-------------------------------------").pack(pady=5)
+    Label(input_window, text="CMSR Shipment Tools").pack(pady=5)
 
+    launch_stt_form_button = Button(input_window, text="Launch CMSR Shipment Tracking Tool", command=launch_stt_form_webbrowser)
+    launch_stt_form_button.pack(pady=3)
+    bind_button_keys(launch_stt_form_button)
 
+    launch_stt_button = Button(input_window, text=f"See all {institution_abbr} shipments", command=see_my_shipments_cmsr)
+    launch_stt_button.pack(pady=3)
+    bind_button_keys(launch_stt_button)
 
 def refresh_data():
     # run_git_pull_seq()
@@ -679,7 +704,8 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
         close_adminer_process()
         button_search_data.config(text=adminer_process_button_face, fg="black")    
     
-
+def open_stt_stock():
+    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/stock/")
 
 # Create a helper function to handle button clicks
 def handle_button_click(action):
@@ -743,6 +769,9 @@ button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
 
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
 button_search_data.grid(row=8, column=1, pady=5, sticky='ew')
+
+button_stock_stt = Button(frame, text=" Check stock on CMSR STT", command=open_stt_stock, width=button_width, height=button_height) 
+button_stock_stt.grid(row=9, column=1, pady=5, sticky='ew')
 
 for pid in get_pid_result().stdout.strip().split("\n"):
     if pid.isdigit():

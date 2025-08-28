@@ -2,8 +2,8 @@
 <ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <HEADER>
     <TYPE>
-        <EXTENSION_TABLE_NAME>FLATNS_SENSOR_DATA</EXTENSION_TABLE_NAME>
-		<NAME>HGC Sensor Flatness Data</NAME>
+        <EXTENSION_TABLE_NAME>HGC_SENSOR_IV_SUMRY</EXTENSION_TABLE_NAME>
+		<NAME>HGC Sensor IV Summary</NAME>
     </TYPE>
     <RUN>
         <!-- <RUN_NAME>Flatness measurement</RUN_NAME> -->
@@ -13,13 +13,13 @@
         <RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
         <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
         <LOCATION>{{ location }}</LOCATION>
-        <COMMENT_DESCRIPTION>Upload flatness measurement</COMMENT_DESCRIPTION>
+        <COMMENT_DESCRIPTION>Upload MAC sensor visual inspection grade</COMMENT_DESCRIPTION>
     </RUN>
 
 </HEADER>
 
     <DATA_SET>
-        <COMMENT_DESCRIPTION>Upload flatness data</COMMENT_DESCRIPTION>
+        <COMMENT_DESCRIPTION>{{ comment_description }}</COMMENT_DESCRIPTION>
         <VERSION>1</VERSION>
         <PART mode="auto">
             <SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
@@ -27,15 +27,7 @@
         </PART>
 
         <DATA>
-			<TESTED_BY>{{ tester }}</TESTED_BY>
-			<TEST_DATE>{{ run_begin_date_ }}</TEST_DATE>
-			<STATUS>n/a</STATUS>
-			<VISUAL_INSPECTION>{{ visual_inspection }}</VISUAL_INSPECTION>
-			<TEST_FILE_NAME>n/a</TEST_FILE_NAME>
-            <FLATNESS>{{ flatness }}</FLATNESS>
-            <THICKNESS>{{ thickness }}</THICKNESS>
-            <GRADE>{{ grade }}</GRADE>
-            <COMMENTS>{{ comments_upload }}</COMMENTS>
+			<MAC_GRADE>{{ mac_grade }}</MAC_GRADE>
         </DATA>
     </DATA_SET>
 </ROOT>

@@ -131,6 +131,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
+            if db_values['COMMENTS_UPLOAD'] == None:
+                db_values['COMMENTS_UPLOAD'] = ''
             output_file_name = f'{hxb_name}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
 

@@ -178,7 +178,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == "ENCAPSULATION_COMMENTS_CONCAT":
                             bk_comment = results.get("back_encap_comment", "")
                             fr_comment = results.get("front_encap_comment", "")
-                            db_values[xml_var] = f"{bk_comment}-{fr_comment}"
+                            db_values[xml_var] = f"{bk_comment} {fr_comment}"
                         elif xml_var == 'BOND_PULL_USER':
                             db_values[xml_var] = results.get('technician', '') if not None else ''
                         elif xml_var == 'BOND_PULL_AVG':
@@ -191,11 +191,19 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = unbonded_count
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-            if 'IS_TEST_BOND_MODULE' not in db_values:
-                db_values['IS_TEST_BOND_MODULE'] = 'False'
-                
+            
+            
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
+            if 'IS_TEST_BOND_MODULE' not in db_values:
+                db_values['IS_TEST_BOND_MODULE'] = 'False'
+                db_values['BOND_PULL_USER'] = ''
+                db_values['BOND_PULL_AVG'] = ''
+                db_values['BOND_PULL_STDDEV'] = ''
+
+                
+                # xml_file_path = xml_file_path.replace("wirebond_upload.xml","wirebond_upload_no_pull_test.xml")
+            
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
             await update_timestamp_col(conn,
                                     update_flag=True,
