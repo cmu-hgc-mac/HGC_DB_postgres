@@ -15,15 +15,12 @@ logic:
 4. Apply the changes
 '''
 
-async def set_table_col_comments(conn, table_name, table_columns, comment_columns):
-    table_exists = True
-    if table_exists:
-        for t in range(len(table_columns)):
-            set_comment_query = f"COMMENT ON COLUMN {table_name}.{table_columns[t]} IS '{comment_columns[t]}';"
-            await conn.execute(set_comment_query) 
-        print(f"Table '{table_name}' column comments updated.")
-    else:
-        print(f"Table '{table_name}' does not exist.")
+async def set_table_col_comments(conn, table_name, table_columns, comment_columns):    
+    for t in range(len(table_columns)):
+        set_comment_query = f"COMMENT ON COLUMN {table_name}.{table_columns[t]} IS '{comment_columns[t]}';"
+        await conn.execute(set_comment_query) 
+    print(f"Table '{table_name}' column comments updated.")
+
 
 # 1. extract the existing table schema
 async def get_existing_table_schema(conn, table_name: str):
@@ -245,12 +242,12 @@ async def main():
             print('\n')
         
         table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, f"{table_name}.csv")
-        
-        # print(len(table_header), len(comment_columns))
-        # print((table_header), (comment_columns))
-        # for t in range(len(table_header)):
-        #     print(table_header[t], comment_columns[t])
-        await set_table_col_comments(conn, table_name, table_header, comment_columns)
+        table_exists_query = """SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = public AND table_name = $1);"""
+        table_exists = await conn.fetchval(table_exists_query, table_name)
+        if table_exists:
+            await set_table_col_comments(conn, table_name, table_header, comment_columns)
+        else:
+            print(f"Table '{table_name}' does not exist.")
 
     await conn.close()
 
