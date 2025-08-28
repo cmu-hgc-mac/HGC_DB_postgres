@@ -152,7 +152,7 @@ async def create_tables_sequence():
 
         if function == 'name': 
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{i}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
             RETURNS TRIGGER AS $$
             BEGIN
                 UPDATE {target_table}
@@ -163,15 +163,15 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{i}_update_data_trigger
+            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW
-                EXECUTE FUNCTION {target_table}_{i}_update_data();
+                EXECUTE FUNCTION {target_table}_{target_col}_update_data();
             """
 
         elif function == 'time':
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{i}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
             RETURNS TRIGGER AS $$
             BEGIN
                 UPDATE {target_table}
@@ -182,15 +182,15 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{i}_update_data_trigger
+            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW
-                EXECUTE FUNCTION {target_table}_{i}_update_data();
+                EXECUTE FUNCTION {target_table}_{target_col}_update_data();
             """
         
         elif function == 'update':
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{i}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
             RETURNS TRIGGER AS $$
             BEGIN
                 IF EXISTS (
@@ -210,7 +210,7 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{i}_update_data_trigger
+            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW 
             EXECUTE FUNCTION {target_table}_{i}_update_data();
