@@ -152,7 +152,7 @@ async def create_tables_sequence():
 
         if function == 'name': 
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_name()
             RETURNS TRIGGER AS $$
             BEGIN
                 UPDATE {target_table}
@@ -163,15 +163,15 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
+            CREATE TRIGGER {target_table}_{target_col}_update_name_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW
-                EXECUTE FUNCTION {target_table}_{target_col}_update_data();
+                EXECUTE FUNCTION {target_table}_{target_col}_update_name();
             """
 
         elif function == 'time':
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_time()
             RETURNS TRIGGER AS $$
             BEGIN
                 UPDATE {target_table}
@@ -182,15 +182,15 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
+            CREATE TRIGGER {target_table}_{target_col}_update_time_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW
-                EXECUTE FUNCTION {target_table}_{target_col}_update_data();
+                EXECUTE FUNCTION {target_table}_{target_col}_update_time();
             """
         
         elif function == 'update':
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_{i}_update_recieved_time()
             RETURNS TRIGGER AS $$
             BEGIN
                 IF EXISTS (
@@ -210,10 +210,44 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
+            CREATE TRIGGER {target_table}_{target_col}_{i}_update_recieved_time_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW 
-            EXECUTE FUNCTION {target_table}_{i}_update_data();
+            EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_recieved_time();
+            """
+
+        elif function == 'proto_lookup':
+            func_name = f"{target_table}_{target_col}_{i}_proto_lookup"
+            trg_name  = f"{target_table}_{target_col}_{i}_proto_lookup_trigger"
+
+            trigger_sql = f"""
+            DROP TRIGGER IF EXISTS {trg_name} ON {source_table};
+
+            CREATE OR REPLACE FUNCTION {func_name}()
+            RETURNS TRIGGER AS $$
+            DECLARE
+                v_val text;
+            BEGIN
+                SELECT pa.{source_col}
+                INTO v_val
+                FROM proto_assembly pa
+                WHERE REPLACE(pa.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                LIMIT 1;
+
+                IF FOUND THEN
+                    UPDATE {target_table} AS tgt
+                    SET {target_col} = v_val
+                    WHERE REPLACE(tgt.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                    AND (tgt.{target_col} IS DISTINCT FROM v_val);
+                END IF;
+
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER {trg_name}
+            AFTER INSERT OR UPDATE OF {replace_col} ON {source_table}
+            FOR EACH ROW EXECUTE FUNCTION {func_name}();
             """
 
         return trigger_sql
