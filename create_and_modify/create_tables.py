@@ -196,11 +196,11 @@ async def create_tables_sequence():
                 IF EXISTS (
                     SELECT 1 FROM {target_table}
                     WHERE REPLACE({replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
-                        AND {target_table}.{target_col} IS NULL
                 ) THEN
                     UPDATE {target_table}
                     SET {target_col} = NEW.{source_col}
-                    WHERE REPLACE({replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '');
+                    WHERE REPLACE({replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                        AND {target_table}.{target_col} IS NULL;
                 ELSE
                     INSERT INTO {target_table} ({replace_col}, {target_col})
                     VALUES (NEW.{replace_col}, NEW.{source_col});
