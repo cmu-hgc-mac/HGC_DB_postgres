@@ -165,6 +165,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == 'FLATNESS':
                             flatness = results.get('flatness', "")
                             db_values[xml_var] = str(round(float(flatness),3))
+                        elif xml_var == 'TEMPERATURE':
+                            temperature = results.get('temperature', "")
+                            db_values[xml_var] = float(temperature.split()[0])
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
         

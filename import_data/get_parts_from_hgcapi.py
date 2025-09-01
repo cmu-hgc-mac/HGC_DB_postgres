@@ -27,9 +27,6 @@ inst_code  = conn_info.get('institution_abbr')
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
 
-## ROC ID Attribute
-## https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
-
 db_params = {
     'database': conn_info.get('dbname'),
     'user': 'editor',
@@ -64,7 +61,7 @@ partTransInit['bp'].update(bp_qc_cols)
 
 def check_roc_count(hxb_name, roc_count):
     ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
-    roc_count_dict = {'LF': 3, 'LL': 2, 'LR': 2, 'LT': 2, 'LB': 2, 'L5': 3, 'HF': 6, 'HL': 2, 'HR': 2, 'HT': 3, 'HB': 4}
+    roc_count_dict = kop_yaml['roc_count_for_res_geom']
     if roc_count_dict[hxb_name[4:6]] == roc_count:
         return True
     return False

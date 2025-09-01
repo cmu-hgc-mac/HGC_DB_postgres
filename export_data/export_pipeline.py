@@ -77,17 +77,15 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
         print(f"Progress: {completed_scripts}/{total_scripts} XML file types generated.")
         print('-'*10); print('')
 
-def scp_files(lxplus_username, lxplus_password, directory, search_date, encryption_key = None, cerndb = 'dev_db'):
+def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db'):
     """Call the scp script to transfer files."""
     try:
         scp_command = ['python3', 
                        'export_data/dbloader_scp_xml.py', 
                        '-lxu', lxplus_username, 
-                       '-lxp', lxplus_password, 
                        '-dir', directory,
                        '-date', str(search_date),
-                       '-cerndb', cerndb,
-                       '-k', encryption_key]
+                       '-cerndb', cerndb]
     
         process = subprocess.run(scp_command, check=True)
         return True
@@ -119,7 +117,6 @@ async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
-    parser.add_argument('-lxp', '--dbl_password', default=None, required=False, help="Password to access lxplus.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', type=valid_directory, default=GENERATED_XMLS_DIR, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     # parser.add_argument('-date', '--date', type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d').date(), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
@@ -135,7 +132,7 @@ async def main():
 
     dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
     lxplus_username = args.dbl_username or pwinput.pwinput(prompt='Enter lxplus username: ', mask='*')
-    lxplus_password = args.dbl_password or pwinput.pwinput(prompt='Enter lxplus password: ', mask='*')
+    # lxplus_password = args.dbl_password or pwinput.pwinput(prompt='Enter lxplus password: ', mask='*')
     directory_to_search = args.directory
     date_start = args.date_start
     date_end = args.date_end
@@ -167,7 +164,7 @@ async def main():
         print("Waiting 3 seconds ...")
         time.sleep(3) ### XMLs take a few seconds to get saved
         for cerndb in db_list:
-            ret = True and scp_files(lxplus_username = lxplus_username, lxplus_password = lxplus_password, directory = directory_to_search, search_date = today, encryption_key = encryption_key, cerndb = cerndb)
+            ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
         # if ret:
         #     await check_upload(db_type)
             # Step 3: Delete generated XMLs on success

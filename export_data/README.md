@@ -1,12 +1,27 @@
+# Allow SCP to LXPlus with Two-factor authentication
+### Create a control process
+```
+ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/scp-%r@%h:%p -o ControlPersist=2h -o ProxyJump=USERNAME@lxtunnel.cern.ch USERNAME@dbloader-hgcal  
+```
+### SCP the file
+```
+scp -o ProxyJump=USERNAME@lxtunnel.cern.ch -o ControlPath=~/.ssh/scp-%r@%h:%p /directory_to_the_xml_file/xxx.xml USERNAME@dbloader-hgcal:/home/dbspool/spool/hgc/int2r  
+```
+### Exit the control process with the appropriate port
+```
+ssh -O exit -o ControlPath=~/.ssh/scp-USERNAME@dbloader-hgcal:22 USERNAME@dbloader-hgcal 
+```
+
+
 # Manual upload to hgcal-dbloader-spool
-Replace `username` in two places and provide the path of the XML file.
+Replace `USERNAME` in two places and provide the path of the XML file.
 #### INT2R:
 ```
-scp -o ProxyJump=username@lxplus.cern.ch /directory_to_the_xml_file/xxx.xml username@dbloader-hgcal:/home/dbspool/spool/hgc/int2r/
+scp -o ProxyJump=USERNAME@lxtunnel.cern.ch /directory_to_the_xml_file/xxx.xml USERNAME@dbloader-hgcal:/home/dbspool/spool/hgc/int2r/
 ```
 #### CMSR:
 ```
-scp -o ProxyJump=username@lxplus.cern.ch /directory_to_the_xml_file/xxx.xml username@dbloader-hgcal:/home/dbspool/spool/hgc/cmsr/
+scp -o ProxyJump=USERNAME@lxtunnel.cern.ch /directory_to_the_xml_file/xxx.xml USERNAME@dbloader-hgcal:/home/dbspool/spool/hgc/cmsr/
 ```
 
 # Developer Instructions
