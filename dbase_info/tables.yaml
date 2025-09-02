@@ -42,7 +42,7 @@ users:
 tables:
   - 
     fname: 'module_info.csv'
-    description: 'Tracks all steps in module assembly'
+    description: 'Entry created when a module comes into existence and tracks all assembly steps thereafter'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -55,7 +55,7 @@ tables:
 
   - 
     fname: 'module_assembly.csv'
-    description: ''
+    description: 'Module assembly details will be filled by the gantry LabVIEW program'
     permission:
       'ogp_user': 'SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -68,7 +68,7 @@ tables:
 
   - 
     fname: 'module_inspect.csv' 
-    description: ''
+    description: 'Module visual inspection to be filled by the OGP/CMM helper python program'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -81,7 +81,7 @@ tables:
 
   - 
     fname: 'module_iv_test.csv' 
-    description: ''
+    description: 'performed by the electrical testing setup'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -94,7 +94,7 @@ tables:
 
   - 
     fname: 'module_pedestal_test.csv' 
-    description: ''
+    description: 'performed by the electrical testing setup'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -107,7 +107,7 @@ tables:
 
   - 
     fname: 'module_pedestal_plots.csv'
-    description: ''
+    description: 'Will store both module and hexaboard pedestal plots'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -120,7 +120,7 @@ tables:
 
   - 
     fname: 'module_qc_summary.csv'
-    description: ''
+    description: 'Will be populated at the electrical testing'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -133,7 +133,7 @@ tables:
 
   - 
     fname: 'back_wirebond.csv'
-    description: ''
+    description: 'Backside wirebonding of the module'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -146,7 +146,7 @@ tables:
 
   - 
     fname: 'back_encap.csv'
-    description: ''
+    description: 'Backside encapsulation of the module'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -159,7 +159,7 @@ tables:
 
   - 
     fname: 'front_wirebond.csv'
-    description: ''
+    description: 'Frontside wirebonding of the module'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -172,7 +172,7 @@ tables:
 
   - 
     fname: 'front_encap.csv'
-    description: ''
+    description: 'Frontside encapsulation of the module'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -185,7 +185,7 @@ tables:
 
   - 
     fname: 'bond_pull_test.csv'
-    description: ''
+    description: 'Pull test results for frontside wirebonding are performed sporadically'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -198,7 +198,7 @@ tables:
 
   - 
     fname: 'proto_assembly.csv' 
-    description: ''
+    description: 'Protomodule assembly details will be filled by the gantry LabVIEW program'
     permission:
       'ogp_user': 'SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -211,7 +211,7 @@ tables:
 
   - 
     fname: 'proto_inspect.csv' 
-    description: ''
+    description: 'Protomodule visual inspection to be filled by the OGP/CMM helper python program'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -224,7 +224,7 @@ tables:
 
   - 
     fname: 'baseplate.csv' 
-    description: ''
+    description: 'This data is imported from CMSR'
     permission: 
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -237,7 +237,7 @@ tables:
 
   - 
     fname: 'bp_inspect.csv' 
-    description: ''
+    description: 'Baseplate visual inspection will be filled by the OGP/CMM helper python program at the MAC'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -250,7 +250,7 @@ tables:
 
   - 
     fname: 'sensor.csv'
-    description: ''
+    description: 'This data is imported from CMSR and will update with MAC grade and comments during assembly'
     permission: 
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -263,7 +263,7 @@ tables:
   
   - 
     fname: 'sen_iv_data.csv'
-    description: ''
+    description: 'Sensor current-voltage data will be imported from CMSR'
     permission: 
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -276,7 +276,7 @@ tables:
 
   - 
     fname: 'hexaboard.csv'
-    description: ''
+    description: 'This data is imported from CMSR'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -289,7 +289,7 @@ tables:
 
   - 
     fname: 'hxb_inspect.csv' 
-    description: ''
+    description: 'Hexaboard visual inspection will be filled by the OGP/CMM helper python program at the MAC'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -302,7 +302,7 @@ tables:
 
   - 
     fname: 'hxb_pedestal_test.csv'
-    description: ''
+    description: 'performed by the electrical testing setup'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'INSERT, SELECT'
@@ -315,7 +315,7 @@ tables:
 
   -
     fname: 'mod_hxb_other_test.csv'
-    description: ''
+    description: 'other tests performed by the electrical testing setup'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'INSERT, SELECT'
@@ -328,7 +328,7 @@ tables:
 
   - 
     fname: 'adhesive_pattern.csv' 
-    description: ''
+    description: 'MACs can track changes to their (proto)module adhesive patterns here'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -341,7 +341,7 @@ tables:
 
   - 
     fname: 'tray_fiducials.csv' 
-    description: ''
+    description: 'Fiducial coordinates of assembly trays for the various types of modules'
     permission:
       'ogp_user': 'INSERT, SELECT, UPDATE'
       'gantry_user':  'INSERT, SELECT, UPDATE'
@@ -352,10 +352,9 @@ tables:
       'shipper':  'SELECT'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
-
   - 
     fname: 'temp_humidity.csv' 
-    description: ''
+    description: 'For lab enviroment temperature and humidity'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -368,7 +367,7 @@ tables:
 
   - 
     fname: 'particulate_counts.csv' 
-    description: ''
+    description: 'For lab enviroment particulate counts'
     permission:
       'ogp_user': 'SELECT'
       'gantry_user':  'SELECT'
@@ -378,3 +377,4 @@ tables:
       'teststand_user':  'SELECT'
       'shipper':  'INSERT, SELECT'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
