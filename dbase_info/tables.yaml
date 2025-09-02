@@ -378,3 +378,16 @@ tables:
       'shipper':  'INSERT, SELECT'
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
+
+  - 
+    fname: 'trophy_and_mezzanine_boards.csv' 
+    description: 'contains trophy board and mezzanine combination details for a test stand station'
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, UPDATE, DELETE, SELECT'
+      'shipper':  'INSERT, UPDATE, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
