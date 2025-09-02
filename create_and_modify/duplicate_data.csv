@@ -1,8 +1,8 @@
 target_table,target_col,source_table,source_col,replace_col,function
 module_info,proto_name,module_assembly,proto_name,module_name,name
 module_info,hxb_name,module_assembly,hxb_name,module_name,name
-module_info,bp_name,proto_assembly,bp_name,proto_name,name
-module_info,sen_name,proto_assembly,sen_name,proto_name,name
+module_info,bp_name,module_assembly,bp_name,proto_name,proto_lookup
+module_info,sen_name,module_assembly,sen_name,proto_name,proto_lookup
 module_assembly,cure_date_end,module_inspect,date_inspect,module_name,time
 module_assembly,cure_time_end,module_inspect,time_inspect,module_name,time
 proto_assembly,cure_date_end,proto_inspect,date_inspect,proto_name,time

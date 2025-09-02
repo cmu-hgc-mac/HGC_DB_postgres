@@ -125,8 +125,10 @@ async def create_tables_sequence():
         END;
         $$ LANGUAGE plpgsql;
 
+        DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
+
         CREATE TRIGGER {table_name}_update_foreign_key_trigger
-        AFTER INSERT OR UPDATE ON {table_name}
+        AFTER INSERT OR UPDATE ON {fk_table}
         FOR EACH ROW
         EXECUTE FUNCTION {table_name}_update_foreign_key();
         """
@@ -152,7 +154,7 @@ async def create_tables_sequence():
 
         if function == 'name': 
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_{i}_update_name()
             RETURNS TRIGGER AS $$
             BEGIN
                 UPDATE {target_table}
@@ -163,15 +165,17 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
+            DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_name_trigger ON {source_table};
+
+            CREATE TRIGGER {target_table}_{target_col}_{i}_update_name_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW
-                EXECUTE FUNCTION {target_table}_{target_col}_update_data();
+                EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_name();
             """
 
         elif function == 'time':
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_{i}_update_time()
             RETURNS TRIGGER AS $$
             BEGIN
                 UPDATE {target_table}
@@ -182,25 +186,27 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
+            DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_time_trigger ON {source_table};
+
+            CREATE TRIGGER {target_table}_{target_col}_{i}_update_time_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW
-                EXECUTE FUNCTION {target_table}_{target_col}_update_data();
+                EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_time();
             """
         
         elif function == 'update':
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_data()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_{i}_update_recieved_time()
             RETURNS TRIGGER AS $$
             BEGIN
                 IF EXISTS (
                     SELECT 1 FROM {target_table}
                     WHERE REPLACE({replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
-                        AND {target_table}.{target_col} IS NULL
                 ) THEN
                     UPDATE {target_table}
                     SET {target_col} = NEW.{source_col}
-                    WHERE REPLACE({replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '');
+                    WHERE REPLACE({replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                        AND {target_table}.{target_col} IS NULL;
                 ELSE
                     INSERT INTO {target_table} ({replace_col}, {target_col})
                     VALUES (NEW.{replace_col}, NEW.{source_col});
@@ -210,10 +216,46 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {target_table}_{target_col}_update_data_trigger
+            DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_recieved_time_trigger ON {source_table};
+
+            CREATE TRIGGER {target_table}_{target_col}_{i}_update_recieved_time_trigger
             AFTER INSERT OR UPDATE ON {source_table}
             FOR EACH ROW 
-            EXECUTE FUNCTION {target_table}_{i}_update_data();
+            EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_recieved_time();
+            """
+
+        elif function == 'proto_lookup':
+            func_name = f"{target_table}_{target_col}_{i}_proto_lookup"
+            trg_name  = f"{target_table}_{target_col}_{i}_proto_lookup_trigger"
+
+            trigger_sql = f"""
+            DROP TRIGGER IF EXISTS {trg_name} ON {source_table};
+
+            CREATE OR REPLACE FUNCTION {func_name}()
+            RETURNS TRIGGER AS $$
+            DECLARE
+                v_val text;
+            BEGIN
+                SELECT pa.{source_col}
+                INTO v_val
+                FROM proto_assembly pa
+                WHERE REPLACE(pa.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                LIMIT 1;
+
+                IF FOUND THEN
+                    UPDATE {target_table} AS tgt
+                    SET {target_col} = v_val
+                    WHERE REPLACE(tgt.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                    AND (tgt.{target_col} IS DISTINCT FROM v_val);
+                END IF;
+
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER {trg_name}
+            AFTER INSERT OR UPDATE OF {replace_col} ON {source_table}
+            FOR EACH ROW EXECUTE FUNCTION {func_name}();
             """
 
         return trigger_sql
@@ -261,10 +303,7 @@ async def create_tables_sequence():
                         await conn.execute(update_foreign_key_trigger(target_table, fk_identifier, fk, fk_table))
                         print(f' >> Foreign key trigger for {target_table} created...')
                     except:
-                        drop_fk_trigger_sql = f"DROP TRIGGER IF EXISTS {target_table}_update_foreign_key_trigger ON {target_table};"
-                        await conn.execute(drop_fk_trigger_sql.format(table_name=target_table))
-                        await conn.execute(update_foreign_key_trigger(target_table, fk_identifier, fk, fk_table))
-                        print(f' >> Foreign key trigger for {target_table} updated.')
+                        raise
 
                 # Create the trigger for updating data:
                 duplicate_datas = get_table_info_data('create_and_modify', 'duplicate_data.csv')
@@ -274,11 +313,8 @@ async def create_tables_sequence():
                             await conn.execute(update_table_datas_trigger(*duplicate_datas[j],j))
                             print(f' >> Data update trigger for {duplicate_datas[j][0]}_{j} created for column {duplicate_datas[j][1]}...')
                         except:
-                            drop_data_trigger_sql = f"DROP TRIGGER IF EXISTS {duplicate_datas[j][0]}_{j}_update_data_trigger ON {duplicate_datas[j][2]};"
-                            await conn.execute(drop_data_trigger_sql.format(table_name=duplicate_datas[j][0]))
-                            await conn.execute(update_table_datas_trigger(*duplicate_datas[j],j))
-                            print(f' >> Data update trigger for {duplicate_datas[j][0]}_{j} updated for column {duplicate_datas[j][1]}...')
-
+                            raise
+                        
                 # Allow permissions:
                 for k in i['permission'].keys():
                     try:
