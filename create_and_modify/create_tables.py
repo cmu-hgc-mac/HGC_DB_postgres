@@ -130,7 +130,7 @@ async def create_tables_sequence():
         DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
 
         CREATE TRIGGER {table_name}_update_foreign_key_trigger
-        AFTER INSERT OR UPDATE ON {fk_table}
+        AFTER INSERT ON {fk_table}
         FOR EACH ROW
         EXECUTE FUNCTION {table_name}_update_foreign_key();
         """
