@@ -65,7 +65,7 @@ async def create_tables_sequence():
     schema_name = 'public'  # Change this if your tables are in a different schema
     print('Connection successful. \n')
 
-    async def create_table(table_name, table_columns_with_type, comment_columns = None, table_headers = None):
+    async def create_table(table_name, table_columns_with_type, comment_columns = None, table_headers = None, table_description = None):
         # Check if the table exists
         table_exists_query = f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2);"
         table_exists = await conn.fetchval(table_exists_query, schema_name, table_name)
@@ -78,6 +78,10 @@ async def create_tables_sequence():
             print(f"Table '{table_name}' created successfully.")
         else:
             print(f"Table '{table_name}' already exists.")
+        if table_description:
+            comment_table_query = f""" COMMENT ON TABLE {table_name} IS '{table_description}' ;"""
+            await conn.execute(comment_table_query)
+            print(f"Table '{table_name}' description updated.")
 
     async def allow_perm(table_name, permission, user):
         await conn.execute(f"GRANT {permission} ON {table_name} TO {user};")
@@ -127,10 +131,11 @@ async def create_tables_sequence():
 
             for i in data.get('tables'):
                 fname = f"{(i['fname'])}"
+                table_description = f"{(i['description'])}"
                 print(f'Getting info from {fname}...')
                 table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, fname)
                 table_columns_with_type = get_column_names(table_header, dat_type, fk_name, fk_ref, parent_table)
-                await create_table(table_name=table_name, table_columns_with_type=table_columns_with_type, comment_columns=comment_columns, table_headers=table_header)
+                await create_table(table_name=table_name, table_columns_with_type=table_columns_with_type, comment_columns=comment_columns, table_headers=table_header, table_description=table_description)
                 pk_seq = f'{table_name}_{table_header[0]}_seq'
                 
                 try:
