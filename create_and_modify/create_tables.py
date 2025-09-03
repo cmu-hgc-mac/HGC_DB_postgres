@@ -170,7 +170,7 @@ async def create_tables_sequence():
             DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_name_trigger ON {source_table};
 
             CREATE TRIGGER {target_table}_{target_col}_{i}_update_name_trigger
-            AFTER INSERT OR UPDATE ON {source_table}
+            AFTER INSERT OR UPDATE OF {source_col} ON {source_table}
             FOR EACH ROW
                 EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_name();
             """
@@ -191,7 +191,7 @@ async def create_tables_sequence():
             DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_time_trigger ON {source_table};
 
             CREATE TRIGGER {target_table}_{target_col}_{i}_update_time_trigger
-            AFTER INSERT OR UPDATE ON {source_table}
+            AFTER INSERT OR UPDATE OF {source_col} ON {source_table}
             FOR EACH ROW
                 EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_time();
             """
@@ -221,7 +221,7 @@ async def create_tables_sequence():
             DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_recieved_time_trigger ON {source_table};
 
             CREATE TRIGGER {target_table}_{target_col}_{i}_update_recieved_time_trigger
-            AFTER INSERT OR UPDATE ON {source_table}
+            AFTER INSERT OR UPDATE OF {source_col} ON {source_table}
             FOR EACH ROW 
             EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_recieved_time();
             """
@@ -257,7 +257,7 @@ async def create_tables_sequence():
             AFTER INSERT OR UPDATE OF proto_name ON module_assembly
             FOR EACH ROW
             EXECUTE FUNCTION module_info_update_names_from_proto();
-"""
+            """
 
         return trigger_sql
     
