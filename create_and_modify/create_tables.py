@@ -117,10 +117,8 @@ async def create_tables_sequence():
         RETURNS TRIGGER AS $$
         BEGIN
             UPDATE {table_name}
-            SET {fk} = {fk_table}.{fk}
-            FROM {fk_table} 
-            WHERE ({table_name}.{fk} IS NULL OR {table_name}.{fk} IS DISTINCT FROM {fk_table}.{fk})
-                AND REPLACE({table_name}.{fk_identifier},'-','') = REPLACE({fk_table}.{fk_identifier},'-','');
+            SET {fk} = NEW.{fk}
+            WHERE REPLACE({fk_identifier},'-','') = REPLACE(new.{fk_identifier},'-','');
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
@@ -225,38 +223,72 @@ async def create_tables_sequence():
             """
 
         elif function == 'proto_lookup':
-            func_name = f"{target_table}_{target_col}_{i}_proto_lookup"
-            trg_name  = f"{target_table}_{target_col}_{i}_proto_lookup_trigger"
+            # func_name = f"{target_table}_{target_col}_{i}_proto_lookup"
+            # trg_name  = f"{target_table}_{target_col}_{i}_proto_lookup_trigger"
 
-            trigger_sql = f"""
-            DROP TRIGGER IF EXISTS {trg_name} ON {source_table};
+            # trigger_sql = f"""
+            # DROP TRIGGER IF EXISTS {trg_name} ON {source_table};
 
-            CREATE OR REPLACE FUNCTION {func_name}()
+            # CREATE OR REPLACE FUNCTION {func_name}()
+            # RETURNS TRIGGER AS $$
+            # DECLARE
+            #     v_val text;
+            # BEGIN
+            #     SELECT pa.{source_col}
+            #     INTO v_val
+            #     FROM proto_assembly pa
+            #     WHERE REPLACE(pa.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+            #     LIMIT 1;
+
+            #     RAISE NOTICE 'Update {target_col}: %', v_val;
+
+            #     IF FOUND THEN
+            #         UPDATE {target_table} AS tgt
+            #         SET {target_col} = v_val
+            #         WHERE REPLACE(tgt.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '');
+            #     END IF;
+
+            #     RETURN NEW;
+            # END;
+            # $$ LANGUAGE plpgsql;
+
+            # CREATE TRIGGER {trg_name}
+            # AFTER INSERT OR UPDATE OF {replace_col} ON {source_table}
+            # FOR EACH ROW EXECUTE FUNCTION {func_name}();
+            # """
+            # print(trigger_sql)
+
+            trigger_sql = """
+            CREATE OR REPLACE FUNCTION module_info_update_names_from_proto()
             RETURNS TRIGGER AS $$
             DECLARE
-                v_val text;
+                v_bp text;
+                v_sen text;
             BEGIN
-                SELECT pa.{source_col}
-                INTO v_val
+                SELECT pa.bp_name, pa.sen_name
+                    INTO v_bp, v_sen
                 FROM proto_assembly pa
-                WHERE REPLACE(pa.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                WHERE REPLACE(pa.proto_name,'-','') = REPLACE(NEW.proto_name,'-','')
                 LIMIT 1;
 
                 IF FOUND THEN
-                    UPDATE {target_table} AS tgt
-                    SET {target_col} = v_val
-                    WHERE REPLACE(tgt.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
-                    AND (tgt.{target_col} IS DISTINCT FROM v_val);
+                    UPDATE module_info tgt
+                    SET bp_name  = COALESCE(v_bp, tgt.bp_name),
+                        sen_name = COALESCE(v_sen, tgt.sen_name)
+                    WHERE REPLACE(tgt.proto_name,'-','') = REPLACE(NEW.proto_name,'-','');
                 END IF;
 
                 RETURN NEW;
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {trg_name}
-            AFTER INSERT OR UPDATE OF {replace_col} ON {source_table}
-            FOR EACH ROW EXECUTE FUNCTION {func_name}();
-            """
+            DROP TRIGGER IF EXISTS module_info_update_names_trigger ON module_assembly;
+
+            CREATE TRIGGER module_info_update_names_trigger
+            AFTER INSERT OR UPDATE OF proto_name ON module_assembly
+            FOR EACH ROW
+            EXECUTE FUNCTION module_info_update_names_from_proto();
+"""
 
         return trigger_sql
     
