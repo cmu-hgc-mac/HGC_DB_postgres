@@ -65,7 +65,7 @@ async def create_tables_sequence():
     schema_name = 'public'  # Change this if your tables are in a different schema
     print('Connection successful. \n')
 
-    async def create_table(table_name, table_columns_with_type, comment_columns = None, table_headers = None):
+    async def create_table(table_name, table_columns_with_type, comment_columns = None, table_headers = None, table_description = None):
         # Check if the table exists
         table_exists_query = f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2);"
         table_exists = await conn.fetchval(table_exists_query, schema_name, table_name)
@@ -78,6 +78,10 @@ async def create_tables_sequence():
             print(f"Table '{table_name}' created successfully.")
         else:
             print(f"Table '{table_name}' already exists.")
+        if table_description:
+            comment_table_query = f""" COMMENT ON TABLE {table_name} IS '{table_description}' ;"""
+            await conn.execute(comment_table_query)
+            print(f"Table '{table_name}' description updated.")
 
     async def allow_perm(table_name, permission, user):
         await conn.execute(f"GRANT {permission} ON {table_name} TO {user};")
@@ -117,10 +121,8 @@ async def create_tables_sequence():
         RETURNS TRIGGER AS $$
         BEGIN
             UPDATE {table_name}
-            SET {fk} = {fk_table}.{fk}
-            FROM {fk_table} 
-            WHERE ({table_name}.{fk} IS NULL OR {table_name}.{fk} IS DISTINCT FROM {fk_table}.{fk})
-                AND REPLACE({table_name}.{fk_identifier},'-','') = REPLACE({fk_table}.{fk_identifier},'-','');
+            SET {fk} = NEW.{fk}
+            WHERE REPLACE({fk_identifier},'-','') = REPLACE(new.{fk_identifier},'-','');
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
@@ -128,7 +130,7 @@ async def create_tables_sequence():
         DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
 
         CREATE TRIGGER {table_name}_update_foreign_key_trigger
-        AFTER INSERT OR UPDATE ON {fk_table}
+        AFTER INSERT ON {fk_table}
         FOR EACH ROW
         EXECUTE FUNCTION {table_name}_update_foreign_key();
         """
@@ -168,7 +170,7 @@ async def create_tables_sequence():
             DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_name_trigger ON {source_table};
 
             CREATE TRIGGER {target_table}_{target_col}_{i}_update_name_trigger
-            AFTER INSERT OR UPDATE ON {source_table}
+            AFTER INSERT OR UPDATE OF {source_col} ON {source_table}
             FOR EACH ROW
                 EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_name();
             """
@@ -189,7 +191,7 @@ async def create_tables_sequence():
             DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_time_trigger ON {source_table};
 
             CREATE TRIGGER {target_table}_{target_col}_{i}_update_time_trigger
-            AFTER INSERT OR UPDATE ON {source_table}
+            AFTER INSERT OR UPDATE OF {source_col} ON {source_table}
             FOR EACH ROW
                 EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_time();
             """
@@ -219,43 +221,42 @@ async def create_tables_sequence():
             DROP TRIGGER IF EXISTS {target_table}_{target_col}_{i}_update_recieved_time_trigger ON {source_table};
 
             CREATE TRIGGER {target_table}_{target_col}_{i}_update_recieved_time_trigger
-            AFTER INSERT OR UPDATE ON {source_table}
+            AFTER INSERT OR UPDATE OF {source_col} ON {source_table}
             FOR EACH ROW 
             EXECUTE FUNCTION {target_table}_{target_col}_{i}_update_recieved_time();
             """
 
         elif function == 'proto_lookup':
-            func_name = f"{target_table}_{target_col}_{i}_proto_lookup"
-            trg_name  = f"{target_table}_{target_col}_{i}_proto_lookup_trigger"
-
-            trigger_sql = f"""
-            DROP TRIGGER IF EXISTS {trg_name} ON {source_table};
-
-            CREATE OR REPLACE FUNCTION {func_name}()
+            trigger_sql = """
+            CREATE OR REPLACE FUNCTION module_info_update_names_from_proto()
             RETURNS TRIGGER AS $$
             DECLARE
-                v_val text;
+                v_bp text;
+                v_sen text;
             BEGIN
-                SELECT pa.{source_col}
-                INTO v_val
+                SELECT pa.bp_name, pa.sen_name
+                    INTO v_bp, v_sen
                 FROM proto_assembly pa
-                WHERE REPLACE(pa.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
+                WHERE REPLACE(pa.proto_name,'-','') = REPLACE(NEW.proto_name,'-','')
                 LIMIT 1;
 
                 IF FOUND THEN
-                    UPDATE {target_table} AS tgt
-                    SET {target_col} = v_val
-                    WHERE REPLACE(tgt.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
-                    AND (tgt.{target_col} IS DISTINCT FROM v_val);
+                    UPDATE module_info tgt
+                    SET bp_name  = COALESCE(v_bp, tgt.bp_name),
+                        sen_name = COALESCE(v_sen, tgt.sen_name)
+                    WHERE REPLACE(tgt.proto_name,'-','') = REPLACE(NEW.proto_name,'-','');
                 END IF;
 
                 RETURN NEW;
             END;
             $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER {trg_name}
-            AFTER INSERT OR UPDATE OF {replace_col} ON {source_table}
-            FOR EACH ROW EXECUTE FUNCTION {func_name}();
+            DROP TRIGGER IF EXISTS module_info_update_names_trigger ON module_assembly;
+
+            CREATE TRIGGER module_info_update_names_trigger
+            AFTER INSERT OR UPDATE OF proto_name ON module_assembly
+            FOR EACH ROW
+            EXECUTE FUNCTION module_info_update_names_from_proto();
             """
 
         return trigger_sql
@@ -283,11 +284,12 @@ async def create_tables_sequence():
 
             for i in data.get('tables'):
                 fname = f"{(i['fname'])}"
+                table_description = f"{(i['description'])}"
                 print(f'Getting info from {fname}...')
 
                 table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, fname)
                 table_columns_with_type = get_column_names(table_header, dat_type, fk_name, fk_ref, parent_table)
-                await create_table(table_name=table_name, table_columns_with_type=table_columns_with_type, comment_columns=comment_columns, table_headers=table_header)
+                await create_table(table_name=table_name, table_columns_with_type=table_columns_with_type, comment_columns=comment_columns, table_headers=table_header, table_description=table_description)
                 pk_seq = f'{table_name}_{table_header[0]}_seq'
 
                 try:
