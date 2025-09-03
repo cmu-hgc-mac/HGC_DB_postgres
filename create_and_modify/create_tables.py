@@ -227,41 +227,6 @@ async def create_tables_sequence():
             """
 
         elif function == 'proto_lookup':
-            # func_name = f"{target_table}_{target_col}_{i}_proto_lookup"
-            # trg_name  = f"{target_table}_{target_col}_{i}_proto_lookup_trigger"
-
-            # trigger_sql = f"""
-            # DROP TRIGGER IF EXISTS {trg_name} ON {source_table};
-
-            # CREATE OR REPLACE FUNCTION {func_name}()
-            # RETURNS TRIGGER AS $$
-            # DECLARE
-            #     v_val text;
-            # BEGIN
-            #     SELECT pa.{source_col}
-            #     INTO v_val
-            #     FROM proto_assembly pa
-            #     WHERE REPLACE(pa.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '')
-            #     LIMIT 1;
-
-            #     RAISE NOTICE 'Update {target_col}: %', v_val;
-
-            #     IF FOUND THEN
-            #         UPDATE {target_table} AS tgt
-            #         SET {target_col} = v_val
-            #         WHERE REPLACE(tgt.{replace_col}, '-', '') = REPLACE(NEW.{replace_col}, '-', '');
-            #     END IF;
-
-            #     RETURN NEW;
-            # END;
-            # $$ LANGUAGE plpgsql;
-
-            # CREATE TRIGGER {trg_name}
-            # AFTER INSERT OR UPDATE OF {replace_col} ON {source_table}
-            # FOR EACH ROW EXECUTE FUNCTION {func_name}();
-            # """
-            # print(trigger_sql)
-
             trigger_sql = """
             CREATE OR REPLACE FUNCTION module_info_update_names_from_proto()
             RETURNS TRIGGER AS $$
