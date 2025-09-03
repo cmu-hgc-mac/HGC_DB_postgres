@@ -55,7 +55,7 @@ async def main():
     parser.add_argument('-mac', '--mac', default=None, required=True, help="MAC: CMU, UCSB, TTU, IHEP, NTU, TIFR")
     args = parser.parse_args()
     print(f'Modules assembled at {args.mac} during {args.year}/{args.month} --')
-    rows = await fetch_unique_counts(args.month, args.year, args.mac)
+    rows = await fetch_unique_counts(args.month, args.year, args.mac.upper())
     if rows:
         # headers = ["Geometry", "Resolution", "BP Material", "Sensor Thickness", "ROC Version", "Count"]
         headers = ["Geometry", "Resolution", "BP Material", "Sensor Thickness", "ROC Version", "Final Grade", "Count"]
