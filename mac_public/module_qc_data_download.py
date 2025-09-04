@@ -37,7 +37,7 @@ async def main():
     args = parser.parse_args()
     module_names = ['ALL'] if not args.module_names else [mn.upper() for mn in args.module_names]
     print(f'Fetching {args.data_type} for module(s) {module_names} assembled at {args.mac}  ...')
-    rows = await fetch_testing_data(args.mac, args.data_type, module_list = module_names)
+    rows = await fetch_testing_data(args.mac.upper(), args.data_type, module_list = module_names)
     now = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
     outfilename = f"{args.mac}_{args.data_type}_asof_{now}.csv" if not args.module_names else f"{args.mac}_{args.data_type}_custom_{now}.csv"
     if rows:
