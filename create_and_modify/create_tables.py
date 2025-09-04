@@ -198,7 +198,7 @@ async def create_tables_sequence():
         
         elif function == 'update':
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_{sorce_table}_update_recieved_time()
+            CREATE OR REPLACE FUNCTION {target_table}_{target_col}_from_{source_table}()
             RETURNS TRIGGER AS $$
             BEGIN
                 IF EXISTS (
@@ -218,12 +218,12 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            DROP TRIGGER IF EXISTS {target_table}_{target_col}_{sorce_table}_update_recieved_time_trigger ON {source_table};
+            DROP TRIGGER IF EXISTS {target_table}_{target_col}_{source_table}_trigger ON {source_table};
 
-            CREATE TRIGGER {target_table}_{target_col}_gupdate_recieved_time_trigger
+            CREATE TRIGGER {target_table}_{target_col}_{source_table}_trigger
             AFTER INSERT OR UPDATE OF {source_col} ON {source_table}
             FOR EACH ROW 
-            EXECUTE FUNCTION {target_table}_{target_col}_{sorce_table}_update_recieved_time();
+            EXECUTE FUNCTION {target_table}_{target_col}_from_{source_table}();
             """
 
         elif function == 'proto_lookup':
