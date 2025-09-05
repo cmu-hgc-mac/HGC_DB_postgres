@@ -27,11 +27,6 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
-resource_yaml = 'export_data/resource.yaml'
-with open(resource_yaml, 'r') as file:
-    yaml_content = yaml.safe_load(file)
-    kind_of_part_yaml = yaml_content['kind_of_part']
-    shipping_loc_yaml = yaml_content['shipping_location']
 
 db_params = {
     'database': conn_info.get('dbname'),
@@ -348,14 +343,15 @@ def print_missing_entries(missing_entries):
 
 def get_roc_version(module_name):
     identifier = module_name[-7]
-    if identifier == 'X':
-        return 'PRE_SERIES'
-    elif identifier in ['2', '4']:
-        return 'v3B'
-    elif identifier == 'C':
-        return 'v3C'
+    if identifier:
+        roc_version = kind_of_part_yaml['roc_version'][identifier]
+        if roc_version is None:
+            return 'not specified'
+        else:
+            return roc_version
     else:
-        return 'not specified'
+        raise ValueError(f"Cannot determine the roc version of {module_name}")
+        
     
 
 ################################################################################
