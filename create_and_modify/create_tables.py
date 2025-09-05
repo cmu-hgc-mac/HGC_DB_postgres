@@ -97,22 +97,22 @@ async def create_tables_sequence():
         print(f"Schema permission access granted to {user}.")
 
     # Function creation SQL
-    create_function_sql = """
-        CREATE OR REPLACE FUNCTION notify_insert()
-        RETURNS TRIGGER AS $$
-        BEGIN
-            PERFORM pg_notify('incoming_data_notification', '');
-            RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql;
-        """
+    # create_function_sql = """
+    #     CREATE OR REPLACE FUNCTION notify_insert()
+    #     RETURNS TRIGGER AS $$
+    #     BEGIN
+    #         PERFORM pg_notify('incoming_data_notification', '');
+    #         RETURN NEW;
+    #     END;
+    #     $$ LANGUAGE plpgsql;
+    #     """
     
-    create_trigger_sql_template = """
-        CREATE TRIGGER {table_name}_insert_trigger
-        AFTER INSERT ON {table_name}
-        FOR EACH ROW
-        EXECUTE FUNCTION notify_insert();
-        """
+    # create_trigger_sql_template = """
+    #     CREATE TRIGGER {table_name}_insert_trigger
+    #     AFTER INSERT ON {table_name}
+    #     FOR EACH ROW
+    #     EXECUTE FUNCTION notify_insert();
+        # """
 
     # SQL query for updating the foreign key:
     def update_foreign_key_trigger(table_name, fk_identifier, fk, fk_table):
@@ -292,12 +292,6 @@ async def create_tables_sequence():
                 await create_table(table_name=table_name, table_columns_with_type=table_columns_with_type, comment_columns=comment_columns, table_headers=table_header, table_description=table_description)
                 pk_seq = f'{table_name}_{table_header[0]}_seq'
 
-                try:
-                    create_trigger_sql = create_trigger_sql_template.format(table_name=table_name)
-                    await conn.execute(create_trigger_sql)
-                except:
-                    print('Trigger already exists..')
-
                 # Create the trigger for the foreign key:
                 target_table, fk_identifier, fk, fk_table, fk_reference = get_table_info_fk(loc, tables_subdir, fname)
                 if fk_identifier is not None:
@@ -327,6 +321,16 @@ async def create_tables_sequence():
                         print(f'Permission {k} already exist.')
                 
                 print('\n')
+                ############### Remove old triggers and functions ################
+                try:
+                    remove_trigger_sql = f"DROP TRIGGER IF EXISTS {table_name}_insert_trigger ON {table_name};"
+                    await conn.execute(remove_trigger_sql)
+                except:
+                    None
+
+            remove_function_sql = "DROP FUNCTION IF EXISTS notify_insert();"
+            await conn.execute(remove_function_sql)
+            #################### Remove old triggers and functions END ################
 
         print("Granting UPDATE permission to teststand_user for front_wirebond.wb_fr_marked_done.")
         front_wirebond_done_query = "GRANT UPDATE (wb_fr_marked_done) ON front_wirebond TO teststand_user;"
