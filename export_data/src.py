@@ -348,14 +348,14 @@ def print_missing_entries(missing_entries):
 
 def get_roc_version(module_name):
     identifier = module_name[-7]
-    if identifier == 'X':
-        return 'PRE_SERIES'
-    elif identifier in ['2', '4']:
-        return 'v3B'
-    elif identifier == 'C':
-        return 'v3C'
+    if identifier:
+        roc_version = kind_of_part_yaml['roc_version'][identifier]
+        if roc_version is None:
+            return 'not specified'
+        else:
+            return roc_version
     else:
-        return 'not specified'
+        raise ValueError(f"Cannot determine the roc version of {module_name}")
     
 
 ################################################################################
