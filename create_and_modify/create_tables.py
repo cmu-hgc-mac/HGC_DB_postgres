@@ -116,24 +116,51 @@ async def create_tables_sequence():
 
     # SQL query for updating the foreign key:
     def update_foreign_key_trigger(table_name, fk_identifier, fk, fk_table):
-        trigger_sql = f"""
-        CREATE OR REPLACE FUNCTION {table_name}_update_foreign_key()
-        RETURNS TRIGGER AS $$
-        BEGIN
-            UPDATE {table_name}
-            SET {fk} = NEW.{fk}
-            WHERE REPLACE({fk_identifier},'-','') = REPLACE(new.{fk_identifier},'-','');
-            RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql;
+        assemble_identifier = ['proto_assembly', 'module_info']
+        components = ['baseplate', 'proto_assembly', 'sensor', 'hexaboard']
 
-        DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
+        if fk_table in assemble_identifier and table_name in components:
+            trigger_sql = f"""
+            CREATE OR REPLACE FUNCTION {table_name}_update_foreign_key()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                UPDATE {table_name}
+                SET {fk} = NEW.{fk}
+                WHERE REPLACE({fk_identifier},'-','') = REPLACE(new.{fk_identifier},'-','');
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
 
-        CREATE TRIGGER {table_name}_update_foreign_key_trigger
-        AFTER INSERT OR UPDATE ON {fk_table}
-        FOR EACH ROW
-        EXECUTE FUNCTION {table_name}_update_foreign_key();
-        """
+            DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
+
+            CREATE TRIGGER {table_name}_update_foreign_key_trigger
+            AFTER INSERT OR UPDATE ON {fk_table}
+            FOR EACH ROW
+            EXECUTE FUNCTION {table_name}_update_foreign_key();
+            """
+
+        else:
+            trigger_sql = f"""
+            CREATE OR REPLACE FUNCTION {table_name}_update_foreign_key()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                UPDATE {table_name}
+                SET {fk} = {fk_table}.{fk}
+                FROM {fk_table}
+                WHERE ({table_name}.{fk} IS NULL OR {table_name}.{fk} IS DISTINCT FROM {fk_table}.{fk})
+                    AND REPLACE({table_name}.{fk_identifier},'-','') = REPLACE({fk_table}.{fk_identifier},'-','');
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
+
+            CREATE TRIGGER {table_name}_update_foreign_key_trigger
+            AFTER INSERT OR UPDATE OF {fk_identifier} ON {table_name}
+            FOR EACH ROW
+            EXECUTE FUNCTION {table_name}_update_foreign_key();
+            """
+            
         return trigger_sql
 
     def get_table_info_fk(loc, tables_subdir, fname):
