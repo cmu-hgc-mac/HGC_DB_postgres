@@ -11,7 +11,7 @@ import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
 from src import process_xml_list
 from find_missing_var_xml import find_missing_var_xml
-from check_successful_upload import check_upload, get_api_data, get_part_id_fromXML
+import check_successful_upload
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
 GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
@@ -165,8 +165,10 @@ async def main():
         time.sleep(3) ### XMLs take a few seconds to get saved
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
-        # if ret:
-        #     await check_upload(db_type)
+        if ret:
+            lxplus_password = 'uniMana16' ## take a user input
+            await check_successful_upload.check_logs(cerndb=db_type, username=lxplus_username, password=lxplus_password)
+            
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
             clean_generated_xmls()
