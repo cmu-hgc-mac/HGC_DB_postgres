@@ -119,6 +119,8 @@ async def create_tables_sequence():
         assemble_identifier = ['proto_assembly', 'module_info']
         components = ['baseplate', 'proto_assembly', 'sensor', 'hexaboard']
 
+        # Check if the table is a component and the fk_table is proto_assembly or module_info
+            # If so, update the corresponding component with the fk in the component table
         if fk_table in assemble_identifier and table_name in components:
             trigger_sql = f"""
             CREATE OR REPLACE FUNCTION {table_name}_update_foreign_key()
@@ -134,11 +136,12 @@ async def create_tables_sequence():
             DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
 
             CREATE TRIGGER {table_name}_update_foreign_key_trigger
-            AFTER INSERT OR UPDATE ON {fk_table}
+            AFTER INSERT OR UPDATE OF {fk_identifier} ON {table_name}
             FOR EACH ROW
             EXECUTE FUNCTION {table_name}_update_foreign_key();
             """
 
+        # In the other case, update the fk while inserting or updating the table
         else:
             trigger_sql = f"""
             CREATE OR REPLACE FUNCTION {table_name}_update_foreign_key()
@@ -180,7 +183,7 @@ async def create_tables_sequence():
 
     # SQL quiery for updating tables data:
     def update_table_datas_trigger(target_table, target_col, source_table, source_col, replace_col, function, i):
-
+        # Update name: proto_name/hxb_name from module_assembly -> module_info
         if function == 'name': 
             trigger_sql = f"""
             CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_name()
@@ -202,6 +205,7 @@ async def create_tables_sequence():
                 EXECUTE FUNCTION {target_table}_{target_col}_update_name();
             """
 
+        # Update time: date_inspect/date_bond/date_encap/date_test from corresponding table -> proto_assembly/module_assembly/module_info
         elif function == 'time':
             trigger_sql = f"""
             CREATE OR REPLACE FUNCTION {target_table}_{target_col}_update_time()
@@ -223,6 +227,7 @@ async def create_tables_sequence():
                 EXECUTE FUNCTION {target_table}_{target_col}_update_time();
             """
         
+        # Upsert component recieved vertified time: from the test/assembly table -> component table
         elif function == 'update':
             trigger_sql = f"""
             CREATE OR REPLACE FUNCTION {target_table}_{target_col}_from_{source_table}()
@@ -253,6 +258,7 @@ async def create_tables_sequence():
             EXECUTE FUNCTION {target_table}_{target_col}_from_{source_table}();
             """
 
+        # Update sen_name/bp_name from module_assembly.proto_name -> module_info
         elif function == 'proto_lookup':
             trigger_sql = """
             CREATE OR REPLACE FUNCTION module_info_update_names_from_proto()
