@@ -156,7 +156,7 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
+            DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {table_name};
 
             CREATE TRIGGER {table_name}_update_foreign_key_trigger
             AFTER INSERT OR UPDATE OF {fk_identifier} ON {table_name}
