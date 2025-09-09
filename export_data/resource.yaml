@@ -32,6 +32,7 @@ kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895
     'X': 'preseries'
     '2': 'HGCROCV3b-2'
     '4': 'HGCROCV3b-4'
+    'B': 'HGCROCV3b-3'
     'C': 'HGCROCV3c'
     'D': 'HGCROCV3d'
   mod_manufacturer: ## 320XXXXXX(__)NNNN
