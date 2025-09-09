@@ -166,8 +166,7 @@ async def main():
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
         if ret:
-            lxplus_password = 'uniMana16' ## take a user input
-            await check_successful_upload.check_logs(cerndb=db_type, username=lxplus_username, password=lxplus_password)
+            check_successful_upload.check_logs(cerndb=db_type, username=lxplus_username)
             
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
