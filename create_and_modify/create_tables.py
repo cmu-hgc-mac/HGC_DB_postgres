@@ -123,7 +123,7 @@ async def create_tables_sequence():
             # If so, update the corresponding component with the fk in the component table
         if fk_table in assemble_identifier and table_name in components:
             trigger_sql = f"""
-            CREATE OR REPLACE FUNCTION {table_name}_update_foreign_key()
+            CREATE OR REPLACE FUNCTION {table_name}_update_{fk_table}_foreign_key()
             RETURNS TRIGGER AS $$
             BEGIN
                 UPDATE {table_name}
@@ -133,12 +133,12 @@ async def create_tables_sequence():
             END;
             $$ LANGUAGE plpgsql;
 
-            DROP TRIGGER IF EXISTS {table_name}_update_foreign_key_trigger ON {fk_table};
+            DROP TRIGGER IF EXISTS {table_name}_update_{fk_table}_foreign_key_trigger ON {fk_table};
 
-            CREATE TRIGGER {table_name}_update_foreign_key_trigger
-            AFTER INSERT OR UPDATE OF {fk_identifier} ON {table_name}
+            CREATE TRIGGER {table_name}_update_{fk_table}_foreign_key_trigger
+            AFTER INSERT OR UPDATE OF {fk_identifier} ON {fk_table}
             FOR EACH ROW
-            EXECUTE FUNCTION {table_name}_update_foreign_key();
+            EXECUTE FUNCTION {table_name}_update_{fk_table}_foreign_key();
             """
 
         # In the other case, update the fk while inserting or updating the table
