@@ -3,11 +3,9 @@ import getpass
 import datetime
 import yaml
 import subprocess
-import time
 import os
 import argparse
 import pytz
-import time
 from pathlib import Path
 
 oracle_error_conversion = {
@@ -56,9 +54,6 @@ def check_transition(date_str, time_str):
         return "after"
 
 def check_logs(username, cerndb):
-    print('Waiting for 10 seconds for logs to be ready...')
-    time.sleep(10)
-
     host = "dbloader-hgcal"
     log_dir = f"/home/dbspool/logs/hgc/{cerndb}"
 
@@ -70,9 +65,8 @@ def check_logs(username, cerndb):
     now_swiss = datetime.datetime.now(local_tz).astimezone(swiss_tz)
 
     # Time window (±30 min)
-    lower = (now_swiss - datetime.timedelta(minutes=40)).strftime("%H:%M")
-    upper = (now_swiss + datetime.timedelta(minutes=10)).strftime("%H:%M")
-    today = now_swiss.strftime("%b %d")   # e.g. "Sep 09"
+    lower_dt = now_swiss - datetime.timedelta(minutes=40)
+    upper_dt = now_swiss + datetime.timedelta(minutes=10)
 
     # Get institution abbreviation from conn.yaml
     location = get_institution_abbr()
@@ -97,12 +91,40 @@ def check_logs(username, cerndb):
         #     f'-newermt "{today} {lower}:00" ! -newermt "{today} {upper}:00"'
         # )
 
-        list_cmd = (
-            f'ssh -o ControlPath={control_path} {username}@{host} '
-            f'ls -lrt {log_dir}/*_{location}_*.xml | tail -n 500'
-        )
+        # list_cmd = [
+        #     "ssh", "-o", f"ControlPath={control_path}",
+        #     f"{username}@{host}",
+        #     f"ls -lrt {log_dir}/*_{location}_*.xml | tail -n 500"
+        # ]
+        # print(list_cmd)
+        # listing = subprocess.run(list_cmd, capture_output=True, text=True, shell=True)
 
-        listing = subprocess.run(list_cmd, capture_output=True, text=True, shell=True)
+        # remote_cmd = f'ls -lrt {log_dir}/*_{location}_*.xml | tail -n 500'
+        # list_cmd = [
+        #     "ssh", "-o", "ControlMaster=no", "-o", f"ControlPath={control_path}",
+        #     f"{username}@{host}",
+        #     "bash", "-c", f"'{remote_cmd}'"
+        # ]
+
+        remote_cmd = (
+            f'find {log_dir}/*_{location}_*.xml -maxdepth 1 -name "*_{location}_*.xml" -type f '
+            f'-printf "%TY-%Tm-%Td %TH:%TM:%TS %p\n" | sort | tail -n 500'
+        )
+        # remote_cmd = f'ls -lrt {log_dir}/*_{location}_*.xml | tail -n 100'
+        list_cmd = [
+            "ssh",
+            "-o", "ControlMaster=auto",
+            "-o", f"ControlPath={control_path}",
+            "-o", "ControlPersist=no",
+            f"{username}@{host}",
+            remote_cmd
+        ]
+        listing = subprocess.run(list_cmd, capture_output=True, text=True)
+        log_lines = listing.stdout.strip().split('\n')
+        
+        ######################################
+        # Still failing to grab the latest log files. IT is likely due to ssh catching issue. 
+        ######################################
 
         if listing.returncode != 0:
             print("❌ SSH worked, but failed to list log files.")
@@ -112,18 +134,28 @@ def check_logs(username, cerndb):
         log_files = []
         for line in listing.stdout.strip().splitlines():
             parts = line.split()
+            print(parts)
             date = f"{parts[5]} {parts[6]}"  # e.g. "Sep 09"
             time = parts[7]  # e.g. "22:05"
             filename = parts[-1]
-            
-            print(parts, check_transition(date_str=date, time_str=time), type(date), type(time))
 
-            if check_transition(date_str=date, time_str=time) == "after":
-                # Keep only today’s logs in time window
-                if date == today and lower <= time <= upper:
-                    log_files.append(filename)
-            else:
+            # if check_transition(date_str=date, time_str=time) == "before":
+            #     continue
+            try:
+                log_dt = datetime.datetime.strptime(
+                    f"{date} {now_swiss.year} {time}",
+                    "%b %d %Y %H:%M"
+                )
+                log_dt = swiss_tz.localize(log_dt)
+            except ValueError:
+                # Skip if parsing fails (e.g. weird format)
                 continue
+            
+            print(filename.split('/')[-1], check_transition(date_str=date, time_str=time), type(log_dt), type(lower_dt), type(upper_dt), lower_dt <= log_dt <= upper_dt)
+            print(f'\t{log_dt}, {lower_dt}, {upper_dt}')
+
+            if lower_dt <= log_dt <= upper_dt:
+                log_files.append(filename)
 
         if not log_files:
             print("⚠️ No log files found for this location.")
