@@ -42,7 +42,7 @@ scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit = config_data.get('scp_force_quit', True)
 scp_ssh_port = config_data.get('scp_ssh_port', 22)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
-max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
+max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 40))
 institution_abbr = config_data.get('institution_abbr')
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
