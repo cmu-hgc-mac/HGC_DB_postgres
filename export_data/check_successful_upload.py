@@ -7,11 +7,15 @@ import time
 import os
 import argparse
 import pytz
+import time
 from pathlib import Path
 
 oracle_error_conversion = {
     "(DbLoader.java:274)": 'Dataset already exists'
 }
+
+transition_date = '2025-02-28' ## time when CERN DB changed a format of log filename
+transition_dt = datetime.datetime.strptime(transition_date, "%Y-%m-%d")
 
 def get_institution_abbr():
     """Read institution_abbr from conn.yaml"""
@@ -30,7 +34,31 @@ def close_ssh_tunnel(dbl_username: str):
     ]
     subprocess.run(cmd, check=True)
 
+## resolve the datetime format discrepancy in CERN DB log file
+def check_transition(date_str, time_str):
+    # transition_dt = datetime.strptime(transition_date, "%Y-%m-%d")
+    transition_year = transition_dt.year
+
+    # Case 1: time is a year
+    if time_str.isdigit() and len(time_str) == 4 and ":" not in time_str:
+        year = int(time_str)
+        dt = datetime.datetime.strptime(f"{date_str} {year}", "%b %d %Y")
+        return "before"  # by definition
+    
+    # Case 2: time is HH:MM
+    dt = datetime.datetime.strptime(f"{date_str} {transition_year} {time_str}", "%b %d %Y %H:%M")
+    
+    # If datetime is before transition, then actually belongs to previous year
+    if dt < transition_dt:
+        dt = dt.replace(year=transition_year - 1)
+        return "before"
+    else:
+        return "after"
+
 def check_logs(username, cerndb):
+    print('Waiting for 10 seconds for logs to be ready...')
+    time.sleep(10)
+
     host = "dbloader-hgcal"
     log_dir = f"/home/dbspool/logs/hgc/{cerndb}"
 
@@ -44,7 +72,7 @@ def check_logs(username, cerndb):
     # Time window (±30 min)
     lower = (now_swiss - datetime.timedelta(minutes=40)).strftime("%H:%M")
     upper = (now_swiss + datetime.timedelta(minutes=10)).strftime("%H:%M")
-    today = now_swiss.strftime("%Y-%m-%d")  # '2025-09-09'
+    today = now_swiss.strftime("%b %d")   # e.g. "Sep 09"
 
     # Get institution abbreviation from conn.yaml
     location = get_institution_abbr()
@@ -81,19 +109,21 @@ def check_logs(username, cerndb):
             print(f"stderr: {listing.stderr.strip()}")
             return
 
-        print(listing)
         log_files = []
         for line in listing.stdout.strip().splitlines():
             parts = line.split()
-            if len(parts) < 9:
-                continue
             date = f"{parts[5]} {parts[6]}"  # e.g. "Sep 09"
             time = parts[7]  # e.g. "22:05"
             filename = parts[-1]
+            
+            print(parts, check_transition(date_str=date, time_str=time), type(date), type(time))
 
-            # Keep only today’s logs in time window
-            if date == today and lower <= time <= upper:
-                log_files.append(filename)
+            if check_transition(date_str=date, time_str=time) == "after":
+                # Keep only today’s logs in time window
+                if date == today and lower <= time <= upper:
+                    log_files.append(filename)
+            else:
+                continue
 
         if not log_files:
             print("⚠️ No log files found for this location.")
@@ -134,8 +164,6 @@ def main():
     dbl_username = args.dbl_username
     cerndb = args.cern_dbase
 
-    print('Waiting for 10 seconds for logs to be ready...')
-    time.sleep(10)
     check_logs(username=dbl_username, cerndb=cerndb)
 
 if __name__ == "__main__":

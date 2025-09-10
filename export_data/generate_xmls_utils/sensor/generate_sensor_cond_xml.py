@@ -117,7 +117,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
             # Update the XML with the database values
-            output_file_name = f'{sen_name}_{os.path.basename(xml_file_path)}'
+            output_file_name = f'{sen_name}_{LOCATION}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
             await update_timestamp_col(conn,
