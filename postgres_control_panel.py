@@ -619,11 +619,11 @@ def record_shipout():
     
     Label(input_window, text="-------------------------------------").pack(pady=5)
     Label(input_window, text="Procedure:", fg="blue",wraplength=270).pack(pady=1)
-    Label(input_window, text="(0) Upload the (proto)modules data to CMSR", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(1) Record the contents of a single box", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(2) Then record the boxes in a single shipment", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(3) Create a new shipment in the STT", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(4) Upload the generated .CSV from step (2) here.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(0) Upload the (proto)modules data to CMSR.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(1) Record the contents of a single box.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(2) Then record the boxes in a single shipment.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(3) Create a new shipment in the STT.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(4) Upload the ./shipping/shipmentout.csv file generated from step (2) to the STT.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
 
     Label(input_window, text="-------------------------------------").pack(pady=5)
     Label(input_window, text="CMSR Shipment Tools").pack(pady=5)
