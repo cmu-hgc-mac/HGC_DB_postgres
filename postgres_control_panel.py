@@ -628,7 +628,7 @@ def record_shipout():
     Label(input_window, text="-------------------------------------").pack(pady=5)
     Label(input_window, text="CMSR Shipment Tools").pack(pady=5)
 
-    launch_stt_form_button = Button(input_window, text="Launch CMSR Shipment Tracking Tool", command=launch_stt_form_webbrowser)
+    launch_stt_form_button = Button(input_window, text="Launch CMSR Shipment Tracking Tool (STT)", command=launch_stt_form_webbrowser)
     launch_stt_form_button.pack(pady=3)
     bind_button_keys(launch_stt_form_button)
 
