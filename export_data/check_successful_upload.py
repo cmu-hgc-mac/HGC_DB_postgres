@@ -33,25 +33,8 @@ def close_ssh_tunnel(dbl_username: str):
     subprocess.run(cmd, check=True)
 
 ## resolve the datetime format discrepancy in CERN DB log file
-def check_transition(date_str, time_str):
-    # transition_dt = datetime.strptime(transition_date, "%Y-%m-%d")
-    transition_year = transition_dt.year
-
-    # Case 1: time is a year
-    if time_str.isdigit() and len(time_str) == 4 and ":" not in time_str:
-        year = int(time_str)
-        dt = datetime.datetime.strptime(f"{date_str} {year}", "%b %d %Y")
-        return "before"  # by definition
-    
-    # Case 2: time is HH:MM
-    dt = datetime.datetime.strptime(f"{date_str} {transition_year} {time_str}", "%b %d %Y %H:%M")
-    
-    # If datetime is before transition, then actually belongs to previous year
-    if dt < transition_dt:
-        dt = dt.replace(year=transition_year - 1)
-        return "before"
-    else:
-        return "after"
+# def check_transition(dt: datetime.datetime) -> str:
+#     return "before" if dt < transition_dt else "after"
 
 def check_logs(username, cerndb):
     host = "dbloader-hgcal"
@@ -65,8 +48,8 @@ def check_logs(username, cerndb):
     now_swiss = datetime.datetime.now(local_tz).astimezone(swiss_tz)
 
     # Time window (±30 min)
-    lower_dt = now_swiss - datetime.timedelta(minutes=40)
-    upper_dt = now_swiss + datetime.timedelta(minutes=10)
+    lower_dt = (now_swiss - datetime.timedelta(minutes=40)).replace(second=0, microsecond=0)
+    upper_dt = (now_swiss + datetime.timedelta(minutes=10)).replace(second=0, microsecond=0)
 
     # Get institution abbreviation from conn.yaml
     location = get_institution_abbr()
@@ -135,24 +118,17 @@ def check_logs(username, cerndb):
         for line in listing.stdout.strip().splitlines():
             parts = line.split()
             print(parts)
-            date = f"{parts[5]} {parts[6]}"  # e.g. "Sep 09"
-            time = parts[7]  # e.g. "22:05"
+            date = parts[0]   # e.g. "2024-11-21"
+            time = parts[1][:5]  # take only HH:MM → "15:56"
             filename = parts[-1]
-
-            # if check_transition(date_str=date, time_str=time) == "before":
-            #     continue
-            try:
-                log_dt = datetime.datetime.strptime(
-                    f"{date} {now_swiss.year} {time}",
-                    "%b %d %Y %H:%M"
-                )
-                log_dt = swiss_tz.localize(log_dt)
-            except ValueError:
-                # Skip if parsing fails (e.g. weird format)
-                continue
             
-            print(filename.split('/')[-1], check_transition(date_str=date, time_str=time), type(log_dt), type(lower_dt), type(upper_dt), lower_dt <= log_dt <= upper_dt)
-            print(f'\t{log_dt}, {lower_dt}, {upper_dt}')
+            dt_string = f"{date} {time}" # e.g. '2024-11-21' 
+            filename = parts[-1]
+        
+            log_dt = datetime.datetime.strptime(dt_string, "%Y-%m-%d %H:%M")
+
+            # print(filename.split('/')[-1], check_transition(log_dt), type(log_dt), type(lower_dt), type(upper_dt), lower_dt <= log_dt <= upper_dt)
+            print(f'{log_dt}, {lower_dt}, {upper_dt}')
 
             if lower_dt <= log_dt <= upper_dt:
                 log_files.append(filename)
