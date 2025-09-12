@@ -1,4 +1,4 @@
-import os, yaml, base64, sys, threading, atexit, signal, csv
+import os, yaml, base64, sys, threading, atexit, signal, csv, math
 from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -42,7 +42,7 @@ scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit = config_data.get('scp_force_quit', True)
 scp_ssh_port = config_data.get('scp_ssh_port', 22)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
-max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 40))
+max_box_per_shipment = int(config_data.get('max_box_per_shipment', 42))
 institution_abbr = config_data.get('institution_abbr')
 php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
@@ -577,7 +577,8 @@ def record_shipout():
             instruction_label = Label(popup1, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
             instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
 
-            num_entries, cols = int(max_box_per_shipment), 2
+            cols = 3
+            num_entries= int(math.ceil(int(max_box_per_shipment)/cols)*cols)
             for i in range(num_entries):
                 row, col = 4 + i % int(num_entries//cols), i // int(num_entries//cols)
                 listlabel = Label(popup1, text=f"{i + 1}:")
@@ -619,16 +620,16 @@ def record_shipout():
     
     Label(input_window, text="-------------------------------------").pack(pady=5)
     Label(input_window, text="Procedure:", fg="blue",wraplength=270).pack(pady=1)
-    Label(input_window, text="(0) Upload the (proto)modules data to CMSR", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(1) Record the contents of a single box", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(2) Then record the boxes in a single shipment", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(3) Create a new shipment in the STT", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-    Label(input_window, text="(4) Upload the generated .CSV from step (2) here.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(0) Upload the (proto)modules data to CMSR.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(1) Record the contents of a single box.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(2) Then record the boxes in a single shipment.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(3) Create a new shipment in the STT.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+    Label(input_window, text="(4) Upload the ./shipping/shipmentout.csv file generated from step (2) to the STT.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
 
     Label(input_window, text="-------------------------------------").pack(pady=5)
     Label(input_window, text="CMSR Shipment Tools").pack(pady=5)
 
-    launch_stt_form_button = Button(input_window, text="Launch CMSR Shipment Tracking Tool", command=launch_stt_form_webbrowser)
+    launch_stt_form_button = Button(input_window, text="Launch CMSR Shipment Tracking Tool (STT)", command=launch_stt_form_webbrowser)
     launch_stt_form_button.pack(pady=3)
     bind_button_keys(launch_stt_form_button)
 
