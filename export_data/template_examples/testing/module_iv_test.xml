@@ -14,9 +14,7 @@
         <LOCATION>{{ location }}</LOCATION>
         <COMMENT_DESCRIPTION>{{ comment_description }}</COMMENT_DESCRIPTION>
     </RUN>
-
 </HEADER>
-
     <DATA_SET>
         <COMMENT_DESCRIPTION>{{ test_comments }}</COMMENT_DESCRIPTION>
         <VERSION>1</VERSION>
