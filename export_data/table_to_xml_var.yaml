@@ -1184,7 +1184,11 @@ module_iv:
   xml_tag: COMMENTS
   nested_query: null
   nullable: 'yes'
-
+- xml_temp_val: TEST_COMMENTS
+  xml_tag: COMMENT_DESCRIPTION
+  dbase_col: comment
+  dbase_table: module_iv_test
+  
 module_iv_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: date_test, time_test
@@ -1210,6 +1214,10 @@ module_iv_cond:
   xml_tag: COMMENT_DESCRIPTION
   dbase_col: null
   dbase_table: null
+- xml_temp_val: TEST_COMMENTS
+  xml_tag: COMMENT_DESCRIPTION
+  dbase_col: comment
+  dbase_table: module_iv_test
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER

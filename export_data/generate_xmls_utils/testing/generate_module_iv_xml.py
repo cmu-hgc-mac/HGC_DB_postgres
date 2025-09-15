@@ -66,6 +66,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = "Si module current-voltage test"
                 elif xml_var == "COMMENT_DESCRIPTION":
                     db_values[xml_var] = f"MAC current-voltage test for {module_name}"
+                # elif xml_var == "TEST_COMMENTS":
+                #     db_values[xml_var] = f"MAC current-voltage test for {module_name}"
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
