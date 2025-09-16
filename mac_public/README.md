@@ -45,3 +45,8 @@ host    all    viewer    128.142.0.0/16    trust    ## CERN datacenter LCG
 host    all    viewer    137.138.0.0/16    trust    ## CERN datacenter ITS
 host    all    viewer    131.225.0.0/16    trust    ## Viewer w/o password on FNAL network
 ```
+
+# Run on LXPLUS with local file
+```
+ssh <USERNAME>@lxplus.cern.ch "python3 - -mac UCSB -y 2025 -m 7" < module_counts_for_month.py
+```
