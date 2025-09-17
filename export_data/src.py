@@ -351,7 +351,6 @@ def get_roc_version(module_name):
             return roc_version
     else:
         raise ValueError(f"Cannot determine the roc version of {module_name}")
-        
     
 
 ################################################################################
