@@ -8,6 +8,6 @@ max_mod_per_box: 10          ## maximum number of modules per box; controls post
 max_box_per_shipment: 24     ## maximum number of boxes per shipment (crate); controls postgres panel 
 max_cern_db_request: 1000    ## maximum number of parts requested from HGCAPI during data import
 scp_persist_minutes: 240     ## duration for which the scp connection is open; important when transferring large number of files
-scp_force_quit: True         ## If False, scp connection will be open without password as long as the panel is open. Set True for shared computers.
-scp_ssh_port: 22             
-delete_xmls: False           ## If true, deletes local xmls after upload; controls postgres panel
+scp_force_quit: True         ## If False, scp connection will be open without password as long as the panel is open. Set True for shared computers.             
+delete_xmls: False           ## If True, deletes local xmls after upload; controls postgres panel
+mass_upload_xmls: True       ## If True, uses mass_loader.py

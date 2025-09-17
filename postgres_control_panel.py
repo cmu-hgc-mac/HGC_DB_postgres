@@ -40,7 +40,7 @@ delete_xmls = config_data.get('delete_xmls', False)
 php_port = config_data.get('php_port', '8083')
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit = config_data.get('scp_force_quit', True)
-scp_ssh_port = config_data.get('scp_ssh_port', 22)
+mass_upload_xmls = config_data.get('mass_upload_xmls', False)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_mod_per_shipment', 24))
 institution_abbr = config_data.get('institution_abbr')
@@ -424,9 +424,9 @@ def export_data():
             
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
-                if open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, get_scp_status=True) != 0:
+                if open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:
                     show_message(f"Check terminal to enter LXPLUS credentials.")
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
             
             upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
             upload_prod_stat = upload_prod_stat if scp_status == 0 else False
@@ -436,7 +436,7 @@ def export_data():
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
             if scp_force_quit:
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, scp_ssh_port=scp_ssh_port)
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, mass_upload_xmls=mass_upload_xmls)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")
             
         else:
