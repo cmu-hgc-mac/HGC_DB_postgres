@@ -426,7 +426,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
         result = subprocess.run(test_cmd, capture_output=True, text=True)
         if result.returncode != 255: ## or result.returncode == 0:
             print("Failed to close ControlMaster Process. Do it manually.")
-            print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
+            print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:{scp_ssh_port} {dbl_username}@dbloader-hgcal`")
         else:
             print("ControlMaster process closed.")
         return result.returncode
@@ -478,7 +478,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print(f"To allow password-free SCP to your LXPLUS for {scp_persist_minutes} minutes...")
                 print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
                 print(f"To force quit this open connection manually, run below command in your terminal:")
-                print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
+                print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:{scp_ssh_port} {dbl_username}@dbloader-hgcal`")
                 print("****************************************")
                 print("")
 
