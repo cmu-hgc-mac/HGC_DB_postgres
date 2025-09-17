@@ -21,7 +21,7 @@ ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/ctrl_lxplus_dbloader -o Cont
 ```
 #### SCP the file to a temporary directory
 ```
-ssh USERNAME@lxplus.cern.ch -o ControlPath=~/.ssh/ctrl_lxplus_dbloader mkdir -p ~/hgc_xml_temp
+ssh USERNAME@lxplus.cern.ch -o ControlPath=~/.ssh/ctrl_lxplus_dbloader 'mkdir -p ~/hgc_xml_temp'
 scp -o ControlPath=~/.ssh/ctrl_lxplus_dbloader /directory_to_the_xml_file/xxx.xml USERNAME@lxplus.cern.ch:~/hgc_xml_temp
 ```
 
