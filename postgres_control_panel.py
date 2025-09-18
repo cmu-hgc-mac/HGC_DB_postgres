@@ -11,6 +11,7 @@ from housekeeping.shipping_helper import update_packed_timestamp_sync, update_sh
 from export_data.src import open_scp_connection
 
 def run_git_pull_seq():
+    restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
     if result.returncode == 0:
         print("Git pull successful ..."); print(result.stdout)
