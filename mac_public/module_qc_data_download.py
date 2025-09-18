@@ -3,7 +3,8 @@ import argparse, csv, datetime
 
 async def fetch_testing_data(macid, data_type, module_list = None):
     mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'dbname':'hgcdb'}, 
-                'UCSB': {'host': 'gut.physics.ucsb.edu',    'dbname':'hgcdb'}, }
+                'UCSB': {'host': 'gut.physics.ucsb.edu',    'dbname':'hgcdb'}, 
+                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'dbname':'hgcdb'}, }
                 # 'TTU' : {'host': '129.118.107.198',         'dbname':'ttu_mac_local'},}
     conn = await asyncpg.connect(
         user='viewer',
