@@ -57,6 +57,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.inspector,
                m.temp_c,
                m.rel_hum,
+               m.status_desc,
                m.comment,
                h.roc_name, 
                h.roc_index
@@ -79,6 +80,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.inspector,
                 m.temp_c,
                 m.rel_hum,
+                m.status_desc,
                 m.comment,
                 h.roc_name, 
                 h.roc_index
@@ -116,6 +118,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'adc_stdd': row['adc_stdd'],
                 'roc_name': row['roc_name'],
                 'comment' : row['comment'],
+                'status_desc': row["status_desc"],
             }
 
             test_data_env[run_begin_timestamp] = {
@@ -127,6 +130,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
                 'roc_name': row['roc_name'],
                 'comment' : row['comment'],
+                'status_desc': row["status_desc"],
             }
     return test_data, test_data_env
 
@@ -140,7 +144,7 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, template_pat
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
-        run_info.find("RUN_TYPE").text = "MAC hexaboard pedestal and noise"
+        run_info.find("RUN_TYPE").text = "MAC hexaboard pedestal and noise" if not test_data['status_desc'] else f"MAC hexaboard pedestal and noise - {test_data['status_desc']}"
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
         run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
@@ -234,13 +238,13 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, template_pat
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
     if run_info is not None:
-        run_info.find("RUN_TYPE").text = "MAC hexaboard pedestal and noise"
+        run_info.find("RUN_TYPE").text = "MAC hexaboard pedestal and noise" if not test_data['status_desc'] else f"MAC hexaboard pedestal and noise - {test_data['status_desc']}"
         run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
         run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
         run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
         run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION").text = f"MAC pedestal and noise data for {test_data['hxb_name']}"
+        run_info.find("COMMENT_DESCRIPTION").text = f"MAC pedestal and noise data for {test_data_env['hxb_name']}"
 
     # Get and remove the original <DATA_SET> template block
     data_set_template = root.find("DATA_SET")
