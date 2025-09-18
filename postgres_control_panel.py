@@ -11,6 +11,7 @@ from housekeeping.shipping_helper import update_packed_timestamp_sync, update_sh
 from export_data.src import open_scp_connection
 
 def run_git_pull_seq():
+    restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
     result = subprocess.run(["git", "pull"], capture_output=True, text=True)
     if result.returncode == 0:
         print("Git pull successful ..."); print(result.stdout)
@@ -423,6 +424,12 @@ def export_data():
             # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             
+            # export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(False), "-uplp", str(False), "-delx", str(False), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
+            # if partslistpre.strip():
+            #     partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
+            #     export_command_list += ['-pn', ] + partslist
+            # subprocess.run(export_command_list) ### generate files before requesting LXplus credentials
+            
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
                 if open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, get_scp_status=True) != 0:
@@ -565,20 +572,12 @@ def record_shipout():
         if dbshipper_pass.strip():
             popup1 = Toplevel(); popup1.title("Enter containers in this shipment")
 
-            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
-            datetime_now_label.grid(row=0, column=2, columnspan=1, pady=10)
-
-            datetime_now_var = StringVar(master=popup1, value=datetime_now)
-            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-            datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
-
-            label1 = Label(popup1 ,wraplength=400, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv' for upload to CERN Shipment Tracking Tools (INT2R and CMSR).")
-            label1.grid(row=1, column=0, columnspan=4, pady=10)
+            cols = 3
+            label1 = Label(popup1 ,wraplength=1000, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv' for upload to CMSR Shipment Tracking Tool.")
+            label1.grid(row=1, column=0, columnspan=int(cols*2), pady=10)
             instruction_label = Label(popup1, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
             instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
 
-            cols = 3
             num_entries= int(math.ceil(int(max_box_per_shipment)/cols)*cols)
             for i in range(num_entries):
                 row, col = 4 + i % int(num_entries//cols), i // int(num_entries//cols)
@@ -588,6 +587,9 @@ def record_shipout():
                 entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
                 entries.append(entry)
 
+            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+            datetime_now_var = StringVar(master=popup1, value=datetime_now)
+        
             def update_db_shipped():
                 module_update_ship = [entry.get() for entry in entries if entry.get().strip() != ""]
                 popup1.destroy()
@@ -596,11 +598,20 @@ def record_shipout():
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                     fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
                     print("List of modules saved under ", fileout_name)
-                    # webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
-                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+                    if fileout_name:
+                        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+                        # webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
 
-            submit_button = Button(popup1, text="Record to DB", command=update_db_shipped)
-            submit_button.grid(row=4+(num_entries//2), column=1, columnspan=4, pady=10)
+            submit_button = Button(popup1, text="Record to DB", command=update_db_shipped, width=25)
+            submit_button.grid(row=0, column=3, columnspan=1, pady=10)
+
+            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
+            datetime_now_label.grid(row=0, column=0, columnspan=1, pady=10)
+            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+            datetime_now_entry.grid(row=0, column=1, columnspan=1, pady=10)
+
+            nothing = Label(popup1, text=f"", justify="right", anchor='e')
+            nothing.grid(pady=10)
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
@@ -611,11 +622,11 @@ def record_shipout():
     def see_my_shipments_cmsr():
         webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
 
-    single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out)
+    single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out, width=30)
     single_pack_button.pack(pady=10)
     bind_button_keys(single_pack_button)
 
-    record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=enter_shipment_contents_out)
+    record_crate_button = Button(input_window, text="Record contents/shipment of a crate", command=enter_shipment_contents_out, width=30)
     record_crate_button.pack(pady=10)
     bind_button_keys(record_crate_button)
     

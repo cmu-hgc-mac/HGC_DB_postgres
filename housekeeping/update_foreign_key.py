@@ -34,7 +34,7 @@ else:
 
 async def update_foreign_key():
     conn = await asyncpg.connect(**db_params)
-    print('Connection successful. \n')
+    # print('Connection successful. \n')
         
     def get_table_info(loc, tables_subdir, fname):
         with open(os.path.join(loc, tables_subdir, fname) , mode='r') as file:
