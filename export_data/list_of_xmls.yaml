@@ -12,7 +12,7 @@ protomodule:
 - proto_build_xml: true
 - proto_cond_xml: true
 sensor:
-- sensor_cond_xml: false
+- sensor_cond_xml: true
 testing:
 - module_pedestal_xml: false
 - hxb_pedestal_xml: false
