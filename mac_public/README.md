@@ -8,7 +8,7 @@ python module_qc_data_download.py -mac UCSB -dt mod_iv  -mn 320MHF1T4SB0015
 ```
 
 # Get monthly module summary
-This has been implemented for CMU, UCSB where it outputs the module summary for a month in a year.
+This has been implemented for CMU, UCSB, and NTU where it outputs the module summary for a month in a year.
 ```
 python mac_public/module_counts_for_month.py -m 3 -y 2025 -mac UCSB
 ```
