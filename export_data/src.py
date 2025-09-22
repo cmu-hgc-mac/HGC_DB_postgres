@@ -457,19 +457,19 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print("****************************************")
                 print("")
 
-
+                scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"
                 if mass_upload_xmls:  ### opens to both lxplus and dbloader-hgcal
                     ssh_cmd = ["ssh", "-MNf",
                         "-o", "ControlMaster=yes",
                         "-o", f"ControlPath=~/.ssh/{controlpathname}",  
-                        "-o", f"ControlPersist={scp_persist_minutes}m",
+                        "-o", f"ControlPersist={scp_timeout_cond}",
                         "-J", f"{dbl_username}@lxplus.cern.ch",
                         f"{dbl_username}@dbloader-hgcal"]    
                 else: ### opens to only dbloader-hgcal via lxplus
                     ssh_cmd = ["ssh", "-MNf",
                         "-o", "ControlMaster=yes",
                         "-o", f"ControlPath=~/.ssh/{controlpathname}",    
-                        "-o", f"ControlPersist={scp_persist_minutes}m",
+                        "-o", f"ControlPersist={scp_timeout_cond}",
                         "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
                         f"{dbl_username}@dbloader-hgcal"]    
                 
