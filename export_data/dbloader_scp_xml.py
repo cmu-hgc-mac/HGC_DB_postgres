@@ -114,7 +114,7 @@ def mass_upload_to_dbloader(dbl_username, fnames, cern_dbname = '', remote_xml_d
         subprocess.run(makedir_cmd,     text=True)
         if verbose: print(f"SCPing files to {dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
         subprocess.run(scp_cmd,         text=True)
-        if verbose: print(f"Uploading to dbloader-hgcal with mass_loader ...")
+        print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
         with open("export_data/mass_loader.py", "r") as f:
             mass_upload_cmd = [
                             "ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", 
