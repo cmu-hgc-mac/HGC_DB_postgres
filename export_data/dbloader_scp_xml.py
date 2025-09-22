@@ -3,7 +3,7 @@ from pathlib import Path
 from scp import SCPClient
 from src import process_xml_list
 import numpy as np
-import datetime, time, yaml, paramiko, pwinput, sys
+import datetime, time, yaml, paramiko, pwinput, sys, re
 from tqdm import tqdm
 import traceback
 
@@ -13,7 +13,7 @@ xml_list = {t: {list(d.keys())[0]: d[list(d.keys())[0]]  for d in xml_list[t]}  
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
-mass_upload_xmls = config_data.get('mass_upload_xmls', False)
+mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 # cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
 # cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
@@ -103,25 +103,39 @@ def scp_to_dbloader(dbl_username, fname, cern_dbname = ''):
         print(f"An error occurred for {fname}: {e}")
         # traceback.print_exc()
 
-def mass_upload_to_dbloader(dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp"):
+def mass_upload_to_dbloader(dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose  = False):
     makedir_cmd = ["ssh", f"{dbl_username}@lxplus.cern.ch" , f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"mkdir -p {remote_xml_dir}"]
     scp_cmd = ["scp", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader"] + fnames + [f"{dbl_username}@lxplus.cern.ch:{remote_xml_dir}/"]
-    # mass_upload_cmd = ["ssh", "-J", f"{dbl_username}@lxplus.cern.ch", f"{dbl_username}@dbloader-hgcal", f"python3 - --{cern_dbname.lower()} {remote_xml_dir}/*.xml", "<", "export_data/mass_loader.py"]
     remove_xml_cmd = ["ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{dbl_username}@lxplus.cern.ch", f"rm {remote_xml_dir}/*",]
-
+    
+    mass_upload_logs_fp = "export_data/mass_upload_logs"
+    os.makedirs(mass_upload_logs_fp, exist_ok=True)
     try:
         subprocess.run(makedir_cmd,     text=True)
-        print(f"SCPing files to {dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
+        if verbose: print(f"SCPing files to {dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
         subprocess.run(scp_cmd,         text=True)
-        print(f"Uploading to bloader-hgcal with mass_loader ...")
+        if verbose: print(f"Uploading to dbloader-hgcal with mass_loader ...")
         with open("export_data/mass_loader.py", "r") as f:
             mass_upload_cmd = [
                             "ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", 
                             f"{dbl_username}@dbloader-hgcal",
                             f"python3 - --{cern_dbname.lower()} {remote_xml_dir}/*.xml"]
-            subprocess.run(mass_upload_cmd, stdin=f, text=True)
+            result = subprocess.run(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if verbose: sys.stdout.write(result.stdout) 
 
-        print(f"Removing files from {dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
+            if '.csv' in result.stdout:
+                print("----> Saving log files to export_data/mass_upload_logs <----")
+                csv_outfile = f"{result.stdout.split('.csv')[0].split(' ')[-1]}.csv"
+                log_outfile = os.path.splitext(csv_outfile)[0] + ".log"
+                scp_masslog_file = ["scp", "-o", "ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{dbl_username}@dbloader-hgcal:~/{csv_outfile}", f"{dbl_username}@dbloader-hgcal:~/{log_outfile}", mass_upload_logs_fp]
+                subprocess.run(scp_masslog_file,     text=True)
+                file_path_log, file_path_csv = os.path.join(mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(mass_upload_logs_fp, os.path.basename(csv_outfile))
+                if os.path.isfile(file_path_csv) and os.path.isfile(file_path_log):
+                    rm_masslog_file = ["ssh", "-o", "ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{dbl_username}@dbloader-hgcal", f"rm ~/{csv_outfile} ~/{log_outfile}"]
+                    subprocess.run(rm_masslog_file,     text=True)
+
+
+        if verbose: print(f"Removing files from {dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
         subprocess.run(remove_xml_cmd,  text=True)
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -154,29 +168,29 @@ def main():
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
         print(f"Uploading protomodule 'build' files to {cern_dbname}...")
 
-        if mass_upload_xmls:
+        if mass_upload_xmls and protomodule_build_files:
             mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname)
         else:
             for fname in tqdm(protomodule_build_files):
                 scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
         
-        if len(protomodule_build_files) > 0 and (len(module_build_files) > 0 or len(other_files) > 0):
+        if protomodule_build_files and (module_build_files or other_files):
             print("Waiting 10 seconds after protomodule upload...")
             time.sleep(10) ### DBLoader has some latency
 
         print(f"Uploading module 'build' files to {cern_dbname}...")
-        if mass_upload_xmls:
+        if mass_upload_xmls and module_build_files:
             mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname)
         else:
             for fname in tqdm(module_build_files):
                 scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
         
-        if len(module_build_files) > 0 and len(other_files) > 0:
+        if module_build_files and other_files:
             print("Waiting 10 seconds after module upload...")
             time.sleep(10) ## DBLoader has some latency
 
         print(f"Uploading other files to {cern_dbname}...")
-        if mass_upload_xmls:
+        if mass_upload_xmls and other_files:
             mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname)
         else:
             for fname in tqdm(other_files):
