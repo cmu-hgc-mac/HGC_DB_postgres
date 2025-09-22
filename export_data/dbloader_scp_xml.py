@@ -116,7 +116,7 @@ def mass_upload_to_dbloader(dbl_username, fnames, cern_dbname = '', remote_xml_d
         print(f"Uploading to bloader-hgcal with mass_loader ...")
         with open("export_data/mass_loader.py", "r") as f:
             mass_upload_cmd = [
-                            "ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", ### "-J", f"{dbl_username}@lxplus.cern.ch",
+                            "ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", 
                             f"{dbl_username}@dbloader-hgcal",
                             f"python3 - --{cern_dbname.lower()} {remote_xml_dir}/*.xml"]
             subprocess.run(mass_upload_cmd, stdin=f, text=True)
