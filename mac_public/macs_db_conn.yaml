@@ -22,7 +22,7 @@ macs:
 
   -
     mac_id: 'TIFR'
-    hostname: ''
+    hostname: 'lxhgcdb02.tifr.res.in'
     password: ''  ## viewer password; optional, not required
     port: '5432'
     db_name: 'hgcdb'
