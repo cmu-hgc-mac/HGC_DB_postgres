@@ -45,7 +45,8 @@ mass_upload_xmls = config_data.get('mass_upload_xmls', False)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_box_per_shipment', 42))
 institution_abbr = config_data.get('institution_abbr')
-php_url = f"http://127.0.0.1:{php_port}/adminer-pgsql.php?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
+adminer_php_file = 'adminer-pgsql.php'
+php_url = f"http://127.0.0.1:{php_port}/{adminer_php_file}?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
 def get_pid_result():
     try:
@@ -685,19 +686,7 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
         except Exception as e:
             print(f"Error: {e}")
 
-    if 'search' in button_search_data.config('text')[-1].lower():
-        adminer_php_file = 'adminer-pgsql.php'
-        if not os.path.exists(adminer_php_file):
-            try:
-                url = "https://download.adminerevo.org/latest/adminer/adminer-pgsql.zip"
-                adminer_zip_file = adminer_php_file.replace('.php','.zip')
-                urllib.request.urlretrieve(url, adminer_zip_file)
-                with zipfile.ZipFile(adminer_zip_file, 'r') as zip_ref:
-                    zip_ref.extractall() 
-                if os.path.exists(adminer_zip_file): os.remove(adminer_zip_file)
-            except Exception as e:
-                print(e)
- 
+    if 'search' in button_search_data.config('text')[-1].lower(): 
         try:
             if os.name == 'nt': ### Windows
                 adminer_process = subprocess.Popen(["start", "php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
@@ -710,8 +699,6 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
             print(php_url)
         except Exception as e:
             traceback.print_exc()
-            print('\n*** PHP Installation Instructions at', 'https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md ***')
-            webbrowser.open(f"https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/php_installation.md")
     else:
         close_adminer_process()
         button_search_data.config(text=adminer_process_button_face, fg="black")    
