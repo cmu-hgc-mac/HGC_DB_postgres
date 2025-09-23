@@ -48,6 +48,12 @@ institution_abbr = config_data.get('institution_abbr')
 adminer_php_file = 'adminer-pgsql.php'
 php_url = f"http://127.0.0.1:{php_port}/{adminer_php_file}?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
 
+def launch_stt_form_webbrowser():
+        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+    
+def see_my_shipments_cmsr():
+    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
+
 def get_pid_result():
     try:
         return subprocess.run(["lsof", "-ti", f":{php_port}"], capture_output=True, text=True)
@@ -244,14 +250,20 @@ def verify_shipin():
                 input_window.destroy()  
 
     enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes_in)
-    enter_verify_button.pack(pady=10, padx=0)
+    enter_verify_button.pack(pady=1, padx=0)
     bind_button_keys(enter_verify_button)
     # enter_verify_button.config(state='disabled')
-    Label(input_window, text="Or").pack(pady=5)
+    Label(input_window, text="Or").pack(pady=1)
     upload_verfile_button = Button(input_window, text="Upload text/csv file with part barcodes", command=upload_file_with_part_in)
-    upload_verfile_button.pack(pady=10)
+    upload_verfile_button.pack(pady=1)
     bind_button_keys(upload_verfile_button)
     
+    Label(input_window, text="").pack(pady=15)
+    Label(input_window, text="******* CMSR Shipment Tool *******").pack(pady=5)
+
+    launch_stt_button = Button(input_window, text=f"Mark {institution_abbr} shipment as received in STT", command=see_my_shipments_cmsr)
+    launch_stt_button.pack(pady=(1,10))
+    bind_button_keys(launch_stt_button)
 
 def import_data():
     # run_git_pull_seq()
@@ -309,6 +321,12 @@ def import_data():
     submit_import_button = Button(input_window, text="Submit", command=submit_import)
     submit_import_button.pack(pady=10)
     bind_button_keys(submit_import_button)
+
+    Label(input_window, text="").pack(pady=15)
+    Label(input_window, text=f"******* To assign parts to {institution_abbr} *******").pack(pady=5)
+    launch_stt_button = Button(input_window, text=f"Mark {institution_abbr} shipment as received in STT", command=see_my_shipments_cmsr)
+    launch_stt_button.pack(pady=(1,10))
+    bind_button_keys(launch_stt_button)
 
 def focus_next_widget(event):
     event.widget.tk_focusNext().focus()
@@ -616,12 +634,6 @@ def record_shipout():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
-    def launch_stt_form_webbrowser():
-        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
-    
-    def see_my_shipments_cmsr():
-        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
-
     single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out, width=30)
     single_pack_button.pack(pady=10)
     bind_button_keys(single_pack_button)
@@ -751,26 +763,28 @@ button_check_config.grid(row=1, column=1, pady=5)
 # spacer.grid(row=2, column=1, pady=10)
 
 button_shipin = Button(frame, text="Verify received shipment ", command=verify_shipin, width=button_width, height=button_height)
-button_shipin.grid(row=3, column=1, pady=5, sticky='ew')
+button_shipin.grid(row=3, column=1, pady=(5,1), sticky='ew')
 
 button_download = Button(frame, text="    Import Parts Data      ", command=import_data, width=button_width, height=button_height)
-button_download.grid(row=4, column=1, pady=5, sticky='ew')
+button_download.grid(row=4, column=1, pady=(1,15), sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
-button_upload_xml.grid(row=5, column=1, pady=5, sticky='ew')
+button_upload_xml.grid(row=5, column=1, pady=(15,1), sticky='ew')
 # button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
-button_shipout.grid(row=6, column=1, pady=5, sticky='ew')
-
-button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=button_height)  
-button_refresh_db.grid(row=7, column=1, pady=5, sticky='ew')
+button_shipout.grid(row=6, column=1, pady=(1,15), sticky='ew')
 
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
-button_search_data.grid(row=8, column=1, pady=5, sticky='ew')
+button_search_data.grid(row=7, column=1, pady=(15,1), sticky='ew')
+
+button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=button_height)  
+button_refresh_db.grid(row=8, column=1, pady=1, sticky='ew')
+
 
 button_stock_stt = Button(frame, text=" Check stock on CMSR STT", command=open_stt_stock, width=button_width, height=button_height) 
-button_stock_stt.grid(row=9, column=1, pady=5, sticky='ew')
+button_stock_stt.grid(row=9, column=1, pady=(1,5), sticky='ew')
+
 
 for pid in get_pid_result().stdout.strip().split("\n"):
     if pid.isdigit():
