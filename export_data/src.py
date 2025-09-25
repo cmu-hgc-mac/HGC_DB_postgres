@@ -439,7 +439,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
             except:
                 print(f"Failed to remove control files: {controlfiles}")
         try:
-            print(f"Running on {platform.system()}")
+            # print(f"Running on {platform.system()}")
             if platform.system() == "Windows":
                 print("")
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
