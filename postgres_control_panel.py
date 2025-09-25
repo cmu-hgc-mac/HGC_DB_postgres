@@ -450,7 +450,7 @@ def export_data():
             
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
-                if open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:
+                if open_scp_connection(dbl_username=lxp_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:
                     show_message(f"Check terminal to enter LXPLUS credentials.")
                 scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
             
