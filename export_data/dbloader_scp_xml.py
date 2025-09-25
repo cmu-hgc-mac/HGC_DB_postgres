@@ -104,59 +104,81 @@ def scp_to_dbloader(dbl_username, fname, cern_dbname = ''):
         print(f"An error occurred for {fname}: {e}")
         # traceback.print_exc()
 
-def mass_upload_to_dbloader(dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose  = False):
-    makedir_cmd = ["ssh", f"{dbl_username}@lxplus.cern.ch" , f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"mkdir -p {remote_xml_dir}"]
-    scp_cmd = ["scp", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader"] + fnames + [f"{dbl_username}@lxplus.cern.ch:{remote_xml_dir}/"]
-    remove_xml_cmd = ["ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{dbl_username}@lxplus.cern.ch", f"rm {remote_xml_dir}/*",]
-    
-    mass_upload_logs_fp = "export_data/mass_upload_logs"
-    os.makedirs(mass_upload_logs_fp, exist_ok=True)
-    try:        
-        
-        if open_scp_connection(dbl_username=dbl_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) == 0:
-            subprocess.run(makedir_cmd,     text=True)
-            if open_scp_connection(dbl_username=dbl_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) == 0:
-                if verbose: print(f"SCPing files to {dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
-                subprocess.run(scp_cmd,         text=True)
-                print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
-                if open_scp_connection(dbl_username=dbl_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) == 0:
-                    with open("export_data/mass_loader.py", "r") as f:
-                        mass_upload_cmd = ["ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{dbl_username}@dbloader-hgcal", f"python3 - --{cern_dbname.lower()} {remote_xml_dir}/*.xml"]
-                        result = subprocess.run(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    
-                    if verbose: sys.stdout.write(result.stdout) 
+class mass_upload_to_dbloader:
+    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose  = False):
+        self.mass_upload_logs_fp = "export_data/mass_upload_logs"
+        os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
+        self.terminal_output = ""
+        self.dbl_username = dbl_username
+        self.fnames = fnames
+        self.cern_dbname = cern_dbname
+        self.remote_xml_dir = remote_xml_dir
+        self.verbose = verbose
 
-                    if '.csv' in result.stdout:
-                        print("----> Saving log files to export_data/mass_upload_logs <----")
-                        csv_outfile = f"{result.stdout.split('.csv')[0].split(' ')[-1]}.csv"
-                        log_outfile = os.path.splitext(csv_outfile)[0] + ".log"
-                        scp_masslog_file = ["scp", "-o", "ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{dbl_username}@dbloader-hgcal:~/{csv_outfile}", f"{dbl_username}@dbloader-hgcal:~/{log_outfile}", mass_upload_logs_fp]
-                        subprocess.run(scp_masslog_file,     text=True)
-                        file_path_log, file_path_csv = os.path.join(mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(mass_upload_logs_fp, os.path.basename(csv_outfile))
-                        if os.path.isfile(file_path_csv) and os.path.isfile(file_path_log):
-                            rm_masslog_file = ["ssh", "-o", "ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{dbl_username}@dbloader-hgcal", f"rm ~/{csv_outfile} ~/{log_outfile}"]
-                            subprocess.run(rm_masslog_file,     text=True)
+    def make_lxplus_dir(self):
+        makedir_cmd = ["ssh", f"{self.dbl_username}@lxplus.cern.ch" , f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"mkdir -p {self.remote_xml_dir}"]
+        result = subprocess.run(makedir_cmd,     text=True)
+        return result.returncode
+
+    def scp_xml_lxplus(self):
+        scp_cmd = ["scp", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader"] + self.fnames + [f"{self.dbl_username}@lxplus.cern.ch:{self.remote_xml_dir}/"]
+        if self.verbose: print(f"SCPing files to {self.dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
+        result = subprocess.run(scp_cmd,         text=True)
+        return result.returncode
+
+    def rm_xml_lxplus(self):
+        remove_xml_cmd = ["ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{self.dbl_username}@lxplus.cern.ch", f"rm {self.remote_xml_dir}/*",]
+        if self.verbose: print(f"Removing files from {self.dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
+        result = subprocess.run(remove_xml_cmd,  text=True)
+        return result.returncode
+
+    def mass_upload_xml_dbl(self):
+        print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
+        with open("export_data/mass_loader.py", "r") as f:
+            mass_upload_cmd = ["ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml"]
+            with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process:
+                for line in process.stdout:
+                    self.terminal_output += line   # save terminal output from mass_upload to log txt file
+                    if self.verbose:
+                        sys.stdout.write(line)         # print live
+                        sys.stdout.flush()             # force immediate display
+
+                process.wait()  # wait for process to finish
+                return process.returncode  ### 0 for success, 255 for failed
+            
+    def scp_logs_local(self):
+        if '.csv' in self.terminal_output:
+            print("----> Saving log files to export_data/mass_upload_logs <----")
+            csv_outfile = f"{self.terminal_output.split('.csv')[0].split(' ')[-1]}.csv"
+            log_outfile = os.path.splitext(csv_outfile)[0] + ".log"
+            terminal_outfile = os.path.splitext(csv_outfile)[0] + ".txt"
+            with open(os.path.join(self.mass_upload_logs_fp, terminal_outfile), 'w') as outfile:
+                outfile.write(self.terminal_output)
+            print(terminal_outfile)
+            scp_masslog_file = ["scp", "-o", "ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{self.dbl_username}@dbloader-hgcal:~/{csv_outfile}", f"{self.dbl_username}@dbloader-hgcal:~/{log_outfile}", self.mass_upload_logs_fp]
+            result = subprocess.run(scp_masslog_file,     text=True)
+            file_path_log, file_path_csv = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(csv_outfile))
+            if os.path.isfile(file_path_csv) and os.path.isfile(file_path_log):
+                rm_masslog_file = ["ssh", "-o", "ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{self.dbl_username}@dbloader-hgcal", f"rm ~/{csv_outfile} ~/{log_outfile}"]
+                result = subprocess.run(rm_masslog_file,     text=True)
+            return result.returncode
                     
-                    if open_scp_connection(dbl_username=dbl_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) == 0:
-                        if verbose: print(f"Removing files from {dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
-                        subprocess.run(remove_xml_cmd,  text=True)
-                    else:
-                        print("Reconnect to LXPLUS -- preexisting connection broken")
-                        scp_status = open_scp_connection(dbl_username=dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
-                else:
-                    print("Reconnect to LXPLUS -- preexisting connection broken")
-                    scp_status = open_scp_connection(dbl_username=dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
-            else:
-                print("Reconnect to LXPLUS -- preexisting connection broken")
-                scp_status = open_scp_connection(dbl_username=dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
-        else:
-            print("Reconnect to LXPLUS -- preexisting connection broken")
-            scp_status = open_scp_connection(dbl_username=dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        
-        
+    def run_steps(self):
+        steps = [self.make_lxplus_dir, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
+
+        curren_step = 0
+        while curren_step < len(steps):
+            if open_scp_connection(dbl_username=self.dbl_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:    ### connection is missing
+                print("Reconnect to LXPLUS -- preexisting connection broken -- retry this step")
+                scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
+                continue  ### keeps requesting credentials until connection is successful
+            try:
+                return_status = steps[curren_step]()
+                if return_status == 0: curren_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
+            except Exception as e:
+                print(f"An error occurred at step {curren_step+1}: {e}")
+                scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)        
+    
 def main():
     default_dir = os.path.abspath(os.path.join(os.getcwd(), "../../xmls_for_dbloader_upload"))
     today = str(datetime.datetime.today().strftime('%Y-%m-%d'))
@@ -182,7 +204,7 @@ def main():
         build_files, other_files = get_build_files(files_found)
         protomodule_build_files, module_build_files, other_build_files = get_proto_module_files(build_files)
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
-        print(f"Uploading protomodule 'build' files to {cern_dbname}...")
+        print(f"Uploading {len(protomodule_build_files)} protomodule 'build' files to {cern_dbname}...")
 
         if mass_upload_xmls and protomodule_build_files:
             mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname)
@@ -194,7 +216,7 @@ def main():
             print("Waiting 10 seconds after protomodule upload...")
             time.sleep(10) ### DBLoader has some latency
 
-        print(f"Uploading module 'build' files to {cern_dbname}...")
+        print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
         if mass_upload_xmls and module_build_files:
             mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname)
         else:
@@ -205,9 +227,9 @@ def main():
             print("Waiting 10 seconds after module upload...")
             time.sleep(10) ## DBLoader has some latency
 
-        print(f"Uploading other files to {cern_dbname}...")
+        print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
         if mass_upload_xmls and other_files:
-            mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname)
+            mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname).run_steps()
         else:
             for fname in tqdm(other_files):
                 scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
