@@ -85,6 +85,13 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
     with open(list_of_xmls_yaml, "w") as file:
         yaml.dump(xml_list, file, default_flow_style=False)
 
+async def check_good_conn(dbpassword):
+    temp_conn = await get_conn(dbpassword)
+    if temp_conn:
+        await temp_conn.close()
+        return True
+    else:
+        return False
 
 async def get_conn(dbpassword, encryption_key = None):
     '''
@@ -105,8 +112,13 @@ async def get_conn(dbpassword, encryption_key = None):
         cipher_suite = Fernet((encryption_key).encode())
         db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
 
-    conn = await asyncpg.connect(**db_params)
-    return conn
+    try:
+        conn = await asyncpg.connect(**db_params)
+        return conn
+    except Exception as e:
+        print(e)
+        return None
+
 
 async def fetch_from_db(query, conn):
     '''
