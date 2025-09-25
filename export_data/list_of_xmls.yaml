@@ -14,6 +14,6 @@ protomodule:
 sensor:
 - sensor_cond_xml: true
 testing:
-- module_pedestal_xml: false
-- hxb_pedestal_xml: false
-- module_iv_xml: false
+- module_pedestal_xml: true
+- hxb_pedestal_xml: true
+- module_iv_xml: true
