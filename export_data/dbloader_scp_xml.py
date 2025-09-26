@@ -136,7 +136,7 @@ class mass_upload_to_dbloader:
         return result.returncode
 
     def mass_upload_xml_dbl(self):
-        print(f"Uploading to dbloader-hgcal with mass_loader ...") # patience, please")
+        print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
         with open("export_data/mass_loader.py", "r") as f:
             mass_upload_cmd = ["ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml"]
             with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
@@ -172,6 +172,7 @@ class mass_upload_to_dbloader:
             if os.path.isfile(file_path_csv) and os.path.isfile(file_path_log):
                 rm_masslog_file = ["ssh", "-o", "ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{self.dbl_username}@dbloader-hgcal", f"rm ~/{csv_outfile} ~/{log_outfile}"]
                 result = subprocess.run(rm_masslog_file,     text=True)
+            print("")
             return result.returncode
                     
     def run_steps(self):
@@ -231,6 +232,7 @@ def main():
         
             if module_build_files or other_files:
                 print("Waiting 10 seconds after protomodule upload...")
+                print("")
                 time.sleep(10) ### DBLoader has some latency
 
         print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
@@ -243,6 +245,7 @@ def main():
         
             if other_files:
                 print("Waiting 10 seconds after module upload...")
+                print("")
                 time.sleep(10) ## DBLoader has some latency
 
         print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
