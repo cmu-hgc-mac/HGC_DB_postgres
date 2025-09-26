@@ -123,7 +123,7 @@ class mass_upload_to_dbloader:
         return result.returncode
 
     def scp_xml_lxplus(self):
-        scp_cmd = ["scp", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader"] + self.fnames + [f"{self.dbl_username}@lxplus.cern.ch:{self.remote_xml_dir}/"]
+        scp_cmd = ["scp", "-C", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader"] + self.fnames + [f"{self.dbl_username}@lxplus.cern.ch:{self.remote_xml_dir}/"]
         print(f"SCPing files to {self.dbl_username}@lxplus.cern.ch:~/hgc_xml_temp ...")
         result = subprocess.run(scp_cmd,         text=True)
         return result.returncode
