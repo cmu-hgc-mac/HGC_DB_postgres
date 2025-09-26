@@ -24,8 +24,9 @@
         </PART>
         <DATA>
             <!-- <TESTER>{{ tester }}</TESTER> -->
-            <STATUS>{{ status }}</STATUS>
-            <STATUS_DESC>{{ status_desc }}</STATUS_DESC>
+            <!-- <COMMENTS>{{ comments }}</COMMENTS> -->
+            <!-- <STATUS>{{ status }}</STATUS> -->
+            <!-- <STATUS_DESC>{{ status_desc }}</STATUS_DESC> -->
             <!-- <REF_VOLT_A>{{ ref_volt_a }}</REF_VOLT_A> -->
             <!-- <REF_VOLT_B>{{ ref_volt_b }}</REF_VOLT_B> -->
             <!-- <CURRENT_AMPS_AT_VOLT_A>{{ current_amps_at_volt_a }}</CURRENT_AMPS_AT_VOLT_A> -->
@@ -33,7 +34,6 @@
             <DATA_POINT_COUNT>{{ data_point_count }}</DATA_POINT_COUNT>
             <DATA_POINTS_JSON>{{ data_points_json }}</DATA_POINTS_JSON>
             <GRADE>{{ grade }}</GRADE>
-            <COMMENTS>{{ comments }}</COMMENTS>
         </DATA>
     </DATA_SET>
 </ROOT>

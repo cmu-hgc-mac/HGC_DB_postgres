@@ -68,7 +68,7 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
     def set_build_to_true(xml_list):
         if isinstance(xml_list, dict):
             for key in xml_list:
-                if not ("build" in key or "proto_cond"in key or "module_cond" in key or "bp_cond" in key or "hxb_cond" in key or "module_assembly" in key or "proto_assembly" in key or "wirebond" in key):
+                if not ("build" in key or "cond"in key or "assembly" in key or "pedestal" in key or "iv" in key or "wirebond" in key):
                     xml_list[key] = set_build_to_true(xml_list[key])
         elif isinstance(xml_list, list):
             xml_list = [set_build_to_true(item) for item in xml_list]
@@ -80,11 +80,18 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
         with open(list_of_xmls_yaml, "r") as file:
             xml_list = yaml.safe_load(file)
         xml_list = set_all_to_true(xml_list)
-        xml_list = set_build_to_true(xml_list)
+        # xml_list = set_build_to_true(xml_list)
 
     with open(list_of_xmls_yaml, "w") as file:
         yaml.dump(xml_list, file, default_flow_style=False)
 
+async def check_good_conn(dbpassword):
+    temp_conn = await get_conn(dbpassword)
+    if temp_conn:
+        await temp_conn.close()
+        return True
+    else:
+        return False
 
 async def get_conn(dbpassword, encryption_key = None):
     '''
@@ -105,8 +112,13 @@ async def get_conn(dbpassword, encryption_key = None):
         cipher_suite = Fernet((encryption_key).encode())
         db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
 
-    conn = await asyncpg.connect(**db_params)
-    return conn
+    try:
+        conn = await asyncpg.connect(**db_params)
+        return conn
+    except Exception as e:
+        print(e)
+        return None
+
 
 async def fetch_from_db(query, conn):
     '''
@@ -439,7 +451,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
             except:
                 print(f"Failed to remove control files: {controlfiles}")
         try:
-            print(f"Running on {platform.system()}")
+            # print(f"Running on {platform.system()}")
             if platform.system() == "Windows":
                 print("")
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")

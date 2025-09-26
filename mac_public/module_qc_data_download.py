@@ -2,14 +2,12 @@ import asyncpg, asyncio
 import argparse, csv, datetime
 
 async def fetch_testing_data(macid, data_type, module_list = None):
-    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'dbname':'hgcdb'}, 
-                'UCSB': {'host': 'gut.physics.ucsb.edu',    'dbname':'hgcdb'}, 
-                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'dbname':'hgcdb'}, }
+    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'database':'hgcdb'}, 
+                'UCSB': {'host': 'gut.physics.ucsb.edu',    'database':'hgcdb'}, 
+                'TIFR': {'host': 'lxhgcdb02.tifr.res.in',   'database':'hgcdb', 'password': 'hgcal'},
+                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'database':'hgcdb'}, }
                 # 'TTU' : {'host': '129.118.107.198',         'dbname':'ttu_mac_local'},}
-    conn = await asyncpg.connect(
-        user='viewer',
-        database=mac_dict[macid]['dbname'],
-        host= mac_dict[macid]['host'])  
+    conn = await asyncpg.connect(user='viewer', **mac_dict[macid])
     
     placeholders = ', '.join(f'${i+1}' for i in range(len(module_list)))
     

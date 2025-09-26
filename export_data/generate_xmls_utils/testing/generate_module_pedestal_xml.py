@@ -163,7 +163,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     tree = ET.parse(template_path)
     root = tree.getroot()
     test_timestamp = test_data['test_timestamp']
-    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
 
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
@@ -256,7 +256,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     tree = ET.parse(template_path_env)
     root = tree.getroot()
     test_timestamp = test_data_env['test_timestamp']
-    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
 
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
