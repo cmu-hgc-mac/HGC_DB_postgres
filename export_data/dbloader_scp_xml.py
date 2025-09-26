@@ -207,7 +207,7 @@ def main():
         print(f"Uploading {len(protomodule_build_files)} protomodule 'build' files to {cern_dbname}...")
 
         if mass_upload_xmls and protomodule_build_files:
-            mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname)
+            mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname).run_steps()
         else:
             for fname in tqdm(protomodule_build_files):
                 scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
@@ -218,7 +218,7 @@ def main():
 
         print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
         if mass_upload_xmls and module_build_files:
-            mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname)
+            mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname).run_steps()
         else:
             for fname in tqdm(module_build_files):
                 scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
