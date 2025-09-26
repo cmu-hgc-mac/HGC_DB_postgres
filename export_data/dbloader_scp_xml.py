@@ -159,8 +159,9 @@ class mass_upload_to_dbloader:
                         sys.stdout.flush()
 
                 process.wait()  # wait for process to finish
-                print(f"=================================================================")
                 print()
+                print(f"=================================================================")
+                
                 return process.returncode  ### 0 for success, 255 for failed
             
     def scp_logs_local(self):
