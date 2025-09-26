@@ -188,7 +188,7 @@ class mass_upload_to_dbloader:
                 return_status = steps[current_step]()
                 if current_step in [2, 3]:
                     current_time = datetime.datetime.now()
-                    print("Time taken:", current_time - self.starttime)
+                    print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
                 if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
             except Exception as e:
