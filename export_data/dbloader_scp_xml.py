@@ -136,7 +136,7 @@ class mass_upload_to_dbloader:
         return result.returncode
 
     def mass_upload_xml_dbl(self):
-        print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
+        print(f"Uploading to dbloader-hgcal with mass_loader ...") # patience, please")
         with open("export_data/mass_loader.py", "r") as f:
             mass_upload_cmd = ["ssh", f"-o", f"ControlPath=~/.ssh/ctrl_lxplus_dbloader", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml"]
             with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
