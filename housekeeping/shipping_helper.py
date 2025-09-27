@@ -1,6 +1,8 @@
 import asyncpg, asyncio, os, yaml, base64, csv
 from cryptography.fernet import Fernet
 from natsort import natsorted
+from datetime import datetime
+import tkinter
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -62,3 +64,29 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
     except Exception as e:
         print(f"Error updating shipped_timestamp: {e}")
         return None
+    
+
+
+class popup_pack_in_crate(tkinter.Toplevel):
+    def __init__(self, parent, title="Add this to the crate?", message=f"Would you like to add this box to the open crate with 15 box(es) (200 module(s))?"):
+        super().__init__(parent)
+        self.result = None
+        self.title(title)
+        self.geometry("300x120")
+        self.grab_set()  # Make modal
+        label = tkinter.Label(self, text=message, wraplength=280)
+        label.pack(pady=10)
+        btn_frame = tkinter.Frame(self)
+        btn_frame.pack(pady=5)
+        add_btn = tkinter.Button(btn_frame, text="Add to Crate", width=12,command=lambda: self._set_result("add"))
+        add_btn.pack(side="left", padx=5)
+        skip_btn = tkinter.Button(btn_frame, text="This is a standalone shipment", width=12,command=lambda: self._set_result("skip"))
+        skip_btn.pack(side="left", padx=5)
+        cancel_btn = tkinter.Button(btn_frame, text="Cancel", width=12, command=lambda: self._set_result("cancel"))
+        cancel_btn.pack(side="left", padx=5)
+        self.protocol("WM_DELETE_WINDOW", lambda: self._set_result("cancel"))
+
+    def _set_result(self, value):
+        self.result = value
+        self.destroy()
+

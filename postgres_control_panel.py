@@ -7,7 +7,7 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
-from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync
+from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync, popup_pack_in_crate
 from export_data.src import open_scp_connection, check_good_conn
 
 def run_git_pull_seq():
@@ -579,11 +579,14 @@ def record_shipout():
 
             def update_db_packed():
                 module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
+                dialog = popup_pack_in_crate(popup1, )
+                root.wait_window(dialog)  # Wait until dialog is closed
                 popup1.destroy()
                 if len(module_update_pack) > 0 :
                     if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                     update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj, savetofile=bool(export_var.get()))
+                
 
             submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
             submit_button.grid(row=3+(num_entries//2), column=2, columnspan=2, pady=10)
