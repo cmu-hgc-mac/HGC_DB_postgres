@@ -15,14 +15,14 @@ macs:
   
   -
     mac_id: 'NTU'
-    hostname: ''
+    hostname: 'hep11.phys.ntu.edu.tw'
     password: ''  ## viewer password; optional, not required
     port: '5432'
     db_name: 'hgcdb'
 
   -
     mac_id: 'TIFR'
-    hostname: ''
+    hostname: 'lxhgcdb02.tifr.res.in'
     password: ''  ## viewer password; optional, not required
     port: '5432'
     db_name: 'hgcdb'

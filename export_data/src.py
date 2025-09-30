@@ -27,11 +27,6 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
-resource_yaml = 'export_data/resource.yaml'
-with open(resource_yaml, 'r') as file:
-    yaml_content = yaml.safe_load(file)
-    kind_of_part_yaml = yaml_content['kind_of_part']
-    shipping_loc_yaml = yaml_content['shipping_location']
 
 db_params = {
     'database': conn_info.get('dbname'),
@@ -73,7 +68,7 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
     def set_build_to_true(xml_list):
         if isinstance(xml_list, dict):
             for key in xml_list:
-                if not ("build" in key or "proto_cond"in key or "module_cond" in key or "bp_cond" in key or "hxb_cond" in key or "module_assembly" in key or "proto_assembly" in key or "wirebond" in key):
+                if not ("build" in key or "cond"in key or "assembly" in key or "pedestal" in key or "iv" in key or "wirebond" in key):
                     xml_list[key] = set_build_to_true(xml_list[key])
         elif isinstance(xml_list, list):
             xml_list = [set_build_to_true(item) for item in xml_list]
@@ -85,11 +80,18 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
         with open(list_of_xmls_yaml, "r") as file:
             xml_list = yaml.safe_load(file)
         xml_list = set_all_to_true(xml_list)
-        xml_list = set_build_to_true(xml_list)
+        # xml_list = set_build_to_true(xml_list)
 
     with open(list_of_xmls_yaml, "w") as file:
         yaml.dump(xml_list, file, default_flow_style=False)
 
+async def check_good_conn(dbpassword):
+    temp_conn = await get_conn(dbpassword)
+    if temp_conn:
+        await temp_conn.close()
+        return True
+    else:
+        return False
 
 async def get_conn(dbpassword, encryption_key = None):
     '''
@@ -110,8 +112,13 @@ async def get_conn(dbpassword, encryption_key = None):
         cipher_suite = Fernet((encryption_key).encode())
         db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
 
-    conn = await asyncpg.connect(**db_params)
-    return conn
+    try:
+        conn = await asyncpg.connect(**db_params)
+        return conn
+    except Exception as e:
+        print(e)
+        return None
+
 
 async def fetch_from_db(query, conn):
     '''
@@ -409,24 +416,24 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         return []
 
 
-def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, scp_ssh_port = 22, get_scp_status = False):
-
+def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, mass_upload_xmls = False):
+    controlpathname = "ctrl_lxplus_dbloader" if mass_upload_xmls else "ctrl_dbloader"
     test_cmd = ["ssh", 
-                "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
+                "-o", f"ControlPath=~/.ssh/{controlpathname}",
                 "-O", "check",     # <-- ask the master process if it’s alive
-                f"{dbl_username}@dbloader-hgcal"]
+                f"{dbl_username}@{controlpathname}"]
     if get_scp_status:
         result = subprocess.run(test_cmd, capture_output=True, text=True)
         return result.returncode
 
     if scp_force_quit:
         quit_cmd = ["ssh", "-O", "exit",
-                    "-o", f"ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:{scp_ssh_port}", f"{dbl_username}@dbloader-hgcal"]
+                    "-o", f"ControlPath=~/.ssh/{controlpathname}", f"{dbl_username}@{controlpathname}"]
         subprocess.run(quit_cmd, check=True)
         result = subprocess.run(test_cmd, capture_output=True, text=True)
         if result.returncode != 255: ## or result.returncode == 0:
             print("Failed to close ControlMaster Process. Do it manually.")
-            print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
+            print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
         else:
             print("ControlMaster process closed.")
         return result.returncode
@@ -434,7 +441,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
     result = subprocess.run(test_cmd, capture_output=True, text=True)    
     if result.returncode != 0 and dbl_username:
         ### Process is not alive but residual files exist that need to be deletes
-        pattern = os.path.expanduser(f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:*") ## f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:22"
+        pattern = os.path.expanduser(f"~/.ssh/{controlpathname}") 
         controlfiles =  glob.glob(pattern)
         if len(controlfiles) > 0:
             try:
@@ -444,7 +451,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
             except:
                 print(f"Failed to remove control files: {controlfiles}")
         try:
-            print(f"Running on {platform.system()}")
+            # print(f"Running on {platform.system()}")
             if platform.system() == "Windows":
                 print("")
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -461,12 +468,23 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print("******* LXPLUS LOGIN CREDENTIALS *******")
                 print("****************************************")
                 print("")
-                ssh_cmd = ["ssh", "-MNf",
-                       "-o", "ControlMaster=yes",
-                       "-o", "ControlPath=~/.ssh/scp-%r@%h:%p",
-                       "-o", f"ControlPersist={scp_persist_minutes}m",
-                       "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
-                       f"{dbl_username}@dbloader-hgcal"]    
+
+                scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"
+                if mass_upload_xmls:  ### opens to both lxplus and dbloader-hgcal
+                    ssh_cmd = ["ssh", "-MNf",
+                        "-o", "ControlMaster=yes",
+                        "-o", f"ControlPath=~/.ssh/{controlpathname}",  
+                        "-o", f"ControlPersist={scp_timeout_cond}",
+                        "-J", f"{dbl_username}@lxplus.cern.ch",
+                        f"{dbl_username}@dbloader-hgcal"]    
+                else: ### opens to only dbloader-hgcal via lxplus
+                    ssh_cmd = ["ssh", "-MNf",
+                        "-o", "ControlMaster=yes",
+                        "-o", f"ControlPath=~/.ssh/{controlpathname}",    
+                        "-o", f"ControlPersist={scp_timeout_cond}",
+                        "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
+                        f"{dbl_username}@dbloader-hgcal"]    
+                
                 subprocess.run(ssh_cmd, check=True)
 
                 print("** SSH ControlMaster session started. **")
@@ -478,7 +496,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print(f"To allow password-free SCP to your LXPLUS for {scp_persist_minutes} minutes...")
                 print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
                 print(f"To force quit this open connection manually, run below command in your terminal:")
-                print(f"`ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal`")
+                print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
                 print("****************************************")
                 print("")
 
@@ -492,7 +510,8 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
         print("ControlMaster process alive.")
     else:
         print("ControlMaster process failed.")
-    ### ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@dbloader-hgcal:22 {dbl_username}@dbloader-hgcal ## To kill process
+    ## ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@{controlpathname} {dbl_username}@{controlpathname} ## To kill process
+    # ssh -O exit -o ControlPath=~/.ssh/ctrl_lxplus_dbloader simurthy@ctrl_lxplus_dbloader
     return result.returncode
     
     # print(result.stdout)

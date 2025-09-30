@@ -31,21 +31,21 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     module_list = set()
     if partsnamelist:
         query = """
-            SELECT module_name, status, mod_ivtest_no
+            SELECT module_name, status, status_desc, mod_ivtest_no
             FROM module_iv_test
             WHERE module_name = ANY($1)
         """
         results = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
-            SELECT module_name, status, mod_ivtest_no
+            SELECT module_name, status, status_desc, mod_ivtest_no
             FROM module_iv_test
             WHERE module_iv_test.date_test BETWEEN '{date_start}' AND '{date_end}'
         """
         results = await conn.fetch(query)
 
-    module_status_list = set((row['module_name'], row['status'], row['mod_ivtest_no']) for row in results if 'module_name' in row and 'status' in row)
-    for module_name, status, mod_ivtest_no in module_status_list:
+    module_status_list = set((row['module_name'], row['status'], row['status_desc'], row['mod_ivtest_no']) for row in results if 'module_name' in row and 'status' in row)
+    for module_name, status, status_desc, mod_ivtest_no in module_status_list:
         print(f'--> {module_name} with mod_ivtest_no {mod_ivtest_no}...')
         try:
             db_values, db_values_iv, db_values_env = {}, {}, {}
@@ -63,9 +63,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'INITIATED_BY_USER':
                     db_values[xml_var]     = lxplus_username
                 elif xml_var == "RUN_TYPE":
-                    db_values[xml_var] = "Si module current-voltage test"
+                    db_values[xml_var] = "Si module current-voltage test" if not status_desc else f"Si module current-voltage test - {status_desc}"
                 elif xml_var == "COMMENT_DESCRIPTION":
                     db_values[xml_var] = f"MAC current-voltage test for {module_name}"
+                # elif xml_var == "TEST_COMMENTS":
+                #     db_values[xml_var] = f"MAC current-voltage test for {module_name}"
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']

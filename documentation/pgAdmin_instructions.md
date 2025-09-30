@@ -67,7 +67,11 @@ In short: the left instance below need not be secure but be judicious with who h
 </p>
 
 ## Updating passwords
-On pgAdmin4, select the database and open the `PSQL tool`.
+
+The [update_password.py](https://github.com/cmu-hgc-mac/HGC_DB_postgres/blob/main/documentation/update_password.py) script may be used to change passwords.
+
+
+Alternatively, on pgAdmin4, select the database and open the `PSQL tool`.
 To list users in the `hgcdb` database, in the PSQL terminal type
 ```
 \du

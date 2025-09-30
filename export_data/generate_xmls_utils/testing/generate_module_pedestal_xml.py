@@ -81,6 +81,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.inspector,
                m.temp_c,
                m.rel_hum,
+               m.status_desc,
+               m.comment,
                h.roc_name, 
                h.roc_index
         FROM module_pedestal_test m
@@ -102,6 +104,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.inspector,
                 m.temp_c,
                 m.rel_hum,
+                m.status_desc,
+                m.comment,
                 h.roc_name, 
                 h.roc_index
             FROM module_pedestal_test m
@@ -136,7 +140,9 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'channeltype': channeltype,
                 'adc_mean': row['adc_mean'],
                 'adc_stdd': row['adc_stdd'],
-                'roc_name': row['roc_name']
+                'roc_name': row['roc_name'],
+                'comment' : row['comment'],
+                'status_desc': row["status_desc"],
             }
 
             test_data_env[run_begin_timestamp] = {
@@ -144,9 +150,11 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'module_name': row['module_name'],
                 'module_no': row['module_no'],
                 'inspector': row['inspector'],
-                'rel_hum': row['rel_hum'],
-                'temp_c': row['temp_c'],
-                'roc_name': row['roc_name']
+                'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
+                'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
+                'roc_name': row['roc_name'],
+                'comment' : row['comment'],
+                'status_desc': row["status_desc"],
             }
     return test_data, test_data_env
 
@@ -155,18 +163,18 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     tree = ET.parse(template_path)
     root = tree.getroot()
     test_timestamp = test_data['test_timestamp']
-    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
 
     # === Fill in <RUN> metadata ===
     run_info = root.find("HEADER/RUN")
-    # if run_info is not None:
-    #     run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
-    #     run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-    #     run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
-    #     run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-    #     run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-    #     run_info.find("LOCATION").text = LOCATION
-    #     run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
+    if run_info is not None:
+        run_info.find("RUN_TYPE").text = "Si module pedestal and noise" if not test_data['status_desc'] else f"Si module pedestal and noise - {test_data['status_desc']}"
+        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
+        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("LOCATION").text = LOCATION
+        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
       
 
     # Get and remove the original <DATA_SET> template block
@@ -200,6 +208,9 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     for roc, entries in roc_grouped_data.items():
         # Deep copy the template DATA_SET element
         data_set = copy.deepcopy(data_set_template)
+
+        # Insert the comments from testing
+        data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data["comment"] else test_data["comment"].replace("\n","; ")
 
         # Set the correct SERIAL_NUMBER inside PART
         serial_elem = data_set.find("PART/SERIAL_NUMBER")
@@ -242,21 +253,21 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
         pretty_xml = fixed_declaration + '\n'.join(pretty_xml.split('\n')[1:])
 
     ### DO the same for the enviromental conditions data
-    # tree = ET.parse(template_path_env)
-    # root = tree.getroot()
-    # test_timestamp = test_data_env['test_timestamp']
-    # test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    tree = ET.parse(template_path_env)
+    root = tree.getroot()
+    test_timestamp = test_data_env['test_timestamp']
+    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
 
     # === Fill in <RUN> metadata ===
-    # run_info = root.find("HEADER/RUN")
-    # if run_info is not None:
-    #     run_info.find("RUN_TYPE").text = "Si module pedestal and noise"
-    #     run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-    #     run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
-    #     run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-    #     run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-    #     run_info.find("LOCATION").text = LOCATION
-    #     run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
+    run_info = root.find("HEADER/RUN")
+    if run_info is not None:
+        run_info.find("RUN_TYPE").text = "Si module pedestal and noise" if not test_data_env['status_desc'] else f"Si module pedestal and noise - {test_data_env['status_desc']}"
+        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
+        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("LOCATION").text = LOCATION
+        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data_env['module_name']}"
 
     # # Get and remove the original <DATA_SET> template block
     # data_set_template = root.find("DATA_SET")
@@ -271,10 +282,13 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     #     # Deep copy the template DATA_SET element
     #     data_set = copy.deepcopy(data_set_template)
 
-    #     # Set the correct SERIAL_NUMBER inside PART
-    #     serial_elem = data_set.find("PART/SERIAL_NUMBER")
-    #     if serial_elem is not None:
-    #         serial_elem.text = roc
+        # Insert the comments from testing
+        data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data_env["comment"] else test_data_env["comment"].replace("\n","; ")
+
+        # Set the correct SERIAL_NUMBER inside PART
+        serial_elem = data_set.find("PART/SERIAL_NUMBER")
+        if serial_elem is not None:
+            serial_elem.text = roc
         
     #     kindofpart = data_set.find("PART/KIND_OF_PART")
     #     if kindofpart is not None:
