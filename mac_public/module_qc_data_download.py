@@ -40,6 +40,7 @@ async def fetch_testing_data(macid, data_type, module_list = None):
         primary_key = query_builder[part_type][table_name]
         module_filter = f"WHERE {part_type} IN ({placeholders})" if module_list[0] != 'ALL' else ""
         query = f"""SELECT * FROM {table_name} {module_filter} ORDER BY {primary_key};"""
+        return query
     
     # query_mod_iv = f"""SELECT * FROM module_iv_test {module_filter} ORDER BY mod_ivtest_no;"""
     # query_mod_ped = f"""SELECT * FROM module_pedestal_test {module_filter} ORDER BY mod_pedtest_no;"""
