@@ -57,6 +57,7 @@ async def fetch_testing_data(macid, data_type, module_list = None):
     else:
         rows = await conn.fetch(query_type_dict[data_type], *module_list)
     await conn.close()
+    print("Found", len(rows))
     return rows
 
 async def main():
