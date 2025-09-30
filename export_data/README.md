@@ -15,7 +15,7 @@ ssh -O exit -o ControlPath=~/.ssh/ctrl_dbloader USERNAME@ctrl_dbloader
 ```
 
 ## Method 2: SCP to LXPLUS and upload via `mass_upload.py`
-#### Create a control process to dbloader-hgcal
+#### Create a control process to dbloader-hgcal via LXTUNNEL
 ```
 ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/ctrl_dbloader -o ControlPersist=2h -o ProxyJump=USERNAME@lxtunnel.cern.ch USERNAME@dbloader-hgcal
 ```
