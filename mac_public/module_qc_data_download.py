@@ -46,7 +46,7 @@ async def fetch_testing_data(macid, data_type, module_list = None):
     # query_mod_qcs = f"""SELECT * FROM module_qc_summary {module_filter} ORDER BY mod_qc_no;"""
 
     query_type_dict = {'mod_iv': get_query('module_iv_test', 'module_name'),
-                       'mod_ped': get_query('module_ped_test', 'module_name'),
+                       'mod_ped': get_query('module_pedestal_test', 'module_name'),
                        'mod_qcs': get_query('module_qc_summary', 'module_name'),
                        'mod_info': get_query('module_info', 'module_name'),
                        }
