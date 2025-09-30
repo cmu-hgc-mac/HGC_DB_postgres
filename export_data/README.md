@@ -18,8 +18,8 @@ ssh -O exit -o ControlPath=~/.ssh/ctrl_dbloader USERNAME@ctrl_dbloader
 #### Create a control process to dbloader-hgcal
 ```
 ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/ctrl_dbloader -o ControlPersist=2h -o ProxyJump=USERNAME@lxtunnel.cern.ch USERNAME@dbloader-hgcal
-<!-- ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/ctrl_lxplus_dbloader -o ControlPersist=2h -J USERNAME@lxtunnel.cern.ch USERNAME@dbloader-hgcal  -->
 ```
+<!-- ssh -MNf -o ControlMaster=yes -o ControlPath=~/.ssh/ctrl_lxplus_dbloader -o ControlPersist=2h -J USERNAME@lxtunnel.cern.ch USERNAME@dbloader-hgcal  -->
 #### SCP the file to a temporary directory
 ```
 ssh USERNAME@dbloader-hgcal -o ProxyJump=USERNAME@lxtunnel.cern.ch -o ControlPath=~/.ssh/ctrl_dbloader 'mkdir -p ~/hgc_xml_temp'
