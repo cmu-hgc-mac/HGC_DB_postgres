@@ -73,7 +73,7 @@ async def fetch_testing_data(macid, data_type, module_list = None):
 
 async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
-    parser.add_argument('-dt', '--data_type', default=None, required=True, help="mod_iv, mod_ped, mod_qc")
+    parser.add_argument('-dt', '--data_type', default=None, required=True, help="mod_iv, mod_ped, mod_qc, mod_info, mod_insp, mod_ass, bk_wb, bk_en, fr_wb, fr_en, proto_insp, proto_ass, bp_insp, hxb_insp, hxb_ped")
     # parser.add_argument('-pfp', '--module_filepath', default=None, required=True, help="mod_iv, mod_ped, mod_qc")
     parser.add_argument('-mn', '--module_names', nargs='+', default=None, required=False, help='Module name(s) separated by spaces')
     parser.add_argument('-mac', '--mac', default=None, required=True, help="MAC: CMU, UCSB")
