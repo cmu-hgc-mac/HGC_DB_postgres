@@ -417,7 +417,7 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
 
 
 def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, mass_upload_xmls = False):
-    controlpathname = "ctrl_lxplus_dbloader" if mass_upload_xmls else "ctrl_dbloader"
+    controlpathname = "ctrl_dbloader"
     test_cmd = ["ssh", 
                 "-o", f"ControlPath=~/.ssh/{controlpathname}",
                 "-O", "check",     # <-- ask the master process if it’s alive
@@ -469,21 +469,14 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print("****************************************")
                 print("")
 
-                scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"
-                if mass_upload_xmls:  ### opens to both lxplus and dbloader-hgcal
-                    ssh_cmd = ["ssh", "-MNf",
-                        "-o", "ControlMaster=yes",
-                        "-o", f"ControlPath=~/.ssh/{controlpathname}",  
-                        "-o", f"ControlPersist={scp_timeout_cond}",
-                        "-J", f"{dbl_username}@lxplus.cern.ch",
-                        f"{dbl_username}@dbloader-hgcal"]    
-                else: ### opens to only dbloader-hgcal via lxplus
-                    ssh_cmd = ["ssh", "-MNf",
-                        "-o", "ControlMaster=yes",
-                        "-o", f"ControlPath=~/.ssh/{controlpathname}",    
-                        "-o", f"ControlPersist={scp_timeout_cond}",
-                        "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
-                        f"{dbl_username}@dbloader-hgcal"]    
+                scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"    
+                ### opens to only dbloader-hgcal via lxplus
+                ssh_cmd = ["ssh", "-MNf",
+                    "-o", "ControlMaster=yes",
+                    "-o", f"ControlPath=~/.ssh/{controlpathname}",    
+                    "-o", f"ControlPersist={scp_timeout_cond}",
+                    "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
+                    f"{dbl_username}@dbloader-hgcal"]    
                 
                 subprocess.run(ssh_cmd, check=True)
 

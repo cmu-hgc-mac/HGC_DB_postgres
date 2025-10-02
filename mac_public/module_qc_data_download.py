@@ -5,26 +5,59 @@ async def fetch_testing_data(macid, data_type, module_list = None):
     mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'database':'hgcdb'}, 
                 'UCSB': {'host': 'gut.physics.ucsb.edu',    'database':'hgcdb'}, 
                 'TIFR': {'host': 'lxhgcdb02.tifr.res.in',   'database':'hgcdb', 'password': 'hgcal'},
+                'IHEP': {'host': 'hgcal.ihep.ac.cn',        'database':'postgres',},
                 'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'database':'hgcdb'}, }
                 # 'TTU' : {'host': '129.118.107.198',         'dbname':'ttu_mac_local'},}
     conn = await asyncpg.connect(user='viewer', **mac_dict[macid])
     
     placeholders = ', '.join(f'${i+1}' for i in range(len(module_list)))
     
-    module_filter = f"WHERE module_name IN ({placeholders})" if module_list[0] != 'ALL' else ""
-    query_mod_iv = f"""SELECT * FROM module_iv_test {module_filter} ORDER BY mod_ivtest_no;"""
-    query_mod_ped = f"""SELECT * FROM module_pedestal_test {module_filter} ORDER BY mod_pedtest_no;"""
-    query_mod_qcs = f"""SELECT * FROM module_qc_summary {module_filter} ORDER BY mod_qc_no;"""
 
-    query_type_dict = {'mod_iv': query_mod_iv,
-                       'mod_ped': query_mod_ped,
-                       'mod_qcs': query_mod_qcs,}
+    query_builder = {'module_name': {
+        'module_info' : 'module_no',
+        'module_iv_test': 'mod_ivtest_no',
+        'module_pedestal_test': 'mod_pedtest_no',
+        'module_qc_summary': 'mod_qc_no',
+        'module_assembly': 'module_ass',
+        'module_inspect': 'module_row_no',
+        'front_wirebond': 'frwirebond_no',
+        'back_wirebond': 'bkwirebond_no',
+        'front_encap': 'frencap_no',
+        'back_encap': 'bkencap_no',
+    },
+                     'proto_name': {
+                         'proto_assembly': 'proto_no',
+                         'proto_inspect': 'proto_row_no',},
+                     'hxb_name': {'hxb_inspect':'hxb_row_no',
+                                   'hxb_pedestal_test': 'hxb_pedtest_no',
+                                   'hexaboard': 'hxb_no',},
+                     'sen_name': {'sensor': 'sen_no'},
+                     'bp_name': {'baseplate': 'bp_no',
+                                   'bp_inspect': 'bp_row_no',},
+                     }
+    
+    def get_query(table_name, part_type):
+        primary_key = query_builder[part_type][table_name]
+        module_filter = f"WHERE {part_type} IN ({placeholders})" if module_list[0] != 'ALL' else ""
+        query = f"""SELECT * FROM {table_name} {module_filter} ORDER BY {primary_key};"""
+        return query
+    
+    # query_mod_iv = f"""SELECT * FROM module_iv_test {module_filter} ORDER BY mod_ivtest_no;"""
+    # query_mod_ped = f"""SELECT * FROM module_pedestal_test {module_filter} ORDER BY mod_pedtest_no;"""
+    # query_mod_qcs = f"""SELECT * FROM module_qc_summary {module_filter} ORDER BY mod_qc_no;"""
+
+    query_type_dict = {'mod_iv': get_query('module_iv_test', 'module_name'),
+                       'mod_ped': get_query('module_pedestal_test', 'module_name'),
+                       'mod_qcs': get_query('module_qc_summary', 'module_name'),
+                       'mod_info': get_query('module_info', 'module_name'),
+                       }
 
     if module_list[0] == 'ALL':
         rows = await conn.fetch(query_type_dict[data_type])
     else:
         rows = await conn.fetch(query_type_dict[data_type], *module_list)
     await conn.close()
+    print("Found", len(rows))
     return rows
 
 async def main():
