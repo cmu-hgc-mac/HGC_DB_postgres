@@ -7,7 +7,7 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime
-from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync, popup_pack_in_crate
+from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync, popup_pack_in_crate, enter_part_barcodes_box
 from export_data.src import open_scp_connection, check_good_conn
 
 def run_git_pull_seq():
@@ -572,48 +572,12 @@ def record_shipout():
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
             messagebox.showerror("Input Error", "Database password is incorrect.")
         else:
-            popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
+            # popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
             
-            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
-            datetime_now_label.grid(row=0, column=2, columnspan=1, pady=10)
-
-            datetime_now_var = StringVar(master=popup1, value=datetime_now)
-            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-            datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
-
-            label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to record shipments.")
-            label.grid(row=1, column=1, columnspan=4, pady=10)
-            upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
-            upload_from_file_button.grid(row=0, column=1, columnspan=1, pady=10)
-
-            num_entries, cols = int(max_mod_per_box), 2
-            for i in range(num_entries):
-                row, col = 3 + i // cols, i % cols
-                listlabel = Label(popup1, text=f"{i + 1}:")
-                listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
-                entry = Entry(popup1, width=30)
-                entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
-                entries.append(entry)
-
-            export_var = IntVar()
-            export_var.set(1)
-            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...csv)', variable=export_var)
-            export_checkbox.grid(row=3+(num_entries//2), column=1, columnspan=1, pady=10)
-
-            def update_db_packed():
-                module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
-                dialog = popup_pack_in_crate(popup1, )
-                root.wait_window(dialog)  # Wait until dialog is closed
-                popup1.destroy()
-                if len(module_update_pack) > 0 :
-                    if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
-                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
-                    update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj, savetofile=bool(export_var.get()))
-                
-
-            submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
-            submit_button.grid(row=3+(num_entries//2), column=2, columnspan=2, pady=10)
+            popup1 = enter_part_barcodes_box(input_window, encryption_key, dbshipper_pass, upload_file_with_part_out, max_mod_per_box, entries)
+            popup1.transient(input_window)        
+            popup1.attributes("-topmost", True)
+            popup1.focus_force()
 
     def enter_shipment_contents_out():
         entries = []
