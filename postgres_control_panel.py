@@ -108,6 +108,9 @@ def load_image(image_path):
 
 def create_database():
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Input Required")
     
     # Field 3: Password (hidden input)
@@ -150,6 +153,9 @@ def create_database():
     
 def verify_shipin():
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Verify received components")
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
@@ -194,7 +200,10 @@ def verify_shipin():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
             if asyncio.run(check_good_conn(shipper_var.get().strip())):
-                popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
+                popup1 = Toplevel(input_window); popup1.title("Enter Barcode of Parts")
+                popup1.transient(input_window)        
+                popup1.attributes("-topmost", True)
+                popup1.focus_force()
                 def verify_components():
                     popup1.destroy() 
                     subprocess.run([sys.executable, "housekeeping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
@@ -276,6 +285,9 @@ def import_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
 
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
@@ -344,6 +356,9 @@ def focus_next_widget(event):
 def export_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Input Required")
     Label(input_window, text="**Enter local DB USER password:**").pack(pady=1)
     shipper_var = StringVar()
@@ -385,7 +400,10 @@ def export_data():
     deleteXML_var_entry.pack(pady=0)
     
     def select_specific():
-        popup = Toplevel()
+        popup = Toplevel(input_window)
+        popup.transient(input_window)        
+        popup.attributes("-topmost", True)
+        popup.focus_force()
         popup.title("Select XMLs")
         
         xml_list = process_xml_list(get_yaml_data = True)
@@ -490,6 +508,9 @@ def export_data():
 
 def record_shipout():
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Record outgoing shipment")
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
@@ -500,7 +521,10 @@ def record_shipout():
     def enter_part_barcodes_out():
         lines_from_file = []
         def upload_file_with_part_out():
-            popup2 = Toplevel()
+            popup2 = Toplevel(input_window)
+            popup2.transient(input_window)        
+            popup2.attributes("-topmost", True)
+            popup2.focus_force()
             popup2.title("Upload text/csv file with module names")
             file_entry = None
             
@@ -675,6 +699,9 @@ def record_shipout():
 def refresh_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Input Required")
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()

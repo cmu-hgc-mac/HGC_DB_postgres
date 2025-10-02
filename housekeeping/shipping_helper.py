@@ -68,24 +68,33 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
 
 
 class popup_pack_in_crate(tkinter.Toplevel):
-    def __init__(self, parent, title="Add this to the crate?", message=f"Would you like to add this box to the open crate with 15 box(es) (200 module(s))?"):
+    def __init__(self, parent):
         super().__init__(parent)
         self.result = None
-        self.title(title)
-        self.geometry("300x120")
+        self.title("Add this to a crate?")
+        self.geometry("320x200")
         self.grab_set()  # Make modal
-        label = tkinter.Label(self, text=message, wraplength=280)
+        self.boxes_in_crate, self.modules_in_crate = asyncio.run(self.get_open_crate())
+        if self.boxes_in_crate:
+            message = f"Would you like to add this box to the open crate with {self.boxes_in_crate} box{'es' if self.boxes_in_crate > 1 else ''} ({self.modules_in_crate} module{'s' if self.modules_in_crate > 1 else ''})?"
+        else:
+            message = f"Would you like to add this box to an empty crate?"
+        label = tkinter.Label(self, text=message, wraplength=300)
         label.pack(pady=10)
         btn_frame = tkinter.Frame(self)
         btn_frame.pack(pady=5)
-        add_btn = tkinter.Button(btn_frame, text="Add to Crate", width=12,command=lambda: self._set_result("add"))
+        add_btn = tkinter.Button(btn_frame, text="Add to Crate", width=12, height = 3, command=lambda: self._set_result("add"), wraplength=100)
         add_btn.pack(side="left", padx=5)
-        skip_btn = tkinter.Button(btn_frame, text="This is a standalone shipment", width=12,command=lambda: self._set_result("skip"))
+        skip_btn = tkinter.Button(btn_frame, text="This is a standalone shipment", width=12, height = 3, command=lambda: self._set_result("skip"), wraplength=100)
         skip_btn.pack(side="left", padx=5)
         cancel_btn = tkinter.Button(btn_frame, text="Cancel", width=12, command=lambda: self._set_result("cancel"))
         cancel_btn.pack(side="left", padx=5)
         self.protocol("WM_DELETE_WINDOW", lambda: self._set_result("cancel"))
 
+    async def get_open_crate(self):
+        boxes_in_crate, modules_in_crate = 10, 300
+        return boxes_in_crate, modules_in_crate
+    
     def _set_result(self, value):
         self.result = value
         self.destroy()
