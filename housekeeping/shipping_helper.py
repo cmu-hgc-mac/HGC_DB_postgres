@@ -1,4 +1,4 @@
-import asyncpg, asyncio, os, yaml, base64, csv
+import asyncpg, asyncio, os, yaml, base64, csv, webbrowser, math
 from cryptography.fernet import Fernet
 from natsort import natsorted
 from datetime import datetime
@@ -102,7 +102,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
 
         def update_db_packed():
             module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
-            dialog = popup_pack_in_crate(self, )
+            dialog = popup_type_of_shipment(self, )
             dialog.transient(self); dialog.attributes("-topmost", True); dialog.focus_force()
             self.wait_window(dialog)  # Wait until dialog is closed
             self.destroy()
@@ -116,7 +116,54 @@ class enter_part_barcodes_box(tkinter.Toplevel):
         submit_button.grid(row=3+(num_entries//2), column=2, columnspan=2, pady=10)
 
 
-class popup_pack_in_crate(tkinter.Toplevel):
+class enter_part_barcodes_shipment(tkinter.Toplevel):
+    def __init__(self, parent, encryption_key, dbshipper_pass, max_box_per_shipment, entries = []):
+        super().__init__(parent)
+
+        self.title("Enter containers in this shipment")
+
+        cols = 3
+        label1 = Label(self ,wraplength=1000, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv' for upload to CMSR Shipment Tracking Tool.")
+        label1.grid(row=1, column=0, columnspan=int(cols*2), pady=10)
+        instruction_label = Label(self, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
+        instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
+
+        num_entries= int(math.ceil(int(max_box_per_shipment)/cols)*cols)
+        for i in range(num_entries):
+            row, col = 4 + i % int(num_entries//cols), i // int(num_entries//cols)
+            listlabel = Label(self, text=f"{i + 1}:")
+            listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
+            entry = Entry(self, width=30)
+            entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
+            entries.append(entry)
+
+        datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+        datetime_now_var = StringVar(master=self, value=datetime_now)
+    
+        def update_db_shipped():
+            module_update_ship = [entry.get() for entry in entries if entry.get().strip() != ""]
+            self.destroy()
+            if len(module_update_ship) > 0:
+                if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
+                datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
+                fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
+                print("List of modules saved under ", fileout_name)
+                if fileout_name:
+                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+
+        submit_button = Button(self, text="Record to DB", command=update_db_shipped, width=25)
+        submit_button.grid(row=0, column=3, columnspan=1, pady=10)
+
+        datetime_now_label = Label(self, text=f"Now:", justify="right", anchor='e')
+        datetime_now_label.grid(row=0, column=0, columnspan=1, pady=10)
+        datetime_now_entry = Entry(self, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+        datetime_now_entry.grid(row=0, column=1, columnspan=1, pady=10)
+
+        nothing = Label(self, text=f"", justify="right", anchor='e')
+        nothing.grid(pady=10)
+
+
+class popup_type_of_shipment(tkinter.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.result = None
