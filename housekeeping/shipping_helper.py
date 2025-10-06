@@ -15,6 +15,13 @@ db_params = {
     'port': yaml.safe_load(open(conn_yaml_file, 'r')).get('port'),
 }
 
+def show_error_on_top(title, message):
+    temp_root = tkinter.Tk()
+    temp_root.withdraw()  # hide the window
+    temp_root.attributes('-topmost', True)  # make it appear above all
+    messagebox.showerror(title, message, parent=temp_root)
+    temp_root.destroy()  # clean up
+
 def update_packed_timestamp_sync(encrypt_key, password, module_names, timestamp, savetofile = False):
     if savetofile:
         fileout_name = f"""shipping/packed_{timestamp.strftime('%Y%m%d_%H%M%S')}_modules_{len(module_names)}.txt"""

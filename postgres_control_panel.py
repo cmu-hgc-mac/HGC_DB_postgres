@@ -7,7 +7,7 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime 
-from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment
+from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top
 from export_data.src import open_scp_connection, check_good_conn
 
 def run_git_pull_seq():
@@ -226,7 +226,7 @@ def verify_shipin():
                 submit_button = Button(popup1, text="Submit to DB", command=save_entries)
                 submit_button.grid(row=10, column=0, columnspan=2, pady=10)
             else:
-                messagebox.showerror("Input Error", "Database password is incorrect.")
+                show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
@@ -260,7 +260,7 @@ def verify_shipin():
                 bind_button_keys(submit_fileparts_button)
 
             else:
-                messagebox.showerror("Input Error", "Database password is incorrect.")
+                show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
@@ -331,7 +331,7 @@ def import_data():
                 if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
             elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-                messagebox.showerror("Input Error", "Database password is incorrect.")
+                show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
                 subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getsen", str(sensor_get_stat)])
@@ -468,7 +468,7 @@ def export_data():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy(); input_window.update()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
@@ -556,7 +556,7 @@ def record_shipout():
                         input_window.destroy()  
                         entries[i].insert(0, lines_from_file[i])
                 else:
-                    messagebox.showerror("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
+                    show_error_on_top("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
 
             submit_fileparts_button = Button(popup2, text="Load module barcodes", command=enter_partnames_in_window)
             submit_fileparts_button.pack(pady=10)
@@ -570,7 +570,7 @@ def record_shipout():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             # popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
             
@@ -589,7 +589,7 @@ def record_shipout():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             popup1 = enter_part_barcodes_shipment(input_window, encryption_key, dbshipper_pass, max_box_per_shipment, entries)
             popup1.transient(input_window)        
@@ -642,7 +642,7 @@ def refresh_data():
             if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
