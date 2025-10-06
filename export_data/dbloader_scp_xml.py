@@ -139,7 +139,8 @@ class mass_upload_to_dbloader:
     def mass_upload_xml_dbl(self):
         GREEN = "\033[32m"; RESET = "\033[0m"
         print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
-        print(f"{GREEN}The mass_upload terminal output message is currently a little buggy. The CERN team is working on fixing it.{RESET}")
+        print(f"{GREEN}The mass_upload terminal output sometimes says that the uploads have failed even when they have succeeded.{RESET}")
+        print(f"{GREEN}The CERN team is working on fixing it.{RESET}")
         print(f"{GREEN}Check the API and the dbloader log to see if the uploads were successful until this gets fixed.{RESET}")
         print(f"=================================================================")
         with open("export_data/mass_loader.py", "r") as f:
