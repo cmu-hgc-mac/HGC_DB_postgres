@@ -35,7 +35,7 @@ async def _update_packed_timestamp(encrypt_key, password, module_names, timestam
         conn = await asyncpg.connect(**db_params)
         await conn.execute(query, timestamp, module_names)
         print(f"Updated packed_timestamp for {len(module_names)} modules.")
-        conn.close()
+        await conn.close()
     except Exception as e:
         print(f"Error updating packed_timestamp: {e}")
 
@@ -48,7 +48,7 @@ async def _get_packed_but_not_shipped(encrypt_key, password, db_params):
     try:
         conn = await asyncpg.connect(**db_params)
         rows = await conn.fetch(query)
-        conn.close()
+        await conn.close()
         if rows:
             packed_datetimes = [row['packed_datetime'] for row in rows]
             packed_box_count, packed_module_count = len(set(packed_datetimes)), len(packed_datetimes)
@@ -71,7 +71,7 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
         rows = await conn.fetch(query_fetch, module_names)
         packed_datetimes = [row['packed_datetime'] for row in rows]
         mod_names_out = await conn.fetch(query_update, timestamp, packed_datetimes)
-        conn.close()
+        await conn.close()
         shipped_modules = [row['module_name'] for row in mod_names_out]
         print(f"Updated shipped_timestamp for {len(shipped_modules)} modules.")
         fileout_name = f"""shipping/shipmentout_{timestamp.strftime('%Y%m%d_%H%M%S')}_modules_{len(shipped_modules)}.csv"""
@@ -120,9 +120,9 @@ class enter_part_barcodes_box(tkinter.Toplevel):
 
         def update_db_packed():
             module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
-            dialog = popup_type_of_shipment(self, )
-            dialog.transient(self); dialog.attributes("-topmost", True); dialog.focus_force()
-            self.wait_window(dialog)  # Wait until dialog is closed
+            # dialog = popup_type_of_shipment(self, )
+            # dialog.transient(self); dialog.attributes("-topmost", True); dialog.focus_force()
+            # self.wait_window(dialog)  # Wait until dialog is closed
             self.destroy()
             if len(module_update_pack) > 0 :
                 if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
@@ -138,7 +138,8 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
     def __init__(self, parent, encryption_key, dbshipper_pass, max_box_per_shipment, entries = [], type = 'crate'):
         super().__init__(parent)
 
-        self.max_box_per_shipment, self.no_of_modules = asyncio.run(_get_packed_but_not_shipped(encrypt_key=encryption_key, password=dbshipper_pass.strip(),  db_params = db_params))
+        ### Implement this!!!
+        # self.max_box_per_shipment, self.no_of_modules = asyncio.run(_get_packed_but_not_shipped(encrypt_key=encryption_key, password=dbshipper_pass.strip(),  db_params = db_params))
 
         self.type = type
         self.title_text = "Enter containers in this crate" if "crate" in self.type else "Enter containers in this shipment"
