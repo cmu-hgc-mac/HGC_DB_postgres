@@ -35,9 +35,26 @@ async def _update_packed_timestamp(encrypt_key, password, module_names, timestam
         conn = await asyncpg.connect(**db_params)
         await conn.execute(query, timestamp, module_names)
         print(f"Updated packed_timestamp for {len(module_names)} modules.")
+        conn.close()
     except Exception as e:
         print(f"Error updating packed_timestamp: {e}")
 
+async def _get_packed_but_not_shipped(encrypt_key, password, db_params):
+    cipher_suite = Fernet((encrypt_key))
+    dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(password)).decode() ## Decode base64 to get encrypted string and then decrypt
+    db_params.update({'password': dbpassword})
+    query = f"""SELECT packed_datetime FROM module_info WHERE packed_datetime IS NOT NULL AND shipped_datetime IS NULL;"""
+    packed_box_count, packed_module_count = 0, 0
+    try:
+        conn = await asyncpg.connect(**db_params)
+        rows = await conn.fetch(query)
+        conn.close()
+        if rows:
+            packed_datetimes = [row['packed_datetime'] for row in rows]
+            packed_box_count, packed_module_count = len(set(packed_datetimes)), len(packed_datetimes)
+        return packed_box_count, packed_module_count
+    except Exception as e:
+        print(f"Error obtaining packed_timestamp: {e}")
 
 def update_shipped_timestamp_sync(encrypt_key, password, module_names, timestamp):
     fileout_name = asyncio.run(_update_shipped_timestamp(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp))
@@ -54,6 +71,7 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
         rows = await conn.fetch(query_fetch, module_names)
         packed_datetimes = [row['packed_datetime'] for row in rows]
         mod_names_out = await conn.fetch(query_update, timestamp, packed_datetimes)
+        conn.close()
         shipped_modules = [row['module_name'] for row in mod_names_out]
         print(f"Updated shipped_timestamp for {len(shipped_modules)} modules.")
         fileout_name = f"""shipping/shipmentout_{timestamp.strftime('%Y%m%d_%H%M%S')}_modules_{len(shipped_modules)}.csv"""
@@ -117,20 +135,26 @@ class enter_part_barcodes_box(tkinter.Toplevel):
 
 
 class enter_part_barcodes_shipment(tkinter.Toplevel):
-    def __init__(self, parent, encryption_key, dbshipper_pass, max_box_per_shipment, entries = []):
+    def __init__(self, parent, encryption_key, dbshipper_pass, max_box_per_shipment, entries = [], type = 'crate'):
         super().__init__(parent)
 
-        self.title("Enter containers in this shipment")
+        self.max_box_per_shipment, self.no_of_modules = asyncio.run(_get_packed_but_not_shipped(encrypt_key=encryption_key, password=dbshipper_pass.strip(),  db_params = db_params))
+
+        self.type = type
+        self.title_text = "Enter containers in this crate" if "crate" in self.type else "Enter containers in this shipment"
+        self.title(self.title_text)
 
         cols = 3
         label1 = Label(self ,wraplength=1000, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv' for upload to CMSR Shipment Tracking Tool.")
         label1.grid(row=1, column=0, columnspan=int(cols*2), pady=10)
-        instruction_label = Label(self, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
+        instruction_label = Label(self, fg='blue', text=f"Enter the ID of any one module present in each container in this {'crate' if 'crate' in self.type else 'shipment'}.")
         instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
 
-        num_entries= int(math.ceil(int(max_box_per_shipment)/cols)*cols)
+        
+        num_entries = max_box_per_shipment ## int(math.ceil(int(max_box_per_shipment)/cols)*cols)
+        no_of_rows = math.ceil(num_entries/cols)
         for i in range(num_entries):
-            row, col = 4 + i % int(num_entries//cols), i // int(num_entries//cols)
+            row, col = 4 + i % no_of_rows, i // no_of_rows
             listlabel = Label(self, text=f"{i + 1}:")
             listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
             entry = Entry(self, width=30)
