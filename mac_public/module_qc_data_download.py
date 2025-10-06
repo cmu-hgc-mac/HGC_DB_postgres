@@ -50,6 +50,17 @@ async def fetch_testing_data(macid, data_type, module_list = None):
                        'mod_ped': get_query('module_pedestal_test', 'module_name'),
                        'mod_qcs': get_query('module_qc_summary', 'module_name'),
                        'mod_info': get_query('module_info', 'module_name'),
+                       'mod_insp': get_query('module_inspect', 'module_name'),
+                       'mod_ass': get_query('module_assembly', 'module_name'),
+                       'bk_wb': get_query('back_wirebond', 'module_name'),
+                       'bk_en': get_query('back_encap', 'module_name'),
+                       'fr_wb': get_query('front_wirebond', 'module_name'),
+                       'fr_en': get_query('front_encap', 'module_name'),
+                       'proto_insp': get_query('proto_inspect', 'proto_name'),
+                       'proto_ass': get_query('proto_assembly', 'proto_name'),
+                       'bp_insp': get_query('bp_inspect', 'bp_name'),
+                       'hxb_insp': get_query('hxb_inspect', 'hxb_name'),
+                       'hxb_ped': get_query('hxb_pedestal_test', 'hxb_name'),
                        }
 
     if module_list[0] == 'ALL':
@@ -62,7 +73,7 @@ async def fetch_testing_data(macid, data_type, module_list = None):
 
 async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
-    parser.add_argument('-dt', '--data_type', default=None, required=True, help="mod_iv, mod_ped, mod_qc")
+    parser.add_argument('-dt', '--data_type', default=None, required=True, help="mod_iv, mod_ped, mod_qc, mod_info, mod_insp, mod_ass, bk_wb, bk_en, fr_wb, fr_en, proto_insp, proto_ass, bp_insp, hxb_insp, hxb_ped")
     # parser.add_argument('-pfp', '--module_filepath', default=None, required=True, help="mod_iv, mod_ped, mod_qc")
     parser.add_argument('-mn', '--module_names', nargs='+', default=None, required=False, help='Module name(s) separated by spaces')
     parser.add_argument('-mac', '--mac', default=None, required=True, help="MAC: CMU, UCSB")
