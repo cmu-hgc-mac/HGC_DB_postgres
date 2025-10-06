@@ -7,7 +7,7 @@ import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime 
-from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top
+from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
 from export_data.src import open_scp_connection, check_good_conn
 
 def run_git_pull_seq():
@@ -131,7 +131,7 @@ def create_database():
             subprocess.run([sys.executable, "create_and_modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"Check terminal for PostgreSQL database tables. Refresh pgAdmin4.")
         else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
                 input_window.destroy()  
 
     submit_create_button = Button(input_window, text="Submit", command=submit_create)
@@ -228,7 +228,7 @@ def verify_shipin():
             else:
                 show_error_on_top("Input Error", "Database password is incorrect.")
         else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
     def upload_file_with_part_in():
@@ -262,7 +262,7 @@ def verify_shipin():
             else:
                 show_error_on_top("Input Error", "Database password is incorrect.")
         else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
     enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes_in)
@@ -324,11 +324,11 @@ def import_data():
         sensor_get_stat = sensor_get_var.get()
 
         if not download_prod_stat and not download_dev_stat:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nSelect a source database."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nSelect a source database."):
                 input_window.destroy()  
         else:
             if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
-                if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+                if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
             elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
                 show_error_on_top("Input Error", "Database password is incorrect.")
@@ -465,7 +465,7 @@ def export_data():
         partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if not (dbshipper_pass.strip() and lxp_username.strip()) :
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
             show_error_on_top("Input Error", "Database password is incorrect.")
@@ -567,7 +567,7 @@ def record_shipout():
         abspath = os.path.dirname(os.path.abspath(__file__))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if not dbshipper_pass.strip(): 
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
             show_error_on_top("Input Error", "Database password is incorrect.")
@@ -586,7 +586,7 @@ def record_shipout():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         
         if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
             show_error_on_top("Input Error", "Database password is incorrect.")
@@ -639,7 +639,7 @@ def refresh_data():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else ""  ## Encrypt password and then convert to base64
 
         if not dbshipper_pass.strip():
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
             show_error_on_top("Input Error", "Database password is incorrect.")
