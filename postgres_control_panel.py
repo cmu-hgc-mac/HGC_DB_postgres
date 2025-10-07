@@ -6,8 +6,8 @@ import subprocess, webbrowser, zipfile, urllib.request, traceback, asyncio
 import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
-from datetime import datetime
-from housekeeping.shipping_helper import update_packed_timestamp_sync, update_shipped_timestamp_sync
+from datetime import datetime 
+from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
 from export_data.src import open_scp_connection, check_good_conn
 
 def run_git_pull_seq():
@@ -108,6 +108,9 @@ def load_image(image_path):
 
 def create_database():
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Input Required")
     
     # Field 3: Password (hidden input)
@@ -128,7 +131,7 @@ def create_database():
             subprocess.run([sys.executable, "create_and_modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"Check terminal for PostgreSQL database tables. Refresh pgAdmin4.")
         else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
                 input_window.destroy()  
 
     submit_create_button = Button(input_window, text="Submit", command=submit_create)
@@ -150,6 +153,9 @@ def create_database():
     
 def verify_shipin():
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Verify received components")
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
@@ -194,7 +200,10 @@ def verify_shipin():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
             if asyncio.run(check_good_conn(shipper_var.get().strip())):
-                popup1 = Toplevel(); popup1.title("Enter Barcode of Parts")
+                popup1 = Toplevel(input_window); popup1.title("Enter Barcode of Parts")
+                popup1.transient(input_window)        
+                popup1.attributes("-topmost", True)
+                popup1.focus_force()
                 def verify_components():
                     popup1.destroy() 
                     subprocess.run([sys.executable, "housekeeping/verify_received_components.py", "-p", dbshipper_pass, "-k", encryption_key, "-pt", str(selected_component.get()), "-fp", str(temptextfile), "-dv", str(shipindate_var.get()), "-geom" , str(selected_geom.get())])
@@ -217,9 +226,9 @@ def verify_shipin():
                 submit_button = Button(popup1, text="Submit to DB", command=save_entries)
                 submit_button.grid(row=10, column=0, columnspan=2, pady=10)
             else:
-                messagebox.showerror("Input Error", "Database password is incorrect.")
+                show_error_on_top("Input Error", "Database password is incorrect.")
         else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
     def upload_file_with_part_in():
@@ -251,9 +260,9 @@ def verify_shipin():
                 bind_button_keys(submit_fileparts_button)
 
             else:
-                messagebox.showerror("Input Error", "Database password is incorrect.")
+                show_error_on_top("Input Error", "Database password is incorrect.")
         else:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password, part type and date cannot be empty."):
                 input_window.destroy()  
 
     enter_verify_button = Button(input_window, text="Enter barcodes of (up to 10) individual parts", command=enter_part_barcodes_in)
@@ -276,6 +285,9 @@ def import_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
     input_window.title("Input Required")
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
 
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
@@ -312,14 +324,14 @@ def import_data():
         sensor_get_stat = sensor_get_var.get()
 
         if not download_prod_stat and not download_dev_stat:
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nSelect a source database."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nSelect a source database."):
                 input_window.destroy()  
         else:
             if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
-                if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+                if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
             elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-                messagebox.showerror("Input Error", "Database password is incorrect.")
+                show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
                 subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getsen", str(sensor_get_stat)])
@@ -344,6 +356,9 @@ def focus_next_widget(event):
 def export_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Input Required")
     Label(input_window, text="**Enter local DB USER password:**").pack(pady=1)
     shipper_var = StringVar()
@@ -385,7 +400,10 @@ def export_data():
     deleteXML_var_entry.pack(pady=0)
     
     def select_specific():
-        popup = Toplevel()
+        popup = Toplevel(input_window)
+        popup.transient(input_window)        
+        popup.attributes("-topmost", True)
+        popup.focus_force()
         popup.title("Select XMLs")
         
         xml_list = process_xml_list(get_yaml_data = True)
@@ -447,10 +465,10 @@ def export_data():
         partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if not (dbshipper_pass.strip() and lxp_username.strip()) :
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy(); input_window.update()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
@@ -490,6 +508,9 @@ def export_data():
 
 def record_shipout():
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Record outgoing shipment")
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
@@ -500,7 +521,10 @@ def record_shipout():
     def enter_part_barcodes_out():
         lines_from_file = []
         def upload_file_with_part_out():
-            popup2 = Toplevel()
+            popup2 = Toplevel(input_window)
+            popup2.transient(input_window)        
+            popup2.attributes("-topmost", True)
+            popup2.focus_force()
             popup2.title("Upload text/csv file with module names")
             file_entry = None
             
@@ -532,7 +556,7 @@ def record_shipout():
                         input_window.destroy()  
                         entries[i].insert(0, lines_from_file[i])
                 else:
-                    messagebox.showerror("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
+                    show_error_on_top("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
 
             submit_fileparts_button = Button(popup2, text="Load module barcodes", command=enter_partnames_in_window)
             submit_fileparts_button.pack(pady=10)
@@ -543,50 +567,17 @@ def record_shipout():
         abspath = os.path.dirname(os.path.abspath(__file__))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if not dbshipper_pass.strip(): 
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
-            popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
+            # popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
             
-            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
-            datetime_now_label.grid(row=0, column=2, columnspan=1, pady=10)
-
-            datetime_now_var = StringVar(master=popup1, value=datetime_now)
-            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-            datetime_now_entry.grid(row=0, column=3, columnspan=1, pady=10)
-
-            label = Label(popup1, wraplength=600 ,fg = "red", text=f"Modules must be present in postgres `module_info` table to record shipments.")
-            label.grid(row=1, column=1, columnspan=4, pady=10)
-            upload_from_file_button = Button(popup1, text="Upload parts from file (optional)", command=upload_file_with_part_out)
-            upload_from_file_button.grid(row=0, column=1, columnspan=1, pady=10)
-
-            num_entries, cols = int(max_mod_per_box), 2
-            for i in range(num_entries):
-                row, col = 3 + i // cols, i % cols
-                listlabel = Label(popup1, text=f"{i + 1}:")
-                listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
-                entry = Entry(popup1, width=30)
-                entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
-                entries.append(entry)
-
-            export_var = IntVar()
-            export_var.set(1)
-            export_checkbox = Checkbutton(popup1, text='Export to file (shipping/packed...csv)', variable=export_var)
-            export_checkbox.grid(row=3+(num_entries//2), column=1, columnspan=1, pady=10)
-
-            def update_db_packed():
-                module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
-                popup1.destroy()
-                if len(module_update_pack) > 0 :
-                    if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
-                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
-                    update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj, savetofile=bool(export_var.get()))
-
-            submit_button = Button(popup1, text="Record to DB", command=update_db_packed)
-            submit_button.grid(row=3+(num_entries//2), column=2, columnspan=2, pady=10)
+            popup1 = enter_part_barcodes_box(input_window, encryption_key, dbshipper_pass, upload_file_with_part_out, max_mod_per_box, entries)
+            popup1.transient(input_window)        
+            popup1.attributes("-topmost", True)
+            popup1.focus_force()
 
     def enter_shipment_contents_out():
         entries = []
@@ -595,52 +586,15 @@ def record_shipout():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         
         if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
-            popup1 = Toplevel(); popup1.title("Enter containers in this shipment")
-            cols = 3
-            label1 = Label(popup1 ,wraplength=1000, text=f"Shipment contents will be saved under 'shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv' for upload to CMSR Shipment Tracking Tool.")
-            label1.grid(row=1, column=0, columnspan=int(cols*2), pady=10)
-            instruction_label = Label(popup1, fg='blue', text=f"Enter the ID of any one module present in each container in this shipment.")
-            instruction_label.grid(row=3, column=0, columnspan=4, pady=10)
-
-            num_entries= int(math.ceil(int(max_box_per_shipment)/cols)*cols)
-            for i in range(num_entries):
-                row, col = 4 + i % int(num_entries//cols), i // int(num_entries//cols)
-                listlabel = Label(popup1, text=f"{i + 1}:")
-                listlabel.grid(row=row, column=col * 2, padx=10, pady=2, sticky="w")
-                entry = Entry(popup1, width=30)
-                entry.grid(row=row, column=col * 2 + 1, padx=10, pady=2)
-                entries.append(entry)
-
-            datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-            datetime_now_var = StringVar(master=popup1, value=datetime_now)
-        
-            def update_db_shipped():
-                module_update_ship = [entry.get() for entry in entries if entry.get().strip() != ""]
-                popup1.destroy()
-                if len(module_update_ship) > 0:
-                    if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
-                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
-                    fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_ship, timestamp=datetime_now_obj)
-                    print("List of modules saved under ", fileout_name)
-                    if fileout_name:
-                        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
-                        # webbrowser.open(f"https://int2r-shipment.web.cern.ch/tracking/add/")
-
-            submit_button = Button(popup1, text="Record to DB", command=update_db_shipped, width=25)
-            submit_button.grid(row=0, column=3, columnspan=1, pady=10)
-
-            datetime_now_label = Label(popup1, text=f"Now:", justify="right", anchor='e')
-            datetime_now_label.grid(row=0, column=0, columnspan=1, pady=10)
-            datetime_now_entry = Entry(popup1, textvariable=datetime_now_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
-            datetime_now_entry.grid(row=0, column=1, columnspan=1, pady=10)
-
-            nothing = Label(popup1, text=f"", justify="right", anchor='e')
-            nothing.grid(pady=10)
+            popup1 = enter_part_barcodes_shipment(input_window, encryption_key, dbshipper_pass, max_box_per_shipment, entries)
+            popup1.transient(input_window)        
+            popup1.attributes("-topmost", True)
+            popup1.focus_force()
 
     single_pack_button = Button(input_window, text="Record contents of a single box", command=enter_part_barcodes_out, width=30)
     single_pack_button.pack(pady=10)
@@ -672,6 +626,9 @@ def record_shipout():
 def refresh_data():
     # run_git_pull_seq()
     input_window = Toplevel(root)
+    input_window.transient(root)        
+    input_window.attributes("-topmost", True)
+    input_window.focus_force()
     input_window.title("Input Required")
     Label(input_window, text="Enter local db USER password:").pack(pady=5)
     shipper_var = StringVar()
@@ -682,10 +639,10 @@ def refresh_data():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else ""  ## Encrypt password and then convert to base64
 
         if not dbshipper_pass.strip():
-            if messagebox.askyesno("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
+            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
         elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            messagebox.showerror("Input Error", "Database password is incorrect.")
+            show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
