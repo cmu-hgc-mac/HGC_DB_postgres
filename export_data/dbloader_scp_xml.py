@@ -117,6 +117,7 @@ class mass_upload_to_dbloader:
         self.cern_dbname = cern_dbname
         self.remote_xml_dir = remote_xml_dir
         self.verbose = verbose
+        self.csv_outfile = ""
         
     def make_lxplus_dir(self):
         makedir_cmd = ["ssh", f"{self.dbl_username}@dbloader-hgcal", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"mkdir -p {self.remote_xml_dir}"]
@@ -137,7 +138,7 @@ class mass_upload_to_dbloader:
         return result.returncode
 
     def mass_upload_xml_dbl(self):
-        GREEN = "\033[32m"; RESET = "\033[0m"
+        GREEN = "\033[32m"; RED = "\033[31m"; RESET = "\033[0m"
         print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
         print(f"{GREEN}The mass_upload terminal output sometimes says that the uploads have failed even when they have succeeded.{RESET}")
         print(f"{GREEN}The CERN team is working on fixing it.{RESET}")
@@ -163,29 +164,47 @@ class mass_upload_to_dbloader:
                 process.wait()  # wait for process to finish
                 print()
                 print(f"=================================================================")
-                
+                if '.csv' in self.terminal_output:
+                    self.csv_outfile = f"{self.terminal_output.split('.csv')[0].split(' ')[-1]}.csv"
+                return process.returncode  ### 0 for success, 255 for failed
+            
+    def check_upload_xml_dbl(self):
+        print(f"=================================================================")
+        with open("export_data/check_upload_xml_logs.py", "r") as f:
+            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - -lfp ~/{self.csv_outfile}"]
+            with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
+                for line in process.stdout:
+                    self.terminal_output += line   # save terminal output from mass_upload to log txt file
+                    txtfile.write(line)                      # save to text file immediately
+                    txtfile.flush()                          # flush to disk in real time
+                    sys.stdout.write(line)         # print live
+                    sys.stdout.flush()             # force immediate display
+
+                process.wait()  # wait for process to finish
+                print()
+                print(f"=================================================================")
                 return process.returncode  ### 0 for success, 255 for failed
             
     def scp_logs_local(self):
         if '.csv' in self.terminal_output:
             print("----> Saving log files to export_data/mass_upload_logs <----")
-            csv_outfile = f"{self.terminal_output.split('.csv')[0].split(' ')[-1]}.csv"
-            log_outfile = os.path.splitext(csv_outfile)[0] + ".log"
-            terminal_outfile = os.path.splitext(csv_outfile)[0] + ".txt"
+            # csv_outfile = f"{self.terminal_output.split('.csv')[0].split(' ')[-1]}.csv"
+            log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
+            terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
             os.rename(self.temp_txt_file_name, os.path.join(self.mass_upload_logs_fp, terminal_outfile))
             print(terminal_outfile)
-            scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal:~/{csv_outfile}", f"{self.dbl_username}@dbloader-hgcal:~/{log_outfile}", self.mass_upload_logs_fp]
+            scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal:~/{self.csv_outfile}", f"{self.dbl_username}@dbloader-hgcal:~/{log_outfile}", self.mass_upload_logs_fp]
             result = subprocess.run(scp_masslog_file,     text=True)
-            file_path_log, file_path_csv = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(csv_outfile))
+            file_path_log, file_path_csv = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
             if os.path.isfile(file_path_csv) and os.path.isfile(file_path_log):
-                rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"rm ~/{csv_outfile} ~/{log_outfile}"]
+                rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"rm ~/{self.csv_outfile} ~/{log_outfile}"]
                 result = subprocess.run(rm_masslog_file,     text=True)
             print("")
             return result.returncode
                     
     def run_steps(self):
         ### remove any existing XML files from that directory to prevent reuploads
-        steps = [self.make_lxplus_dir, self.rm_xml_lxplus, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
+        steps = [self.make_lxplus_dir, self.rm_xml_lxplus, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.check_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
 
         current_step = 0
         while current_step < len(steps):
