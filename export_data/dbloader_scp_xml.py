@@ -33,7 +33,7 @@ def get_selected_type_files(files_found_all):
             file_type = f"module_{parent_directory}_xml" if "320M" in str(fi) else f"hxb_{parent_directory}_xml"
             parent_directory = 'testing'
         else:
-            parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]
+            parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',2)[-1]
         
         for xmlt in list(xml_list[parent_directory].keys()):
             if xml_list[parent_directory][xmlt] and file_type in xmlt:
@@ -189,18 +189,22 @@ class mass_upload_to_dbloader:
 
         current_step = 0
         while current_step < len(steps):
+            print(f"\n[DEBUG] === Starting Step {current_step+1}/{len(steps)}: {steps[current_step].__name__} ===")
             if open_scp_connection(dbl_username=self.dbl_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:    ### connection is missing
+                print("[DEBUG] SCP connection missing, attempting reconnect...")
                 print("Reconnect to LXPLUS -- preexisting connection broken -- retry this step")
                 scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
                 continue  ### keeps requesting credentials until connection is successful
             try:
                 return_status = steps[current_step]()
+                print(f"[DEBUG] Step {steps[current_step].__name__} returned {return_status}")
                 if current_step in [2, 3]:
                     current_time = datetime.datetime.now()
                     print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
                 if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
             except Exception as e:
+                print(f"[DEBUG][WARN] Step {steps[current_step].__name__} failed (return={return_status}) → retrying same step")
                 print(f"An error occurred at step {current_step+1}: {e}")
                 scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)        
     

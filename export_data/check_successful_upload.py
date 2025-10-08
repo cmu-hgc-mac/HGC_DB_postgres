@@ -1,178 +1,167 @@
-import paramiko
-import getpass
-import datetime
-import yaml
-import subprocess
+import asyncio
+import asyncpg
+import csv
 import os
-import argparse
-import pytz
 from pathlib import Path
+from datetime import datetime
+import re, base64
+import yaml
+from cryptography.fernet import Fernet
+import argparse
 
-oracle_error_conversion = {
-    "(DbLoader.java:274)": 'Dataset already exists'
+## get the latest log csv file under mass_upload_logs (dbloader_batch_uploader_YYYYMMDDTTTTTT.csv)
+## Open the csv file, find the value for "upload_status"
+## if the upload_status is {upload status: boolean}= {"Already Uploaded": True, "Error": False, "Success": True}
+## with the dictionary above, update the xml_upload_success column under a certain table in postgresql. 
+## Make this table as a variable of a function. 
+
+# --- CONFIG ---
+LOG_DIR = Path("export_data/mass_upload_logs")
+UPLOAD_STATUS_MAP = {
+    "Already Uploaded": True,
+    "Success": True,
+    "Error": False
 }
 
-transition_date = '2025-02-28' ## time when CERN DB changed a format of log filename
-transition_dt = datetime.datetime.strptime(transition_date, "%Y-%m-%d")
+YAML_MAP = "export_data/resource.yaml"        # local mapping file
+with open(YAML_MAP) as f:
+    yaml_data = yaml.safe_load(f)
+    
 
-def get_institution_abbr():
-    """Read institution_abbr from conn.yaml"""
-    yaml_path = Path("dbase_info/conn.yaml")
-    with open(yaml_path, "r") as f:
-        config = yaml.safe_load(f)
-    return config.get("institution_abbr")
+def get_xml_key(xml_path: str) -> str:
+    """Return mapping key like 'bp_cond' based on part name and path."""
+    part_name_map = {'BA': 'bp', 'XL': 'hxb', '_': 'sensor', 'PL': 'proto', 'ML': 'module'}
+    part_name = xml_path.split('/')[-1].split('_')[0]
 
-def close_ssh_tunnel(dbl_username: str):
-    """Close SSH tunnel with ControlPath."""
-    control_path = os.path.expanduser(f"~/.ssh/scp-{dbl_username}@dbloader-hgcal:22")
-    cmd = [
-        "ssh", "-O", "exit",
-        "-o", f"ControlPath={control_path}",
-        f"{dbl_username}@dbloader-hgcal"
-    ]
-    subprocess.run(cmd, check=True)
+    # Detect type code inside long serial number
+    m = re.search(r'(BA|XL|PL|ML|_)', part_name)
+    typecode = m.group(1) if m else None
+    prefix = part_name_map.get(typecode, "")
+    suffix = ""
 
-## resolve the datetime format discrepancy in CERN DB log file
-# def check_transition(dt: datetime.datetime) -> str:
-#     return "before" if dt < transition_dt else "after"
+    if "wirebond" in xml_path:
+        suffix = "wirebond"
+    elif "_cond_upload.xml" in xml_path:
+        suffix = "cond"
+    elif "_build_upload.xml" in xml_path:
+        suffix = "build"
+    elif "_assembly.xml" in xml_path:
+        suffix = "assembly"
+    elif "_iv_cond.xml" in xml_path:
+        suffix = "iv_cond"
+    elif "_iv.xml" in xml_path:
+        suffix = "iv"
+    elif "_pedestal" in xml_path:
+        suffix = "pedestal"
 
-def check_logs(username, cerndb):
-    host = "dbloader-hgcal"
-    log_dir = f"/home/dbspool/logs/hgc/{cerndb}"
+    xml_type = f"{prefix}_{suffix}"
+    table_map = yaml_data["postgres_table_to_xml"]
+    tables = table_map[xml_type]
 
-    # --- Timezone conversion (local → Swiss time) ---
-    local_tz = datetime.datetime.now().astimezone().tzinfo
-    swiss_tz = pytz.timezone("Europe/Zurich")
+    if not prefix or not suffix:
+        raise ValueError(f"Cannot determine key for part={part_name}, path={xml_path}")
 
-    # current Swiss time
-    now_swiss = datetime.datetime.now(local_tz).astimezone(swiss_tz)
+    xml_type = f"{prefix}_{suffix}"
+    table_map = yaml_data["postgres_table_to_xml"]
+    tables = table_map.get(xml_type, [])
 
-    # Time window (±30 min)
-    lower_dt = (now_swiss - datetime.timedelta(minutes=40)).replace(second=0, microsecond=0)
-    upper_dt = (now_swiss + datetime.timedelta(minutes=10)).replace(second=0, microsecond=0)
+    if not tables:
+        raise ValueError(f"No tables found in YAML for xml_type={xml_type}")
 
-    # Get institution abbreviation from conn.yaml
-    location = get_institution_abbr()
-    if not location or not username:
-        raise ValueError("Missing location or username")
+    return part_name, tables
 
-    control_path = os.path.expanduser(f"~/.ssh/scp-{username}@{host}:22")
+async def update_upload_status_from_latest_log(pool: asyncpg.Pool):
+    """
+    Reads the latest dbloader_batch_uploader_*.csv under export_data/mass_upload_logs,
+    parses upload_status, and updates xml_upload_success for each part_name in the given table.
+    """
 
-    try:
-        # Step 1: Test SSH tunnel
-        test_cmd = f'ssh -o ControlPath={control_path} {username}@{host} "echo SSH_OK"'
-        test = subprocess.run(test_cmd, capture_output=True, text=True, shell=True)
-        if test.returncode != 0 or "SSH_OK" not in test.stdout:
-            print("❌ SSH tunnel not working.")
-            print(f"stderr: {test.stderr.strip()}")
-            return
+    # 1. Find the latest CSV file
+    csv_files = list(LOG_DIR.glob("dbloader_batch_uploader_*.csv"))
+    if not csv_files:
+        print("❌ No log CSV files found.")
+        return
 
-        # Step 2 + 3: Find candidate logs and check last line
-        # list_cmd = (
-        #     f'ssh -o ControlPath={control_path} {username}@{host} '
-        #     f'find {log_dir} -type f -name "*_{location}_*.xml" '
-        #     f'-newermt "{today} {lower}:00" ! -newermt "{today} {upper}:00"'
-        # )
+    latest_csv = max(csv_files, key=os.path.getmtime)
+    print(f"📄 Using latest log file: {latest_csv.name}")
 
-        # list_cmd = [
-        #     "ssh", "-o", f"ControlPath={control_path}",
-        #     f"{username}@{host}",
-        #     f"ls -lrt {log_dir}/*_{location}_*.xml | tail -n 500"
-        # ]
-        # print(list_cmd)
-        # listing = subprocess.run(list_cmd, capture_output=True, text=True, shell=True)
+    updates = []
 
-        # remote_cmd = f'ls -lrt {log_dir}/*_{location}_*.xml | tail -n 500'
-        # list_cmd = [
-        #     "ssh", "-o", "ControlMaster=no", "-o", f"ControlPath={control_path}",
-        #     f"{username}@{host}",
-        #     "bash", "-c", f"'{remote_cmd}'"
-        # ]
-
-        remote_cmd = (
-            f'find {log_dir}/*_{location}_*.xml -maxdepth 1 -name "*_{location}_*.xml" -type f '
-            f'-printf "%TY-%Tm-%Td %TH:%TM:%TS %p\n" | sort | tail -n 500'
-        )
-        # remote_cmd = f'ls -lrt {log_dir}/*_{location}_*.xml | tail -n 100'
-        list_cmd = [
-            "ssh",
-            "-o", "ControlMaster=auto",
-            "-o", f"ControlPath={control_path}",
-            "-o", "ControlPersist=no",
-            f"{username}@{host}",
-            remote_cmd
-        ]
-        listing = subprocess.run(list_cmd, capture_output=True, text=True)
-        log_lines = listing.stdout.strip().split('\n')
-        
-        ######################################
-        # Still failing to grab the latest log files. IT is likely due to ssh catching issue. 
-        ######################################
-
-        if listing.returncode != 0:
-            print("❌ SSH worked, but failed to list log files.")
-            print(f"stderr: {listing.stderr.strip()}")
-            return
-
-        log_files = []
-        for line in listing.stdout.strip().splitlines():
-            parts = line.split()
-            print(parts)
-            date = parts[0]   # e.g. "2024-11-21"
-            time = parts[1][:5]  # take only HH:MM → "15:56"
-            filename = parts[-1]
+    # 2. Parse the CSV file
+    with open(latest_csv, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            xml_path = row["xml_path"]
+            upload_status = row["upload_status"].strip()
             
-            dt_string = f"{date} {time}" # e.g. '2024-11-21' 
-            filename = parts[-1]
-        
-            log_dt = datetime.datetime.strptime(dt_string, "%Y-%m-%d %H:%M")
+            part_name, db_tables_to_be_updated = get_xml_key(xml_path)
 
-            # print(filename.split('/')[-1], check_transition(log_dt), type(log_dt), type(lower_dt), type(upper_dt), lower_dt <= log_dt <= upper_dt)
-            print(f'{log_dt}, {lower_dt}, {upper_dt}')
-
-            if lower_dt <= log_dt <= upper_dt:
-                log_files.append(filename)
-
-        if not log_files:
-            print("⚠️ No log files found for this location.")
-            return
-        
-        for filename in log_files:
-            xml_filename = os.path.basename(filename)
-
-            tail_cmd = (
-                f'ssh -o ControlPath={control_path} {username}@{host} '
-                f'"tail -n 1 {filename}"'
-            )
-            tail = subprocess.run(tail_cmd, capture_output=True, text=True, shell=True)
-
-            if tail.returncode != 0:
-                print(f"❌ Failed to read file {xml_filename}")
-                print(f"stderr: {tail.stderr.strip()}")
+            # Skip if unknown status
+            if upload_status not in UPLOAD_STATUS_MAP:
                 continue
 
-            last_line = tail.stdout.strip()
+            # 3. Map status to boolean
+            status_bool = UPLOAD_STATUS_MAP[upload_status]
+            updates.append((part_name, status_bool, db_tables_to_be_updated))
 
-            if "commit transaction" in last_line:
-                print(f"{xml_filename.split('/')[-1]} ---- ✅ commit transaction")
-            else:
-                error = oracle_error_conversion[xml_filename]
-                print(f"❌ {xml_filename.split('/')[-1]} ---- {error}")
+    if not updates:
+        print("⚠️ No valid updates found in log.")
+        return
 
-    finally:
-        print("Closing SSH tunnel...")
-        close_ssh_tunnel(dbl_username=username)
+    # 5. Execute updates inside one transaction
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for part_name, status_bool, tables in updates:
+                for table in tables:
+                    query = f"""
+                        UPDATE {db_tables_to_be_updated}
+                        SET xml_upload_success = $1
+                        WHERE module_name = $2
+                        OR bp_name = $2
+                        OR proto_name = $2
+                        OR hxb_name = $2
+                        OR sensor_name = $2
+                    """
+                    print(query)
+                    await conn.execute(query, status_bool, part_name)
 
-def main():
+    print(f"✅ Updated {len(updates)} rows in table '{db_tables_to_be_updated}'.")
+
+
+async def main(dbpassword, encryption_key=None):
+
     parser = argparse.ArgumentParser(description="Script to process files in a directory.")
-    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
-    parser.add_argument('-cerndb', '--cern_dbase', default='dev_db', required=False, help="Name of cern db to upload to - dev_db/prod_db.")
+    parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     args = parser.parse_args()
+    
+    dbpassword = args.dbpassword
+    encryption_key = args.encrypt_key
 
-    dbl_username = args.dbl_username
-    cerndb = args.cern_dbase
+    # Example DB connection setup
+    loc = 'dbase_info'
+    conn_yaml_file = os.path.join(loc, 'conn.yaml')
+    conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
+    db_params = {
+        'database': conn_info.get('dbname'),
+        'user': 'editor',
+        'host': conn_info.get('db_hostname'),
+        'port': conn_info.get('port'),
+    }
 
-    check_logs(username=dbl_username, cerndb=cerndb)
+    if encryption_key is None:
+        db_params.update({'password': dbpassword})
+    else:
+        cipher_suite = Fernet((encryption_key).encode())
+        db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
+
+    pool = await asyncpg.create_pool(**db_params)
+
+    try:
+        await update_upload_status_from_latest_log(pool)
+    finally:
+        await pool.close()
+
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main(dbpassword))
