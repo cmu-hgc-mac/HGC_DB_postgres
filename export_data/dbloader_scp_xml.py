@@ -6,6 +6,7 @@ import numpy as np
 import datetime, time, yaml, paramiko, pwinput, sys, re
 from tqdm import tqdm
 import traceback, datetime
+GREEN = "\033[32m"; RED = "\033[31m"; YELLOW = "\033[33m"; RESET = "\033[0m"; 
 
 xml_list = process_xml_list(get_yaml_data = True)
 xml_list = {t: {list(d.keys())[0]: d[list(d.keys())[0]]  for d in xml_list[t]}  for t in xml_list.keys()}
@@ -38,7 +39,7 @@ def get_selected_type_files(files_found_all):
         for xmlt in list(xml_list[parent_directory].keys()):
             if xml_list[parent_directory][xmlt] and file_type in xmlt:
                 files_selected.append(fi)
-    return files_selected
+    return list(set(files_selected))
 
 def valid_directory(path):
     if os.path.isdir(path):
@@ -138,11 +139,10 @@ class mass_upload_to_dbloader:
         return result.returncode
 
     def mass_upload_xml_dbl(self):
-        GREEN = "\033[32m"; RED = "\033[31m"; RESET = "\033[0m"
         print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
-        print(f"{GREEN}The mass_upload terminal output sometimes says that the uploads have failed even when they have succeeded.{RESET}")
-        print(f"{GREEN}The CERN team is working on fixing it.{RESET}")
-        print(f"{GREEN}Check the API and the dbloader log to see if the uploads were successful until this gets fixed.{RESET}")
+        # print(f"{GREEN}The mass_upload terminal output sometimes says that the uploads have failed even when they have succeeded.{RESET}")
+        # print(f"{GREEN}The CERN team is working on fixing it.{RESET}")
+        # print(f"{GREEN}Check the API and the dbloader log to see if the uploads were successful until this gets fixed.{RESET}")
         print(f"=================================================================")
         with open("export_data/mass_loader.py", "r") as f:
             mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml"]
@@ -158,7 +158,7 @@ class mass_upload_to_dbloader:
                         sys.stdout.write(line)         # print live
                         sys.stdout.flush()             # force immediate display
                     elif "Progress: [" in line: 
-                        sys.stdout.write("\r" + line.strip())  # overwrite the same line
+                        sys.stdout.write("\r" + f"{YELLOW}{line.strip().split('(Success')[0]}{RESET}")  # overwrite the same line
                         sys.stdout.flush()
 
                 process.wait()  # wait for process to finish
@@ -171,15 +171,15 @@ class mass_upload_to_dbloader:
     def check_upload_xml_dbl(self):
         print(f"=================================================================")
         with open("export_data/check_upload_xml_logs.py", "r") as f:
-            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - -lfp ~/{self.csv_outfile}"]
-            with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
+            check_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - -lfp ~/{self.csv_outfile}"]
+            with subprocess.Popen(check_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile: 
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
                     txtfile.write(line)                      # save to text file immediately
                     txtfile.flush()                          # flush to disk in real time
+                    # if not "Success" in line or "Already existis" in line:
                     sys.stdout.write(line)         # print live
                     sys.stdout.flush()             # force immediate display
-
                 process.wait()  # wait for process to finish
                 print()
                 print(f"=================================================================")
