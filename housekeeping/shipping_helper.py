@@ -135,9 +135,9 @@ class enter_part_barcodes_box(tkinter.Toplevel):
 
         def update_db_packed():
             module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
-            # dialog = popup_type_of_shipment(self, )
-            # dialog.transient(self); dialog.attributes("-topmost", True); dialog.focus_force()
-            # self.wait_window(dialog)  # Wait until dialog is closed
+            dialog = popup_type_of_shipment(self, )
+            dialog.transient(self); dialog.attributes("-topmost", True); dialog.focus_force()
+            self.wait_window(dialog)  # Wait until dialog is closed
             self.destroy()
             if len(module_update_pack) > 0 :
                 if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
