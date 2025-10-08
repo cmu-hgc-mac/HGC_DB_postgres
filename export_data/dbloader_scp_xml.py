@@ -33,7 +33,7 @@ def get_selected_type_files(files_found_all):
             file_type = f"module_{parent_directory}_xml" if "320M" in str(fi) else f"hxb_{parent_directory}_xml"
             parent_directory = 'testing'
         else:
-            parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',1)[1]
+            parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',2)[-1]
         
         for xmlt in list(xml_list[parent_directory].keys()):
             if xml_list[parent_directory][xmlt] and file_type in xmlt:
