@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import csv, argparse, time
 from pathlib import Path
 from typing import Tuple
+import re
 
 GREEN = "\033[32m"; RED = "\033[31m"; YELLOW = "\033[33m"; RESET = "\033[0m"; 
         
@@ -36,7 +37,8 @@ def analyze_log_status(log_path: str) -> Tuple[str, str]:
         last_line = lines[-1].strip()
 
         log_text = " ".join(lines)
-        
+        missing_failed_lastLine_pattern = re.compile(r"\.\.\.\s*\d+\s+more\b")
+
         # ---- Decision logic ----
         if "commit transaction" in last_line.lower():
             print(f"{GREEN}Success: {logfilename}:{RESET} {last_line}.")
@@ -49,7 +51,7 @@ def analyze_log_status(log_path: str) -> Tuple[str, str]:
             else:
                 return ("XML Parse Error", last_line)
 
-        if "... 20 more" in log_text:
+        if missing_failed_lastLine_pattern.search(last_line.lower()):
             print(f"{RED}Missing/Wrong Variable: {logfilename}:{RESET} {last_line}.")
             return ("Missing/Wrong Variable", last_line)
 
