@@ -41,24 +41,26 @@ def analyze_log_status(log_path: str) -> Tuple[str, str]:
 
         # ---- Decision logic ----
         if "commit transaction" in last_line.lower():
-            print(f"{GREEN}Success: {logfilename}:{RESET} {last_line}.")
+            print(f"{GREEN}Success: {logfilename}:{RESET} {last_line}")
             return ("Success", last_line)
 
         if "dbloader.java:274" in log_text.lower():
             if "dataset already exists" in log_text.lower():
-                print(f"{YELLOW}Already exsists: {logfilename}:{RESET} {last_line}.")
+                print(f"{YELLOW}Already exsists: {logfilename}:{RESET} {last_line}")
                 return ("Already Exists", last_line)
             else:
+                print(f"{RED}XML Parse Error: {logfilename}: {RESET} {last_line}")
                 return ("XML Parse Error", last_line)
 
         if missing_failed_lastLine_pattern.search(last_line.lower()):
-            print(f"{RED}Missing/Wrong Variable: {logfilename}:{RESET} {last_line}.")
+            print(f"{RED}Missing/Wrong Variable: {logfilename}:{RESET} {last_line}")
             return ("Missing/Wrong Variable", last_line)
 
-        print(f"{RED}Error: {logfilename}: {RESET} {last_line}.")
+        print(f"{RED}Error: {logfilename}: {RESET} {last_line}")
         return ("Error", last_line) # Default
 
     except Exception as e:
+        print(f"{RED}Error Reading Log: {logfilename}{RESET}")
         return (f"Error Reading Log: {e}", "")
     
 def main():
