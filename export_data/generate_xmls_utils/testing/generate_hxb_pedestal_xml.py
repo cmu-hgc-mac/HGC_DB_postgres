@@ -12,6 +12,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
 
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
+statusdict_test_upload = config_data.get('statusdict_test_upload', None)
+if statusdict_test_upload:
+    statusdict_select_temp = tuple([k for d in statusdict_test_upload for k, v in d.items() if v])
+    statusdict_select_temp = [f"'{s}'" for s in statusdict_select_temp]
+    statusdict_select = f"({', '.join(statusdict_select_temp)})" if statusdict_select_temp else None
+else:
+    statusdict_select = None # f"('Untaped')"
+
 chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
 resource_yaml = 'export_data/resource.yaml'
 with open(chip_idxMap_yaml, 'r') as file:
@@ -65,6 +75,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
         LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
         WHERE m.hxb_name = ANY($1)
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
+        if statusdict_select:
+            query += f" AND status_desc IN {statusdict_select}"
         rows = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
@@ -86,8 +98,10 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 h.roc_index
             FROM hxb_pedestal_test m
             LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
-            WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
+            WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}' 
         """
+        if statusdict_select:
+            query += f" AND status_desc IN {statusdict_select}"
         rows = await conn.fetch(query)
 
     if rows is None:

@@ -8,6 +8,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
 
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
+statusdict_test_upload = config_data.get('statusdict_test_upload', None)
+if statusdict_test_upload:
+    statusdict_select_temp = tuple([k for d in statusdict_test_upload for k, v in d.items() if v])
+    statusdict_select_temp = [f"'{s}'" for s in statusdict_select_temp]
+    statusdict_select = f"({', '.join(statusdict_select_temp)})" if statusdict_select_temp else None
+else:
+    statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated')"
+
 def fetch_module_iv_data(prog_v, meas_v, meas_i, meas_r):
     return {
         'program_v': prog_v,
@@ -30,11 +40,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     ## list module_names that we want to generate xmls
     module_list = set()
     if partsnamelist:
-        query = """
+        query = f"""
             SELECT module_name, status, status_desc, mod_ivtest_no
             FROM module_iv_test
             WHERE module_name = ANY($1)
         """
+        if statusdict_select:
+            query += f" AND status_desc IN {statusdict_select}"
         results = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
@@ -42,6 +54,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             FROM module_iv_test
             WHERE module_iv_test.date_test BETWEEN '{date_start}' AND '{date_end}'
         """
+        if statusdict_select:
+            query += f" AND status_desc IN {statusdict_select}"
         results = await conn.fetch(query)
 
     module_status_list = set((row['module_name'], row['status'], row['status_desc'], row['mod_ivtest_no']) for row in results if 'module_name' in row and 'status' in row)
