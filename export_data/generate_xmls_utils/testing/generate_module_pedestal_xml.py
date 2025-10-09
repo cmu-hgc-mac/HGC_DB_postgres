@@ -293,7 +293,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
         with open(outfile_names[xml_type], "w", encoding="utf-8") as f:  ### Write to output file
             f.write(pretty_xml)
 
-    return True
+    return outfile_names
 
 
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None):
