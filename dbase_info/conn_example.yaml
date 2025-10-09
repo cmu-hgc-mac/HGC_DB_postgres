@@ -11,3 +11,15 @@ scp_persist_minutes: 240     ## duration for which the scp connection is open; s
 scp_force_quit: True         ## If False, scp connection will be open without password as long as the panel is open. Set True for shared computers.             
 delete_xmls: False           ## If True, deletes local xmls after upload; controls postgres panel
 mass_upload_xmls: True       ## If True, uses mass_loader.py
+
+statusdict_test_upload:      ## https://github.com/cmu-hgc-mac/hgcal-module-testing-gui/blob/master/DBTools.py#L34
+  - 'Untaped': False
+  - 'Taped': False
+  - 'Assembled': False 
+  - 'Backside Bonded': False 
+  - 'Frontside Bonded': False 
+  - 'Backside Encapsulated': False 
+  - 'Frontside Encapsulated': True 
+  - 'Completely Bonded': False 
+  - 'Bonds Reworked': False
+  - 'Completely Encapsulated': True
