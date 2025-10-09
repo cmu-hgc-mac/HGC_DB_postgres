@@ -7,7 +7,7 @@ import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
-import sys, os, yaml, argparse
+import sys, os, yaml, argparse, json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
@@ -55,6 +55,19 @@ async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
         print('roc_index unmatched. No ROC was found')
         return False
 
+def find_toa_vref(d):
+    json_results = []
+    if isinstance(d, dict):
+        for k, v in d.items():
+            if k == "Toa_vref":
+                json_results.append(v)
+            else:
+                json_results.extend(find_toa_vref(v))
+    elif isinstance(d, list):
+        for item in d:
+            json_results.extend(find_toa_vref(item))
+    return json_results  
+
 def remap_channels(channel, channel_type):
     for i in range(len(channel)):
         if channel_type[i] == 1:
@@ -93,6 +106,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.rel_hum,
                m.status_desc,
                m.comment,
+               m.pedestal_config_json,
                h.roc_name, 
                h.roc_index
         FROM module_pedestal_test m
@@ -118,6 +132,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.rel_hum,
                 m.status_desc,
                 m.comment,
+                m.pedestal_config_json
                 h.roc_name, 
                 h.roc_index
             FROM module_pedestal_test m
@@ -131,7 +146,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
-    test_data, test_data_env = {}, {}
+    test_data, test_data_env, test_data_config = {}, {}, {}
     for row in rows:
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
@@ -170,10 +185,21 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'comment' : row['comment'],
                 'status_desc': row["status_desc"],
             }
-    return test_data, test_data_env
+
+            test_data_config[run_begin_timestamp] = {
+                'test_timestamp': f"{row['date_test']} {row['time_test']}",
+                'module_name': row['module_name'],
+                'module_no': row['module_no'],
+                'inspector': row['inspector'],
+                'pedestal_config_json': row['pedestal_config_json'] if row['pedestal_config_json'] is not None else "N/A",
+                'roc_name': row['roc_name'],
+                'comment' : row['comment'],
+                'status_desc': row["status_desc"],
+            }
+    return test_data, test_data_env, test_data_config,
 
 
-async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None, lxplus_username = None):
+async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None, template_path_config = None, test_data_config = None, lxplus_username = None):
     tree = ET.parse(template_path)
     root = tree.getroot()
     test_timestamp = test_data['test_timestamp']
@@ -254,6 +280,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     # Pretty-print the XML
     rough_string = ET.tostring(root, encoding="utf-8")
     pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
+    del root, tree, data_set, data, rough_string
     pretty_xml = "\n".join(line for line in pretty_xml.split("\n") if line.strip())
     
     # delete the first <ROOT> for formatting
@@ -327,6 +354,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     rough_string = ET.tostring(root, encoding="utf-8")
     pretty_xml_env = minidom.parseString(rough_string).toprettyxml(indent="\t")
     pretty_xml_env = "\n".join(line for line in pretty_xml_env.split("\n") if line.strip())
+    del root, tree, data_set, data, rough_string
     
     # delete the first <ROOT> for formatting
     lines = pretty_xml_env.splitlines()
@@ -337,6 +365,83 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     
     if pretty_xml_env.startswith('<?xml'):
         pretty_xml_env = fixed_declaration + '\n'.join(pretty_xml_env.split('\n')[1:])
+        
+    ### DO the same for the test configuration data
+    tree = ET.parse(template_path_config)
+    root = tree.getroot()
+    test_timestamp = test_data_config['test_timestamp']
+    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
+
+    # === Fill in <RUN> metadata ===
+    run_info = root.find("HEADER/RUN")
+    if run_info is not None:
+        run_info.find("RUN_TYPE").text = "Si module pedestal and noise" if not test_data_config['status_desc'] else f"Si module pedestal and noise - {test_data_config['status_desc']}"
+        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
+        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+        run_info.find("LOCATION").text = LOCATION
+        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data_config['module_name']}"
+
+    # Get and remove the original <DATA_SET> template block
+    data_set_template = root.find("DATA_SET")
+    root.remove(data_set_template)
+    roc_names = test_data_config["roc_name"]
+
+    # Group data by ROC
+    roc_grouped_data = defaultdict(list)
+    
+    # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
+    for roc in roc_names:
+        # Deep copy the template DATA_SET element
+        data_set = copy.deepcopy(data_set_template)
+
+        # Insert the comments from testing
+        data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data_config["comment"] else test_data_config["comment"].replace("\n","; ")
+
+        # Set the correct SERIAL_NUMBER inside PART
+        serial_elem = data_set.find("PART/SERIAL_NUMBER")
+        if serial_elem is not None:
+            serial_elem.text = roc
+        
+        kindofpart = data_set.find("PART/KIND_OF_PART")
+        if kindofpart is not None:
+            kindofpart.text = f"{test_data_config['module_name'][4]}D HGCROC"
+
+        # Remove placeholder DATA blocks (direct children of DATA_SET)
+        for data_elem in data_set.findall("DATA"):
+            data_set.remove(data_elem)
+
+        # Add actual DATA blocks under DATA_SET (NOT under PART)
+        data = ET.Element("DATA")
+        if test_data_config['pedestal_config_json'] != "N/A":
+            toa_vref = find_toa_vref(json.loads(f'''{test_data_config['pedestal_config_json']}'''))
+            ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+            ET.SubElement(data, "ConfigJSON").text = f'''{test_data_config['pedestal_config_json']}'''
+        else:
+            ET.SubElement(data, "Purpose").text = "N/A"
+            ET.SubElement(data, "ConfigJSON").text = "N/A"
+        data_set.append(data)  # <== append directly under DATA_SET 
+
+        # Append the completed DATA_SET to ROOT
+        root.append(data_set); 
+
+    # Pretty-print the XML CONFIG
+    rough_string = ET.tostring(root, encoding="utf-8")
+    pretty_xml_config = minidom.parseString(rough_string).toprettyxml(indent="\t")
+    pretty_xml_config = "\n".join(line for line in pretty_xml_config.split("\n") if line.strip())
+    
+    # delete the first <ROOT> for formatting
+    lines = pretty_xml_config.splitlines()
+    if lines[1].strip().startswith("<ROOT"):
+        lines.pop(1)
+    pretty_xml_config = "\n".join(lines)
+    fixed_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
+    
+    if pretty_xml_config.startswith('<?xml'):
+        pretty_xml_config = fixed_declaration + '\n'.join(pretty_xml_config.split('\n')[1:])
+    
+    ##########################
 
     # Write to output file
     os.makedirs(output_path, exist_ok=True)
@@ -347,6 +452,9 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     file_path_env = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_cond.xml")
     with open(file_path_env, "w", encoding="utf-8") as f:
         f.write(pretty_xml_env)
+    file_path_config = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_config.xml")
+    with open(file_path_config, "w", encoding="utf-8") as f:
+        f.write(pretty_xml_config)
 
     return file_path
 
@@ -354,18 +462,21 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
+    temp_dir_config = 'export_data/template_examples/testing/module_pedestal_config.xml'
     temp_dir_env = 'export_data/template_examples/testing/qc_env_cond.xml'
     output_dir = 'export_data/xmls_for_upload/testing/pedestal'
 
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        test_data, test_data_env = await fetch_test_data(conn, date_start, date_end, partsnamelist)
+        test_data, test_data_env, test_data_config = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for timestamp_key in tqdm(list(test_data_env.keys())):
-            if test_data_env[timestamp_key]['rel_hum'] is None or test_data_env[timestamp_key]['temp_c'] is None:
+            if test_data_env[timestamp_key]['rel_hum'] in [None, 'None'] or test_data_env[timestamp_key]['temp_c'] in [None, 'None']:
                 raise ValueError("You cannot upload any test data when humidity or temperature is null.")
+            if test_data_config[timestamp_key]['pedestal_config_json'] is None:
+                raise ValueError("You cannot upload any test data that is missing pedestal_config_json.")
             else:
-                output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, temp_dir, output_dir, template_path_env=temp_dir_env, test_data_env=test_data_env[timestamp_key], lxplus_username=lxplus_username)
+                output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, temp_dir, output_dir, template_path_env=temp_dir_env, test_data_env=test_data_env[timestamp_key], template_path_config=temp_dir_config ,test_data_config=test_data_config[timestamp_key], lxplus_username=lxplus_username)
 
     except Exception as e:
         RED = '\033[91m'
