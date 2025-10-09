@@ -429,6 +429,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_
     # Pretty-print the XML CONFIG
     rough_string = ET.tostring(root, encoding="utf-8")
     pretty_xml_config = minidom.parseString(rough_string).toprettyxml(indent="\t")
+    pretty_xml_config = pretty_xml_config.replace("&quot;", '"')
     pretty_xml_config = "\n".join(line for line in pretty_xml_config.split("\n") if line.strip())
     
     # delete the first <ROOT> for formatting
