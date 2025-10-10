@@ -270,10 +270,8 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
                     ET.SubElement(data, "ConfigJSON").text = "N/A"
                 data_set.append(data)  # <== append directly under DATA_SET 
             
-
             root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
         
-         
         # Pretty-print the XML
         rough_string = ET.tostring(root, encoding="utf-8")
         pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
