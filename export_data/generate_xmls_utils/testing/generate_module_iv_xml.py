@@ -12,9 +12,9 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 statusdict_test_upload = config_data.get('statusdict_test_upload', None)
 if statusdict_test_upload:
-    statusdict_select_temp = tuple([k for d in statusdict_test_upload for k, v in d.items() if v])
-    statusdict_select_temp = [f"'{s}'" for s in statusdict_select_temp]
-    statusdict_select = f"({', '.join(statusdict_select_temp)})" if statusdict_select_temp else None
+    statusdict_select = tuple([k for d in statusdict_test_upload for k, v in d.items() if v])
+    statusdict_select = [f"'{s}'" for s in statusdict_select]
+    statusdict_select = f"({', '.join(statusdict_select)})" if statusdict_select else None
 else:
     statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated')"
 
