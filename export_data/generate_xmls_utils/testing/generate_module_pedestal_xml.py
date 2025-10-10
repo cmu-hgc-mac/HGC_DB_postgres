@@ -11,6 +11,7 @@ import sys, os, yaml, argparse, json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
+RED = '\033[91m'; RESET = '\033[0m'
 
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -307,15 +308,10 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
             try:
                 float(test_data[timestamp_key]['rel_hum'])
                 float(test_data[timestamp_key]['temp_c'])
-            except:
-                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.")
-            if test_data[timestamp_key]['pedestal_config_json'] is None:
-                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data that is missing pedestal_config_json.")
-            else:
                 output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
+            except:
+                print(f"{RED}{test_data['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
     except Exception as e:
-        RED = '\033[91m'
-        RESET = '\033[0m'
         print(f"{RED}An error occurred: {e}. You cannot upload any test data when humidity or temperature is null.{RESET}")
     finally:
         await conn.close()
