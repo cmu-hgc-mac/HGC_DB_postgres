@@ -11,7 +11,7 @@ import sys, os, yaml, argparse, json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
-from export_data.generate_xmls_utils.testing.generate_module_pedestal_xml import find_toa_vref
+from export_data.generate_xmls_utils.testing.generate_module_pedestal_xml import find_toa_vref, find_rocID
 RED = '\033[91m'; RESET = '\033[0m'
 
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -155,10 +155,16 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
     adc_stdds = test_data["adc_stdd"]
     roc_names = test_data["roc_name"]
 
-    chip_to_roc = {}
+    pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
+    chip_to_roc, chip_config = {}, {}
     for idx, chip in enumerate(sorted(set(chips))):
         if idx < len(roc_names):
             chip_to_roc[chip] = roc_names[idx]
+            chip_config[chip] = pedestal_config_json_full[f"roc_s{idx}"]["sc"]
+    
+    for chip in list(chip_config.keys()):
+        roc = chip_to_roc.get(chip, "UNKNOWN")
+        chip_config[roc] = chip_config.pop(chip)    
 
     roc_grouped_data = defaultdict(list)  # Group data by ROC
     for i in range(len(channels)):
@@ -233,9 +239,9 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                 data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'config':
                 data = ET.Element("DATA")
-                toa_vref = find_toa_vref(json.loads(f'''{test_data['pedestal_config_json']}'''))
+                toa_vref = find_toa_vref(chip_config[roc])
                 ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                ET.SubElement(data, "ConfigJSON").text = f'''{test_data['pedestal_config_json']}'''
+                ET.SubElement(data, "ConfigJSON").text = f'''{chip_config[roc]}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
             
             root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
