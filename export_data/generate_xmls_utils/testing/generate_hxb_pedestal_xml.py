@@ -217,8 +217,9 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    ET.SubElement(data, "FRAC_UNC").text = "0.0"
-                    ET.SubElement(data, "FLAGS").text = "0"
+                    ET.SubElement(data, "FRAC_UNC").text = round(10032**(-0.5),6) ### 1/sqrt(N) where N=10032
+                    if False:  ### How to define this criteria?
+                        ET.SubElement(data, "FLAGS").text = "0"
                     data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'env':
                 data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
