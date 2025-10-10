@@ -306,10 +306,13 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     try:
         test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for timestamp_key in tqdm(list(test_data.keys())):
-            if test_data[timestamp_key]['rel_hum'] in [None, 'None'] or test_data[timestamp_key]['temp_c'] in [None, 'None']:
-                raise ValueError("You cannot upload any test data when humidity or temperature is null.")
+            try:
+                float(test_data[timestamp_key]['rel_hum'])
+                float(test_data[timestamp_key]['temp_c'])
+            except:
+                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.")
             if test_data[timestamp_key]['pedestal_config_json'] is None:
-                raise ValueError("You cannot upload any test data that is missing pedestal_config_json.")
+                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data that is missing pedestal_config_json.")
             else:
                 output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:

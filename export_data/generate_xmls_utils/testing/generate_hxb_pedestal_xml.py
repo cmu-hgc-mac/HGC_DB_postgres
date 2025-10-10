@@ -270,10 +270,13 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     try:
         test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for run_begin_timestamp in tqdm(list(test_data.keys())):
-            if test_data[run_begin_timestamp]['rel_hum'] in [None, 'None'] or test_data[run_begin_timestamp]['temp_c'] in [None, 'None']:
-                raise ValueError("You cannot upload any test data when humidity or temperature is null.")
+            try:
+                float(test_data[run_begin_timestamp]['rel_hum'])
+                float(test_data[run_begin_timestamp]['temp_c'])
+            except:
+                raise ValueError(f"{test_data['hxb_name']}: {run_begin_timestamp} You cannot upload any test data when humidity or temperature is null.")
             if test_data[run_begin_timestamp]['pedestal_config_json'] is None:
-                raise ValueError("You cannot upload any test data that is missing pedestal_config_json.")
+                raise ValueError(f"{test_data['hxb_name']}: {run_begin_timestamp}You cannot upload any test data that is missing pedestal_config_json.")
             else:
                 output_file = await generate_hxb_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, output_dir, template_path_test=temp_dir, template_path_env = temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
 
