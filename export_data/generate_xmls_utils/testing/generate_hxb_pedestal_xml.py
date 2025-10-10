@@ -178,6 +178,8 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
 
     # === Fill in <RUN> metadata ===
     for xml_type in list(xml_types.keys()): ####### Common for all three XML types
+        if xml_type == 'env' and test_data['pedestal_config_json'] != None: 
+            continue
         tree = ET.parse(xml_types[xml_type])
         root = tree.getroot()
         run_info = root.find("HEADER/RUN")
@@ -225,13 +227,9 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                 data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'config':
                 data = ET.Element("DATA")
-                if test_data['pedestal_config_json'] != "N/A":
-                    toa_vref = find_toa_vref(json.loads(f'''{test_data['pedestal_config_json']}'''))
-                    ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                    ET.SubElement(data, "ConfigJSON").text = f'''{test_data['pedestal_config_json']}'''
-                else:
-                    ET.SubElement(data, "Purpose").text = "N/A"
-                    ET.SubElement(data, "ConfigJSON").text = "N/A"
+                toa_vref = find_toa_vref(json.loads(f'''{test_data['pedestal_config_json']}'''))
+                ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                ET.SubElement(data, "ConfigJSON").text = f'''{test_data['pedestal_config_json']}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
             
             root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
