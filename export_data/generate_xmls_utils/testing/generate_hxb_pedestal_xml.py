@@ -139,7 +139,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'inspector': row['inspector'],  ###### for env
                 'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
                 'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
-                'pedestal_config_json': row['pedestal_config_json'] if row['pedestal_config_json'] is not None else "N/A", #### for config
+                'pedestal_config_json': row['pedestal_config_json'] ## if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
     return test_data
 
