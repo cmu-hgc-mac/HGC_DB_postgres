@@ -159,6 +159,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             meas_r = results.get('meas_r', "")
                             meas_v = results.get('meas_v', "")
                             db_values[xml_var] = fetch_module_iv_data(prog_v, meas_v, meas_i, meas_r)
+                        elif xml_var in ['TEMP_C', 'HUMIDITY_REL'] :
+                            try:
+                                float(results[xml_var])
+                            except:
+                                raise ValueError("\033[91mYou cannot upload any test data when temperature/humidity is null.\033[0m")
                         else:
                             db_values[xml_var] = results.get(dbase_col, '')
                 
