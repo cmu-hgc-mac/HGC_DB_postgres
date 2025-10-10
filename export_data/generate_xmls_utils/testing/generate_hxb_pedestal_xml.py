@@ -270,7 +270,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     try:
         test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for run_begin_timestamp in tqdm(list(test_data.keys())):
-            if test_data[run_begin_timestamp]['rel_hum'] in [None, 'None'] or test_data[run_begin_timestamp]['temp_c'] in [None, 'None']:
+            if test_data[run_begin_timestamp]['rel_hum'] in [None, 'None', 'N/A', 'n/a', 'na', 'null', 'Null', 'NULL'] or test_data[run_begin_timestamp]['temp_c'] in [None, 'None', 'N/A', 'n/a', 'na', 'null', 'Null', 'NULL']:
                 raise ValueError("You cannot upload any test data when humidity or temperature is null.")
             if test_data[run_begin_timestamp]['pedestal_config_json'] is None:
                 raise ValueError("You cannot upload any test data that is missing pedestal_config_json.")
