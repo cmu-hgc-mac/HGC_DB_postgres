@@ -85,15 +85,16 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
     with open(list_of_xmls_yaml, "w") as file:
         yaml.dump(xml_list, file, default_flow_style=False)
 
-async def check_good_conn(dbpassword):
-    temp_conn = await get_conn(dbpassword)
+async def check_good_conn(dbpassword, user_type = None):
+    temp_conn = await get_conn(dbpassword, user_type)
     if temp_conn:
         await temp_conn.close()
         return True
     else:
         return False
 
-async def get_conn(dbpassword, encryption_key = None):
+async def get_conn(dbpassword, encryption_key = None, user_type = None):
+    user_type = user_type if user_type else 'shipper'
     '''
     Does: get connection to database
     Return: connection
@@ -102,7 +103,7 @@ async def get_conn(dbpassword, encryption_key = None):
     yaml_file = f'{loc}conn.yaml'
     db_params = {
             'database': yaml.safe_load(open(yaml_file, 'r'))['dbname'],
-            'user': 'shipper',
+            'user': f'{user_type}',
             # 'user': 'viewer',
             'host': yaml.safe_load(open(yaml_file, 'r'))['db_hostname']}   
     
