@@ -257,7 +257,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    ET.SubElement(data, "FRAC_UNC").text = round(10032**(-0.5),6) ### 1/sqrt(N) where N=10032
+                    ET.SubElement(data, "FRAC_UNC").text = str(round(10032**(-0.5),6)) ### 1/sqrt(N) where N=10032
                     if False:  ### How to define this criteria?
                         ET.SubElement(data, "FLAGS").text = "0"
                     data_set.append(data)  # <== append directly under DATA_SET
