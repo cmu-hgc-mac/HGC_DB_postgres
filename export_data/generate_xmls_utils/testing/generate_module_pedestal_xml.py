@@ -146,7 +146,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
-    test_data, = {}
+    test_data = {}
     for row in rows:
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
