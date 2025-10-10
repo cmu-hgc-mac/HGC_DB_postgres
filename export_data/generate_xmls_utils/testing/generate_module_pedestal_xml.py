@@ -146,7 +146,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
-    test_data, test_data, test_data = {}, {}, {}
+    test_data, = {}
     for row in rows:
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
@@ -177,7 +177,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
                 'pedestal_config_json': row['pedestal_config_json'] if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
-    return test_data, test_data, test_data,
+    return test_data
 
 
 async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_path, template_path_test, template_path_env = None, template_path_config = None, lxplus_username = None):
@@ -304,7 +304,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        test_data, test_data, test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
+        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
         for timestamp_key in tqdm(list(test_data.keys())):
             if test_data[timestamp_key]['rel_hum'] in [None, 'None'] or test_data[timestamp_key]['temp_c'] in [None, 'None']:
                 raise ValueError("You cannot upload any test data when humidity or temperature is null.")
