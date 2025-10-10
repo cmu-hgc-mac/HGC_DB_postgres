@@ -108,11 +108,13 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.status_desc,
                m.comment,
                m.pedestal_config_json,
+               m.bias_vol,
                h.roc_name, 
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
         WHERE m.module_name = ANY($1)
+        AND m.bias_vol > 0
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -133,12 +135,14 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.rel_hum,
                 m.status_desc,
                 m.comment,
-                m.pedestal_config_json
+                m.pedestal_config_json,
+                m.bias_vol,
                 h.roc_name, 
                 h.roc_index
             FROM module_pedestal_test m
             LEFT JOIN hexaboard h ON m.module_no = h.module_no
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
+            AND m.bias_vol > 0
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
