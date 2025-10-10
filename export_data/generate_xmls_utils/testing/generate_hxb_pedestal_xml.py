@@ -141,8 +141,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'inverse_sqrt_n': row['inverse_sqrt_n'],
                 'status_desc': row["status_desc"],
                 'inspector': row['inspector'],  ###### for env
-                'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
-                'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
+                'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
+                'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
                 'pedestal_config_json': row['pedestal_config_json'] ## if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
     return test_data
@@ -228,8 +228,7 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
                     if test_data["inverse_sqrt_n"]:
                         ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
-                    if False:  ### How to define this criteria?
-                        ET.SubElement(data, "FLAGS").text = "0"
+                    # ET.SubElement(data, "FLAGS").text = "0"
                     data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'env':
                 data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
@@ -239,7 +238,7 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                 data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'config':
                 data = ET.Element("DATA")
-                toa_vref = find_toa_vref(chip_config[roc])
+                toa_vref = find_toa_vref(chip_config[roc]) if chip_config[roc] else None
                 ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
                 ET.SubElement(data, "ConfigJSON").text = f'''{chip_config[roc]}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
