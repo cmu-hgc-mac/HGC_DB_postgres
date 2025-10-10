@@ -97,7 +97,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.rel_hum,
                 m.status_desc,
                 m.comment,
-                m.pedestal_config_json
+                m.pedestal_config_json,
                 h.roc_name, 
                 h.roc_index
             FROM hxb_pedestal_test m
