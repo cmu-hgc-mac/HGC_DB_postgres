@@ -11,6 +11,7 @@ import sys, os, yaml, argparse, json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
+RED = '\033[91m'; RESET = '\033[0m'
 
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -179,7 +180,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'inspector': row['inspector'],  ###### for env
                 'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
                 'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
-                'pedestal_config_json': row['pedestal_config_json'] if row['pedestal_config_json'] is not None else "N/A", #### for config
+                'pedestal_config_json': row['pedestal_config_json'] ## if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
     return test_data
 
@@ -218,6 +219,8 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
 
     # === Fill in <RUN> metadata ===
     for xml_type in list(xml_types.keys()): ####### Common for all three XML types
+        if xml_type == 'config' and test_data['pedestal_config_json'] == None: 
+            continue
         tree = ET.parse(xml_types[xml_type])
         root = tree.getroot()
         run_info = root.find("HEADER/RUN")
@@ -265,13 +268,9 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
                 data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'config':
                 data = ET.Element("DATA")
-                if test_data['pedestal_config_json'] != "N/A":
-                    toa_vref = find_toa_vref(json.loads(f'''{test_data['pedestal_config_json']}'''))
-                    ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                    ET.SubElement(data, "ConfigJSON").text = f'''{test_data['pedestal_config_json']}'''
-                else:
-                    ET.SubElement(data, "Purpose").text = "N/A"
-                    ET.SubElement(data, "ConfigJSON").text = "N/A"
+                toa_vref = find_toa_vref(json.loads(f'''{test_data['pedestal_config_json']}'''))
+                ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                ET.SubElement(data, "ConfigJSON").text = f'''{test_data['pedestal_config_json']}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
             
             root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
@@ -313,15 +312,10 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
             try:
                 float(test_data[timestamp_key]['rel_hum'])
                 float(test_data[timestamp_key]['temp_c'])
-            except:
-                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.")
-            if test_data[timestamp_key]['pedestal_config_json'] is None:
-                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data that is missing pedestal_config_json.")
-            else:
                 output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
+            except:
+                print(f"{RED}{test_data['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
     except Exception as e:
-        RED = '\033[91m'
-        RESET = '\033[0m'
         print(f"{RED}An error occurred: {e}. You cannot upload any test data when humidity or temperature is null.{RESET}")
     finally:
         await conn.close()
