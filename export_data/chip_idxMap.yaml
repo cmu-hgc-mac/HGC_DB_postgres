@@ -1,3 +1,5 @@
+## reference: https://indico.cern.ch/event/1492551/contributions/6289012/attachments/2992039/5270825/Tsionou_DB_ROCpositions_6Jan25.pdf
+
 LD Full:
   - chip: 0
     name: M1
@@ -26,9 +28,9 @@ LD Top:
 
 LD Bottom:
   - chip: 0
-    name: IC4
-  - chip: 1
     name: IC3
+  - chip: 1
+    name: IC4
 
 LD Five:
   - chip: 0
@@ -68,7 +70,7 @@ HD Bottom:
   - chip: 2
     name: M3
   - chip: 3
-    name: M3
+    name: M4
 
 HD Right:
   - chip: 0
@@ -78,6 +80,6 @@ HD Right:
 
 HD Left:
   - chip: 0
-    name: IC4
-  - chip: 1
     name: IC3
+  - chip: 1
+    name: IC4
