@@ -195,16 +195,17 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
     adc_stdds = test_data["adc_stdd"]
     roc_names = test_data["roc_name"]
 
-    pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
     chip_to_roc, chip_config = {}, {}
     for idx, chip in enumerate(sorted(set(chips))):
         if idx < len(roc_names):
             chip_to_roc[chip] = roc_names[idx]
+            
+    if test_data['pedestal_config_json']:
+        pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
+        for idx, chip in enumerate(sorted(set(chips))):
             chip_config[chip] = pedestal_config_json_full[f"roc_s{idx}"]["sc"]
-    
-    for chip in list(chip_config.keys()):
-        roc = chip_to_roc.get(chip, "UNKNOWN")
-        chip_config[roc] = chip_config.pop(chip)    
+            roc = chip_to_roc.get(chip, "UNKNOWN")
+            chip_config[roc] = chip_config.pop(chip)            
 
     roc_grouped_data = defaultdict(list)  # Group data by ROC
     for i in range(len(channels)):
@@ -278,7 +279,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
                 data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'config':
                 data = ET.Element("DATA")
-                toa_vref = find_toa_vref(chip_config[roc]) if chip_config[roc] else None
+                toa_vref = find_toa_vref(chip_config[roc])
                 ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
                 ET.SubElement(data, "ConfigJSON").text = f'''{chip_config[roc]}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
