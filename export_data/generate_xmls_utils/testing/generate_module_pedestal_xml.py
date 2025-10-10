@@ -50,7 +50,7 @@ async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
     '''
     roc_name, roc_index = await conn.fetchrow(query)
     if roc_index == chip_names:
-        return roc_name## i.e., ['SU02-0124-001061', 'SU02-0124-001067', 'SU02-0124-001076']
+        return roc_name ## i.e., ['SU02-0124-001061', 'SU02-0124-001067', 'SU02-0124-001076']
     else:
         print('roc_index unmatched. No ROC was found')
         return False
