@@ -214,7 +214,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
 
     # === Fill in <RUN> metadata ===
     for xml_type in list(xml_types.keys()): ####### Common for all three XML types
-        if xml_type == 'env' and test_data['pedestal_config_json'] != None: 
+        if xml_type == 'config' and test_data['pedestal_config_json'] == None: 
             continue
         tree = ET.parse(xml_types[xml_type])
         root = tree.getroot()
