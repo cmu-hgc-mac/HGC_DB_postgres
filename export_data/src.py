@@ -85,8 +85,8 @@ def process_xml_list(xml_list = None, get_yaml_data = False):
     with open(list_of_xmls_yaml, "w") as file:
         yaml.dump(xml_list, file, default_flow_style=False)
 
-async def check_good_conn(dbpassword, user_type = None):
-    temp_conn = await get_conn(dbpassword, user_type)
+async def check_good_conn(dbpassword, encryption_key = None,  user_type = None):
+    temp_conn = await get_conn(dbpassword = dbpassword, encryption_key = encryption_key, user_type = user_type)
     if temp_conn:
         await temp_conn.close()
         return True
