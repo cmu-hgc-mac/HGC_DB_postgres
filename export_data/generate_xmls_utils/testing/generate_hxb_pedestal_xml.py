@@ -220,7 +220,8 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],8)) ### 1/sqrt(N) where N=10032
+                    if test_data["inverse_sqrt_n"]:
+                        ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
                     if False:  ### How to define this criteria?
                         ET.SubElement(data, "FLAGS").text = "0"
                     data_set.append(data)  # <== append directly under DATA_SET
