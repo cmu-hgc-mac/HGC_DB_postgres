@@ -108,6 +108,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.status_desc,
                m.comment,
                m.pedestal_config_json,
+               m.inverse_sqrt_n,
                m.bias_vol,
                h.roc_name, 
                h.roc_index
@@ -136,6 +137,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.status_desc,
                 m.comment,
                 m.pedestal_config_json,
+                m.inverse_sqrt_n,
                 m.bias_vol,
                 h.roc_name, 
                 h.roc_index
@@ -176,6 +178,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'adc_stdd': row['adc_stdd'],
                 'roc_name': row['roc_name'],
                 'comment' : row['comment'],
+                'inverse_sqrt_n': row['inverse_sqrt_n'],
                 'status_desc': row["status_desc"],
                 'inspector': row['inspector'],  ###### for env
                 'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
@@ -257,7 +260,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    ET.SubElement(data, "FRAC_UNC").text = str(round(10032**(-0.5),6)) ### 1/sqrt(N) where N=10032
+                    ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],8)) ### 1/sqrt(N) where N=10032
                     if False:  ### How to define this criteria?
                         ET.SubElement(data, "FLAGS").text = "0"
                     data_set.append(data)  # <== append directly under DATA_SET
@@ -312,12 +315,13 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
         for timestamp_key in tqdm(list(test_data.keys())):
             try:
                 float(test_data[timestamp_key]['rel_hum'])
-                float(test_data[timestamp_key]['temp_c'])
-                output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
+                float(test_data[timestamp_key]['temp_c'])                
             except:
                 print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
+                # continue
+            output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:
-        print(f"{RED}An error occurred: {e}. You cannot upload any test data when humidity or temperature is null.{RESET}")
+        print(f"{RED}An error occurred: {e}.{RESET}")
     finally:
         await conn.close()
 
