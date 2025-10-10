@@ -318,7 +318,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
                 float(test_data[timestamp_key]['temp_c'])                
             except:
                 print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
-                # continue
+                continue
             output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:
         print(f"{RED}An error occurred: {e}.{RESET}")
