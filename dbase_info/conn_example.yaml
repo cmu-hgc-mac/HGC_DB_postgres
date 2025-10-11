@@ -23,3 +23,4 @@ statusdict_test_upload:      ## https://github.com/cmu-hgc-mac/hgcal-module-test
   - 'Completely Bonded': False 
   - 'Bonds Reworked': False
   - 'Completely Encapsulated': True
+  - 'Bolted': True
