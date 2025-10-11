@@ -72,6 +72,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.status_desc,
                m.comment,
                m.pedestal_config_json,
+               m.list_dead_cells,
+               m.list_noisy_cells, 
                m.inverse_sqrt_n,
                h.roc_name, 
                h.roc_index
@@ -99,6 +101,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.status_desc,
                 m.comment,
                 m.pedestal_config_json,
+                m.list_dead_cells,
+                m.list_noisy_cells,
                 m.inverse_sqrt_n,
                 h.roc_name, 
                 h.roc_index
@@ -143,7 +147,9 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'inspector': row['inspector'],  ###### for env
                 'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
                 'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
-                'pedestal_config_json': row['pedestal_config_json'] ## if row['pedestal_config_json'] is not None else "N/A", #### for config
+                'list_dead_cells': row['list_dead_cells'],
+                'list_noisy_cells': row['list_noisy_cells'],
+                'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
     return test_data
 
@@ -227,6 +233,10 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
+                    flag = "D"      if entry["channel"] in test_data["list_dead_cells"]  else ""
+                    flag = flag+"N" if entry["channel"] in test_data["list_noisy_cells"] else flag
+                    if flag:
+                        ET.SubElement(data, "FLAGS").text = flag
                     if test_data["inverse_sqrt_n"]:
                         ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
                     # ET.SubElement(data, "FLAGS").text = "0"
