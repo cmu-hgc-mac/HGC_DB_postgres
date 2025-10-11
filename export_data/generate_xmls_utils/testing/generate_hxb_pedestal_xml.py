@@ -61,6 +61,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.hxb_no, 
                m.chip, 
                m.channel, 
+               m.cell,
                m.adc_mean, 
                m.adc_stdd, 
                m.channeltype, 
@@ -90,6 +91,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.hxb_no, 
                 m.chip, 
                 m.channel, 
+                m.cell,
                 m.adc_mean, 
                 m.adc_stdd, 
                 m.channeltype, 
@@ -135,6 +137,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'hxb_name': row['hxb_name'],
                 'hxb_no': row['hxb_no'],
                 'inspector': row['inspector'],
+                'cell': row['cell'],
                 'chip': _chip,
                 'channel': channel,
                 'channeltype': channeltype,
@@ -166,12 +169,27 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
         if idx < len(roc_names):
             chip_to_roc[chip] = roc_names[idx]
             
+    chip_dead_channels = {chip: [] for chip in set(chips)}
+    for c in test_data['list_dead_cells']:
+        chip_dead_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
+    
+    chip_noisy_channels = {chip: [] for chip in set(chips)}
+    for c in test_data['list_noisy_cells']:
+        chip_noisy_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
+
+    for chip in set(chips):
+        roc = chip_to_roc.get(chip, "UNKNOWN")
+        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  ## replace chip number with roc name
+        chip_noisy_channels[roc] = chip_noisy_channels.pop(chip)
+
     if test_data['pedestal_config_json']:
         pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
-        for idx, chip in enumerate(sorted(set(chips))):
-            chip_config[chip] = pedestal_config_json_full[f"roc_s{idx}"]["sc"]
-            roc = chip_to_roc.get(chip, "UNKNOWN")
-            chip_config[roc] = chip_config.pop(chip)  
+
+    for idx, chip in enumerate(sorted(set(chips))):
+        roc = chip_to_roc.get(chip, "UNKNOWN")
+        chip_config[roc] = pedestal_config_json_full[f"roc_s{idx}"]["sc"] if test_data['pedestal_config_json'] else None
+        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  ## replace chip number with roc name
+        chip_noisy_channels[roc] = chip_noisy_channels.pop(chip) 
 
     roc_grouped_data = defaultdict(list)  # Group data by ROC
     for i in range(len(channels)):
@@ -233,8 +251,9 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    flag = "D"      if entry["channel"] in test_data["list_dead_cells"]  else ""
-                    flag = flag+"N" if entry["channel"] in test_data["list_noisy_cells"] else flag
+                    flag = "0"      if entry["adc_mean"] == 0  else ""
+                    flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
+                    flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
                     if flag:
                         ET.SubElement(data, "FLAGS").text = flag
                     if test_data["inverse_sqrt_n"]:
