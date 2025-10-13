@@ -3,7 +3,7 @@
 <HEADER>
     <TYPE>
         <EXTENSION_TABLE_NAME>HGC_COND_ROC_CONFIG_JSON</EXTENSION_TABLE_NAME>
-        <NAME>HGCROC Pedestal Configuration JSON</NAME>
+        <NAME>HGCROC Configuration JSON</NAME>
     </TYPE>
     <RUN>
         <RUN_TYPE>{{ run_type }}</RUN_TYPE>
