@@ -160,8 +160,8 @@ class mass_upload_to_dbloader:
                         sys.stdout.write(line)         # print live
                         sys.stdout.flush()             # force immediate display
                     elif "Progress: [" in line: 
+                        self.files_to_retry = int(line.strip().split('Timeout:')[-1])
                         sys.stdout.write("\r" + f"{YELLOW}{line.strip()}{RESET}")  # overwrite the same line
-                        # sys.stdout.write("\r" + f"{YELLOW}{line.strip().split('(Success')[0]}{RESET}")  # overwrite the same line
                         sys.stdout.flush()
 
                 process.wait()  # wait for process to finish
@@ -223,10 +223,11 @@ class mass_upload_to_dbloader:
                     current_time = datetime.datetime.now()
                     print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
-                if current_step == 4: ## check_upload_xml_dbl
-                    if self.files_to_retry and self.times_to_retry and return_status == 0:
+                if current_step == 3: ## mass_upload_xml_dbl
+                    print(self.files_to_retry , self.times_to_retry ,  return_status, self.files_to_retry > 0 , self.times_to_retry > 0 , return_status == 0)
+                    if self.files_to_retry > 0 and self.times_to_retry > 0 and return_status == 0:
                         self.times_to_retry -= 1 ### attempt only upto 5 times
-                        current_step -= 2 ### current step -2 +1 = go one step back to mass_upload
+                        continue ### repeat current step
                 if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
 
             except Exception as e:
