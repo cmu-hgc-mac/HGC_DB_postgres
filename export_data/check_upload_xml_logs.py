@@ -23,7 +23,7 @@ def get_upload_log_filepaths(csv_file_path):
                 upload_paths.append(row[-2])  # second last column
     return log_paths, upload_paths
 
-def analyze_log_status(log_path: str, upload_path: str, status_tracker: dict) -> Tuple[str, str]:
+def analyze_log_status(log_path: str, upload_path: str, status_tracker = status_tracker) -> Tuple[str, str]:
     """
     Analyze the log file and return a tuple: (status, last_line).
     Status is determined by the log content based on key phrases.
