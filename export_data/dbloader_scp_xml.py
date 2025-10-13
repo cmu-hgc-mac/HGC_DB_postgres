@@ -118,6 +118,8 @@ class mass_upload_to_dbloader:
         self.cern_dbname = cern_dbname
         self.remote_xml_dir = remote_xml_dir
         self.verbose = verbose
+        self.files_to_retry = 0
+        self.times_to_retry = 5
         self.csv_outfile = ""
         
     def make_lxplus_dir(self):
@@ -145,7 +147,7 @@ class mass_upload_to_dbloader:
         # print(f"{GREEN}Check the API and the dbloader log to see if the uploads were successful until this gets fixed.{RESET}")
         print(f"=================================================================")
         with open("export_data/mass_loader.py", "r") as f:
-            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml"]
+            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5"]
             with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -158,7 +160,8 @@ class mass_upload_to_dbloader:
                         sys.stdout.write(line)         # print live
                         sys.stdout.flush()             # force immediate display
                     elif "Progress: [" in line: 
-                        sys.stdout.write("\r" + f"{YELLOW}{line.strip().split('(Success')[0]}{RESET}")  # overwrite the same line
+                        sys.stdout.write("\r" + f"{YELLOW}{line.strip()}{RESET}")  # overwrite the same line
+                        # sys.stdout.write("\r" + f"{YELLOW}{line.strip().split('(Success')[0]}{RESET}")  # overwrite the same line
                         sys.stdout.flush()
 
                 process.wait()  # wait for process to finish
@@ -180,6 +183,8 @@ class mass_upload_to_dbloader:
                     # if not "Success" in line or "Already existis" in line:
                     sys.stdout.write(line)         # print live
                     sys.stdout.flush()             # force immediate display
+                    if 'db_failure' in line:
+                        self.files_to_retry = int(line.split('-')[-1])
                 process.wait()  # wait for process to finish
                 print()
                 print(f"=================================================================")
@@ -218,7 +223,12 @@ class mass_upload_to_dbloader:
                     current_time = datetime.datetime.now()
                     print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
+                if current_step == 4: ## check_upload_xml_dbl
+                    if self.files_to_retry and self.times_to_retry and return_status == 0:
+                        self.times_to_retry -= 1 ### attempt only upto 5 times
+                        current_step -= 2 ### current step -2 +1 = go one step back to mass_upload
                 if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
+
             except Exception as e:
                 print(f"An error occurred at step {current_step+1}: {e}")
                 scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)        
