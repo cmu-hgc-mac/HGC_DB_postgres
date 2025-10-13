@@ -224,7 +224,6 @@ class mass_upload_to_dbloader:
                     print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
                 if current_step == 3: ## mass_upload_xml_dbl
-                    print(self.files_to_retry , self.times_to_retry ,  return_status, self.files_to_retry > 0 , self.times_to_retry > 0 , return_status == 0)
                     if self.files_to_retry > 0 and self.times_to_retry > 0 and return_status == 0:
                         self.times_to_retry -= 1 ### attempt only upto 5 times
                         continue ### repeat current step
