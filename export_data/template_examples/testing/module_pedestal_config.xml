@@ -24,8 +24,8 @@
             <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
         </PART>
         <DATA>
-            <Purpose>{{ purpose }}</Purpose>
-            <ConfigJSON>{{ ConfigJSON }}</ConfigJSON>
+            <PURPOSE>{{ purpose }}</PURPOSE>
+            <CONFIG_JSON>{{ ConfigJSON }}</CONFIG_JSON>
         </DATA>
     </DATA_SET>
 </ROOT>
