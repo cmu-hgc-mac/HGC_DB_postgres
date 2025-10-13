@@ -269,8 +269,8 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
             elif xml_type == 'config':
                 data = ET.Element("DATA")
                 toa_vref = find_toa_vref(chip_config[roc])
-                ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                ET.SubElement(data, "ConfigJSON").text = f'''{chip_config[roc]}'''
+                ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
             
             root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
