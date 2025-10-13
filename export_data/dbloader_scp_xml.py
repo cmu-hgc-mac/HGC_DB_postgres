@@ -160,7 +160,7 @@ class mass_upload_to_dbloader:
                         sys.stdout.write(line)         # print live
                         sys.stdout.flush()             # force immediate display
                     elif "Progress: [" in line: 
-                        self.files_to_retry = int(line.strip().split('Timeout:')[-1])
+                        self.files_to_retry = int(line.strip().split('Timeout:')[-1].split(')')[0])  ## Example: 2025-10-13 16:39:01,347 - INFO - Progress: [41/41] (Success: 0, Already: 26, Failed: 7, Timeout: 8)
                         sys.stdout.write("\r" + f"{YELLOW}{line.strip()}{RESET}")  # overwrite the same line
                         sys.stdout.flush()
 
