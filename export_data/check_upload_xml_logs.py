@@ -90,9 +90,9 @@ def main():
     time.sleep(5) ### wait for log files to get saved
     for log_path, upload_path in zip(log_paths, upload_paths):
         result = analyze_log_status(log_path, upload_path)
-    print('XML CHECK STATUS')
-    for k in status_tracker.keys():
-        print(k, '-', status_tracker[k])
+    # print('XML CHECK STATUS')
+    # for k in status_tracker.keys():
+    #     print(k, '-', status_tracker[k])
 
 if __name__ == "__main__":
     main()
