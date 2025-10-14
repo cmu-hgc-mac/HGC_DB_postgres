@@ -3,7 +3,7 @@ from pathlib import Path
 from scp import SCPClient
 from src import process_xml_list, open_scp_connection
 import numpy as np
-import datetime, time, yaml, paramiko, pwinput, sys, re
+import datetime, time, yaml, paramiko, pwinput, sys, re, math
 from tqdm import tqdm
 import traceback, datetime
 GREEN = "\033[32m"; RED = "\033[31m"; YELLOW = "\033[33m"; RESET = "\033[0m"; 
@@ -119,7 +119,7 @@ class mass_upload_to_dbloader:
         self.remote_xml_dir = remote_xml_dir
         self.verbose = verbose
         self.files_to_retry = 0
-        self.times_to_retry = 10
+        self.times_to_retry = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
         self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.csv"
         
     def make_lxplus_dir(self):
