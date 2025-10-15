@@ -29,6 +29,8 @@ with open(YAML_MAP) as f:
 
 def get_xml_key(xml_path: str) -> str:
     """Return mapping key like 'bp_cond' based on part name and path."""
+    """xml_path: /afs/cern.ch/user/u/username/hgc_xml_temp/320MLF2W2CM0102_wirebond_upload.xml"""
+
     part_name_map = {'BA': 'bp', 'XL': 'hxb', '_': 'sensor', 'PL': 'proto', 'ML': 'module'}
     part_name = xml_path.split('/')[-1].split('_')[0]
 
@@ -67,8 +69,28 @@ def get_xml_key(xml_path: str) -> str:
     if not tables:
         raise ValueError(f"No tables found in YAML for xml_type={xml_type}")
 
-    return part_name, tables
+    return part_name, tables ##i.e., module, 
 
+def get_upload_status_csv(csv_path):
+    '''
+    xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path
+    '''
+    with open(csv_path, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            xml_path = row["xml_path"]
+            upload_status = row["upload_status"].strip()## Already Uploaded, State Timeout, Successful
+            part_name, db_tables_to_be_updated = get_xml_key(xml_path)
+
+            # Skip if unknown status
+            if upload_status not in UPLOAD_STATUS_MAP:
+                continue
+
+'''
+TO-DO: 
+1. Update the upload_status_map for the latest version
+2. return the status and the part_name only
+'''
 async def update_upload_status_from_latest_log(pool: asyncpg.Pool):
     """
     Reads the latest dbloader_batch_uploader_*.csv under export_data/mass_upload_logs,
