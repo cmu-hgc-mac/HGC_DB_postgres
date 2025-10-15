@@ -135,3 +135,19 @@ institution_fullname:
   'NTU': 'National Taiwan University'
   'FSU': 'Florida State University'
   'DESY': 'Deutsches Elektronen-Synchrotron'
+
+postgres_table_to_xml:
+  'bp_cond': ['bp_inspect']
+  'hxb_cond': ['hxb_inspect', 'hxb_pedestal_test']
+  'module_assembly': ['module_assembly']
+  # 'module_build': 
+  'module_cond': ['module_inspect']
+  'wirebond': ['back_wirebond', 'front_wirebond', 'back_encap', 'front_encap', 'bond_pull_test']
+  'proto_assembly': ['proto_assembly']
+  # 'proto_build':
+  'proto_cond': ['proto_inspect']
+  'sensor_cond': ['sensor']
+  'module_pedestal': ['module_pedestal_test']
+  # 'hxb_pedestal':
+  'module_iv': ['module_iv_test']
+  'module_iv_cond': ['module_iv_test']
