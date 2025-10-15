@@ -148,8 +148,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'inverse_sqrt_n': row['inverse_sqrt_n'],
                 'status_desc': row["status_desc"],
                 'inspector': row['inspector'],  ###### for env
-                'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
-                'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
+                'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
+                'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
                 'list_dead_cells': row['list_dead_cells'],
                 'list_noisy_cells': row['list_noisy_cells'],
                 'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
@@ -313,7 +313,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
                 float(test_data[run_begin_timestamp]['rel_hum'])
                 float(test_data[run_begin_timestamp]['temp_c'])
             except:
-                print(f"{test_data[run_begin_timestamp]['hxb_name']}: {run_begin_timestamp} You cannot upload any test data when humidity or temperature is null.") 
+                print(f"{test_data[run_begin_timestamp]['hxb_name']}: {run_begin_timestamp} Cannot upload any test data when humidity or temperature is null.") 
                 continue
             output_file = await generate_hxb_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, output_dir, template_path_test=temp_dir, template_path_env = temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:
