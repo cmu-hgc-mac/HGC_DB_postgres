@@ -2,13 +2,14 @@ import asyncpg, asyncio, argparse
 from tabulate import tabulate  
 
 async def fetch_unique_counts(month, year, macid):
-    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'dbname':'hgcdb'}, 
-                'UCSB': {'host': 'gut.physics.ucsb.edu',    'dbname':'hgcdb'}, 
-                'TTU' : {'host': '129.118.107.198',         'dbname':'ttu_mac_local'},}
-    conn = await asyncpg.connect(
-        user='viewer',
-        database=mac_dict[macid]['dbname'],
-        host= mac_dict[macid]['host'])  
+    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'database':'hgcdb'}, 
+                'UCSB': {'host': 'gut.physics.ucsb.edu',    'database':'hgcdb'}, 
+                'TIFR': {'host': 'lxhgcdb02.tifr.res.in',   'database':'hgcdb', 'password': 'hgcal'},
+                'IHEP': {'host': 'hgcal.ihep.ac.cn',        'database':'postgres',},
+                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'database':'hgcdb'}, }
+    conn = await asyncpg.connect(user='viewer', **mac_dict[macid])
+        #database=mac_dict[macid]['dbname'],
+        #host= mac_dict[macid]['host'])  
     
     # query = f"""SELECT geometry, resolution, bp_material, sen_thickness, roc_version, COUNT(*) AS count
     # FROM module_info

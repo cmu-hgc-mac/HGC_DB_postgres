@@ -199,7 +199,7 @@ def verify_shipin():
         temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip())):
+            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 popup1 = Toplevel(input_window); popup1.title("Enter Barcode of Parts")
                 popup1.transient(input_window)        
                 popup1.attributes("-topmost", True)
@@ -234,7 +234,7 @@ def verify_shipin():
     def upload_file_with_part_in():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip())):
+            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 popup2 = Toplevel()
                 popup2.title("Upload text/csv file with component names")
                 file_entry = None
@@ -330,7 +330,7 @@ def import_data():
             if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
                 if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
-            elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+            elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
@@ -641,7 +641,7 @@ def refresh_data():
         if not dbshipper_pass.strip():
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy()  

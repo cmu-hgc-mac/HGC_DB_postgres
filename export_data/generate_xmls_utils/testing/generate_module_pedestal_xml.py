@@ -7,10 +7,21 @@ import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
-import sys, os, yaml, argparse
+import sys, os, yaml, argparse, json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
+RED = '\033[91m'; RESET = '\033[0m'
+
+conn_yaml_file = os.path.join(loc, 'conn.yaml')
+config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
+statusdict_test_upload = config_data.get('statusdict_test_upload', None)
+if statusdict_test_upload:
+    statusdict_select = tuple([k for d in statusdict_test_upload for k, v in d.items() if v])
+    statusdict_select = [f"'{s}'" for s in statusdict_select]
+    statusdict_select = f"({', '.join(statusdict_select)})" if statusdict_select else None
+else:
+    statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated', 'Bolted')"
 
 chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
 resource_yaml = 'export_data/resource.yaml'
@@ -40,10 +51,23 @@ async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
     '''
     roc_name, roc_index = await conn.fetchrow(query)
     if roc_index == chip_names:
-        return roc_name## i.e., ['SU02-0124-001061', 'SU02-0124-001067', 'SU02-0124-001076']
+        return roc_name ## i.e., ['SU02-0124-001061', 'SU02-0124-001067', 'SU02-0124-001076']
     else:
         print('roc_index unmatched. No ROC was found')
         return False
+
+def find_toa_vref(d):
+    json_results = []
+    if isinstance(d, dict):
+        for k, v in d.items():
+            if k == "Toa_vref":
+                json_results.append(v)
+            else:
+                json_results.extend(find_toa_vref(v))
+    elif isinstance(d, list):
+        for item in d:
+            json_results.extend(find_toa_vref(item))
+    return json_results  
 
 def remap_channels(channel, channel_type):
     for i in range(len(channel)):
@@ -73,6 +97,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.module_no, 
                m.chip, 
                m.channel, 
+               m.cell,
                m.adc_mean, 
                m.adc_stdd, 
                m.channeltype, 
@@ -83,12 +108,20 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.rel_hum,
                m.status_desc,
                m.comment,
+               m.pedestal_config_json,
+               m.list_dead_cells,
+               m.list_noisy_cells,
+               m.inverse_sqrt_n,
+               m.bias_vol,
                h.roc_name, 
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
         WHERE m.module_name = ANY($1)
+        AND m.bias_vol > 0
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
+        if statusdict_select:
+            query += f" AND status_desc IN {statusdict_select}"
         rows = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
@@ -96,6 +129,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.module_no, 
                 m.chip, 
                 m.channel, 
+                m.cell,
                 m.adc_mean, 
                 m.adc_stdd, 
                 m.channeltype, 
@@ -106,18 +140,26 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.rel_hum,
                 m.status_desc,
                 m.comment,
+                m.pedestal_config_json,
+                m.list_dead_cells,
+                m.list_noisy_cells,
+                m.inverse_sqrt_n,
+                m.bias_vol,
                 h.roc_name, 
                 h.roc_index
             FROM module_pedestal_test m
             LEFT JOIN hexaboard h ON m.module_no = h.module_no
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
+            AND m.bias_vol > 0
         """
+        if statusdict_select:
+            query += f" AND status_desc IN {statusdict_select}"
         rows = await conn.fetch(query)
 
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
 
-    test_data, test_data_env = {}, {}
+    test_data = {}
     for row in rows:
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
@@ -135,6 +177,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'module_name': row['module_name'],
                 'module_no': row['module_no'],
                 'inspector': row['inspector'],
+                'cell': row['cell'],
                 'chip': _chip,
                 'channel': channel,
                 'channeltype': channeltype,
@@ -142,221 +185,173 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'adc_stdd': row['adc_stdd'],
                 'roc_name': row['roc_name'],
                 'comment' : row['comment'],
+                'inverse_sqrt_n': row['inverse_sqrt_n'],
                 'status_desc': row["status_desc"],
+                'inspector': row['inspector'],  ###### for env
+                'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
+                'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
+                'list_dead_cells': row['list_dead_cells'],
+                'list_noisy_cells': row['list_noisy_cells'],
+                'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
-
-            test_data_env[run_begin_timestamp] = {
-                'test_timestamp': f"{row['date_test']} {row['time_test']}",
-                'module_name': row['module_name'],
-                'module_no': row['module_no'],
-                'inspector': row['inspector'],
-                'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
-                'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
-                'roc_name': row['roc_name'],
-                'comment' : row['comment'],
-                'status_desc': row["status_desc"],
-            }
-    return test_data, test_data_env
+    return test_data
 
 
-async def generate_module_pedestal_xml(test_data, run_begin_timestamp, template_path, output_path, template_path_env = None, test_data_env = None, lxplus_username = None):
-    tree = ET.parse(template_path)
-    root = tree.getroot()
+async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_path, template_path_test, template_path_env = None, template_path_config = None, lxplus_username = None):
+    chips = test_data["chip"]   # Prepare chip-to-ROC mapping
+    channels = test_data["channel"]
+    adc_means = test_data["adc_mean"]
+    adc_stdds = test_data["adc_stdd"]
+    roc_names = test_data["roc_name"]
+
+    chip_to_roc, chip_config = {}, {}
+    for idx, chip in enumerate(sorted(set(chips))):
+        if idx < len(roc_names):
+            chip_to_roc[chip] = roc_names[idx]
+            
+    chip_dead_channels = {chip: [] for chip in set(chips)}
+    for c in test_data['list_dead_cells']:
+        chip_dead_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
+    
+    chip_noisy_channels = {chip: [] for chip in set(chips)}
+    for c in test_data['list_noisy_cells']:
+        chip_noisy_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
+
+    if test_data['pedestal_config_json']:
+        pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
+
+    for idx, chip in enumerate(sorted(set(chips))):
+        roc = chip_to_roc.get(chip, "UNKNOWN")
+        chip_config[roc] = pedestal_config_json_full[f"roc_s{idx}"]["sc"] if test_data['pedestal_config_json'] else None
+        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  ## replace chip number with roc name
+        chip_noisy_channels[roc] = chip_noisy_channels.pop(chip) 
+
+    roc_grouped_data = defaultdict(list)  # Group data by ROC
+    for i in range(len(channels)):
+        chip = chips[i]
+        roc = chip_to_roc.get(chip, "UNKNOWN")
+        roc_grouped_data[roc].append({
+            "channel": channels[i],
+            "adc_mean": adc_means[i],
+            "adc_stdd": adc_stdds[i] })
+    
+    os.makedirs(output_path, exist_ok=True)
+    timestamp_formatted = str(run_begin_timestamp).replace(":","").split('.')[0]
+    file_path_test = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal.xml")
+    file_path_env = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_cond.xml")
+    file_path_config = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_config.xml")
+    outfile_names = {'test': file_path_test, 'env': file_path_env, 'config': file_path_config}
+    xml_types = {'test': template_path_test, 'env': template_path_env, 'config': template_path_config}
+
     test_timestamp = test_data['test_timestamp']
     test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
 
     # === Fill in <RUN> metadata ===
-    run_info = root.find("HEADER/RUN")
-    if run_info is not None:
-        run_info.find("RUN_TYPE").text = "Si module pedestal and noise" if not test_data['status_desc'] else f"Si module pedestal and noise - {test_data['status_desc']}"
-        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
-        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
-      
+    for xml_type in list(xml_types.keys()): ####### Common for all three XML types
+        if xml_type == 'config' and test_data['pedestal_config_json'] == None: 
+            continue
+        tree = ET.parse(xml_types[xml_type])
+        root = tree.getroot()
+        run_info = root.find("HEADER/RUN")
+        if run_info is not None:
+            run_info.find("RUN_TYPE").text = "Si module pedestal and noise" if not test_data['status_desc'] else f"Si module pedestal and noise - {test_data['status_desc']}"
+            run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
+            run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
+            run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+            run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+            run_info.find("LOCATION").text = LOCATION
+            run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data['module_name']}"
 
-    # Get and remove the original <DATA_SET> template block
-    data_set_template = root.find("DATA_SET")
-    root.remove(data_set_template)
+        data_set = root.find("DATA_SET")  # Get and remove the original <DATA_SET> template block in all three XML types
+        root.remove(data_set)
 
-    # # Prepare chip-to-ROC mapping
-    # chips = test_data["chip"]
-    # channels = test_data["channel"]
-    # adc_means = test_data["adc_mean"]
-    # adc_stdds = test_data["adc_stdd"]
-    # roc_names = test_data["roc_name"]
+        # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
+        for roc, entries in roc_grouped_data.items():
+            data_set = copy.deepcopy(data_set)       # Deep copy the template DATA_SET element for the test
+            data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data["comment"] else test_data["comment"].replace("\n","; ")  # Insert the comments from testing
 
-    # chip_to_roc = {}
-    # for idx, chip in enumerate(sorted(set(chips))):
-    #     if idx < len(roc_names):
-    #         chip_to_roc[chip] = roc_names[idx]
+            serial_elem = data_set.find("PART/SERIAL_NUMBER") # Set the correct SERIAL_NUMBER inside PART
+            if serial_elem is not None:
+                serial_elem.text = roc
+            kindofpart = data_set.find("PART/KIND_OF_PART")
+            if kindofpart is not None:
+                kindofpart.text = f"{test_data['module_name'][4]}D HGCROC"
 
-    # Group data by ROC
-    # roc_grouped_data = defaultdict(list)
-    # for i in range(len(channels)):
-    #     chip = chips[i]
-    #     roc = chip_to_roc.get(chip, "UNKNOWN")
-    #     roc_grouped_data[roc].append({
-    #         "channel": channels[i],
-    #         "adc_mean": adc_means[i],
-    #         "adc_stdd": adc_stdds[i]
-    #     })
+            for data_elem in data_set.findall("DATA"): # Remove placeholder DATA blocks (direct children of DATA_SET)
+                data_set.remove(data_elem)
 
-    # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
-    for roc, entries in roc_grouped_data.items():
-        # Deep copy the template DATA_SET element
-        data_set = copy.deepcopy(data_set_template)
-
-        # Insert the comments from testing
-        data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data["comment"] else test_data["comment"].replace("\n","; ")
-
-        # Set the correct SERIAL_NUMBER inside PART
-        serial_elem = data_set.find("PART/SERIAL_NUMBER")
-        if serial_elem is not None:
-            serial_elem.text = roc
-        kindofpart = data_set.find("PART/KIND_OF_PART")
-        if kindofpart is not None:
-            kindofpart.text = f"{test_data['module_name'][4]}D HGCROC"
-
-        # Remove placeholder DATA blocks (direct children of DATA_SET)
-        for data_elem in data_set.findall("DATA"):
-            data_set.remove(data_elem)
-
-        # Add actual DATA blocks under DATA_SET (NOT under PART)
-        for entry in entries:
-            data = ET.Element("DATA")
-            ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
-            ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
-            ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-            ET.SubElement(data, "FRAC_UNC").text = "0.0"
-            ET.SubElement(data, "FLAGS").text = "0"
-            data_set.append(data)  # <== append directly under DATA_SET
-
-        # Append the completed DATA_SET to ROOT
-        root.append(data_set)
-
-    # Pretty-print the XML
-    rough_string = ET.tostring(root, encoding="utf-8")
-    pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
-    pretty_xml = "\n".join(line for line in pretty_xml.split("\n") if line.strip())
-    
-    # delete the first <ROOT> for formatting
-    lines = pretty_xml.splitlines()
-    if lines[1].strip().startswith("<ROOT"):
-        lines.pop(1)
-    pretty_xml = "\n".join(lines)
-    fixed_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
-    
-    if pretty_xml.startswith('<?xml'):
-        pretty_xml = fixed_declaration + '\n'.join(pretty_xml.split('\n')[1:])
-
-    ### DO the same for the enviromental conditions data
-    tree = ET.parse(template_path_env)
-    root = tree.getroot()
-    test_timestamp = test_data_env['test_timestamp']
-    test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
-
-    # === Fill in <RUN> metadata ===
-    run_info = root.find("HEADER/RUN")
-    if run_info is not None:
-        run_info.find("RUN_TYPE").text = "Si module pedestal and noise" if not test_data_env['status_desc'] else f"Si module pedestal and noise - {test_data_env['status_desc']}"
-        run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
-        run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
-        run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("RUN_END_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        run_info.find("LOCATION").text = LOCATION
-        run_info.find("COMMENT_DESCRIPTION").text = f"MAC Si module pedestal and noise data for {test_data_env['module_name']}"
-
-    # # Get and remove the original <DATA_SET> template block
-    # data_set_template = root.find("DATA_SET")
-    # root.remove(data_set_template)
-    # roc_names = test_data_env["roc_name"]
-
-    # # Group data by ROC
-    # roc_grouped_data = defaultdict(list)
-    
-    # # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
-    # for roc in roc_names:
-    #     # Deep copy the template DATA_SET element
-    #     data_set = copy.deepcopy(data_set_template)
-
-        # Insert the comments from testing
-        data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data_env["comment"] else test_data_env["comment"].replace("\n","; ")
-
-        # Set the correct SERIAL_NUMBER inside PART
-        serial_elem = data_set.find("PART/SERIAL_NUMBER")
-        if serial_elem is not None:
-            serial_elem.text = roc
+            if xml_type == 'test':
+                for entry in entries:  # Add actual DATA blocks under DATA_SET (NOT under PART)
+                    data = ET.Element("DATA")
+                    ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
+                    ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
+                    ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
+                    flag = "0"      if entry["adc_mean"] == 0  else ""
+                    flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
+                    flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
+                    if flag:
+                        ET.SubElement(data, "FLAGS").text = flag
+                    if test_data["inverse_sqrt_n"]:
+                        ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
+                    data_set.append(data)  # <== append directly under DATA_SET
+            elif xml_type == 'env':
+                data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
+                ET.SubElement(data, "TEMP_C").text = test_data['temp_c']
+                ET.SubElement(data, "HUMIDITY_REL").text = test_data['rel_hum']
+                ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+                data_set.append(data)  # <== append directly under DATA_SET
+            elif xml_type == 'config':
+                data = ET.Element("DATA")
+                toa_vref = find_toa_vref(chip_config[roc])
+                ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
+                data_set.append(data)  # <== append directly under DATA_SET 
+            
+            root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
         
-    #     kindofpart = data_set.find("PART/KIND_OF_PART")
-    #     if kindofpart is not None:
-    #         kindofpart.text = f"{test_data_env['module_name'][4]}D HGCROC"
+        # Pretty-print the XML
+        rough_string = ET.tostring(root, encoding="utf-8")
+        pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
+        pretty_xml = pretty_xml.replace("&quot;", '"')
+        pretty_xml = "\n".join(line for line in pretty_xml.split("\n") if line.strip())
+        
+        # delete the first <ROOT> for formatting
+        lines = pretty_xml.splitlines()
+        if lines[1].strip().startswith("<ROOT"):
+            lines.pop(1)
+        pretty_xml = "\n".join(lines)
+        fixed_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
+        
+        if pretty_xml.startswith('<?xml'):
+            pretty_xml = fixed_declaration + '\n'.join(pretty_xml.split('\n')[1:])
+        
+        with open(outfile_names[xml_type], "w", encoding="utf-8") as f:  ### Write to output file
+            f.write(pretty_xml)
 
-        # Remove placeholder DATA blocks (direct children of DATA_SET)
-        for data_elem in data_set.findall("DATA"):
-            data_set.remove(data_elem)
-
-        # Add actual DATA blocks under DATA_SET (NOT under PART)
-        data = ET.Element("DATA")
-        ET.SubElement(data, "TEMP_C").text = test_data_env['temp_c']
-        ET.SubElement(data, "HUMIDITY_REL").text = test_data_env['rel_hum']
-        # ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-        # ET.SubElement(data, "TEMPSENSOR_ID").text = "0"
-        data_set.append(data)  # <== append directly under DATA_SET
-
-        # Append the completed DATA_SET to ROOT
-        root.append(data_set)
-
-    # Pretty-print the XML COND
-    rough_string = ET.tostring(root, encoding="utf-8")
-    pretty_xml_env = minidom.parseString(rough_string).toprettyxml(indent="\t")
-    pretty_xml_env = "\n".join(line for line in pretty_xml_env.split("\n") if line.strip())
-    
-    # delete the first <ROOT> for formatting
-    lines = pretty_xml_env.splitlines()
-    if lines[1].strip().startswith("<ROOT"):
-        lines.pop(1)
-    pretty_xml_env = "\n".join(lines)
-    fixed_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
-    
-    if pretty_xml_env.startswith('<?xml'):
-        pretty_xml_env = fixed_declaration + '\n'.join(pretty_xml_env.split('\n')[1:])
-
-    # Write to output file
-    os.makedirs(output_path, exist_ok=True)
-    temp = str(run_begin_timestamp).replace(":","").split('.')[0]
-    file_path = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal.xml")
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(pretty_xml)
-    file_path_env = os.path.join(output_path, f"{test_data['module_name']}_{temp}_pedestal_cond.xml")
-    with open(file_path_env, "w", encoding="utf-8") as f:
-        f.write(pretty_xml_env)
-
-    return file_path
+    return outfile_names
 
 
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
+    temp_dir_config = 'export_data/template_examples/testing/module_pedestal_config.xml'
     temp_dir_env = 'export_data/template_examples/testing/qc_env_cond.xml'
     output_dir = 'export_data/xmls_for_upload/testing/pedestal'
 
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        test_data, test_data_env = await fetch_test_data(conn, date_start, date_end, partsnamelist)
-        for timestamp_key in tqdm(list(test_data_env.keys())):
-            if test_data_env[timestamp_key]['rel_hum'] is None or test_data_env[timestamp_key]['temp_c'] is None:
-                raise ValueError("You cannot upload any test data when humidity or temperature is null.")
-            else:
-                output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, temp_dir, output_dir, template_path_env=temp_dir_env, test_data_env=test_data_env[timestamp_key], lxplus_username=lxplus_username)
-
+        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
+        for timestamp_key in tqdm(list(test_data.keys())):
+            try:
+                float(test_data[timestamp_key]['rel_hum'])
+                float(test_data[timestamp_key]['temp_c'])                
+            except:
+                print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
+                continue
+            output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:
-        RED = '\033[91m'
-        RESET = '\033[0m'
-        print(f"{RED}An error occurred: {e}. You cannot upload any test data when humidity or temperature is null.{RESET}")
+        print(f"{RED}An error occurred: {e}.{RESET}")
     finally:
         await conn.close()
 
