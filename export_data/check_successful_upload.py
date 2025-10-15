@@ -26,7 +26,6 @@ UPLOAD_STATUS_MAP = {
 YAML_MAP = "export_data/resource.yaml"        # local mapping file
 with open(YAML_MAP) as f:
     yaml_data = yaml.safe_load(f)
-    
 
 def get_xml_key(xml_path: str) -> str:
     """Return mapping key like 'bp_cond' based on part name and path."""
