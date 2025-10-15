@@ -120,7 +120,7 @@ class mass_upload_to_dbloader:
         self.verbose = verbose
         self.files_to_retry = 0
         self.times_to_retry = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
-        self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.csv"
+        self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         
     def make_lxplus_dir(self):
         makedir_cmd = ["ssh", f"{self.dbl_username}@dbloader-hgcal", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"mkdir -p {self.remote_xml_dir}"]
