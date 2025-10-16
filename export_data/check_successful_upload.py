@@ -35,8 +35,7 @@ PART_NAME_MAP = {
 }
 
 
-# YAML_MAP = "export_data/resource.yaml"        # local mapping file
-YAML_MAP = "resource.yaml"        # local mapping file
+YAML_MAP = "export_data/resource.yaml"        # local mapping file
 with open(YAML_MAP) as f:
     yaml_data = yaml.safe_load(f)
 
@@ -138,12 +137,12 @@ async def update_upload_status(conn, csv_output):
     for e in errors:
         print(f"❌ {type(e).__name__}: {e}")
 
-def get_latest_upload_log(log_dir: str = "mass_upload_logs"):
-    pattern = os.path.join(log_dir, "*.csv")
+def get_latest_upload_log():
+    pattern = os.path.join(LOG_DIR, "*.csv")
     csv_files = glob.glob(pattern)
 
     if not csv_files:
-        print(f"No CSV files found in {log_dir}")
+        print(f"No CSV files found in {LOG_DIR}")
         return None
 
     # Sort by modification time (newest last)
