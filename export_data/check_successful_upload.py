@@ -8,6 +8,7 @@ import re, base64
 import yaml
 from cryptography.fernet import Fernet
 import argparse
+import glob
 
 ## get the latest log csv file under mass_upload_logs (dbloader_batch_uploader_YYYYMMDDTTTTTT.csv)
 ## Open the csv file, find the value for "upload_status"
@@ -20,134 +21,135 @@ LOG_DIR = Path("export_data/mass_upload_logs")
 UPLOAD_STATUS_MAP = {
     "Already Uploaded": True,
     "Success": True,
-    "Error": False
+    "State Timeout": False,
+    "Error": False,
+    "Copy Failed": False,
+    "Processing Exception": False
+}
+PART_NAME_MAP = {
+    'BA': 'bp',
+    'XL': 'hxb',
+    '_': 'sensor',
+    'PL': 'proto',
+    'ML': 'module'
 }
 
-YAML_MAP = "export_data/resource.yaml"        # local mapping file
+
+# YAML_MAP = "export_data/resource.yaml"        # local mapping file
+YAML_MAP = "resource.yaml"        # local mapping file
 with open(YAML_MAP) as f:
     yaml_data = yaml.safe_load(f)
 
-def get_xml_key(xml_path: str) -> str:
+def get_reflected_tables(xml_path: str) -> str:
     """Return mapping key like 'bp_cond' based on part name and path."""
     """xml_path: /afs/cern.ch/user/u/username/hgc_xml_temp/320MLF2W2CM0102_wirebond_upload.xml"""
 
-    part_name_map = {'BA': 'bp', 'XL': 'hxb', '_': 'sensor', 'PL': 'proto', 'ML': 'module'}
+    table_map = yaml_data["postgres_table_to_xml"]
+    
+    ## get prefix
     part_name = xml_path.split('/')[-1].split('_')[0]
-
-    # Detect type code inside long serial number
     m = re.search(r'(BA|XL|PL|ML|_)', part_name)
     typecode = m.group(1) if m else None
-    prefix = part_name_map.get(typecode, "")
-    suffix = ""
-
-    if "wirebond" in xml_path:
-        suffix = "wirebond"
-    elif "_cond_upload.xml" in xml_path:
-        suffix = "cond"
-    elif "_build_upload.xml" in xml_path:
-        suffix = "build"
-    elif "_assembly.xml" in xml_path:
-        suffix = "assembly"
-    elif "_iv_cond.xml" in xml_path:
-        suffix = "iv_cond"
-    elif "_iv.xml" in xml_path:
-        suffix = "iv"
-    elif "_pedestal" in xml_path:
-        suffix = "pedestal"
-
-    xml_type = f"{prefix}_{suffix}"
-    table_map = yaml_data["postgres_table_to_xml"]
-    tables = table_map[xml_type]
-
-    if not prefix or not suffix:
-        raise ValueError(f"Cannot determine key for part={part_name}, path={xml_path}")
-
-    xml_type = f"{prefix}_{suffix}"
-    table_map = yaml_data["postgres_table_to_xml"]
-    tables = table_map.get(xml_type, [])
-
-    if not tables:
-        raise ValueError(f"No tables found in YAML for xml_type={xml_type}")
-
-    return part_name, tables ##i.e., module, 
+    prefix = PART_NAME_MAP.get(typecode, "")
+    if not prefix:
+        raise ValueError(f"Cannot determine part type for part={part_name}, path={xml_path}")
+    
+    suffix_matching = {
+        "wirebond": "wirebond",
+        "_cond_upload.xml": f"{prefix}_cond",
+        "_build_upload.xml": f"{prefix}_build",
+        "_assembly.xml": f"{prefix}_assembly",
+        "_iv_cond.xml": f"{prefix}_iv_cond",
+        "_iv.xml": f"{prefix}_iv",
+        "_pedestal": f"{prefix}_pedestal"
+    }
+    for suffix, xml_type in suffix_matching.items():
+        if suffix in xml_path:
+            tables = table_map[xml_type]
+            if not suffix:
+                raise ValueError(f"Cannot determine xml type for part={part_name}, path={xml_path}")
+            return prefix, part_name, tables ##i.e., module, 320MLF2W2CM0102, [module_pedestal, module_cond]
 
 def get_upload_status_csv(csv_path):
     '''
     xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path
     '''
+    csv_output = []
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             xml_path = row["xml_path"]
-            upload_status = row["upload_status"].strip()## Already Uploaded, State Timeout, Successful
-            part_name, db_tables_to_be_updated = get_xml_key(xml_path)
-
+            upload_status = row["upload_status"].strip()## Refer to UPLOAD_STATUS_MAP
+            prefix, part_name, db_tables_to_be_updated = get_reflected_tables(xml_path)
+            csv_output.append((prefix, part_name, upload_status, db_tables_to_be_updated))
             # Skip if unknown status
             if upload_status not in UPLOAD_STATUS_MAP:
                 continue
+        return csv_output ## [(part_name, upload_status, db_tables_to_be_updated), (...), ...]
 
-'''
-TO-DO: 
-1. Update the upload_status_map for the latest version
-2. return the status and the part_name only
-'''
-async def update_upload_status_from_latest_log(pool: asyncpg.Pool):
+async def update_upload_status(conn, csv_output):
     """
-    Reads the latest dbloader_batch_uploader_*.csv under export_data/mass_upload_logs,
-    parses upload_status, and updates xml_upload_success for each part_name in the given table.
-    """
+    Update 'xml_upload_success' column for relevant tables based on csv_output.
 
-    # 1. Find the latest CSV file
-    csv_files = list(LOG_DIR.glob("dbloader_batch_uploader_*.csv"))
+    Args:
+        conn: An existing asyncpg.Connection object.
+        csv_output: List of tuples in the form (part_name, status, [table_names]).
+    """
+    tasks = []
+
+    for prefix, part_name, status, tables in csv_output:
+        success_flag = UPLOAD_STATUS_MAP.get(status)
+        if success_flag is None:
+            print(f"Unknown status '{status}' for part {part_name}, skipping.")
+            continue
+
+        for table in tables:
+            # Sanitize table name for safety: ensure it's alphanumeric + underscore only
+            if not table.replace("_", "").isalnum():
+                print(f"Skipping suspicious table name: {table}")
+                continue
+            if prefix == 'sensor':
+                query = f"""
+                    UPDATE {table}
+                    SET xml_upload_success = $1
+                    WHERE sen_name = $2
+                """
+            else:
+                query = f"""
+                    UPDATE {table}
+                    SET xml_upload_success = $1
+                    WHERE {prefix}_name = $2
+                """
+            tasks.append(conn.execute(query, success_flag, part_name))
+
+    if not tasks:
+        print("No valid update tasks found.")
+        return
+
+    # Run updates concurrently
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Report results
+    total_updates = len(results)
+    errors = [r for r in results if isinstance(r, Exception)]
+    print(f"✅ Attempted {total_updates} updates; {len(errors)} errors.")
+
+    # Optional: print specific error info
+    for e in errors:
+        print(f"❌ {type(e).__name__}: {e}")
+
+def get_latest_upload_log(log_dir: str = "mass_upload_logs"):
+    pattern = os.path.join(log_dir, "*.csv")
+    csv_files = glob.glob(pattern)
+
     if not csv_files:
-        print("❌ No log CSV files found.")
-        return
+        print(f"No CSV files found in {log_dir}")
+        return None
 
-    latest_csv = max(csv_files, key=os.path.getmtime)
-    print(f"📄 Using latest log file: {latest_csv.name}")
-
-    updates = []
-
-    # 2. Parse the CSV file
-    with open(latest_csv, newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            xml_path = row["xml_path"]
-            upload_status = row["upload_status"].strip()
-            
-            part_name, db_tables_to_be_updated = get_xml_key(xml_path)
-
-            # Skip if unknown status
-            if upload_status not in UPLOAD_STATUS_MAP:
-                continue
-
-            # 3. Map status to boolean
-            status_bool = UPLOAD_STATUS_MAP[upload_status]
-            updates.append((part_name, status_bool, db_tables_to_be_updated))
-
-    if not updates:
-        print("⚠️ No valid updates found in log.")
-        return
-
-    # 5. Execute updates inside one transaction
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for part_name, status_bool, tables in updates:
-                for table in tables:
-                    query = f"""
-                        UPDATE {db_tables_to_be_updated}
-                        SET xml_upload_success = $1
-                        WHERE module_name = $2
-                        OR bp_name = $2
-                        OR proto_name = $2
-                        OR hxb_name = $2
-                        OR sensor_name = $2
-                    """
-                    print(query)
-                    await conn.execute(query, status_bool, part_name)
-
-    print(f"✅ Updated {len(updates)} rows in table '{db_tables_to_be_updated}'.")
-
+    # Sort by modification time (newest last)
+    latest_file = max(csv_files, key=os.path.getmtime)
+    print(f"Latest upload log: {latest_file}")
+    return latest_file
 
 async def main(dbpassword, encryption_key=None):
 
@@ -169,20 +171,34 @@ async def main(dbpassword, encryption_key=None):
         'host': conn_info.get('db_hostname'),
         'port': conn_info.get('port'),
     }
+    # Decrypt password if needed
+    if encryption_key:
+        cipher_suite = Fernet(encryption_key.encode())
+        dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(dbpassword)).decode()
 
-    if encryption_key is None:
-        db_params.update({'password': dbpassword})
-    else:
-        cipher_suite = Fernet((encryption_key).encode())
-        db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
+    db_params["password"] = dbpassword
 
+    # Connect to PostgreSQL
     pool = await asyncpg.create_pool(**db_params)
+    print("✅ Connected to database.")
 
     try:
-        await update_upload_status_from_latest_log(pool)
+        # Find and process latest CSV
+        massloader_log_csv = get_latest_upload_log()
+        if not massloader_log_csv:
+            print("No log file to process.")
+            return
+
+        # Assuming get_upload_status_csv() returns csv_output as described
+        csv_output = get_upload_status_csv(massloader_log_csv)
+
+        # Update DB
+        async with pool.acquire() as conn:
+            await update_upload_status(conn, csv_output)
+
     finally:
         await pool.close()
-
-
+        print("🔒 Database connection closed.")
+        
 if __name__ == "__main__":
-    asyncio.run(main(dbpassword))
+    asyncio.run(main())
