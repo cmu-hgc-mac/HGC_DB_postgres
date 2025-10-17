@@ -166,11 +166,11 @@ async def update_date_received():
         END $$;
         """
 
-        restul = await conn.execute(update_hxb)
+        result = await conn.execute(update_hxb)
         print(f"Hexaboards date_verify_received updated.")
-        restul = await conn.execute(update_sensor)
+        result = await conn.execute(update_sensor)
         print(f"Sensors date_verify_received updated.")
-        restul = await conn.execute(update_baseplate)
+        result = await conn.execute(update_baseplate)
         print(f"Baseplates date_verify_received updated.")
 
     except Exception as e:
