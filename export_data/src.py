@@ -93,7 +93,7 @@ async def check_good_conn(dbpassword, encryption_key = None,  user_type = None):
     else:
         return False
 
-async def get_conn(dbpassword, encryption_key = None, user_type = None):
+async def get_conn(dbpassword, encryption_key = None, user_type = None, pool=False):
     user_type = user_type if user_type else 'shipper'
     '''
     Does: get connection to database
@@ -112,13 +112,16 @@ async def get_conn(dbpassword, encryption_key = None, user_type = None):
     else:
         cipher_suite = Fernet((encryption_key).encode())
         db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
-
-    try:
-        conn = await asyncpg.connect(**db_params)
-        return conn
-    except Exception as e:
-        print(e)
-        return None
+    if pool:
+        pool = await asyncpg.create_pool(**db_params)
+        return pool
+    else:
+        try:
+            conn = await asyncpg.connect(**db_params)
+            return conn
+        except Exception as e:
+            print(e)
+            return None
 
 
 async def fetch_from_db(query, conn):
