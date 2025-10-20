@@ -152,34 +152,9 @@ def get_latest_upload_log():
 
 async def main(dbpassword, encryption_key=None):
 
-    parser = argparse.ArgumentParser(description="Script to process files in a directory.")
-    parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
-    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
-    args = parser.parse_args()
-    
-    dbpassword = args.dbpassword
-    encryption_key = args.encrypt_key
-
-    # Example DB connection setup
-    loc = 'dbase_info'
-    conn_yaml_file = os.path.join(loc, 'conn.yaml')
-    conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
-    db_params = {
-        'database': conn_info.get('dbname'),
-        'user': 'editor',
-        'host': conn_info.get('db_hostname'),
-        'port': conn_info.get('port'),
-    }
-    # Decrypt password if needed
-    if encryption_key:
-        cipher_suite = Fernet(encryption_key.encode())
-        dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(dbpassword)).decode()
-
-    db_params["password"] = dbpassword
-
     # Connect to PostgreSQL
-    pool = await asyncpg.create_pool(**db_params)
-    print("✅ Connected to database.")
+    pool = await get_conn(dbpassword, encryption_key, pool=True)
+    print("Connected to database.")
 
     try:
         # Find and process latest CSV
@@ -197,7 +172,14 @@ async def main(dbpassword, encryption_key=None):
 
     finally:
         await pool.close()
-        print("🔒 Database connection closed.")
+        print("Database connection closed.")
         
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Script to process files in a directory.")
+    parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
+    args = parser.parse_args()
+    
+    dbpassword = args.dbpassword
+    encryption_key = args.encrypt_key
+    asyncio.run(main(dbpassword=dbpassword, encryption_key=encryption_key))

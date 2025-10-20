@@ -11,6 +11,7 @@ import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
 from src import process_xml_list
 from find_missing_var_xml import find_missing_var_xml
+import check_successful_upload
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 # import export_data.check_successful_upload as check_successful_upload
 
@@ -167,8 +168,8 @@ async def main():
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
-        # if ret:
-        #     check_successful_upload(dbpassword = dbpassword, encryption_key = encryption_key)
+        if ret:
+            await check_successful_upload(dbpassword = dbpassword, encryption_key = encryption_key)
 
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
