@@ -120,14 +120,9 @@ async def update_upload_status(conn, csv_output):
                     SET xml_upload_success = $1
                     WHERE {prefix}_name = $2
                 """
-            try:
-                result = await conn.execute(query, success_flag, part_name)
-                print(f"Updated {table} for {part_name}: {result}")
-            except Exception as e:
-                print(f"Failed update {table} for {part_name}: {e}")
-
-    if not tasks:
-        print("No valid update tasks found.")
+            tasks.append(conn.execute(query, success_flag, part_name))
+        if not tasks:
+            print("No valid update tasks found.")
         return
 
     # Run updates concurrently
@@ -136,7 +131,7 @@ async def update_upload_status(conn, csv_output):
     # Report results
     total_updates = len(results)
     errors = [r for r in results if isinstance(r, Exception)]
-    print(f"✅ Attempted {total_updates} updates; {len(errors)} errors.")
+    print(f"Attempted {total_updates} updates; {len(errors)} errors.")
 
     # Optional: print specific error info
     for e in errors:
