@@ -9,6 +9,7 @@ import yaml
 from cryptography.fernet import Fernet
 import argparse
 import glob
+from src import get_conn
 
 ## get the latest log csv file under mass_upload_logs (dbloader_batch_uploader_YYYYMMDDTTTTTT.csv)
 ## Open the csv file, find the value for "upload_status"
@@ -119,7 +120,11 @@ async def update_upload_status(conn, csv_output):
                     SET xml_upload_success = $1
                     WHERE {prefix}_name = $2
                 """
-            tasks.append(conn.execute(query, success_flag, part_name))
+            try:
+                result = await conn.execute(query, success_flag, part_name)
+                print(f"Updated {table} for {part_name}: {result}")
+            except Exception as e:
+                print(f"Failed update {table} for {part_name}: {e}")
 
     if not tasks:
         print("No valid update tasks found.")
@@ -135,7 +140,7 @@ async def update_upload_status(conn, csv_output):
 
     # Optional: print specific error info
     for e in errors:
-        print(f"❌ {type(e).__name__}: {e}")
+        print(f"{type(e).__name__}: {e}")
 
 def get_latest_upload_log():
     pattern = os.path.join(LOG_DIR, "*.csv")

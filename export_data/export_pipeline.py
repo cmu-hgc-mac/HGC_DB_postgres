@@ -169,7 +169,14 @@ async def main():
         for cerndb in db_list:
             ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
         if ret:
-            await check_successful_upload(dbpassword = dbpassword, encryption_key = encryption_key)
+            result = subprocess.run(
+                [sys.executable, "export_data/check_successful_upload.py", "--dbpassword", dbpassword, "--encrypt_key", encryption_key or ""],
+                capture_output=True,
+                text=True
+                )
+            if result.stderr:
+                print("check_successful_upload.py errors:\n", result.stderr)
+            # await check_successful_upload(dbpassword = dbpassword, encryption_key = encryption_key)
 
             # Step 3: Delete generated XMLs on success
         if ret and str2bool(args.del_xml):
