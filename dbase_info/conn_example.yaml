@@ -3,6 +3,7 @@ port: '5432'
 db_hostname: 'localhost' 
 institution_abbr: ''         ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB
 cern_db: 'prod_db'           ## default upload database: dev_db vs prod_db; controls postgres panel 
+dbloader_hostname: 'hgcaldbloader.cern.ch'  ## Choose between new 'hgcaldbloader.cern.ch' and old 'dbloader-hgcal'
 php_port: 8083
 max_mod_per_box: 10          ## maximum number of modules per box; controls postgres panel 
 max_box_per_shipment: 40     ## maximum number of boxes per shipment (crate); controls postgres panel 
