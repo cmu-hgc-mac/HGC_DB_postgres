@@ -326,16 +326,33 @@ class UploadProcessor:
 
         # Read final state
         state = self.file_handler.read_state_file(state_path)
+        log_path = self.file_handler.get_log_path(file_path.name, db)
+
+        # Default interpretation from state file
         if state is None:
             status = UploadStatus.ERROR.value
             state = 'State Read Error'
+        elif state == 0:
+            status = UploadStatus.SUCCESS.value
         else:
-            status = UploadStatus.SUCCESS.value if state == 0 else UploadStatus.ERROR.value
+            status = UploadStatus.ERROR.value
 
-        log_path = self.file_handler.get_log_path(file_path.name, db)
-        logger.info(f"Log path for {file_path.name}: {log_path}")
+        # --- NEW SECTION: check log content for special cases ---
+        try:
+            if os.path.exists(log_path):
+                with open(log_path, 'r', encoding='utf-8', errors='ignore') as logf:
+                    log_text = logf.read().lower()
+                    if "dataset already exists" in log_text or "already uploaded" in log_text:
+                        status = UploadStatus.ALREADY_UPLOADED.value
+                    elif "timeout" in log_text and status != UploadStatus.SUCCESS.value:
+                        status = UploadStatus.TIMEOUT.value
+        except Exception as log_err:
+            logger.warning(f"Could not read log file {log_path}: {log_err}")
+        # --------------------------------------------------------
 
+        logger.info(f"Final status for {file_path.name}: {status}")
         return UploadResult(src, status, state, state_path, log_path)
+
 
 
 # =============================================================================
