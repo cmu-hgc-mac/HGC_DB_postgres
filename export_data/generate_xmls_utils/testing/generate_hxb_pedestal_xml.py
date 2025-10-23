@@ -317,7 +317,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
                 continue
             output_file = await generate_hxb_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, output_dir, template_path_test=temp_dir, template_path_env = temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:
-        print(f"{RED}An error occurred: {e}.{RESET}")
+        print(f"{RED}An error occurred: {traceback.print_exc()}.{RESET}")
     finally:
         await conn.close()
 
