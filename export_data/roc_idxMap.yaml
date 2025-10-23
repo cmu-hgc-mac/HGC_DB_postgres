@@ -3,10 +3,13 @@
 LD Full:
   - chip: 0
     name: M1
+    index: roc_s0
   - chip: 1
     name: M2
+    index: roc_s1
   - chip: 2
     name: M3
+    index: roc_s0
 
 LD Right:
   - chip: 0
@@ -43,16 +46,22 @@ LD Five:
 HD Full:
   - chip: 0
     name: IC1
+    index: roc_s0_0
   - chip: 1
     name: IC2
+    index: roc_s0_1
   - chip: 2
     name: IC3
+    index: roc_s1_0
   - chip: 3
     name: IC4
+    index: roc_s1_1
   - chip: 4
     name: IC5
+    index: roc_s2_0
   - chip: 5
     name: IC6
+    index: roc_s2_1
 
 HD Top:
   - chip: 0

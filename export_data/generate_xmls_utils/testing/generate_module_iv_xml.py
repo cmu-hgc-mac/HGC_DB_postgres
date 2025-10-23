@@ -7,6 +7,7 @@ import sys, os, yaml, argparse, datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
+RED = '\033[91m'; RESET = '\033[0m'
 
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -41,7 +42,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     module_list = set()
     if partsnamelist:
         query = f"""
-            SELECT module_name, status, status_desc, mod_ivtest_no
+            SELECT module_name, status, status_desc, mod_ivtest_no, temp_c, rel_hum
             FROM module_iv_test
             WHERE module_name = ANY($1)
         """
@@ -50,7 +51,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         results = await conn.fetch(query, partsnamelist)
     else:
         query = f"""
-            SELECT module_name, status, status_desc, mod_ivtest_no
+            SELECT module_name, status, status_desc, mod_ivtest_no, temp_c, rel_hum
             FROM module_iv_test
             WHERE module_iv_test.date_test BETWEEN '{date_start}' AND '{date_end}'
         """
@@ -58,13 +59,22 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             query += f" AND status_desc IN {statusdict_select}"
         results = await conn.fetch(query)
 
-    module_status_list = set((row['module_name'], row['status'], row['status_desc'], row['mod_ivtest_no']) for row in results if 'module_name' in row and 'status' in row)
-    for module_name, status, status_desc, mod_ivtest_no in module_status_list:
-        print(f'--> {module_name} with mod_ivtest_no {mod_ivtest_no}...')
+    module_status_list = set((row['module_name'], row['status'], row['status_desc'], row['mod_ivtest_no'], row['temp_c'], row['rel_hum']) for row in results if 'module_name' in row and 'status' in row)
+    for module_name, status, status_desc, mod_ivtest_no, temp_c, rel_hum in module_status_list:
+        combined_str = "" ### initialize
+        try:
+            print(f'--> {module_name} with mod_ivtest_no {mod_ivtest_no}...')
+            float(temp_c)
+            float(rel_hum)
+        except:
+            print(f"{RED}--> {module_name} with mod_ivtest_no {mod_ivtest_no}: Cannot upload any IV test data for which humidity or temperature is null.{RESET}") 
+            continue
+
         try:
             db_values, db_values_iv, db_values_env = {}, {}, {}
             for entry in xml_data:
                 xml_var, xml_type = entry['xml_temp_val'], entry['xml_type']
+                
 
                 if xml_var == 'LOCATION':
                     db_values[xml_var]     = LOCATION 
@@ -159,18 +169,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             meas_r = results.get('meas_r', "")
                             meas_v = results.get('meas_v', "")
                             db_values[xml_var] = fetch_module_iv_data(prog_v, meas_v, meas_i, meas_r)
-                        elif xml_var in ['TEMP_C', 'HUMIDITY_REL'] :
-                            try:
-                                float(results[xml_var])
-                            except:
-                                raise ValueError("\033[91mYou cannot upload any test data when temperature/humidity is null.\033[0m")
                         else:
                             db_values[xml_var] = results.get(dbase_col, '')
-                
-                if 'TEMP_C' not in db_values:
-                    db_values['TEMP_C'] = 999
-                elif 'HUMIDITY_REL' not in db_values:
-                    db_values['HUMIDITY_REL'] = 999
                 
                 if xml_type == 'iv':
                     db_values_iv[xml_var] = db_values[xml_var]
