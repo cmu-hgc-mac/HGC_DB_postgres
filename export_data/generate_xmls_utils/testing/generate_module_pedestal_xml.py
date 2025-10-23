@@ -23,9 +23,9 @@ if statusdict_test_upload:
 else:
     statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated', 'Bolted')"
 
-chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
+roc_idxMap_yaml = 'export_data/roc_idxMap.yaml'
 resource_yaml = 'export_data/resource.yaml'
-with open(chip_idxMap_yaml, 'r') as file:
+with open(roc_idxMap_yaml, 'r') as file:
     chip_idx_yaml = yaml.safe_load(file)
 
 with open(resource_yaml, 'r') as file:
@@ -220,7 +220,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
     chip_dead_channels = {chip: [] for chip in set(chips)}
     for c in test_data['list_dead_cells']:
         chip_dead_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
-    
+
     chip_noisy_channels = {chip: [] for chip in set(chips)}
     for c in test_data['list_noisy_cells']:
         chip_noisy_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
@@ -228,11 +228,13 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
     if test_data['pedestal_config_json']:
         pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
 
+    print(chip_dead_channels)
     for idx, chip in enumerate(sorted(set(chips))):
         roc = chip_to_roc.get(chip, "UNKNOWN")
         chip_config[roc] = pedestal_config_json_full[f"roc_s{idx}"]["sc"] if test_data['pedestal_config_json'] else None
         chip_dead_channels[roc] = chip_dead_channels.pop(chip)  ## replace chip number with roc name
         chip_noisy_channels[roc] = chip_noisy_channels.pop(chip) 
+    print(chip_dead_channels)
 
     roc_grouped_data = defaultdict(list)  # Group data by ROC
     for i in range(len(channels)):
