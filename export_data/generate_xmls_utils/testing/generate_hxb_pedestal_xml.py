@@ -7,11 +7,11 @@ import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
-import sys, os, yaml, argparse, json
+import sys, os, yaml, argparse, json, traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
-from export_data.generate_xmls_utils.testing.generate_module_pedestal_xml import find_toa_vref, find_rocID
+from export_data.generate_xmls_utils.testing.generate_module_pedestal_xml import find_toa_vref, get_roc_name
 RED = '\033[91m'; RESET = '\033[0m'
 
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -150,6 +150,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'adc_mean': row['adc_mean'],
                 'adc_stdd': row['adc_stdd'],
                 'roc_name': row['roc_name'],
+                'roc_index': row['roc_index'],
                 'comment' : row['comment'],
                 'inverse_sqrt_n': row['inverse_sqrt_n'],
                 'status_desc': row["status_desc"],
@@ -168,43 +169,36 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
     channels = test_data["channel"]
     adc_means = test_data["adc_mean"]
     adc_stdds = test_data["adc_stdd"]
-    roc_names = test_data["roc_name"]
 
-    chip_to_roc, chip_config = {}, {}
-    for idx, chip in enumerate(sorted(set(chips))):
-        if idx < len(roc_names):
-            chip_to_roc[chip] = roc_names[idx]
-            
-    chip_dead_channels = {chip: [] for chip in set(chips)}
-    for c in test_data['list_dead_cells']:
+    chip_dead_channels = {chip: [] for chip in set(chips)} 
+    for c in test_data['list_dead_cells']:      ### fill this dict with `cell` as keys
         chip_dead_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
     
-    chip_noisy_channels = {chip: [] for chip in set(chips)}
-    for c in test_data['list_noisy_cells']:
+    chip_noisy_channels = {chip: [] for chip in set(chips)} 
+    for c in test_data['list_noisy_cells']:      ### fill this dict with `cell` as keys
         chip_noisy_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
 
-    for chip in set(chips):
-        roc = chip_to_roc.get(chip, "UNKNOWN")
-        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  ## replace chip number with roc name
+    roc_grouped_data = defaultdict(list)  # Group data by ROC
+    for i, chip in enumerate(chips):
+        roc_grouped_data[chip].append({
+            "channel": channels[i],
+            "adc_mean": adc_means[i],
+            "adc_stdd": adc_stdds[i] })
+    
+    chip_to_roc_name, json_key_to_roc_name = get_roc_name(module_name = test_data['hxb_name'], roc_name = test_data['roc_name'], roc_index = test_data['roc_index'])
+
+    for chip in set(chips): ## replace chip number with roc name
+        roc = chip_to_roc_name[chip]
+        roc_grouped_data[roc] = roc_grouped_data.pop(chip)
+        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  
         chip_noisy_channels[roc] = chip_noisy_channels.pop(chip)
 
     if test_data['pedestal_config_json']:
         pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
-
-    for idx, chip in enumerate(sorted(set(chips))):
-        roc = chip_to_roc.get(chip, "UNKNOWN")
-        chip_config[roc] = pedestal_config_json_full[f"roc_s{idx}"]["sc"] if test_data['pedestal_config_json'] else None
-        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  ## replace chip number with roc name
-        chip_noisy_channels[roc] = chip_noisy_channels.pop(chip) 
-
-    roc_grouped_data = defaultdict(list)  # Group data by ROC
-    for i in range(len(channels)):
-        chip = chips[i]
-        roc = chip_to_roc.get(chip, "UNKNOWN")
-        roc_grouped_data[roc].append({
-            "channel": channels[i],
-            "adc_mean": adc_means[i],
-            "adc_stdd": adc_stdds[i] })
+        
+    chip_config = {}    
+    for key, roc in json_key_to_roc_name.items():   
+        chip_config[roc] = pedestal_config_json_full[key]["sc"] if test_data['pedestal_config_json'] else None   
     
     os.makedirs(output_path, exist_ok=True)
     timestamp_formatted = str(run_begin_timestamp).replace(":","").split('.')[0]

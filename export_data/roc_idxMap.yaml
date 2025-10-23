@@ -1,85 +1,109 @@
 ## reference: https://indico.cern.ch/event/1492551/contributions/6289012/attachments/2992039/5270825/Tsionou_DB_ROCpositions_6Jan25.pdf
 
-LD Full:
-  - chip: 0
-    name: M1
-  - chip: 1
-    name: M2
-  - chip: 2
-    name: M3
+LD: 
+  Full:
+    - chip: 0
+      roc_index: M1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: M2
+      config_json_key: roc_s1
+    - chip: 2
+      roc_index: M3
+      config_json_key: roc_s2
+  Right:
+    - chip: 0
+      roc_index: M1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: M2
+      config_json_key: roc_s0
+  Left:
+    - chip: 0
+      roc_index: M1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: M2
+      config_json_key: roc_s0
+  Top:
+    - chip: 0
+      roc_index: IC1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: IC2
+      config_json_key: roc_s0
+  Bottom:
+    - chip: 0
+      roc_index: IC3
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: IC4
+      config_json_key: roc_s0
+  Five:
+    - chip: 0
+      roc_index: IC1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: IC2
+      config_json_key: roc_s0
+    - chip: 2
+      roc_index: IC3
+      config_json_key: roc_s0
 
-LD Right:
-  - chip: 0
-    name: M1
-  - chip: 1
-    name: M2
-
-LD Left:
-  - chip: 0
-    name: M1
-  - chip: 1
-    name: M2
-
-LD Top:
-  - chip: 0
-    name: IC1
-  - chip: 1
-    name: IC2
-
-LD Bottom:
-  - chip: 0
-    name: IC3
-  - chip: 1
-    name: IC4
-
-LD Five:
-  - chip: 0
-    name: IC1
-  - chip: 1
-    name: IC2
-  - chip: 2
-    name: IC3
-
-HD Full:
-  - chip: 0
-    name: IC1
-  - chip: 1
-    name: IC2
-  - chip: 2
-    name: IC3
-  - chip: 3
-    name: IC4
-  - chip: 4
-    name: IC5
-  - chip: 5
-    name: IC6
-
-HD Top:
-  - chip: 0
-    name: IC3
-  - chip: 1
-    name: IC4
-  - chip: 2
-    name: IC5
-
-HD Bottom:
-  - chip: 0
-    name: M1
-  - chip: 1
-    name: M2
-  - chip: 2
-    name: M3
-  - chip: 3
-    name: M4
-
-HD Right:
-  - chip: 0
-    name: IC1
-  - chip: 1
-    name: IC2
-
-HD Left:
-  - chip: 0
-    name: IC3
-  - chip: 1
-    name: IC4
+HD: 
+  Full:
+    - chip: 0
+      roc_index: IC1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: IC2
+      config_json_key: roc_s0
+    - chip: 2
+      roc_index: IC3
+      config_json_key: roc_s0
+    - chip: 3
+      roc_index: IC4
+      config_json_key: roc_s0
+    - chip: 4
+      roc_index: IC5
+      config_json_key: roc_s0
+    - chip: 5
+      roc_index: IC6 
+      config_json_key: roc_s0
+  Top:
+    - chip: 0
+      roc_index: IC3
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: IC4
+      config_json_key: roc_s0
+    - chip: 2
+      roc_index: IC5
+      config_json_key: roc_s0
+  Bottom:
+    - chip: 0
+      roc_index: M1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: M2
+      config_json_key: roc_s0
+    - chip: 2
+      roc_index: M3
+      config_json_key: roc_s0
+    - chip: 3
+      roc_index: M4
+      config_json_key: roc_s0
+  Right:
+    - chip: 0
+      roc_index: IC1
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: IC2
+      config_json_key: roc_s0
+  Left:
+    - chip: 0
+      roc_index: IC3
+      config_json_key: roc_s0
+    - chip: 1
+      roc_index: IC4
+      config_json_key: roc_s0
