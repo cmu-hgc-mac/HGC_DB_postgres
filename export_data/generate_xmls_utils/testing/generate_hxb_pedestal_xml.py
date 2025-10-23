@@ -79,7 +79,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                h.roc_name, 
                h.roc_index
         FROM hxb_pedestal_test m
-        LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
+        LEFT JOIN hexaboard h ON m.hxb_name = h.hxb_name
         WHERE m.hxb_name = ANY($1)
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
@@ -109,7 +109,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 h.roc_name, 
                 h.roc_index
             FROM hxb_pedestal_test m
-            LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
+            LEFT JOIN hexaboard h ON m.hxb_name = h.hxb_name
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}' 
         """
         if statusdict_select:
@@ -313,11 +313,11 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
                 float(test_data[run_begin_timestamp]['rel_hum'])
                 float(test_data[run_begin_timestamp]['temp_c'])
             except:
-                print(f"{test_data[run_begin_timestamp]['hxb_name']}: {run_begin_timestamp} Cannot upload any test data when humidity or temperature is null.") 
+                print(f"{test_data[run_begin_timestamp]['hxb_name']}: {run_begin_timestamp} {RED}Cannot upload any test data when humidity or temperature is null.{RESET}") 
                 continue
             output_file = await generate_hxb_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, output_dir, template_path_test=temp_dir, template_path_env = temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:
-        print(f"{RED}An error occurred: {e}.{RESET}")
+        print(f"{RED}An error occurred: {traceback.print_exc()}.{RESET}")
     finally:
         await conn.close()
 
