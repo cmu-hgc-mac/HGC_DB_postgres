@@ -24,9 +24,9 @@ if statusdict_test_upload:
 else:
     statusdict_select = None # f"('Untaped')"
 
-chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
+roc_idxMap_yaml = 'export_data/roc_idxMap.yaml'
 resource_yaml = 'export_data/resource.yaml'
-with open(chip_idxMap_yaml, 'r') as file:
+with open(roc_idxMap_yaml, 'r') as file:
     chip_idx_yaml = yaml.safe_load(file)
 
 with open(resource_yaml, 'r') as file:
