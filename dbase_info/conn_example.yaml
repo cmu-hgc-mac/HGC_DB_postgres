@@ -13,8 +13,8 @@ delete_xmls: False           ## If True, deletes local xmls after upload; contro
 mass_upload_xmls: True       ## If True, uses mass_loader.py
 
 statusdict_test_upload:      ## https://github.com/cmu-hgc-mac/hgcal-module-testing-gui/blob/master/DBTools.py#L34
-  - 'Untaped': False
-  - 'Taped': False
+  - 'Untaped': True  ## for hexaboard
+  - 'Taped': True    ## for hexaboard
   - 'Assembled': False 
   - 'Backside Bonded': False 
   - 'Frontside Bonded': False 
@@ -23,3 +23,4 @@ statusdict_test_upload:      ## https://github.com/cmu-hgc-mac/hgcal-module-test
   - 'Completely Bonded': False 
   - 'Bonds Reworked': False
   - 'Completely Encapsulated': True
+  - 'Bolted': True

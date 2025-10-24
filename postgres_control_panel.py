@@ -200,7 +200,7 @@ def verify_shipin():
         temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip())):
+            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 popup1 = Toplevel(input_window); popup1.title("Enter Barcode of Parts")
                 popup1.transient(input_window)        
                 popup1.attributes("-topmost", True)
@@ -235,7 +235,7 @@ def verify_shipin():
     def upload_file_with_part_in():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip())):
+            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 popup2 = Toplevel()
                 popup2.title("Upload text/csv file with component names")
                 file_entry = None
@@ -331,7 +331,7 @@ def import_data():
             if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
                 if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
-            elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+            elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
@@ -494,7 +494,7 @@ def export_data():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
-            if scp_force_quit:
+            if (upload_dev_stat or upload_prod_stat) and scp_force_quit: ### only quit if it was opened at all
                 scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, mass_upload_xmls=mass_upload_xmls)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")           
 
@@ -642,7 +642,7 @@ def refresh_data():
         if not dbshipper_pass.strip():
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy()  
