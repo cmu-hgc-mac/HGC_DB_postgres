@@ -135,14 +135,20 @@ class enter_part_barcodes_box(tkinter.Toplevel):
 
         def update_db_packed():
             module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
-            # dialog = popup_type_of_shipment(self, )
-            # dialog.transient(self); dialog.attributes("-topmost", True); dialog.focus_force()
-            # self.wait_window(dialog)  # Wait until dialog is closed
-            self.destroy()
             if len(module_update_pack) > 0 :
+                dialog = popup_type_of_shipment(self, )
+                dialog.transient(self); dialog.attributes("-topmost", True); dialog.focus_force()
+                self.wait_window(dialog)  # Wait until dialog is closed
+                selection = dialog.result 
+                self.destroy()
                 if len(datetime_now_var.get().strip()) == 0: datetime_now_var.set(datetime_now)
                 datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                 update_packed_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=module_update_pack, timestamp=datetime_now_obj, savetofile=bool(export_var.get()))
+                if selection == 'standalone':
+                    fileout_name = update_shipped_timestamp_sync(encrypt_key=encryption_key, password=dbshipper_pass.strip(), module_names=[module_update_pack[0]], timestamp=datetime_now_obj)
+                    print("List of modules saved under ", fileout_name)
+                    if fileout_name:
+                        webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
                 
 
         submit_button = Button(self, text="Record to DB", command=update_db_packed)
@@ -211,17 +217,18 @@ class popup_type_of_shipment(tkinter.Toplevel):
         self.geometry("320x200")
         self.grab_set()  # Make modal
         self.boxes_in_crate, self.modules_in_crate = asyncio.run(self.get_open_crate())
-        if self.boxes_in_crate:
-            message = f"Would you like to add this box to the open crate with {self.boxes_in_crate} box{'es' if self.boxes_in_crate > 1 else ''} ({self.modules_in_crate} module{'s' if self.modules_in_crate > 1 else ''})?"
-        else:
-            message = f"Would you like to add this box to an empty crate?"
+        # if self.boxes_in_crate:
+        #     message = f"Would you like to add this box to the open crate with {self.boxes_in_crate} box{'es' if self.boxes_in_crate > 1 else ''} ({self.modules_in_crate} module{'s' if self.modules_in_crate > 1 else ''})?"
+        # else:
+            # message = f"Would you like to add this box to an empty crate?"
+        message = f"Is this box a standalone shipment?"
         label = tkinter.Label(self, text=message, wraplength=300)
         label.pack(pady=10)
         btn_frame = tkinter.Frame(self)
         btn_frame.pack(pady=5)
-        add_btn = tkinter.Button(btn_frame, text="Add to Crate", width=12, height = 3, command=lambda: self._set_result("add"), wraplength=100)
+        add_btn = tkinter.Button(btn_frame, text="Pack into a crate later", width=12, height = 3, command=lambda: self._set_result("crate"), wraplength=100)
         add_btn.pack(side="left", padx=5)
-        skip_btn = tkinter.Button(btn_frame, text="This is a standalone shipment", width=12, height = 3, command=lambda: self._set_result("skip"), wraplength=100)
+        skip_btn = tkinter.Button(btn_frame, text="Mark this is a standalone shipment", width=12, height = 3, command=lambda: self._set_result("standalone"), wraplength=100)
         skip_btn.pack(side="left", padx=5)
         cancel_btn = tkinter.Button(btn_frame, text="Cancel", width=12, command=lambda: self._set_result("cancel"))
         cancel_btn.pack(side="left", padx=5)
