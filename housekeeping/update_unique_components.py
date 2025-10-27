@@ -40,10 +40,9 @@ DO $$
 DECLARE
   v_schema text := 'public';
 
-  -- table set to process
-  v_tables text[] := ARRAY['baseplate', 'hexaboard', 'module_info', 'proto_assembly', 'sensor'];
-  v_pks    text[] := ARRAY['bp_no',     'hxb_no',    'module_no',   'proto_no',       'sen_no'];  -- primary key columns
-  v_uks    text[] := ARRAY['bp_name',   'hxb_name',  'module_name', 'proto_name',     'sen_name'];  -- unique constrain columns: name
+  v_tables text[] := ARRAY['baseplate','hexaboard','module_info','proto_assembly','sensor'];
+  v_pks    text[] := ARRAY['bp_no',    'hxb_no',   'module_no',  'proto_no',       'sen_no'];
+  v_uks    text[] := ARRAY['bp_name',  'hxb_name', 'module_name','proto_name',     'sen_name'];
 
   i int;
   v_table text;
@@ -52,7 +51,7 @@ DECLARE
 
   v_sel_list text;
   v_set_list text;
-  col record;
+  rec record;
 BEGIN
   FOR i IN 1..array_length(v_tables,1) LOOP
     v_table := v_tables[i];
@@ -64,38 +63,44 @@ BEGIN
     v_sel_list := '';
     v_set_list := '';
 
-    -- list columns to merge (except pk(primary key) and uk(unique key))
-    FOR col IN
-      SELECT column_name, data_type
-      FROM information_schema.columns
-      WHERE table_schema = v_schema
-        AND table_name   = v_table
-        AND column_name NOT IN (v_pk, v_uk)
-        AND COALESCE(is_generated,'NEVER') <> 'ALWAYS'
-      ORDER BY ordinal_position
+    -- Handle mergeable columns (non-array, non-PK, non-UK)
+    FOR rec IN
+      SELECT
+        a.attname AS column_name,
+        format_type(a.atttypid, a.atttypmod) AS col_type,
+        (format_type(a.atttypid, a.atttypmod) ILIKE 'date%'
+         OR format_type(a.atttypid, a.atttypmod) ILIKE 'timestamp%'
+         OR format_type(a.atttypid, a.atttypmod) ILIKE 'time%') AS is_datetime
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid
+      WHERE n.nspname = v_schema
+        AND c.relname = v_table
+        AND a.attnum > 0
+        AND NOT a.attisdropped
+        AND a.attname NOT IN (v_pk, v_uk)
+        AND a.attndims = 0                   -- ★ Non-array columns only
+      ORDER BY a.attnum
     LOOP
-      IF col.data_type IN ('date','time','timestamp') THEN
-        -- date/time columns: take the earliest non-NULL value, set NULLs to NULL
+      IF rec.is_datetime THEN
         v_sel_list := v_sel_list || CASE WHEN v_sel_list='' THEN '' ELSE ', ' END ||
-                      format('MIN(%1$I) AS %1$I', col.column_name);
+                      format('MIN(%1$I) AS %1$I', rec.column_name);
         v_set_list := v_set_list || CASE WHEN v_set_list='' THEN '' ELSE ', ' END ||
-                      format('%1$I = m.%1$I', col.column_name);
+                      format('%1$I = m.%1$I', rec.column_name);
       ELSE
-        -- other columns: take the first non-NULL value, set NULLs to NULL
         v_sel_list := v_sel_list || CASE WHEN v_sel_list='' THEN '' ELSE ', ' END ||
                       format('(ARRAY_AGG(%1$I ORDER BY (%1$I IS NULL), %2$I DESC))[1] AS %1$I',
-                             col.column_name, v_pk);
+                             rec.column_name, v_pk);
         v_set_list := v_set_list || CASE WHEN v_set_list='' THEN '' ELSE ', ' END ||
-                      format('%1$I = COALESCE(t.%1$I, m.%1$I)', col.column_name);
+                      format('%1$I = COALESCE(t.%1$I, m.%1$I)', rec.column_name);
       END IF;
     END LOOP;
 
-    -- make sure v_sel_list is not empty
     IF v_sel_list = '' THEN
-      v_sel_list := '/* no other columns */ NULL::int';
+      v_sel_list := '/* no mergeable columns */ NULL::int';
     END IF;
 
-    -- 1) write merged result to the keeper (the row with the smallest primary key value)
+    -- write back to keepers
     EXECUTE format($f$
       WITH keepers AS (
         SELECT MIN(%1$I) AS keep_id, %2$I AS k
@@ -116,7 +121,7 @@ BEGIN
       WHERE t.%1$I = k.keep_id
     $f$, v_pk, v_uk, v_schema, v_table, v_sel_list, v_set_list);
 
-    -- 2) delete other duplicates
+    -- delete duplicates
     EXECUTE format($f$
       WITH ranked AS (
         SELECT %1$I AS id,
@@ -136,12 +141,12 @@ END $$;
 
     try:
         await conn.execute(query)
+        print('Duplicate components merged successfully.')
 
     except asyncpg.PostgresError as e:
         print("Error:", e)
         traceback.print_exc()
     
     await conn.close()
-    print('Duplicate components merged successfully.')
 
 asyncio.run(merge_duplicate_components())
