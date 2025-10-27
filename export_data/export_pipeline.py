@@ -50,6 +50,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
     xml_list = process_xml_list(get_yaml_data = True)
     subdirs = list(xml_list.keys())    # subdirs = ['baseplate', 'hexaboard', 'module', 'protomodule', 'sensor', 'testing']
     scripts_to_run = []
+    building_module, building_proto = False, False ## initialize 
 
     for subdir in subdirs:
         subdir_path = os.path.join(XML_GENERATOR_DIR, subdir)
@@ -60,12 +61,19 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
                 file_suff = list(filetype.keys())[0]
                 file = f"generate_{file_suff}.py"
                 if filetype[file_suff] and os.path.exists(os.path.join(subdir_path, file)):                
-                    ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules.     
+                    if 'module_build' in file: building_module = True
+                    if 'proto_build'  in file:  building_proto = True
+                    ## We only upload build_upload.xml for all parts EXCEPT protomodule and modules.    
                     if subdir_path.split('/')[-1] not in ['protomodule', 'module'] and (file.endswith('build_xml.py') == True):
                         print(f'subdir_path to skip -- {subdir_path}')
                         continue; 
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
+    
+    if building_module and building_proto:  ### add protomodule serial number if both module and protomodule are being built for a given module
+        proto_parts_list = [part.replace('320M', '320P') for part in partsnamelist if '320M' in part] 
+        partsnamelist.extend(proto_parts_list)
+    
     #Run all the scripts asynchronously
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
