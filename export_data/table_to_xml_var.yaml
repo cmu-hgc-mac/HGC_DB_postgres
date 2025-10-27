@@ -494,6 +494,12 @@ module_build:
   xml_tag: SERIAL_NUMBER
   nested_query: null
   nullable: 'no'
+- xml_temp_val: assembly_date
+  dbase_col: ass_run_date
+  dbase_table: module_assembly
+  xml_tag: PRODUCTION_DATE
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: VERSION
 module_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
@@ -890,6 +896,12 @@ proto_build:
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART_SENSOR
   xml_tag: KIND_OF_PART
+- xml_temp_val: assembly_date
+  dbase_col: ass_run_date
+  dbase_table: proto_assembly
+  xml_tag: PRODUCTION_DATE
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: SENSOR
   dbase_col: sen_name
   dbase_table: proto_assembly
