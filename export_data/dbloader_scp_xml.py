@@ -16,6 +16,7 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
+dbloader_hostname = config_data.get('dbloader_hostname', "hgcaldbloader.cern.ch")  
 # cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
 # cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
@@ -92,13 +93,13 @@ def get_proto_module_files(files_list):
 
 ## https://security.web.cern.ch/recommendations/en/ssh_tunneling.shtml
 ## https://cern.service-now.com/service-portal?id=kb_article&n=KB0008504
-def scp_to_dbloader(dbl_username, fname, cern_dbname = ''):
-    ## f"scp -o ProxyJump={dbl_username}@lxtunnel.cern.ch -o ControlPath=~/.ssh/scp-%r@%h:%p {fname} {dbl_username}@dbloader-hgcal:/home/dbspool/spool/hgc/{cern_dbname}"
+def scp_to_dbloader(dbl_username, fname, cern_dbname = '', dbloader_hostname = 'hgcaldbloader.cern.ch'):
+    ## f"scp -o ProxyJump={dbl_username}@lxtunnel.cern.ch -o ControlPath=~/.ssh/scp-%r@%h:%p {fname} {dbl_username}@{dbloader_hostname}:/home/dbspool/spool/hgc/{cern_dbname}"
     scp_cmd = ["scp",
                 f"-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
                 f"-o", f"ControlPath=~/.ssh/ctrl_dbloader",
                 fname,
-                f"{dbl_username}@dbloader-hgcal:/home/dbspool/spool/hgc/{cern_dbname}"]
+                f"{dbl_username}@{dbloader_hostname}:/home/dbspool/spool/hgc/{cern_dbname}"]
     try:
         subprocess.run(scp_cmd, capture_output=True, text=True)
     except Exception as e:
@@ -106,7 +107,7 @@ def scp_to_dbloader(dbl_username, fname, cern_dbname = ''):
         # traceback.print_exc()
 
 class mass_upload_to_dbloader:
-    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose  = False):
+    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose  = False, dbloader_hostname = 'hgcaldbloader.cern.ch'):
         self.mass_upload_logs_fp = "export_data/mass_upload_logs"
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )#_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt")
@@ -116,6 +117,7 @@ class mass_upload_to_dbloader:
         self.dbl_username = dbl_username
         self.fnames = fnames
         self.cern_dbname = cern_dbname
+        self.dbloader_hostname = dbloader_hostname
         self.remote_xml_dir = remote_xml_dir
         self.verbose = verbose
         self.files_to_retry = 0
@@ -123,31 +125,31 @@ class mass_upload_to_dbloader:
         self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         
     def make_lxplus_dir(self):
-        makedir_cmd = ["ssh", f"{self.dbl_username}@dbloader-hgcal", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"mkdir -p {self.remote_xml_dir}"]
+        makedir_cmd = ["ssh", f"{self.dbl_username}@{self.dbloader_hostname}", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"mkdir -p {self.remote_xml_dir}"]
         result = subprocess.run(makedir_cmd,     text=True)
         return result.returncode
 
     def scp_xml_lxplus(self):
-        scp_cmd = ["scp", "-C", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}"] + self.fnames + [f"{self.dbl_username}@dbloader-hgcal:{self.remote_xml_dir}/"]
-        print(f"SCPing files to {self.dbl_username}@dbloader-hgcal:~/hgc_xml_temp ...")
+        scp_cmd = ["scp", "-C", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}"] + self.fnames + [f"{self.dbl_username}@{self.dbloader_hostname}:{self.remote_xml_dir}/"]
+        print(f"SCPing files to {self.dbl_username}@{self.dbloader_hostname}:~/hgc_xml_temp ...")
         result = subprocess.run(scp_cmd,         text=True)
         return result.returncode
 
     def rm_xml_lxplus(self):
-        remove_xml_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"rm {self.remote_xml_dir}/*",]
-        if self.verbose: print(f"Removing files from {self.dbl_username}@dbloader-hgcal:~/hgc_xml_temp ...")
+        remove_xml_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm {self.remote_xml_dir}/*",]
+        if self.verbose: print(f"Removing files from {self.dbl_username}@{self.dbloader_hostname}:~/hgc_xml_temp ...")
         result = subprocess.run(remove_xml_cmd,  text=True, capture_output=True)
         if "No such file or directory" in result.stderr: return 0
         return result.returncode
 
     def mass_upload_xml_dbl(self):
-        print(f"Uploading to dbloader-hgcal with mass_loader ... patience, please")
+        print(f"Uploading to {self.dbloader_hostname} with mass_loader ... patience, please")
         # print(f"{GREEN}The mass_upload terminal output sometimes says that the uploads have failed even when they have succeeded.{RESET}")
         # print(f"{GREEN}The CERN team is working on fixing it.{RESET}")
         # print(f"{GREEN}Check the API and the dbloader log to see if the uploads were successful until this gets fixed.{RESET}")
         print(f"=================================================================")
         with open("export_data/mass_loader.py", "r") as f:
-            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"]
+            mass_upload_cmd = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"]
             with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -174,7 +176,7 @@ class mass_upload_to_dbloader:
     def check_upload_xml_dbl(self):
         print(f"=================================================================")
         with open("export_data/check_upload_xml_logs.py", "r") as f:
-            check_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - -lfp ~/{self.csv_outfile}"]
+            check_upload_cmd = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - -lfp ~/{self.csv_outfile}"]
             with subprocess.Popen(check_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile: 
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -198,11 +200,11 @@ class mass_upload_to_dbloader:
             terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
             os.rename(self.temp_txt_file_name, os.path.join(self.mass_upload_logs_fp, terminal_outfile))
             print(terminal_outfile)
-            scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal:~/{self.csv_outfile}", self.mass_upload_logs_fp ]#f"{self.dbl_username}@dbloader-hgcal:~/{log_outfile}", self.mass_upload_logs_fp]
+            scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}:~/{self.csv_outfile}", self.mass_upload_logs_fp ]#f"{self.dbl_username}@{self.dbloader_hostname}:~/{log_outfile}", self.mass_upload_logs_fp]
             result = subprocess.run(scp_masslog_file,     text=True)
             file_path_log, file_path_csv = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
             if os.path.isfile(file_path_csv) and os.path.isfile(file_path_log):
-                rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"rm ~/{self.csv_outfile}"] # ~/{log_outfile}"]
+                rm_masslog_file = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm ~/{self.csv_outfile}"] # ~/{log_outfile}"]
                 result = subprocess.run(rm_masslog_file,     text=True)
             print("")
             return result.returncode
@@ -267,10 +269,10 @@ def main():
 
         if protomodule_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
             else:
                 for fname in tqdm(protomodule_build_files):
-                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
+                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
         
             if module_build_files or other_files:
                 print("Waiting 10 seconds after protomodule upload...")
@@ -280,10 +282,10 @@ def main():
         print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
         if module_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
             else:
                 for fname in tqdm(module_build_files):
-                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
+                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
         
             if other_files:
                 print("Waiting 10 seconds after module upload...")
@@ -293,10 +295,10 @@ def main():
         print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
         if other_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
             else:
                 for fname in tqdm(other_files):
-                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname)
+                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
     else:
         print("No files found for the given date.")
 
