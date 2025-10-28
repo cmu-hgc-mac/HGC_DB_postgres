@@ -2,11 +2,10 @@
 <ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <HEADER>
 	<TYPE>
-		<EXTENSION_TABLE_NAME>HGC_PRTO_MOD_ASMBLY</EXTENSION_TABLE_NAME>
-		<NAME>HGC Eight Inch Proto Module Assembly</NAME>
+		<EXTENSION_TABLE_NAME>HGC_PROTO_MOD_INSP</EXTENSION_TABLE_NAME>
+		<NAME>Silicon Proto Module Inspection</NAME>
 	</TYPE>
 	<RUN>
-		<!-- <RUN_NAME>HGC Proto Module Assembly</RUN_NAME> -->
 		<RUN_TYPE>Si protomodule assembly and inspection</RUN_TYPE>
 		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
 		<RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
@@ -25,18 +24,14 @@
 			<SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
 		</PART>
 		<DATA>
-			<ASMBL_USER>{{ asmbl_user }}</ASMBL_USER>
-			<ASMBL_TRAY_NAME>{{ asmbl_tray_name }}</ASMBL_TRAY_NAME>
-			<COMP_TRAY_NAME>{{ comp_tray_name }}</COMP_TRAY_NAME>
-			<SNSR_SER_NUM>{{ sensor }}</SNSR_SER_NUM>
-			<PLT_ASM_ROW>{{ asm_row }}</PLT_ASM_ROW>
-			<PLT_ASM_COL>{{ asm_col }}</PLT_ASM_COL>
-			<SNSR_CMP_ROW>{{ asm_row }}</SNSR_CMP_ROW>
-			<SNSR_CMP_COL>{{ asm_col }}</SNSR_CMP_COL>
-			<SNSR_TOOL_NAME>{{ snsr_tool_name }}</SNSR_TOOL_NAME>
-			<GLUE_TYPE>transfer tape</GLUE_TYPE>
-			<GLUE_BATCH_NUM>{{ glue_batch_num }}</GLUE_BATCH_NUM>
-			<TRANSFER_TAPE_BATCH_NUM>{{ transfer_tape_batch_num }}</TRANSFER_TAPE_BATCH_NUM>
+			<INPS_USER>{{ inspection_user }}</INPS_USER>
+			<PLT_GRADE>{{ prto_grade }}</PLT_GRADE>
+			<PLT_FLTNES_MM>{{ flatness }}</PLT_FLTNES_MM>
+			<PLT_AVE_THKNS_MM>{{ ave_thickness }}</PLT_AVE_THKNS_MM>
+			<PLT_MAX_THKNS_MM>{{ max_thickness }}</PLT_MAX_THKNS_MM>
+			<SNSR_X_OFFST>{{ snsr_x_offst }}</SNSR_X_OFFST>
+			<SNSR_Y_OFFST>{{ snsr_y_offst }}</SNSR_Y_OFFST>
+			<SNSR_ANG_OFFSET>{{ snsr_ang_offst }}</SNSR_ANG_OFFSET>
 		</DATA>
 	</DATA_SET>
 
