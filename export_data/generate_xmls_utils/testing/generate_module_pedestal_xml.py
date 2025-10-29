@@ -159,9 +159,9 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     test_data = {}
     for row in rows:
         if row['roc_name'] is None:
-            module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi-cmsr')
+            module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi')
             hxb_child_320X = [child["serial_number"] for child in module_data["children"] if child["serial_number"].startswith("320X")][0]
-            hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi-cmsr')
+            hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi')
             hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
             hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
             row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
