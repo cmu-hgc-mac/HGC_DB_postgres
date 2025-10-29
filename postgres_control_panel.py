@@ -150,7 +150,23 @@ def create_database():
     user_var = StringVar()
     user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     user_var_entry.pack(pady=5)
-    
+
+    def update_password():
+        viewer_pass = viewer_var.get()
+        user_pass = user_var.get()
+        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt((password_var.get()).encode()) ).decode() if password_var.get().strip() else ""  ## Encrypt password and then convert to base64
+        if db_pass.strip():
+            input_window.destroy()  # Close the input window
+            subprocess.run([sys.executable, "housekeeping/update_user_viewer_passwords.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
+            show_message(f"Check terminal for password change status. Refresh pgAdmin4.")
+        else:
+            if askyesno_on_top("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
+                input_window.destroy()  
+
+    update_password_button = Button(input_window, text="Update USER/VIEWER passwords", command=update_password)
+    update_password_button.pack(pady=10)
+    bind_button_keys(update_password_button)
+
 def verify_shipin():
     input_window = Toplevel(root)
     input_window.transient(root)        
