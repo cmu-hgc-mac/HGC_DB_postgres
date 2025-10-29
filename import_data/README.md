@@ -1,9 +1,12 @@
 ## Reading from HGCAPI
 
-[CMSR HGCAPI](https://hgcapi.web.cern.ch/docs#/mac/mac_part_full_mac_part__search_id__full_get)
-[INTR HGCAPI](https://hgcapi-intg.web.cern.ch/docs#/mac/mac_part_full_mac_part__search_id__full_get)
+#### CMSR HGCAPI
+https://hgcapi.web.cern.ch/docs#/mac/mac_part_full_mac_part__search_id__full_get
 
-### Example of QC data JSON for download
+#### INTR HGCAPI
+https://hgcapi-intg.web.cern.ch/docs#/mac/mac_part_full_mac_part__search_id__full_get
+
+#### Example of QC data JSON for download
 https://hgcapi.web.cern.ch/mac/qc/pedestals/320MLF3TCCM0221
 
 
