@@ -150,7 +150,23 @@ def create_database():
     user_var = StringVar()
     user_var_entry = Entry(input_window, textvariable=user_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
     user_var_entry.pack(pady=5)
-    
+
+    def update_password():
+        viewer_pass = viewer_var.get()
+        user_pass = user_var.get()
+        db_pass = base64.urlsafe_b64encode( cipher_suite.encrypt((password_var.get()).encode()) ).decode() if password_var.get().strip() else ""  ## Encrypt password and then convert to base64
+        if db_pass.strip():
+            input_window.destroy()  # Close the input window
+            subprocess.run([sys.executable, "housekeeping/update_user_viewer_passwords.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
+            show_message(f"Check terminal for password change status. Refresh pgAdmin4.")
+        else:
+            if askyesno_on_top("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
+                input_window.destroy()  
+
+    update_password_button = Button(input_window, text="Update USER/VIEWER passwords", command=update_password)
+    update_password_button.pack(pady=10)
+    bind_button_keys(update_password_button)
+
 def verify_shipin():
     input_window = Toplevel(root)
     input_window.transient(root)        
@@ -199,7 +215,7 @@ def verify_shipin():
         temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip())):
+            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 popup1 = Toplevel(input_window); popup1.title("Enter Barcode of Parts")
                 popup1.transient(input_window)        
                 popup1.attributes("-topmost", True)
@@ -234,7 +250,7 @@ def verify_shipin():
     def upload_file_with_part_in():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip())):
+            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 popup2 = Toplevel()
                 popup2.title("Upload text/csv file with component names")
                 file_entry = None
@@ -330,7 +346,7 @@ def import_data():
             if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
                 if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
-            elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+            elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
                 show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
@@ -493,7 +509,7 @@ def export_data():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
-            if scp_force_quit:
+            if (upload_dev_stat or upload_prod_stat) and scp_force_quit: ### only quit if it was opened at all
                 scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, mass_upload_xmls=mass_upload_xmls)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")           
 
@@ -641,7 +657,7 @@ def refresh_data():
         if not dbshipper_pass.strip():
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy()  
@@ -686,6 +702,12 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
 def open_stt_stock():
     webbrowser.open(f"https://cmsr-shipment.web.cern.ch/stock/")
 
+def open_cmsr_hgcapi():
+    webbrowser.open(f"https://hgcapi.web.cern.ch/docs#/mac/mac_part_full_mac_part__search_id__full_get")
+
+def get_electrical_test_hgcapi():
+    webbrowser.open(f"https://hgcapi.web.cern.ch/mac/qc/pedestals/320MLF3TCCM0220")
+
 # Create a helper function to handle button clicks
 def handle_button_click(action):
     threading.Thread(target=action).start()
@@ -693,7 +715,7 @@ def handle_button_click(action):
 # Initialize the application
 root = Tk()
 root.title("Local DB Control Panel - CMS HGC MAC")
-root.geometry("400x550")
+root.geometry("400x650")
 
 # Load logo image
 image_path = "documentation/images/logo_small_75.png"  # Update with your image path
@@ -722,10 +744,10 @@ else:
 
 # Add buttons with grid layout
 button_create = Button(frame, text="Create/Modify DBase Tables", command=create_database, width=small_button_width, height=small_button_height)
-button_create.grid(row=0, column=1, pady=5)
+button_create.grid(row=0, column=1, pady=(5,1), sticky='ew')
 
-button_check_config = Button(frame, text="Check Config", command=check_config_action, width=small_button_width, height=small_button_height)
-button_check_config.grid(row=1, column=1, pady=5)
+button_check_config = Button(frame, text="Check Postgres Config", command=check_config_action, width=small_button_width, height=small_button_height)
+button_check_config.grid(row=1, column=1, pady=(1,5), sticky='ew')
 
 # spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
 # spacer.grid(row=2, column=1, pady=10)
@@ -746,12 +768,17 @@ button_shipout.grid(row=6, column=1, pady=(1,15), sticky='ew')
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
 button_search_data.grid(row=7, column=1, pady=(15,1), sticky='ew')
 
-button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=button_height)  
+button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))  
 button_refresh_db.grid(row=8, column=1, pady=1, sticky='ew')
 
+button_stock_stt = Button(frame, text=" Check stock on CMSR STT ", command=open_stt_stock, width=button_width, height=int(button_height/2)) 
+button_stock_stt.grid(row=9, column=1, pady=1, sticky='ew')
 
-button_stock_stt = Button(frame, text=" Check stock on CMSR STT", command=open_stt_stock, width=button_width, height=button_height) 
-button_stock_stt.grid(row=9, column=1, pady=(1,5), sticky='ew')
+button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2)) 
+button_stock_stt.grid(row=10, column=1, pady=1, sticky='ew')
+
+button_stock_stt = Button(frame, text=" Check QC data on CMSR-HGCAPI", command=get_electrical_test_hgcapi, width=button_width, height=int(button_height/2)) 
+button_stock_stt.grid(row=11, column=1, pady=(1,5), sticky='ew')
 
 
 for pid in get_pid_result().stdout.strip().split("\n"):

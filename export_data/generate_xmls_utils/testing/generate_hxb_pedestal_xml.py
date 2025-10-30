@@ -7,11 +7,12 @@ import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
-import sys, os, yaml, argparse, json
+import sys, os, yaml, argparse, json, traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
-from export_data.generate_xmls_utils.testing.generate_module_pedestal_xml import find_toa_vref
+from export_data.generate_xmls_utils.testing.generate_module_pedestal_xml import find_toa_vref, get_roc_name
+RED = '\033[91m'; RESET = '\033[0m'
 
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -23,9 +24,9 @@ if statusdict_test_upload:
 else:
     statusdict_select = None # f"('Untaped')"
 
-chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
+roc_idxMap_yaml = 'export_data/roc_idxMap.yaml'
 resource_yaml = 'export_data/resource.yaml'
-with open(chip_idxMap_yaml, 'r') as file:
+with open(roc_idxMap_yaml, 'r') as file:
     chip_idx_yaml = yaml.safe_load(file)
 
 with open(resource_yaml, 'r') as file:
@@ -60,6 +61,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.hxb_no, 
                m.chip, 
                m.channel, 
+               m.cell,
                m.adc_mean, 
                m.adc_stdd, 
                m.channeltype, 
@@ -71,10 +73,13 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.status_desc,
                m.comment,
                m.pedestal_config_json,
+               m.list_dead_cells,
+               m.list_noisy_cells, 
+               m.inverse_sqrt_n,
                h.roc_name, 
                h.roc_index
         FROM hxb_pedestal_test m
-        LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
+        LEFT JOIN hexaboard h ON m.hxb_name = h.hxb_name
         WHERE m.hxb_name = ANY($1)
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
@@ -86,6 +91,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.hxb_no, 
                 m.chip, 
                 m.channel, 
+                m.cell,
                 m.adc_mean, 
                 m.adc_stdd, 
                 m.channeltype, 
@@ -96,11 +102,14 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.rel_hum,
                 m.status_desc,
                 m.comment,
-                m.pedestal_config_json
+                m.pedestal_config_json,
+                m.list_dead_cells,
+                m.list_noisy_cells,
+                m.inverse_sqrt_n,
                 h.roc_name, 
                 h.roc_index
             FROM hxb_pedestal_test m
-            LEFT JOIN hexaboard h ON m.hxb_no = h.hxb_no
+            LEFT JOIN hexaboard h ON m.hxb_name = h.hxb_name
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}' 
         """
         if statusdict_select:
@@ -112,6 +121,12 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
 
     test_data = {}
     for row in rows:
+        if row['roc_name'] is None:
+            hxb_data = read_from_cern_db(partID = row['hxb_name'], cern_db_url = 'hgcapi')
+            hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
+            hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
+            row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
+
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
         run_begin_timestamp = f"{date_test}T{time_test}"
@@ -128,18 +143,23 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'hxb_name': row['hxb_name'],
                 'hxb_no': row['hxb_no'],
                 'inspector': row['inspector'],
+                'cell': row['cell'],
                 'chip': _chip,
                 'channel': channel,
                 'channeltype': channeltype,
                 'adc_mean': row['adc_mean'],
                 'adc_stdd': row['adc_stdd'],
                 'roc_name': row['roc_name'],
+                'roc_index': row['roc_index'],
                 'comment' : row['comment'],
+                'inverse_sqrt_n': row['inverse_sqrt_n'],
                 'status_desc': row["status_desc"],
                 'inspector': row['inspector'],  ###### for env
                 'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
                 'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
-                'pedestal_config_json': row['pedestal_config_json'] if row['pedestal_config_json'] is not None else "N/A", #### for config
+                'list_dead_cells': row['list_dead_cells'],
+                'list_noisy_cells': row['list_noisy_cells'],
+                'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
     return test_data
 
@@ -149,21 +169,36 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
     channels = test_data["channel"]
     adc_means = test_data["adc_mean"]
     adc_stdds = test_data["adc_stdd"]
-    roc_names = test_data["roc_name"]
 
-    chip_to_roc = {}
-    for idx, chip in enumerate(sorted(set(chips))):
-        if idx < len(roc_names):
-            chip_to_roc[chip] = roc_names[idx]
+    chip_dead_channels = {chip: [] for chip in set(chips)} 
+    for c in test_data['list_dead_cells']:      ### fill this dict with `cell` as keys
+        chip_dead_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
+    
+    chip_noisy_channels = {chip: [] for chip in set(chips)} 
+    for c in test_data['list_noisy_cells']:      ### fill this dict with `cell` as keys
+        chip_noisy_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
 
     roc_grouped_data = defaultdict(list)  # Group data by ROC
-    for i in range(len(channels)):
-        chip = chips[i]
-        roc = chip_to_roc.get(chip, "UNKNOWN")
-        roc_grouped_data[roc].append({
+    for i, chip in enumerate(chips):
+        roc_grouped_data[chip].append({
             "channel": channels[i],
             "adc_mean": adc_means[i],
             "adc_stdd": adc_stdds[i] })
+    
+    chip_to_roc_name, json_key_to_roc_name = get_roc_name(module_name = test_data['hxb_name'], roc_name = test_data['roc_name'], roc_index = test_data['roc_index'])
+
+    for chip in set(chips): ## replace chip number with roc name
+        roc = chip_to_roc_name[chip]
+        roc_grouped_data[roc] = roc_grouped_data.pop(chip)
+        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  
+        chip_noisy_channels[roc] = chip_noisy_channels.pop(chip)
+
+    if test_data['pedestal_config_json']:
+        pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
+        
+    chip_config = {}    
+    for key, roc in json_key_to_roc_name.items():   
+        chip_config[roc] = pedestal_config_json_full[key]["sc"] if test_data['pedestal_config_json'] else None   
     
     os.makedirs(output_path, exist_ok=True)
     timestamp_formatted = str(run_begin_timestamp).replace(":","").split('.')[0]
@@ -178,6 +213,8 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
 
     # === Fill in <RUN> metadata ===
     for xml_type in list(xml_types.keys()): ####### Common for all three XML types
+        if xml_type == 'config' and test_data['pedestal_config_json'] == None: 
+            continue
         tree = ET.parse(xml_types[xml_type])
         root = tree.getroot()
         run_info = root.find("HEADER/RUN")
@@ -214,8 +251,14 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    ET.SubElement(data, "FRAC_UNC").text = "0.0"
-                    ET.SubElement(data, "FLAGS").text = "0"
+                    flag = "0"      if entry["adc_mean"] == 0  else ""
+                    flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
+                    flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
+                    if flag:
+                        ET.SubElement(data, "FLAGS").text = flag
+                    if test_data["inverse_sqrt_n"]:
+                        ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
+                    # ET.SubElement(data, "FLAGS").text = "0"
                     data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'env':
                 data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
@@ -225,13 +268,9 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
                 data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'config':
                 data = ET.Element("DATA")
-                if test_data['pedestal_config_json'] != "N/A":
-                    toa_vref = find_toa_vref(json.loads(f'''{test_data['pedestal_config_json']}'''))
-                    ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                    ET.SubElement(data, "ConfigJSON").text = f'''{test_data['pedestal_config_json']}'''
-                else:
-                    ET.SubElement(data, "Purpose").text = "N/A"
-                    ET.SubElement(data, "ConfigJSON").text = "N/A"
+                toa_vref = find_toa_vref(chip_config[roc])
+                ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
             
             root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
@@ -274,12 +313,11 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
                 float(test_data[run_begin_timestamp]['rel_hum'])
                 float(test_data[run_begin_timestamp]['temp_c'])
             except:
-                raise ValueError(f"{test_data['hxb_name']}: {run_begin_timestamp} You cannot upload any test data when humidity or temperature is null.")
-            if test_data[run_begin_timestamp]['pedestal_config_json'] is None:
-                raise ValueError(f"{test_data['hxb_name']}: {run_begin_timestamp}You cannot upload any test data that is missing pedestal_config_json.")
-            else:
-                output_file = await generate_hxb_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, output_dir, template_path_test=temp_dir, template_path_env = temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
-
+                print(f"{test_data[run_begin_timestamp]['hxb_name']}: {run_begin_timestamp} {RED}Cannot upload any test data when humidity or temperature is null.{RESET}") 
+                continue
+            output_file = await generate_hxb_pedestal_xml(test_data[run_begin_timestamp], run_begin_timestamp, output_dir, template_path_test=temp_dir, template_path_env = temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
+    except Exception as e:
+        print(f"{RED}An error occurred: {traceback.print_exc()}.{RESET}")
     finally:
         await conn.close()
 

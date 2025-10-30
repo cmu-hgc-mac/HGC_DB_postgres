@@ -4,6 +4,7 @@ from cryptography.fernet import Fernet
 from natsort import natsorted, natsort_keygen
 from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from export_data.src import read_from_cern_db
 
 """
 Logic of writing to parts tables:
@@ -24,7 +25,7 @@ conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 kop_yaml = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r')).get('kind_of_part')
 inst_code  = conn_info.get('institution_abbr')
 # source_db_cern = conn_info.get('cern_db')
-db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
+db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
 
 db_params = {
@@ -122,33 +123,6 @@ async def write_to_db_secondary(pool, db_upload_data, partType = None, check_con
         query = get_query_update_secondary(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
         await conn.execute(query, *db_upload_data.values())
 
-def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-cmsr'):
-    if partID is not None:
-        return f"https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full"
-    elif partType is not None:
-        if macID is not None:
-            return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}&location={macID}"
-        return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}"
-    return
-
-def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi-cmsr'):
-    headers = {'Accept': 'application/json'}
-    response = requests.get(get_url(partID = partID, macID = macID, partType = partType, cern_db_url = cern_db_url), headers=headers)
-    if response.status_code == 200:
-        data = response.json() ; 
-#         print(json.dumps(data, indent=2))
-        return data
-    elif response.status_code == 500:
-        print(f"Internal Server ERROR for {cern_db_url.upper()}. Try again later.")
-    elif response.status_code == 404:
-        print(f"Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
-    else:
-        if partType:
-            print(f"ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}")
-        if partID:
-            print(f"ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}")
-        return None
-
 def form(data):
     if type(data) is str:
         if data.lstrip('-').replace('.',"").isdigit():
@@ -193,7 +167,7 @@ def get_dict_for_db_upload(data_full, partType):
         # print('*'*100)
         return None
     
-def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
+def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi'):
     try:
         data_full = read_from_cern_db(partID = hxb_name, cern_db_url=cern_db_url)
         roc_names, roc_indices = [], []
@@ -220,7 +194,7 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
         # print('*'*100)
         return None
 
-def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols = None):
+def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi', part_qc_cols = None):
     """
     According to Jay Mathew Lawhorn, (ETP):
     We will not send you any parts for installation that have any of the booleans false (and if we send you rejected baseplates as dummies, the tolerance grade will be a C).
@@ -243,7 +217,7 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols =
         # print('*'*100)
         return None
 
-def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi-cmsr'):
+def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi'):
     try:
         data_full = read_from_cern_db(partID = sen_name, cern_db_url=cern_db_url)
         db_dict = None

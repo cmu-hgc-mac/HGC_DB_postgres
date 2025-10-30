@@ -3,7 +3,7 @@ from pathlib import Path
 from scp import SCPClient
 from src import process_xml_list, open_scp_connection
 import numpy as np
-import datetime, time, yaml, paramiko, pwinput, sys, re
+import datetime, time, yaml, paramiko, pwinput, sys, re, math
 from tqdm import tqdm
 import traceback, datetime
 GREEN = "\033[32m"; RED = "\033[31m"; YELLOW = "\033[33m"; RESET = "\033[0m"; 
@@ -118,7 +118,9 @@ class mass_upload_to_dbloader:
         self.cern_dbname = cern_dbname
         self.remote_xml_dir = remote_xml_dir
         self.verbose = verbose
-        self.csv_outfile = ""
+        self.files_to_retry = 0
+        self.times_to_retry = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
+        self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         
     def make_lxplus_dir(self):
         makedir_cmd = ["ssh", f"{self.dbl_username}@dbloader-hgcal", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"mkdir -p {self.remote_xml_dir}"]
@@ -145,7 +147,7 @@ class mass_upload_to_dbloader:
         # print(f"{GREEN}Check the API and the dbloader log to see if the uploads were successful until this gets fixed.{RESET}")
         print(f"=================================================================")
         with open("export_data/mass_loader.py", "r") as f:
-            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml"]
+            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"]
             with subprocess.Popen(mass_upload_cmd, stdin=f, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -158,7 +160,8 @@ class mass_upload_to_dbloader:
                         sys.stdout.write(line)         # print live
                         sys.stdout.flush()             # force immediate display
                     elif "Progress: [" in line: 
-                        sys.stdout.write("\r" + f"{YELLOW}{line.strip().split('(Success')[0]}{RESET}")  # overwrite the same line
+                        self.files_to_retry = int(line.strip().split('Timeout:')[-1].split(')')[0])  ## Example: 2025-10-13 16:39:01,347 - INFO - Progress: [41/41] (Success: 0, Already: 26, Failed: 7, Timeout: 8)
+                        sys.stdout.write("\r" + f"{YELLOW}{line.strip()}{RESET}")  # overwrite the same line
                         sys.stdout.flush()
 
                 process.wait()  # wait for process to finish
@@ -180,6 +183,8 @@ class mass_upload_to_dbloader:
                     # if not "Success" in line or "Already existis" in line:
                     sys.stdout.write(line)         # print live
                     sys.stdout.flush()             # force immediate display
+                    if 'db_failure' in line:
+                        self.files_to_retry = int(line.split('-')[-1])
                 process.wait()  # wait for process to finish
                 print()
                 print(f"=================================================================")
@@ -193,11 +198,11 @@ class mass_upload_to_dbloader:
             terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
             os.rename(self.temp_txt_file_name, os.path.join(self.mass_upload_logs_fp, terminal_outfile))
             print(terminal_outfile)
-            scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal:~/{self.csv_outfile}", f"{self.dbl_username}@dbloader-hgcal:~/{log_outfile}", self.mass_upload_logs_fp]
+            scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal:~/{self.csv_outfile}", self.mass_upload_logs_fp ]#f"{self.dbl_username}@dbloader-hgcal:~/{log_outfile}", self.mass_upload_logs_fp]
             result = subprocess.run(scp_masslog_file,     text=True)
             file_path_log, file_path_csv = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
             if os.path.isfile(file_path_csv) and os.path.isfile(file_path_log):
-                rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"rm ~/{self.csv_outfile} ~/{log_outfile}"]
+                rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@dbloader-hgcal", f"rm ~/{self.csv_outfile}"] # ~/{log_outfile}"]
                 result = subprocess.run(rm_masslog_file,     text=True)
             print("")
             return result.returncode
@@ -218,7 +223,13 @@ class mass_upload_to_dbloader:
                     current_time = datetime.datetime.now()
                     print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
+                if current_step == 3: ## mass_upload_xml_dbl
+                    if self.files_to_retry > 0 and self.times_to_retry > 0 and return_status == 0:
+                        print(f"Reattempting the {self.files_to_retry} timed-out file(s) -- ({self.times_to_retry-1} reattempt(s) left) ")
+                        self.times_to_retry -= 1 ### attempt only upto 5 times
+                        continue ### repeat current step
                 if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
+
             except Exception as e:
                 print(f"An error occurred at step {current_step+1}: {e}")
                 scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)        

@@ -7,10 +7,11 @@ import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
-import sys, os, yaml, argparse, json
+import sys, os, yaml, argparse, json, traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
+RED = '\033[91m'; RESET = '\033[0m'
 
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
@@ -20,40 +21,37 @@ if statusdict_test_upload:
     statusdict_select = [f"'{s}'" for s in statusdict_select]
     statusdict_select = f"({', '.join(statusdict_select)})" if statusdict_select else None
 else:
-    statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated')"
+    statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated', 'Bolted')"
 
-chip_idxMap_yaml = 'export_data/chip_idxMap.yaml'
+roc_idxMap_yaml = 'export_data/roc_idxMap.yaml'
 resource_yaml = 'export_data/resource.yaml'
-with open(chip_idxMap_yaml, 'r') as file:
+with open(roc_idxMap_yaml, 'r') as file:
     chip_idx_yaml = yaml.safe_load(file)
 
 with open(resource_yaml, 'r') as file:
     yaml_content = yaml.safe_load(file)
     kind_of_part_yaml = yaml_content['kind_of_part']
     
-async def find_rocID(module_name, module_num, conn, yaml_content=yaml_content):
+def get_roc_name(module_name, roc_name, roc_index, kind_of_part_yaml = kind_of_part_yaml, chip_idx_yaml = chip_idx_yaml):
     '''
-    1. Get a geometry of a module (=hxb)
-    2. get a corresponding chip number and name from yaml using the geometry
-    3. get a ROC-ID from hxb table 
+    1. Get a resolution & geometry of a module (=hxb)
+    2. Convert chip -> roc_index -> roc_name where chip is 0, 1, 2, 3 etc. for no of chips
+    2. Convert config_json_key -> roc_index -> roc_name from the configuration data
     '''
     part_id = (module_name[0:3].replace('320', '') + module_name[3:]).replace('-', '')
     resolution_dict = kind_of_part_yaml['resolution']
     geometry_dict = kind_of_part_yaml['geometry']
-    resolution = resolution_dict[part_id[1]]
-    geometry = geometry_dict[part_id[2]]
-    chip_idx_data = chip_idx_yaml[f'{resolution} {geometry}']
-    chip_names = [item['name'] for item in chip_idx_data] ##i.e., [M1, M2, M3]
-
-    query = f'''
-    SELECT roc_name, roc_index FROM hexaboard where module_no = {module_num} 
-    '''
-    roc_name, roc_index = await conn.fetchrow(query)
-    if roc_index == chip_names:
-        return roc_name ## i.e., ['SU02-0124-001061', 'SU02-0124-001067', 'SU02-0124-001076']
-    else:
-        print('roc_index unmatched. No ROC was found')
-        return False
+    resolution, geometry = resolution_dict[part_id[1]], geometry_dict[part_id[2]]
+    map_for_chip = chip_idx_yaml.get(resolution, {}).get(geometry, [])
+    try:
+        roc_index_to_roc_name = {roc_index[i] : roc_name[i] for i in range(len(roc_name))}
+        chip_to_roc_name = {item['chip']: roc_index_to_roc_name[item['roc_index']] for item in map_for_chip}
+        json_key_to_roc_name = {item['config_json_key']: roc_index_to_roc_name[item['roc_index']] for item in map_for_chip}
+        return chip_to_roc_name, json_key_to_roc_name
+    except Exception as e:
+        print('Something happened for', module_name, 'roc_name', roc_name, 'roc_index', roc_index)
+        print(e)
+        return None, None
 
 def find_toa_vref(d):
     json_results = []
@@ -96,6 +94,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.module_no, 
                m.chip, 
                m.channel, 
+               m.cell,
                m.adc_mean, 
                m.adc_stdd, 
                m.channeltype, 
@@ -107,11 +106,16 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.status_desc,
                m.comment,
                m.pedestal_config_json,
+               m.list_dead_cells,
+               m.list_noisy_cells,
+               m.inverse_sqrt_n,
+               m.bias_vol,
                h.roc_name, 
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
         WHERE m.module_name = ANY($1)
+        AND m.bias_vol > 0
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -122,6 +126,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.module_no, 
                 m.chip, 
                 m.channel, 
+                m.cell,
                 m.adc_mean, 
                 m.adc_stdd, 
                 m.channeltype, 
@@ -132,12 +137,17 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.rel_hum,
                 m.status_desc,
                 m.comment,
-                m.pedestal_config_json
+                m.pedestal_config_json,
+                m.list_dead_cells,
+                m.list_noisy_cells,
+                m.inverse_sqrt_n,
+                m.bias_vol,
                 h.roc_name, 
                 h.roc_index
             FROM module_pedestal_test m
             LEFT JOIN hexaboard h ON m.module_no = h.module_no
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
+            AND m.bias_vol > 0
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -148,6 +158,14 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
 
     test_data = {}
     for row in rows:
+        if row['roc_name'] is None:
+            module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi')
+            hxb_child_320X = [child["serial_number"] for child in module_data["children"] if child["serial_number"].startswith("320X")][0]
+            hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi')
+            hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
+            hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
+            row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
+
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
         run_begin_timestamp = f"{date_test}T{time_test}"
@@ -164,18 +182,23 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'module_name': row['module_name'],
                 'module_no': row['module_no'],
                 'inspector': row['inspector'],
+                'cell': row['cell'],
                 'chip': _chip,
                 'channel': channel,
                 'channeltype': channeltype,
                 'adc_mean': row['adc_mean'],
                 'adc_stdd': row['adc_stdd'],
                 'roc_name': row['roc_name'],
+                'roc_index': row['roc_index'],
                 'comment' : row['comment'],
+                'inverse_sqrt_n': row['inverse_sqrt_n'],
                 'status_desc': row["status_desc"],
                 'inspector': row['inspector'],  ###### for env
-                'rel_hum': row['rel_hum'] if row['rel_hum'] is not None else 999,
-                'temp_c': row['temp_c'] if row['temp_c'] is not None else 999,
-                'pedestal_config_json': row['pedestal_config_json'] if row['pedestal_config_json'] is not None else "N/A", #### for config
+                'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
+                'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
+                'list_dead_cells': row['list_dead_cells'],
+                'list_noisy_cells': row['list_noisy_cells'],
+                'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
             }
     return test_data
 
@@ -185,22 +208,37 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
     channels = test_data["channel"]
     adc_means = test_data["adc_mean"]
     adc_stdds = test_data["adc_stdd"]
-    roc_names = test_data["roc_name"]
-
-    chip_to_roc = {}
-    for idx, chip in enumerate(sorted(set(chips))):
-        if idx < len(roc_names):
-            chip_to_roc[chip] = roc_names[idx]
+        
+    chip_dead_channels = {chip: [] for chip in set(chips)} 
+    for c in test_data['list_dead_cells']:      ### fill this dict with `cell` as keys
+        chip_dead_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
+    
+    chip_noisy_channels = {chip: [] for chip in set(chips)} 
+    for c in test_data['list_noisy_cells']:      ### fill this dict with `cell` as keys
+        chip_noisy_channels[test_data['chip'][test_data['cell'].index(c)]].append(test_data['channel'][test_data['cell'].index(c)])
 
     roc_grouped_data = defaultdict(list)  # Group data by ROC
-    for i in range(len(channels)):
-        chip = chips[i]
-        roc = chip_to_roc.get(chip, "UNKNOWN")
-        roc_grouped_data[roc].append({
+    for i, chip in enumerate(chips):
+        roc_grouped_data[chip].append({
             "channel": channels[i],
             "adc_mean": adc_means[i],
             "adc_stdd": adc_stdds[i] })
     
+    chip_to_roc_name, json_key_to_roc_name = get_roc_name(module_name = test_data['module_name'], roc_name = test_data['roc_name'], roc_index = test_data['roc_index'])
+
+    for chip in set(chips): ## replace chip number with roc name
+        roc = chip_to_roc_name[chip]
+        roc_grouped_data[roc] = roc_grouped_data.pop(chip)
+        chip_dead_channels[roc] = chip_dead_channels.pop(chip)  
+        chip_noisy_channels[roc] = chip_noisy_channels.pop(chip)
+
+    if test_data['pedestal_config_json']:
+        pedestal_config_json_full = json.loads(f'''{test_data['pedestal_config_json']}''')
+        
+    chip_config = {}    
+    for key, roc in json_key_to_roc_name.items():   
+        chip_config[roc] = pedestal_config_json_full[key]["sc"] if test_data['pedestal_config_json'] else None   
+        
     os.makedirs(output_path, exist_ok=True)
     timestamp_formatted = str(run_begin_timestamp).replace(":","").split('.')[0]
     file_path_test = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal.xml")
@@ -214,6 +252,8 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
 
     # === Fill in <RUN> metadata ===
     for xml_type in list(xml_types.keys()): ####### Common for all three XML types
+        if xml_type == 'config' and test_data['pedestal_config_json'] == None: 
+            continue
         tree = ET.parse(xml_types[xml_type])
         root = tree.getroot()
         run_info = root.find("HEADER/RUN")
@@ -250,8 +290,13 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
                     ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
                     ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
                     ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    ET.SubElement(data, "FRAC_UNC").text = "0.0"
-                    ET.SubElement(data, "FLAGS").text = "0"
+                    flag = "0"      if entry["adc_mean"] == 0  else ""
+                    flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
+                    flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
+                    if flag:
+                        ET.SubElement(data, "FLAGS").text = flag
+                    if test_data["inverse_sqrt_n"]:
+                        ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
                     data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'env':
                 data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
@@ -261,13 +306,9 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
                 data_set.append(data)  # <== append directly under DATA_SET
             elif xml_type == 'config':
                 data = ET.Element("DATA")
-                if test_data['pedestal_config_json'] != "N/A":
-                    toa_vref = find_toa_vref(json.loads(f'''{test_data['pedestal_config_json']}'''))
-                    ET.SubElement(data, "Purpose").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                    ET.SubElement(data, "ConfigJSON").text = f'''{test_data['pedestal_config_json']}'''
-                else:
-                    ET.SubElement(data, "Purpose").text = "N/A"
-                    ET.SubElement(data, "ConfigJSON").text = "N/A"
+                toa_vref = find_toa_vref(chip_config[roc])
+                ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
                 data_set.append(data)  # <== append directly under DATA_SET 
             
             root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
@@ -308,17 +349,13 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
         for timestamp_key in tqdm(list(test_data.keys())):
             try:
                 float(test_data[timestamp_key]['rel_hum'])
-                float(test_data[timestamp_key]['temp_c'])
+                float(test_data[timestamp_key]['temp_c'])                
             except:
-                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.")
-            if test_data[timestamp_key]['pedestal_config_json'] is None:
-                raise ValueError(f"{test_data['module_name']}: {timestamp_key} You cannot upload any test data that is missing pedestal_config_json.")
-            else:
-                output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
+                print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
+                continue
+            output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
     except Exception as e:
-        RED = '\033[91m'
-        RESET = '\033[0m'
-        print(f"{RED}An error occurred: {e}. You cannot upload any test data when humidity or temperature is null.{RESET}")
+        print(f"{RED}An error occurred: {traceback.print_exc()}.{RESET}")
     finally:
         await conn.close()
 
