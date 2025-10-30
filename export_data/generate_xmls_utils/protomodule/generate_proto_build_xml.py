@@ -61,7 +61,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     # if _bp_name:
                     #     bp_name = _bp_name[0]['bp_name']
                     #     correct_bp_combo = [LOCATION, bp_name]
-                    #     api_bp_combo = get_location_and_partid(part_id=bp_name, part_type='baseplate', cern_db_url='hgcapi-cmsr')
+                    #     api_bp_combo = get_location_and_partid(part_id=bp_name, part_type='baseplate', cern_db_url='hgcapi')
 
                     #     if correct_bp_combo != api_bp_combo:
                     #         errors.append(f"\033[91mBaseplate information mismatches with API. Submit a GitLab ticket.\nYou have {correct_bp_combo}, but the api has {api_bp_combo}.\033[0m")
@@ -76,7 +76,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     # if _sen_name:
                     #     sen_name = _sen_name[0]['sen_name']
                     #     correct_sen_combo = [LOCATION, sen_name]
-                    #     api_sen_combo = get_location_and_partid(part_id=sen_name, part_type='sensor', cern_db_url='hgcapi-cmsr')
+                    #     api_sen_combo = get_location_and_partid(part_id=sen_name, part_type='sensor', cern_db_url='hgcapi')
                         
                     #     if correct_sen_combo != api_sen_combo:
                     #         errors.append(f"\033[91mSensor information mismatches with API. Submit a GitLab ticket. \nYou have {correct_sen_combo}, but the api has {api_sen_combo}.\033[0m")

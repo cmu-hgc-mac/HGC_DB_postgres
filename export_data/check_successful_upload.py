@@ -5,9 +5,9 @@ from src import get_kind_of_part
 
 def get_api_data(search_id, db_type):
     if db_type == 'cmsr':
-        url = f"https://hgcapi-cmsr.web.cern.ch/mac/part/{search_id}/full"
-    elif db_type == 'int2r':
         url = f"https://hgcapi.web.cern.ch/mac/part/{search_id}/full"
+    elif db_type == 'int2r':
+        url = f"https://hgcapi-intg.web.cern.ch/mac/part/{search_id}/full"
 
     headers = {'Accept': 'application/json'}
     selected_keys = ['kind', 'record_insertion_user', 'record_insertion_time', 'serial_number']

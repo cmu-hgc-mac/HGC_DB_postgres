@@ -9,6 +9,7 @@
 			<INSTITUTION>{{ institution }}</INSTITUTION>
 			<MANUFACTURER>{{ manufacturer }}</MANUFACTURER>
 			<VERSION>{{ version }}</VERSION>
+			<PRODUCTION_DATE>{{ assembly_date }}</PRODUCTION_DATE>
 		<CHILDREN>
 		<PART mode="auto">
 			<KIND_OF_PART>{{ kind_of_part_protomodule }}</KIND_OF_PART>
