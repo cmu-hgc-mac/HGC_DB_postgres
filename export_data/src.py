@@ -25,7 +25,7 @@ with open(resource_yaml, 'r') as file:
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
-db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
+db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
 
 db_params = {
@@ -41,7 +41,7 @@ partTrans = {'bp' :{'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 
              'ml' :{'apikey':'modules', 'dbtabname': 'module_inspect', 'db_col': 'module_name', 'qc_cols':  {'mod_grade': 'grade', 'mod_ave_thkns_mm': 'avg_thickness', "mod_max_thkns_mm": 'max_thickness', 'mod_fltns_mm': 'flatness', "pcb_plcment_x_offset": 'x_offset_mu', "pcb_plcment_y_offset": 'y_offset_mu',"pcb_plcment_ang_offset": 'ang_offset_deg'}},
             }
 
-def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-cmsr'):
+def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
     if partID is not None:
         return f"https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full"
     elif partType is not None:
@@ -50,7 +50,7 @@ def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-
         return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}"
     return
 
-def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi-cmsr'):
+def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):
     headers = {'Accept': 'application/json'}
     response = requests.get(get_url(partID = partID, macID = macID, partType = partType, cern_db_url = cern_db_url), headers=headers)
     if response.status_code == 200:
@@ -396,7 +396,7 @@ def get_roc_version(module_name):
 ################################################################################
 ### Below is for checking part exisistence and combination with location ###
 ################################################################################
-def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-cmsr'):
+def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
     if partID is not None:
         return f'https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full'
     elif partType is not None:
@@ -405,7 +405,7 @@ def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi-
         return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}'
     return
 
-def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi-cmsr'):
+def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):
     headers = {'Accept': 'application/json'}
     response = requests.get(get_url(partID = partID, macID = macID, partType = partType, cern_db_url = cern_db_url), headers=headers)
     if response.status_code == 200:
@@ -423,7 +423,7 @@ def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url
             print(f'ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}')
         return None
 
-def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hgcapi-cmsr") -> list:
+def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hgcapi") -> list:
     try:
         data = read_from_cern_db(partID=part_id, partType=part_type, cern_db_url=cern_db_url)
         if not data:
