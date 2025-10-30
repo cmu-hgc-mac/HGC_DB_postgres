@@ -25,7 +25,7 @@ conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 kop_yaml = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r')).get('kind_of_part')
 inst_code  = conn_info.get('institution_abbr')
 # source_db_cern = conn_info.get('cern_db')
-db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi-cmsr'}}
+db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
 
 db_params = {
@@ -167,7 +167,7 @@ def get_dict_for_db_upload(data_full, partType):
         # print('*'*100)
         return None
     
-def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
+def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi'):
     try:
         data_full = read_from_cern_db(partID = hxb_name, cern_db_url=cern_db_url)
         roc_names, roc_indices = [], []
@@ -194,7 +194,7 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi-cmsr'):
         # print('*'*100)
         return None
 
-def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols = None):
+def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi', part_qc_cols = None):
     """
     According to Jay Mathew Lawhorn, (ETP):
     We will not send you any parts for installation that have any of the booleans false (and if we send you rejected baseplates as dummies, the tolerance grade will be a C).
@@ -217,7 +217,7 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi-cmsr', part_qc_cols =
         # print('*'*100)
         return None
 
-def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi-cmsr'):
+def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi'):
     try:
         data_full = read_from_cern_db(partID = sen_name, cern_db_url=cern_db_url)
         db_dict = None
