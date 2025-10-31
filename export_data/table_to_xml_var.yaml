@@ -1,10 +1,4 @@
 module_assembly:
-- xml_temp_val: STEP_PCB_NUM
-  dbase_col: null
-  dbase_table: null
-  nested_query: null
-  default_value: null
-  nullable: 'no'
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: module_assembly
@@ -34,6 +28,12 @@ module_assembly:
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
+- xml_temp_val: ASMBL_USER
+  dbase_col:
+  dbase_table: null
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: ASMBL_TRAY_NAME
   dbase_col: ass_tray_id
   dbase_table: module_assembly
@@ -56,32 +56,10 @@ module_assembly:
   default_value: null
   nullable: 'no'
 - xml_temp_val: ASM_COL
-  dbase_col: pos_col
-  dbase_table: module_assembly
-  xml_tag: PCB_CMP_COL
+  dbase_col: pos_row ## check this
+  dbase_table: module_assembly ## check this
+  xml_tag: PRTO_ASM_COL ## check this
   nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: COMP_TRAY_NAME
-  dbase_col: hxb_tray_id
-  dbase_table: module_assembly
-  xml_tag: COMP_TRAY_NAME
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: PCB
-  dbase_col: hxb_name
-  dbase_table: module_assembly
-  xml_tag: PCB_SER_NUM
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: PCB_THICKNESS
-  dbase_col: thickness
-  dbase_table: hxb_inspect
-  xml_tag: PCB_THKNES_MM
-  nested_query: SELECT thickness::text FROM hxb_inspect JOIN module_assembly ON REPLACE(module_assembly.hxb_name,'-','')
-    = REPLACE(hxb_inspect.hxb_name,'-','')
   default_value: null
   nullable: 'no'
 - xml_temp_val: ASM_ROW
@@ -105,13 +83,6 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: PCB_TOOL_FEET_CHK_STR
-  dbase_col: null
-  dbase_table: null
-  xml_tag: PCB_TOOL_FEET_CHK
-  nested_query: null
-  default_value: 'yes'
-  nullable: 'no'
 - xml_temp_val: GLUE_TYPE
   dbase_col: adhesive
   dbase_table: module_assembly
@@ -126,38 +97,62 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
+- xml_temp_val: COMP_TRAY_NAME
+  dbase_col: hxb_tray_id
+  dbase_table: module_assembly
+  xml_tag: COMP_TRAY_NAME
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: TRANSFER_TAPE_BATCH_NUM ## check this
+  dbase_col:  ## check this
+  dbase_table: module_assembly ## check this
+  xml_tag: TRANSFER_TAPE_BATCH_NUM
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+
+module_visual_insp:
+- xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: module_assembly
+  xml_tag: RUN_BEGIN_TIMESTAMP
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: RUN_END_TIMESTAMP_
+  dbase_col: ass_run_date, ass_time_end
+  dbase_table: module_assembly
+  xml_tag: RUN_END_TIMESTAMP
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+- xml_temp_val: LOCATION
+  xml_tag: LOCATION
+- xml_temp_val: RUN_NUMBER
+  xml_tag: RUN_NUMBER
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: module_assembly
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: ID
+  xml_tag: SERIAL_NUMBER
+- xml_temp_val: INPS_USER
+  dbase_col: ## check this
+  dbase_table: null
+  xml_tag: INPS_USER
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: MOD_GRADE
   dbase_col: grade
   dbase_table: module_inspect
   xml_tag: MOD_GRADE
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: STEP_PCB
-  dbase_col: batch_no
-  dbase_table: module_assembly
-  xml_tag: PCB_STEP
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: PCB_PLCMENT_X_OFFSET
-  dbase_col: x_offset_mu
-  dbase_table: module_inspect
-  xml_tag: PCB_PLCMENT_X_OFFSET
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: PCB_PLCMENT_Y_OFFSET
-  dbase_col: y_offset_mu
-  dbase_table: module_inspect
-  xml_tag: PCB_PLCMENT_Y_OFFSET
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: PCB_PLCMENT_ANG_OFFSET
-  dbase_col: ang_offset_deg
-  dbase_table: module_inspect
-  xml_tag: PCB_PLCMENT_ANG_OFFSET
   nested_query: null
   default_value: null
   nullable: 'no'
@@ -182,6 +177,28 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
+- xml_temp_val: PCB_PLCMENT_X_OFFSET
+  dbase_col: x_offset_mu
+  dbase_table: module_inspect
+  xml_tag: PCB_PLCMENT_X_OFFSET
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: PCB_PLCMENT_Y_OFFSET
+  dbase_col: y_offset_mu
+  dbase_table: module_inspect
+  xml_tag: PCB_PLCMENT_Y_OFFSET
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: PCB_PLCMENT_ANG_OFFSET
+  dbase_col: ang_offset_deg
+  dbase_table: module_inspect
+  xml_tag: PCB_PLCMENT_ANG_OFFSET
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+
 wirebond:
 - xml_temp_val: BACK_BONDS_DATE
   dbase_col: date_bond
@@ -465,6 +482,7 @@ wirebond:
     ORDER BY date_encap DESC, time_encap DESC LIMIT 1);"
   default_value: null
   nullable: 'yes'
+
 module_build:
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -708,6 +726,7 @@ hxb_cond:
   nested_query: null
   default_value: null
   nullable: 'yes'
+
 proto_assembly:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
@@ -738,52 +757,16 @@ proto_assembly:
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
+- xml_temp_val: ASMBL_USER
+  dbase_col: ## check this
+  dbase_table: ## check this
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: ASMBL_TRAY_NAME
   dbase_col: ass_tray_id
   dbase_table: proto_assembly
   xml_tag: ASMBL_TRAY_NAME
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: BASEPLATE
-  dbase_col: bp_name
-  dbase_table: proto_assembly
-  xml_tag: PLT_SER_NUM
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: ASM_ROW
-  dbase_col: pos_row
-  dbase_table: proto_assembly
-  xml_tag: PLT_ASM_ROW
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: ASM_COL
-  dbase_col: pos_col
-  dbase_table: proto_assembly
-  xml_tag: PLT_ASM_COL
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: FLATNESS
-  dbase_col: flatness
-  dbase_table: proto_inspect
-  xml_tag: PLT_FLTNES_MM
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: AVE_THICKNESS
-  dbase_col: avg_thickness
-  dbase_table: proto_inspect
-  xml_tag: PLT_AVE_THKNS_MM
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: MAX_THICKNESS
-  dbase_col: max_thickness
-  dbase_table: proto_inspect
-  xml_tag: PLT_MAX_THKNS_MM
   nested_query: null
   default_value: null
   nullable: 'no'
@@ -804,6 +787,20 @@ proto_assembly:
 - xml_temp_val: ASM_ROW
   dbase_col: pos_row
   dbase_table: proto_assembly
+  xml_tag: PLT_ASM_ROW
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: ASM_COL
+  dbase_col: pos_col
+  dbase_table: proto_assembly
+  xml_tag: PLT_ASM_COL
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: ASM_ROW
+  dbase_col: pos_row
+  dbase_table: proto_assembly
   xml_tag: SNSR_CMP_ROW
   nested_query: null
   default_value: null
@@ -812,27 +809,6 @@ proto_assembly:
   dbase_col: pos_col
   dbase_table: proto_assembly
   xml_tag: SNSR_CMP_COL
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: SNSR_X_OFFST
-  dbase_col: x_offset_mu
-  dbase_table: proto_inspect
-  xml_tag: SNSR_X_OFFST
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: SNSR_Y_OFFST
-  dbase_col: y_offset_mu
-  dbase_table: proto_inspect
-  xml_tag: SNSR_Y_OFFST
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: SNSR_ANG_OFFST
-  dbase_col: ang_offset_deg
-  dbase_table: proto_inspect
-  xml_tag: SNSR_ANG_OFFSET
   nested_query: null
   default_value: null
   nullable: 'no'
@@ -864,6 +840,43 @@ proto_assembly:
   nested_query: null
   default_value: null
   nullable: 'yes'
+
+proto_visual_insp:
+- xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: proto_assembly
+  xml_tag: RUN_BEGIN_TIMESTAMP
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: RUN_END_TIMESTAMP_
+  dbase_col: ass_run_date, ass_time_end
+  dbase_table: proto_assembly
+  xml_tag: RUN_END_TIMESTAMP
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+- xml_temp_val: LOCATION
+  xml_tag: LOCATION
+- xml_temp_val: RUN_NUMBER
+  xml_tag: RUN_NUMBER
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: proto_assembly
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: ID
+  xml_tag: SERIAL_NUMBER
+- xml_temp_val: INPS_USER
+  dbase_col: ## check this
+  dbase_table: ## check this
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: PRTO_GRADE
   dbase_col: grade
   dbase_table: proto_inspect
@@ -871,6 +884,49 @@ proto_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
+- xml_temp_val: FLATNESS
+  dbase_col: flatness
+  dbase_table: proto_inspect
+  xml_tag: PLT_FLTNES_MM
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: AVE_THICKNESS
+  dbase_col: avg_thickness
+  dbase_table: proto_inspect
+  xml_tag: PLT_AVE_THKNS_MM
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: MAX_THICKNESS
+  dbase_col: max_thickness
+  dbase_table: proto_inspect
+  xml_tag: PLT_MAX_THKNS_MM
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: SNSR_X_OFFST
+  dbase_col: x_offset_mu
+  dbase_table: proto_inspect
+  xml_tag: SNSR_X_OFFST
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: SNSR_Y_OFFST
+  dbase_col: y_offset_mu
+  dbase_table: proto_inspect
+  xml_tag: SNSR_Y_OFFST
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: SNSR_ANG_OFFST
+  dbase_col: ang_offset_deg
+  dbase_table: proto_inspect
+  xml_tag: SNSR_ANG_OFFSET
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+
 proto_build:
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -965,6 +1021,7 @@ proto_cond:
   xml_tag: HUMIDITY_PRCNT
   nested_query: null
   nullable: 'no'
+
 sensor_build:
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -974,6 +1031,7 @@ sensor_build:
   xml_tag: LOCATION
 - xml_temp_val: INSTITUTION
   xml_tag: INSTITUTION
+
 sensor_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
@@ -1038,12 +1096,6 @@ pedestal_test:
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-# - xml_temp_val: INSPECTOR
-#   dbase_col: inspector
-#   dbase_table: module_pedestal_test
-#   xml_tag: INSPECTOR
-#   nested_query: null
-#   nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
