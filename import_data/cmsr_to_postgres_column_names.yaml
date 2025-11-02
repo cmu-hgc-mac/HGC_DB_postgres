@@ -1,0 +1,63 @@
+children_for_import:
+  bp:
+    apikey: baseplates
+    dbtabname: baseplate
+    db_cols:
+      serial_number: bp_name  ### column_name_in_cmsr: column_name_in_postgres
+      kind: kind
+      comment_description: comment
+    qc_cols:   ### column_name_in_cmsr: column_name_in_postgres
+      tolerance_grade: tolerance_grade
+      flatness_grade: flatness_grade
+      height_lam_avg: avg_thickness_init
+      height_lam_max: max_thickness_init
+      flatness_lam: flatness_init
+      weight_lam: weight_grams
+
+  sen:
+    apikey: sensors
+    dbtabname: sensor
+    db_cols:
+      serial_number: sen_name ### column_name_in_cmsr: column_name_in_postgres
+      kind: kind
+      comment_description: comment
+      batch_number: sen_batch_id
+
+  hxb:
+    apikey: pcbs
+    dbtabname: hexaboard
+    db_cols:
+      serial_number: hxb_name  ### column_name_in_cmsr: column_name_in_postgres
+      kind: kind
+      comment_description: comment
+
+# parts_for_upload_check:
+#   pml:
+#     apikey: protomodules
+#     dbtabname: proto_inspect
+#     db_cols:
+#       serial_number: proto_name
+#       kind: kind
+#       comment_description: comment
+#     qc_cols:
+#       prto_grade: grade
+#       prto_thkns_mm: max_thickness
+#       prto_fltns_mm: flatness
+#       snsr_x_offst: x_offset_mu
+#       snsr_y_offst: y_offset_mu
+#       snsr_ang_offst: ang_offset_deg
+#   ml:
+#     apikey: modules
+#     dbtabname: module_inspect
+#     db_cols:
+#       serial_number: module_name
+#       kind: kind
+#       comment_description: comment
+#     qc_cols:
+#       mod_grade: grade
+#       mod_ave_thkns_mm: avg_thickness
+#       mod_max_thkns_mm: max_thickness
+#       mod_fltns_mm: flatness
+#       pcb_plcment_x_offset: x_offset_mu
+#       pcb_plcment_y_offset: y_offset_mu
+#       pcb_plcment_ang_offset: ang_offset_deg
