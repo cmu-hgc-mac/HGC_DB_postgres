@@ -39,26 +39,22 @@ def str2bool(boolstr):
     dictstr = {'True': True, 'False': False}
     return dictstr[boolstr]
 
-partTrans = {'bp' :{'apikey':'baseplates',   'dbtabname': 'bp_inspect', 'db_col': 'bp_name',  'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
-             'sen':{'apikey':'sensors',      'dbtabname': 'sensor',     'db_col': 'sen_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment'}},
-             'hxb':{'apikey':'pcbs',         'dbtabname': 'hxb_inspect','db_col': 'hxb_name', 'qc_cols': {'grade': 'grade' ,'thickness': 'thickness','comments': 'comment', 'flatness':'flatness', 'weight': 'weight'}},
-             'pml':{'apikey':'protomodules', 'dbtabname': 'proto_inspect', 'db_col': 'proto_name' ,'qc_cols':  {'prto_grade': 'grade', 'prto_thkns_mm': 'avg_thickness', "prto_thkns_mm": 'max_thickness', 'prto_fltns_mm': 'flatness', "snsr_x_offst": 'x_offset_mu', "snsr_y_offst": 'y_offset_mu',"snsr_ang_offst": 'ang_offset_deg'}},
-             'ml' :{'apikey':'modules', 'dbtabname': 'module_inspect', 'db_col': 'module_name', 'qc_cols':  {'mod_grade': 'grade', 'mod_ave_thkns_mm': 'avg_thickness', "mod_max_thkns_mm": 'max_thickness', 'mod_fltns_mm': 'flatness', "pcb_plcment_x_offset": 'x_offset_mu', "pcb_plcment_y_offset": 'y_offset_mu',"pcb_plcment_ang_offset": 'ang_offset_deg'}},
-            }
+# children_for_import = {'bp': {'apikey':'baseplates', 'dbtabname': 'baseplate', 'db_cols': {'serial_number': 'bp_name',  'kind': 'kind', 'comment_description': 'comment'}},
+#                 'sen': {'apikey':'sensors',    'dbtabname': 'sensor',    'db_cols': {'serial_number': 'sen_name', 'kind': 'kind', 'comment_description': 'comment', 'batch_number': 'sen_batch_id'}},
+#                 'hxb': {'apikey':'pcbs',       'dbtabname': 'hexaboard', 'db_cols': {'serial_number': 'hxb_name', 'kind': 'kind', 'comment_description': 'comment'}},
+#             }
 
-partTransInit = {'bp': {'apikey':'baseplates', 'dbtabname': 'baseplate', 'db_cols': {'serial_number': 'bp_name',  'kind': 'kind', 'comment_description': 'comment'}},
-                'sen': {'apikey':'sensors',    'dbtabname': 'sensor',    'db_cols': {'serial_number': 'sen_name', 'kind': 'kind', 'comment_description': 'comment', 'batch_number': 'sen_batch_id'}},
-                'hxb': {'apikey':'pcbs',       'dbtabname': 'hexaboard', 'db_cols': {'serial_number': 'hxb_name', 'kind': 'kind', 'comment_description': 'comment'}},
-            }
+# bp_qc_cols = {'qc_cols': {'tolerance_grade': 'tolerance_grade',
+#                   'flatness_grade': 'flatness_grade',
+#                   'height_lam_avg': 'avg_thickness_init',
+#                   'height_lam_max': 'max_thickness_init',
+#                   'flatness_lam': 'flatness_init',
+#                   'weight_lam': 'weight_grams',  }}
 
-bp_qc_cols = {'qc_cols': {'tolerance_grade': 'tolerance_grade',
-                  'flatness_grade': 'flatness_grade',
-                  'height_lam_avg': 'avg_thickness_init',
-                  'height_lam_max': 'max_thickness_init',
-                  'flatness_lam': 'flatness_init',
-                  'weight_lam': 'weight_grams',  }}
+# children_for_import['bp'].update(bp_qc_cols)
 
-partTransInit['bp'].update(bp_qc_cols)
+with open('import_data/cmsr_to_postgres_column_names.yaml', 'r') as f:
+    children_for_import = yaml.safe_load(f)['children_for_import']
 
 def check_roc_count(hxb_name, roc_count):
     ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
@@ -110,7 +106,7 @@ def get_query_update_secondary(table_name, column_names, check_conflict_col = No
 #     return query
 
 async def write_to_db(pool, db_upload_data, partType = None, check_conflict_col=None):
-    table_name = partTransInit[partType]["dbtabname"]
+    table_name = children_for_import[partType]["dbtabname"]
     async with pool.acquire() as conn:
         query = get_query_write(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
         await conn.execute(query, *db_upload_data.values())
@@ -118,7 +114,7 @@ async def write_to_db(pool, db_upload_data, partType = None, check_conflict_col=
         await conn.execute(query, *db_upload_data.values())
 
 async def write_to_db_secondary(pool, db_upload_data, partType = None, check_conflict_col=None):
-    table_name = partTransInit[partType]["dbtabname"]
+    table_name = children_for_import[partType]["dbtabname"]
     async with pool.acquire() as conn:
         query = get_query_update_secondary(table_name, db_upload_data.keys(), check_conflict_col=check_conflict_col, db_upload_data=db_upload_data)
         await conn.execute(query, *db_upload_data.values())
@@ -157,7 +153,7 @@ def get_part_type(partName, partType):
 
 def get_dict_for_db_upload(data_full, partType):
     try:
-        db_dict = {partTransInit[partType]["db_cols"][k]: data_full[k] for k in (partTransInit[partType]["db_cols"]).keys()}
+        db_dict = {children_for_import[partType]["db_cols"][k]: data_full[k] for k in (children_for_import[partType]["db_cols"]).keys()}
         db_dict.update(get_part_type(data_full['serial_number'], partType))
         return db_dict
     except Exception as e:
@@ -275,7 +271,7 @@ async def main():
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
         for pt in part_types_to_get:  #, 'pml', 'ml']:
-            print(f"Reading {partTrans[pt]['apikey']} from {cern_db_url.upper()} ..." )
+            print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
             parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
             if parts:
                 for p in tqdm(parts['parts']):
@@ -283,7 +279,7 @@ async def main():
                         db_dict = get_dict_for_db_upload(p, partType = pt)
                         if db_dict is not None:
                             try:
-                                await write_to_db(pool, db_dict, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
+                                await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
                             except Exception as e:
                                 print(f"ERROR for single part upload for {p['serial_number']}", e)
                                 traceback.print_exc()
@@ -296,11 +292,11 @@ async def main():
                 secondary_upload = await get_missing_roc_hxb(pool)
             elif pt == 'bp':
                 secondary_upload = await get_missing_qc_bp(pool)
-                part_qc_cols = partTransInit[pt]['qc_cols']
+                part_qc_cols = children_for_import[pt]['qc_cols']
             elif pt == 'sen':
                 secondary_upload = await get_missing_batch_sen(pool)
             if secondary_upload:
-                print(f"Fetching other necessary {partTrans[pt]['apikey']} data ...")
+                print(f"Fetching other necessary {children_for_import[pt]['apikey']} data ...")
                 for p in tqdm(secondary_upload):
                     try:
                         if pt == 'hxb':
@@ -311,7 +307,7 @@ async def main():
                             db_dict_secondary = get_sen_batch_for_db_upload(p, cern_db_url = cern_db_url)
                         if db_dict_secondary is not None:
                             try:
-                                await write_to_db_secondary(pool, db_dict_secondary, partType = pt, check_conflict_col = partTransInit[pt]['db_cols']['serial_number'])
+                                await write_to_db_secondary(pool, db_dict_secondary, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
                             except Exception as e:
                                 print(f"ERROR for single part upload for {p['serial_number']}", e)
                                 traceback.print_exc()
@@ -319,7 +315,7 @@ async def main():
                     except:
                         traceback.print_exc()
                 
-                print(f"Writing {partTrans[pt]['apikey']} to postgres from {cern_db_url.upper()} complete.")
+                print(f"Writing {children_for_import[pt]['apikey']} to postgres from {cern_db_url.upper()} complete.")
                 print('-'*40); print('\n')
 
                             
