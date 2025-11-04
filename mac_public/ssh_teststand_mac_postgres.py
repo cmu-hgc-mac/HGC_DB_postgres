@@ -1,5 +1,11 @@
 import subprocess, os, glob, platform, webbrowser, traceback
 
+mac_dict_lxplus = { 'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'database':'hgcdb',      'forwardport': '15432'}, 
+                    'UCSB': {'host': 'gut.physics.ucsb.edu',    'database':'hgcdb',     'forwardport': '15433'}, 
+                    'TIFR': {'host': 'lxhgcdb02.tifr.res.in',   'database':'hgcdb',     'password': 'hgcal', 'forwardport': '15434'},
+                    'IHEP': {'host': 'hgcal.ihep.ac.cn',        'database':'postgres', 'forwardport': '15435'},
+                    'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'database':'hgcdb',     'forwardport': '15436'}, }
+
 def open_ssh_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False):
     controlpathname = "ctrlpath_lxtunnel_postgres"
     test_cmd = ["ssh", 
@@ -58,15 +64,13 @@ def open_ssh_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 ssh_cmd = ["ssh", "-MNf",
                     "-o", "ControlMaster=yes",
                     "-o", f"ControlPath=~/.ssh/{controlpathname}",    
-                    "-o", f"ControlPersist={scp_timeout_cond}",
-                    "-L", f"15432:cmsmac04.phys.cmu.edu:5432",
-                    "-L", f"15433:gut.physics.ucsb.edu:5432",
-                    "-L", f"15434:lxhgcdb02.tifr.res.in:5432",
-                    "-L", f"15435:hgcal.ihep.ac.cn:5432",
-                    "-L", f"15436:hep11.phys.ntu.edu.tw:5432",
-                    # "-L", f"15437:tbd.ttu.edu:5432", ### Update with ttu credentials
-                    f"{dbl_username}@lxtunnel.cern.ch"]    
+                    "-o", f"ControlPersist={scp_timeout_cond}",]
                 
+                for mac in mac_dict_lxplus.keys():
+                    ssh_cmd.append("-L")
+                    ssh_cmd.append(f"{mac_dict_lxplus[mac]['forwardport']}:{mac_dict_lxplus[mac]['host']}:5432")
+
+                ssh_cmd.append(f"{dbl_username}@lxtunnel.cern.ch")                
                 subprocess.run(ssh_cmd, check=True)
 
                 print("** SSH ControlMaster session started. **")
@@ -95,3 +99,12 @@ def open_ssh_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
     ## ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@{controlpathname} {dbl_username}@{controlpathname} ## To kill process
     # ssh -O exit -o ControlPath=~/.ssh/ctrl_lxplus_dbloader simurthy@ctrl_lxplus_dbloader
     return result.returncode
+
+
+mac_dict = mac_dict_lxplus
+
+for mac in mac_dict.keys():
+    mac_dict[mac]['host'] = 'localhost' ## replace with localhost
+    mac_dict[mac]['port'] = mac_dict[mac].pop('forwardport')
+    
+conn = await asyncpg.connect(user='viewer', **mac_dict[macid]) 
