@@ -4,7 +4,17 @@ Code to set up a local PostgreSQL database at an HGC MAC
  git clone https://github.com/cmu-hgc-mac/HGC_DB_postgres.git
 ```
 
- ## Getting started
+## Using the control panel
+If the database already exists, and you wish to access only the postgres control panel on a different computer, do the following:
+```
+git clone https://github.com/cmu-hgc-mac/HGC_DB_postgres.git
+cd HGC_DB_postgres
+pip install -r housekeeping/requirements.txt
+## Create a copy of dbase_info/conn.py and update with the right credentials.
+python3 postgres_control_panel.py
+```
+
+ ## Setting up the postgreSQL database
 
 Each MAC requires the following to replicate this setup:
 1. A database computer with a static IP address or host name with postgreSQL-15 with pgAdmin4 installed. 
