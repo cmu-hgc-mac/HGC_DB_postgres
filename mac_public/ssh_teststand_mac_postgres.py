@@ -107,4 +107,4 @@ for mac in mac_dict.keys():
     mac_dict[mac]['host'] = 'localhost' ## replace with localhost
     mac_dict[mac]['port'] = mac_dict[mac].pop('forwardport')
     
-conn = await asyncpg.connect(user='viewer', **mac_dict[macid]) 
+## conn = await asyncpg.connect(user='viewer', **mac_dict[macid]) 
