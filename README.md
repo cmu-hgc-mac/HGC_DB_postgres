@@ -14,7 +14,7 @@ pip install -r housekeeping/requirements.txt
 python3 postgres_control_panel.py
 ```
 
- ## Initial setup for the postgreSQL database at the MAC
+ ## Initial one time setup for the postgreSQL database at the MAC
 
 Each MAC requires the following to replicate this setup:
 1. A database computer with a static IP address or host name with postgreSQL-15 with pgAdmin4 installed. 
