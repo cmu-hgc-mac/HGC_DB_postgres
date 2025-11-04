@@ -36,6 +36,7 @@
 			<SNSR_TOOL_NAME>{{ snsr_tool_name }}</SNSR_TOOL_NAME>
 			<GLUE_TYPE>transfer tape</GLUE_TYPE>
 			<GLUE_BATCH_NUM>{{ glue_batch_num }}</GLUE_BATCH_NUM>
+			<TRANSFER_TAPE_BATCH_NUM>{{ transfer_tape_batch_num }}</TRANSFER_TAPE_BATCH_NUM>
 		</DATA>
 	</DATA_SET>
 
