@@ -445,7 +445,7 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         return []
 
 
-def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, mass_upload_xmls = False):
+def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False):
     controlpathname = "ctrl_dbloader"
     test_cmd = ["ssh", "-Y",
                 "-o", f"ControlPath=~/.ssh/{controlpathname}",

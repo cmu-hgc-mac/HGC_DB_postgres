@@ -41,7 +41,6 @@ delete_xmls = config_data.get('delete_xmls', True)
 php_port = config_data.get('php_port', '8083')
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit = config_data.get('scp_force_quit', True)
-mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_box_per_shipment', 42))
 institution_abbr = config_data.get('institution_abbr')
@@ -498,9 +497,9 @@ def export_data():
             
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
-                if open_scp_connection(dbl_username=lxp_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:
+                if open_scp_connection(dbl_username=lxp_username, get_scp_status=True) != 0:
                     show_message(f"Check terminal to enter LXPLUS credentials.")
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
             
             upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
             upload_prod_stat = upload_prod_stat if scp_status == 0 else False
@@ -510,7 +509,7 @@ def export_data():
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
             if (upload_dev_stat or upload_prod_stat) and scp_force_quit: ### only quit if it was opened at all
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, mass_upload_xmls=mass_upload_xmls)
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")           
 
     select_specific_button = Button(input_window, text="Select type of XMLs", command=select_specific)
