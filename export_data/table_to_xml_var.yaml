@@ -833,13 +833,6 @@ proto_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: TRANSFER_TAPE_BATCH_NUM
-  dbase_col: tape_batch
-  dbase_table: proto_assembly
-  xml_tag: TRANSFER_TAPE_BATCH_NUM
-  nested_query: null
-  default_value: null
-  nullable: 'yes'
 
 proto_visual_insp:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
