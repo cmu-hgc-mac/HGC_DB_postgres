@@ -1,20 +1,20 @@
 baseplate:
-- bp_cond_xml: true
+- bp_inspection_xml: true
 hexaboard:
-- hxb_cond_xml: true
+- hxb_inspection_xml: true
 module:
 - module_assembly_xml: true
-- module_visual_insp_xml: false
+- module_inspection_xml: true
 - module_build_xml: true
-- module_cond_xml: true
+- module_cure_cond_xml: true
 - wirebond_xml: true
 protomodule:
 - proto_assembly_xml: true
-- proto_visual_insp_xml: false
+- proto_inspection_xml: true
 - proto_build_xml: true
-- proto_cond_xml: true
+- proto_cure_cond_xml: true
 sensor:
-- sensor_cond_xml: true
+- sensor_inspection_xml: true
 testing:
 - module_pedestal_xml: true
 - hxb_pedestal_xml: true

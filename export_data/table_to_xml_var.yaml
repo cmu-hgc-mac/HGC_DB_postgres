@@ -112,7 +112,7 @@ module_assembly:
   default_value: null
   nullable: 'no'
 
-module_visual_insp:
+module_inspection:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: module_assembly
@@ -519,7 +519,7 @@ module_build:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: VERSION
-module_cond:
+module_cure_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: module_assembly
@@ -582,7 +582,7 @@ bp_build:
 - xml_temp_val: ID
 - xml_temp_val: LOCATION
 - xml_temp_val: INSTITUTION
-bp_cond:
+bp_inspection:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: date_inspect, time_inspect
   dbase_table: bp_inspect
@@ -647,7 +647,7 @@ hxb_build:
   xml_tag: LOCATION
 - xml_temp_val: INSTITUTION
   xml_tag: INSTITUTION
-hxb_cond:
+hxb_inspection:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: date_inspect, time_inspect
   dbase_table: hxb_inspect
@@ -841,7 +841,7 @@ proto_assembly:
   default_value: null
   nullable: 'yes'
 
-proto_visual_insp:
+proto_inspection:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: proto_assembly
@@ -965,7 +965,7 @@ proto_build:
   xml_tag: SERIAL_NUMBER
   nested_query: null
   nullable: 'no'
-proto_cond:
+proto_cure_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: date_inspect, time_inspect
   dbase_table: proto_inspect
@@ -1033,7 +1033,7 @@ sensor_build:
 - xml_temp_val: INSTITUTION
   xml_tag: INSTITUTION
 
-sensor_cond:
+sensor_inspection:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: proto_assembly
