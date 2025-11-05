@@ -670,7 +670,7 @@ def refresh_data():
     submit_refresh_button.pack(pady=10)
     bind_button_keys(submit_refresh_button)
 
-def open_adminerevo():   ### lsof -i :8083; kill <pid>
+def open_adminer():   ### lsof -i :8083; kill <pid>
     def close_adminer_process():
         try:
             pids = get_pid_result().stdout.strip().split("\n")
@@ -689,8 +689,8 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
                 adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
             
             webbrowser.open(php_url)
-            button_search_data.config(text="Stop AdminerEvo", fg="red")
-            print('AdminerEvo opened in browser...')
+            button_search_data.config(text="Stop Adminer", fg="red")
+            print('Adminer opened in browser...')
             print(php_url)
         except Exception as e:
             traceback.print_exc()
@@ -764,7 +764,7 @@ button_upload_xml.grid(row=5, column=1, pady=(15,1), sticky='ew')
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=(1,15), sticky='ew')
 
-button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
+button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminer, width=button_width, height=button_height) 
 button_search_data.grid(row=7, column=1, pady=(15,1), sticky='ew')
 
 button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))  
@@ -782,7 +782,7 @@ button_stock_stt.grid(row=11, column=1, pady=(1,5), sticky='ew')
 
 for pid in get_pid_result().stdout.strip().split("\n"):
     if pid.isdigit():
-        button_search_data.config(text="Stop AdminerEvo", fg="red")
+        button_search_data.config(text="Stop Adminer", fg="red")
     else:
         button_search_data.config(text=adminer_process_button_face, fg="black")
         
