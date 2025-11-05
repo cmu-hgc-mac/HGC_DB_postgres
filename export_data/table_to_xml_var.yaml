@@ -126,6 +126,58 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
+- xml_temp_val: COMP_TRAY_NAME
+  dbase_col: hxb_tray_id
+  dbase_table: module_assembly
+  xml_tag: COMP_TRAY_NAME
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: TRANSFER_TAPE_BATCH_NUM
+  dbase_col: tape_batch
+  dbase_table: module_assembly
+  xml_tag: TRANSFER_TAPE_BATCH_NUM
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+
+module_inspection:
+- xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: module_assembly
+  xml_tag: RUN_BEGIN_TIMESTAMP
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: RUN_END_TIMESTAMP_
+  dbase_col: ass_run_date, ass_time_end
+  dbase_table: module_assembly
+  xml_tag: RUN_END_TIMESTAMP
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: INITIATED_BY_USER
+  xml_tag: INITIATED_BY_USER
+- xml_temp_val: LOCATION
+  xml_tag: LOCATION
+- xml_temp_val: RUN_NUMBER
+  xml_tag: RUN_NUMBER
+  dbase_col: ass_run_date, ass_time_begin
+  dbase_table: module_assembly
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: KIND_OF_PART
+  xml_tag: KIND_OF_PART
+- xml_temp_val: ID
+  xml_tag: SERIAL_NUMBER
+- xml_temp_val: INSPECTION_USER
+  dbase_col: inspector
+  dbase_table: module_inspect
+  xml_tag: INPS_USER
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: MOD_GRADE
   dbase_col: grade
   dbase_table: module_inspect
@@ -862,7 +914,7 @@ proto_assembly:
   dbase_table: proto_assembly
   xml_tag: TRANSFER_TAPE_BATCH_NUM
   nested_query: null
-  default_value: null
+  default_value: 'null'
   nullable: 'yes'
 - xml_temp_val: PRTO_GRADE
   dbase_col: grade
