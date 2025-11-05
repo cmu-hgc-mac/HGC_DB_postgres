@@ -70,22 +70,11 @@ def get_reflected_tables(xml_path: str) -> str:
                 raise ValueError(f"Cannot determine xml type for part={part_name}, path={xml_path}")
             return prefix, part_name, tables ##i.e., module, 320MLF2W2CM0102, [module_pedestal, module_cond]
 
-def get_upload_status_csv(csv_path):
-    '''
-    xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path
-    '''
-    csv_output = []
-    with open(csv_path, newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            xml_path = row["xml_path"]
-            upload_status = row["upload_status"].strip()## Refer to UPLOAD_STATUS_MAP
-            prefix, part_name, db_tables_to_be_updated = get_reflected_tables(xml_path)
-            csv_output.append((prefix, part_name, upload_status, db_tables_to_be_updated))
-            # Skip if unknown status
-            if upload_status not in UPLOAD_STATUS_MAP:
-                continue
-        return csv_output ## [(part_name, upload_status, db_tables_to_be_updated), (...), ...]
+def get_api_data(search_id, db_type):
+    if db_type == 'cmsr':
+        url = f"https://hgcapi.web.cern.ch/mac/part/{search_id}/full"
+    elif db_type == 'int2r':
+        url = f"https://hgcapi-intg.web.cern.ch/mac/part/{search_id}/full"
 
 async def update_upload_status(conn, csv_output):
     """
