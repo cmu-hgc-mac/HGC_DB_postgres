@@ -29,8 +29,8 @@ module_assembly:
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: ASMBL_USER
-  dbase_col:
-  dbase_table: null
+  dbase_col: operator
+  dbase_table: module_assembly
   nested_query: null
   default_value: null
   nullable: 'no'
@@ -143,8 +143,8 @@ module_visual_insp:
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: INPS_USER
-  dbase_col: ## check this
-  dbase_table: null
+  dbase_col: inspector
+  dbase_table: module_inspect
   xml_tag: INPS_USER
   nested_query: null
   default_value: null
@@ -758,8 +758,8 @@ proto_assembly:
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: ASMBL_USER
-  dbase_col: ## check this
-  dbase_table: ## check this
+  dbase_col: operator
+  dbase_table: proto_assembly
   nested_query: null
   default_value: null
   nullable: 'no'
@@ -872,8 +872,8 @@ proto_visual_insp:
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: INPS_USER
-  dbase_col: ## check this
-  dbase_table: ## check this
+  dbase_col: inspector
+  dbase_table: proto_inspect
   nested_query: null
   default_value: null
   nullable: 'no'

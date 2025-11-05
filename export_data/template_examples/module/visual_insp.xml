@@ -3,10 +3,9 @@
 <HEADER>
 	<TYPE>
 		<EXTENSION_TABLE_NAME>HGC_MOD_INSP</EXTENSION_TABLE_NAME>
-		<NAME>HGC Eight Inch Module Assembly</NAME>
+		<NAME>Silicon Module Inspection</NAME>
 	</TYPE>
 	<RUN>
-		<!-- <RUN_TYPE>Module Assembly</RUN_TYPE> -->
 		<RUN_TYPE>Silicon Module Inspection</RUN_TYPE>
         <RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
 		<RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>

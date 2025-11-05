@@ -2,7 +2,7 @@
 <ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <HEADER>
 	<TYPE>
-		<EXTENSION_TABLE_NAME>HGC_PROTO_MOD_INSP</EXTENSION_TABLE_NAME>
+		<EXTENSION_TABLE_NAME>HGC_PRTO_MOD_INSP</EXTENSION_TABLE_NAME>
 		<NAME>Silicon Proto Module Inspection</NAME>
 	</TYPE>
 	<RUN>
