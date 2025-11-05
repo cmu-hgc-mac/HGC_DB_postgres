@@ -14,7 +14,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         yaml_data = yaml.safe_load(file)
 
     # Retrieve module data from the YAML file
-    module_data = yaml_data['proto_visual_insp']
+    module_data = yaml_data['proto_inspection']
     # module_data = [item for item in yaml_data if 'module' in item['dbase_table']]
     
     if not module_data:
@@ -149,7 +149,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = 'export_data/template_examples/protomodule/visual_insp.xml'# XML template file path
+    xml_file_path = 'export_data/template_examples/protomodule/inspection_upload.xml'# XML template file path
     xml_output_dir = output_dir + '/protomodule'  # Directory to save the updated XML
 
 

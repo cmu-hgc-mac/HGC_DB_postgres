@@ -14,7 +14,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         yaml_data = yaml.safe_load(file)
 
     # Retrieve data from the YAML file
-    xml_data = yaml_data['module_cond']
+    xml_data = yaml_data['module_cure_cond']
     
     if not xml_data:
         print("No data found in YAML file")
@@ -188,7 +188,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = 'export_data/template_examples/module/cond_upload.xml'# XML template file path
+    xml_file_path = 'export_data/template_examples/module/cure_cond_upload.xml'# XML template file path
     xml_output_dir = output_dir + '/module'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool

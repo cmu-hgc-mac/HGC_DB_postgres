@@ -16,11 +16,11 @@ with open(YAML_FILE, "r") as f:
 
 # Mapping of part names (directory) to YAML categories
 PART_TO_YAML_CATEGORIES = {
-    "sensor": ["sensor_cond"],
-    "module": ["module_cond", "module_assembly", "module_build", "wirebond", "module_visal_insp"],
-    "protomodule": ["proto_cond", "proto_assembly", "proto_build"],
-    "hexaboard": ["hxb_cond", "hxb_build"],
-    "baseplate": ["bp_cond", "bp_build"]
+    "sensor": ["sensor_inspection"],
+    "module": ["module_cure_cond", "module_assembly", "module_build", "wirebond", "module_inspection"],
+    "protomodule": ["proto_cure_cond", "proto_assembly", "proto_build"],
+    "hexaboard": ["hxb_inspection", "hxb_build"],
+    "baseplate": ["bp_inspection", "bp_build"]
     }
 
 # Function to get XML files, with an optional time limit
@@ -60,7 +60,9 @@ def get_yaml_categories(xml_file_path):
         return "testing"
     else:
         xml_type = xml_file_path.split('_')[-2] ## e.g. cond, build, assembly, wirebond
+        print(f'xml_type -- {xml_type}')
         _yaml_cat = PART_TO_YAML_CATEGORIES[part_name]
+        print(f'_yaml_cat -- {_yaml_cat}')
         if xml_type == 'visual':
             if part_name == 'protomodule':
                 return 'proto_visual_insp'

@@ -15,7 +15,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         yaml_data = yaml.safe_load(file)
 
     # Retrieve module data from the YAML file
-    module_data = yaml_data['module_visual_insp']
+    module_data = yaml_data['module_inspection']
     if not module_data:
         print("No 'module' data found in YAML file")
         return
@@ -155,7 +155,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = 'export_data/template_examples/module/visual_insp.xml'# XML template file path
+    xml_file_path = 'export_data/template_examples/module/inspection_upload.xml'# XML template file path
     xml_output_dir = output_dir + '/module'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool
