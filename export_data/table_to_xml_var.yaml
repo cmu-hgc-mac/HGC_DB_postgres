@@ -104,9 +104,9 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: TRANSFER_TAPE_BATCH_NUM ## check this
-  dbase_col:  ## check this
-  dbase_table: module_assembly ## check this
+- xml_temp_val: TRANSFER_TAPE_BATCH_NUM
+  dbase_col: tape_batch
+  dbase_table: module_assembly
   xml_tag: TRANSFER_TAPE_BATCH_NUM
   nested_query: null
   default_value: null
@@ -838,7 +838,7 @@ proto_assembly:
   dbase_table: proto_assembly
   xml_tag: TRANSFER_TAPE_BATCH_NUM
   nested_query: null
-  default_value: null
+  default_value: 'null'
   nullable: 'yes'
 
 proto_inspection:
