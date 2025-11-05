@@ -142,7 +142,7 @@ module_visual_insp:
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
-- xml_temp_val: INPS_USER
+- xml_temp_val: INSPECTION_USER
   dbase_col: inspector
   dbase_table: module_inspect
   xml_tag: INPS_USER
@@ -871,9 +871,10 @@ proto_visual_insp:
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
-- xml_temp_val: INPS_USER
+- xml_temp_val: INSPECTION_USER
   dbase_col: inspector
   dbase_table: proto_inspect
+  xml_tag: INPS_USER
   nested_query: null
   default_value: null
   nullable: 'no'
