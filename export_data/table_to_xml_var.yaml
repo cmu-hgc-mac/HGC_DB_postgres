@@ -553,7 +553,8 @@ module_build:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: VERSION
-module_cond:
+
+module_cure_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: module_assembly

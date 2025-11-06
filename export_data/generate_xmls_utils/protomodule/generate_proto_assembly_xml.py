@@ -49,12 +49,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
-        print(f'--> {proto_name}...')
         try:
             db_values = {}
             for entry in module_data:
                 xml_var = entry['xml_temp_val']
-
                 if xml_var in ['LOCATION']:
                     db_values[xml_var] = LOCATION
                 elif xml_var == 'INSTITUTION':
@@ -65,7 +63,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = await get_kind_of_part(format_part_name(proto_name))
                 elif xml_var == 'INITIATED_BY_USER':
                     db_values[xml_var] = lxplus_username
-                elif entry['default_value']:## something is wrong 
+                elif entry['default_value']:## something is wrong
                     db_values[xml_var] = entry['default_value']
 
                 else:
