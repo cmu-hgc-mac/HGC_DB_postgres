@@ -56,11 +56,12 @@ def get_reflected_tables(xml_path: str) -> str:
     
     suffix_matching = {
         "wirebond": "wirebond",
-        "_cond_upload.xml": f"{prefix}_cond",
-        "_build_upload.xml": f"{prefix}_build",
-        "_assembly.xml": f"{prefix}_assembly",
-        "_iv_cond.xml": f"{prefix}_iv_cond",
-        "_iv.xml": f"{prefix}_iv",
+        "_cure_cond": f"{prefix}_cure_cond",
+        "_inspection": f"{prefix}_inspection",
+        "_build_upload": f"{prefix}_build",
+        "_assembly": f"{prefix}_assembly",
+        "_iv_cond": f"{prefix}_iv_cond",
+        "_iv": f"{prefix}_iv",
         "_pedestal": f"{prefix}_pedestal"
     }
     for suffix, xml_type in suffix_matching.items():
@@ -69,6 +70,7 @@ def get_reflected_tables(xml_path: str) -> str:
             if not suffix:
                 raise ValueError(f"Cannot determine xml type for part={part_name}, path={xml_path}")
             return prefix, part_name, tables ##i.e., module, 320MLF2W2CM0102, [module_pedestal, module_cond]
+        
 def get_upload_status_csv(csv_path):
     '''
     xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path     

@@ -137,17 +137,16 @@ institution_fullname:
   'DESY': 'Deutsches Elektronen-Synchrotron'
 
 postgres_table_to_xml:
-  'bp_cond': ['bp_inspect']
-  'hxb_cond': ['hxb_inspect', 'hxb_pedestal_test']
+  'bp_inspection': ['bp_inspect']
+  'hxb_inspection': ['hxb_inspect', 'hxb_pedestal_test']
   'module_assembly': ['module_assembly']
-  # 'module_build': 
-  'module_cond': ['module_inspect']
+  'module_cure_cond': ['module_assembly']
+  'module_inspection': ['module_inspect']
   'wirebond': ['back_wirebond', 'front_wirebond', 'back_encap', 'front_encap', 'bond_pull_test']
   'proto_assembly': ['proto_assembly']
-  # 'proto_build':
-  'proto_cond': ['proto_inspect']
-  'sensor_cond': ['sensor']
+  'proto_inspection': ['proto_inspect']
+  'proto_cure_cond': ['proto_assembly']
+  'sensor_inspection': ['sensor']
   'module_pedestal': ['module_pedestal_test']
-  # 'hxb_pedestal':
   'module_iv': ['module_iv_test']
   'module_iv_cond': ['module_iv_test']

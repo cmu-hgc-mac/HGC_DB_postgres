@@ -18,7 +18,7 @@ with open(YAML_FILE, "r") as f:
 PART_TO_YAML_CATEGORIES = {
     "sensor": ["sensor_inspection"],
     "module": ["module_cure_cond", "module_assembly", "module_build", "wirebond", "module_inspection"],
-    "protomodule": ["proto_cure_cond", "proto_assembly", "proto_build"],
+    "protomodule": ["proto_cure_cond", "proto_assembly", "proto_build", "module_inspection"],
     "hexaboard": ["hxb_inspection", "hxb_build"],
     "baseplate": ["bp_inspection", "bp_build"]
     }
@@ -63,14 +63,8 @@ def get_yaml_categories(xml_file_path):
         print(f'xml_type -- {xml_type}')
         _yaml_cat = PART_TO_YAML_CATEGORIES[part_name]
         print(f'_yaml_cat -- {_yaml_cat}')
-        if xml_type == 'visual':
-            if part_name == 'protomodule':
-                return 'proto_visual_insp'
-            else:
-                return 'module_visual_insp'
-        else:
-            yaml_cat = [item for item in _yaml_cat if item.endswith(xml_type)][0]
-            return yaml_cat
+        yaml_cat = [item for item in _yaml_cat if item.endswith(xml_type)][0]
+        return yaml_cat
 
 # Function to find missing or empty XML tags
 def find_missing_or_empty_tags(expected_tags, xml_data):
