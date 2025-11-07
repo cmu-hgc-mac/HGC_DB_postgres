@@ -21,6 +21,8 @@ module_assembly:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -126,58 +128,6 @@ module_assembly:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: COMP_TRAY_NAME
-  dbase_col: hxb_tray_id
-  dbase_table: module_assembly
-  xml_tag: COMP_TRAY_NAME
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: TRANSFER_TAPE_BATCH_NUM
-  dbase_col: tape_batch
-  dbase_table: module_assembly
-  xml_tag: TRANSFER_TAPE_BATCH_NUM
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-
-module_inspection:
-- xml_temp_val: RUN_BEGIN_TIMESTAMP_
-  dbase_col: ass_run_date, ass_time_begin
-  dbase_table: module_assembly
-  xml_tag: RUN_BEGIN_TIMESTAMP
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: RUN_END_TIMESTAMP_
-  dbase_col: ass_run_date, ass_time_end
-  dbase_table: module_assembly
-  xml_tag: RUN_END_TIMESTAMP
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: INITIATED_BY_USER
-  xml_tag: INITIATED_BY_USER
-- xml_temp_val: LOCATION
-  xml_tag: LOCATION
-- xml_temp_val: RUN_NUMBER
-  xml_tag: RUN_NUMBER
-  dbase_col: ass_run_date, ass_time_begin
-  dbase_table: module_assembly
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: KIND_OF_PART
-  xml_tag: KIND_OF_PART
-- xml_temp_val: ID
-  xml_tag: SERIAL_NUMBER
-- xml_temp_val: INSPECTION_USER
-  dbase_col: inspector
-  dbase_table: module_inspect
-  xml_tag: INPS_USER
-  nested_query: null
-  default_value: null
-  nullable: 'no'
 - xml_temp_val: MOD_GRADE
   dbase_col: grade
   dbase_table: module_inspect
@@ -251,6 +201,8 @@ wirebond:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -546,15 +498,8 @@ module_build:
   xml_tag: SERIAL_NUMBER
   nested_query: null
   nullable: 'no'
-- xml_temp_val: assembly_date
-  dbase_col: ass_run_date
-  dbase_table: module_assembly
-  xml_tag: PRODUCTION_DATE
-  nested_query: null
-  nullable: 'no'
 - xml_temp_val: VERSION
-
-module_cure_cond:
+module_cond:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: module_assembly
@@ -569,6 +514,8 @@ module_cure_cond:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -632,6 +579,8 @@ bp_cond:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -651,13 +600,13 @@ bp_cond:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: THICKNESS
-  dbase_col: avg_thickness
+  dbase_col: thickness
   dbase_table: bp_inspect
   xml_tag: THICKNESS
   nested_query: null
   nullable: 'no'
 - xml_temp_val: WEIGHT
-  dbase_col: weight_grams
+  dbase_col: weight
   dbase_table: bp_inspect
   nested_query: null
   nullable: 'no'
@@ -672,7 +621,7 @@ bp_cond:
   dbase_table: bp_inspect
   xml_tag: COMMENTS
   nested_query: null
-  nullable: 'yes'
+  nullable: 'no'
 hxb_build:
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -699,6 +648,8 @@ hxb_cond:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -741,7 +692,7 @@ hxb_cond:
   default_value: null
   nullable: 'no'
 - xml_temp_val: THICKNESS
-  dbase_col: avg_thickness
+  dbase_col: thickness
   dbase_table: hxb_inspect
   xml_tag: THICKNESS
   nested_query: null
@@ -760,7 +711,7 @@ hxb_cond:
   xml_tag: COMMENTS
   nested_query: null
   default_value: null
-  nullable: 'yes'
+  nullable: 'no'
 proto_assembly:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_begin
@@ -778,6 +729,8 @@ proto_assembly:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -911,11 +864,11 @@ proto_assembly:
   default_value: null
   nullable: 'no'
 - xml_temp_val: TRANSFER_TAPE_BATCH_NUM
-  dbase_col: tape_batch
+  dbase_col: table_batch
   dbase_table: proto_assembly
   xml_tag: TRANSFER_TAPE_BATCH_NUM
   nested_query: null
-  default_value: 'null'
+  default_value: null
   nullable: 'yes'
 - xml_temp_val: PRTO_GRADE
   dbase_col: grade
@@ -935,12 +888,12 @@ proto_build:
   xml_tag: LOCATION
 - xml_temp_val: INSTITUTION
   xml_tag: INSTITUTION
-- xml_temp_val: RECORD_INSERTION_USER
-  xml_tag: RECORD_INSERTION_USER
 - xml_temp_val: MANUFACTURER
   xml_tag: MANUFACTURER
 - xml_temp_val: KIND_OF_PART_BASEPLATE
   xml_tag: KIND_OF_PART
+- xml_temp_val: RECORD_INSERTION_USER
+  xml_tag: RECORD_INSERTION_USER
 - xml_temp_val: BASEPLATE
   dbase_col: bp_name
   dbase_table: proto_assembly
@@ -949,12 +902,6 @@ proto_build:
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART_SENSOR
   xml_tag: KIND_OF_PART
-- xml_temp_val: assembly_date
-  dbase_col: ass_run_date
-  dbase_table: proto_assembly
-  xml_tag: PRODUCTION_DATE
-  nested_query: null
-  nullable: 'no'
 - xml_temp_val: SENSOR
   dbase_col: sen_name
   dbase_table: proto_assembly
@@ -976,6 +923,8 @@ proto_cond:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: RUN_NUMBER
@@ -1044,6 +993,8 @@ sensor_cond:
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
 - xml_temp_val: ID
@@ -1057,6 +1008,13 @@ sensor_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
+- xml_temp_val: TESTER
+  dbase_col: operator
+  dbase_table: proto_assembly
+  xml_tag: TESTED_BY
+  nested_query: null
+  default_value: null
+  nullable: 'no'
 - xml_temp_val: RUN_BEGIN_DATE_
   dbase_col: ass_run_date
   dbase_table: proto_assembly
@@ -1064,17 +1022,38 @@ sensor_cond:
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: MAC_GRADE
+- xml_temp_val: VISUAL_INSPECTION
   dbase_col: grade
   dbase_table: sensor
-  xml_tag: MAC_GRADE
+  xml_tag: VISUAL_INSPECTION
   nested_query: null
   default_value: null
   nullable: 'no'
-- xml_temp_val: COMMENT_DESCRIPTION
-  xml_tag: COMMENT_DESCRIPTION
+- xml_temp_val: FLATNESS
+  dbase_col: null
+  dbase_table: null
+  xml_tag: FLATNESS
+  nested_query: null
+  default_value: None
+  nullable: 'no'
+- xml_temp_val: THICKNESS
+  dbase_col: thickness
+  dbase_table: sensor
+  xml_tag: THICKNESS
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: GRADE
+  dbase_col: grade
+  dbase_table: sensor
+  xml_tag: GRADE
+  nested_query: null
+  default_value: null
+  nullable: 'no'
+- xml_temp_val: COMMENTS_UPLOAD
   dbase_col: comment
   dbase_table: sensor
+  xml_tag: COMMENTS
   nested_query: null
   default_value: null
   nullable: 'no'
@@ -1147,49 +1126,32 @@ pedestal_test:
 module_iv:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
   dbase_col: date_test, time_test
-  dbase_table: module_iv_test
+  dbase_table: module_pedestal_test
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: date_test, time_test
-  dbase_table: module_iv_test
+  dbase_table: module_pedestal_test
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
   nullable: 'no'
-- xml_temp_val: INITIATED_BY_USER
-  xml_tag: INITIATED_BY_USER
+- xml_temp_val: INSPECTOR
+  dbase_col: inspector
+  dbase_table: module_pedestal_test
+  xml_tag: INSPECTOR
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: LOCATION
   xml_tag: LOCATION
-- xml_temp_val: RUN_TYPE
-  xml_tag: RUN_TYPE
-  dbase_col: null
-  dbase_table: null
-  default_value: "Si module current-voltage test"
-  nullable: 'no'
-- xml_temp_val: COMMENT_DESCRIPTION
-  xml_tag: COMMENT_DESCRIPTION
-  dbase_col: null
-  dbase_table: null
 - xml_temp_val: RUN_NUMBER
-  dbase_col: date_test, time_test
-  dbase_table: module_iv_test
   xml_tag: RUN_NUMBER
-  nested_query: null
-  default_value: null
-  nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
-- xml_temp_val: TESTER
-  dbase_col: inspector
-  dbase_table: module_iv_test
-  xml_tag: TESTER
-  nested_query: null
-  nullable: 'no'
 - xml_temp_val: STATUS
   dbase_col: status
   dbase_table: module_iv_test
@@ -1215,27 +1177,28 @@ module_iv:
   nested_query: null
   nullable: 'no'
 - xml_temp_val: CURRENT_AMPS_AT_VOLT_A
-  dbase_col: program_v, meas_i, ratio_at_vs 
+  dbase_col: ### fill this
   dbase_table: module_iv_test
   xml_tag: CURRENT_AMPS_AT_VOLT_A
   nested_query: null
   nullable: 'no'
 - xml_temp_val: CURRENT_RATIO_B_OVER_A
-  dbase_col: program_v, meas_i, ratio_at_vs 
+  dbase_col: ratio_i_at_vs
   dbase_table: module_iv_test
   xml_tag: CURRENT_RATIO_B_OVER_A
   nested_query: null
   nullable: 'no'
 - xml_temp_val: DATA_POINT_COUNT
-  dbase_col: program_v ## get the length of this list
+  dbase_col: ### fill this
   dbase_table: module_iv_test
   xml_tag: DATA_POINT_COUNT
   nested_query: null
   nullable: 'no'
 - xml_temp_val: DATA_POINTS_JSON
-  dbase_col: program_v, meas_i, meas_v, meas_r
+  dbase_col: ### fill this
   dbase_table: module_iv_test
   xml_tag: DATA_POINTS_JSON
+  nested_query: null
   nullable: 'no'
 - xml_temp_val: GRADE
   dbase_col: grade
@@ -1249,75 +1212,35 @@ module_iv:
   xml_tag: COMMENTS
   nested_query: null
   nullable: 'yes'
-- xml_temp_val: TEST_COMMENTS
-  xml_tag: COMMENT_DESCRIPTION
-  dbase_col: comment
-  dbase_table: module_iv_test
-  
-module_iv_cond:
-- xml_temp_val: RUN_BEGIN_TIMESTAMP_
-  dbase_col: date_test, time_test
-  dbase_table: module_iv_test
-  xml_tag: RUN_BEGIN_TIMESTAMP
-  nested_query: null
-  nullable: 'no'
-- xml_temp_val: RUN_END_TIMESTAMP_
-  dbase_col: date_test, time_test
-  dbase_table: module_iv_test
-  xml_tag: RUN_END_TIMESTAMP
-  nested_query: null
-  nullable: 'no'
-- xml_temp_val: INITIATED_BY_USER
-  xml_tag: INITIATED_BY_USER
-- xml_temp_val: RUN_TYPE
-  xml_tag: RUN_TYPE
-  dbase_col: null
-  dbase_table: null
-  default_value: "Si module current-voltage test"
-  nullable: 'no'
-- xml_temp_val: COMMENT_DESCRIPTION
-  xml_tag: COMMENT_DESCRIPTION
-  dbase_col: null
-  dbase_table: null
-- xml_temp_val: TEST_COMMENTS
-  xml_tag: COMMENT_DESCRIPTION
-  dbase_col: comment
-  dbase_table: module_iv_test
-- xml_temp_val: LOCATION
-  xml_tag: LOCATION
-- xml_temp_val: RUN_NUMBER
-  dbase_col: date_test, time_test
-  dbase_table: module_iv_test
-  xml_tag: RUN_NUMBER
-  nested_query: null
-  default_value: null
-  nullable: 'no'
-- xml_temp_val: KIND_OF_PART
-  xml_tag: KIND_OF_PART
-- xml_temp_val: ID
-  xml_tag: SERIAL_NUMBER
-- xml_temp_val: KIND_OF_PART
-  xml_tag: KIND_OF_PART
-- xml_temp_val: TEMP_C
-  dbase_col: temp_c
-  dbase_table: module_iv_test
-  xml_tag: TEMP_C
-  nullable: 'no'
-- xml_temp_val: HUMIDITY_REL
-  dbase_col: rel_hum
-  dbase_table: module_iv_test
-  xml_tag: HUMIDITY_REL
-  nested_query: null
-  nullable: 'yes'
-- xml_temp_val: RUN_BEGIN_TIMESTAMP_
-  dbase_col: date_test, time_test
-  dbase_table: module_iv_test
-  xml_tag: MEASUREMENT_TIME
-  nested_query: null
-  nullable: 'no'
-- xml_temp_val: TEMPSENSOR_ID
-  dbase_col: null
-  dbase_table: null
-  xml_tag: TEMPSENSOR_ID
-  nested_query: null
-  default_value: 0
+
+env_data:
+  - xml_temp_val: RUN_NUMBER
+    xml_tag: RUN_NUMBER
+  # - xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  #   xml_tag: RUN_BEGIN_TIMESTAMP
+  #   nested_query: 
+  # - xml_temp_val: RUN_END_TIMESTAMP_
+  #   xml_tag: RUN_END_TIMESTAMP
+  #   nested_query: null
+  - xml_temp_val: INITIATED_BY_USER
+    xml_tag: INITIATED_BY_USER
+    nested_query: None
+  - xml_temp_val: LOCATION
+    xml_tag: LOCATION
+  - xml_temp_val: ID
+    xml_tag: SERIAL_NUMBER
+  - xml_temp_val: KIND_OF_PART
+    xml_tag: KIND_OF_PART
+  - xml_temp_val: MEASUREMENT_TIME
+    xml_tag: MEASUREMENT_TIME
+  - xml_temp_val: TEMP_C
+    xml_tag: TEMP_C
+  - xml_temp_val: HUMIDITY_REL
+    xml_tag: HUMIDITY_REL
+  - xml_temp_val: TEMPSENSOR_ID
+    xml_tag: TEMPSENSOR_ID
+    dbase_col: 
+    dbase_table: temp_humidity
+  # - xml_temp_val: COMMENTS_UPLOAD
+  #   xml_tag: COMMENTS
+  #   nested_query: null
