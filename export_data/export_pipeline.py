@@ -11,7 +11,7 @@ import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
 from src import process_xml_list
 from find_missing_var_xml import find_missing_var_xml
-from check_successful_upload import check_upload, get_api_data, get_part_id_fromXML
+import check_successful_upload
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
 GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
