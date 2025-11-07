@@ -2,7 +2,9 @@ import asyncio, asyncpg, pwinput
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, os, base64, sys, argparse, traceback, datetime, tzlocal, pytz
+import tzlocal
+import yaml, os, base64, sys, argparse, traceback
+import datetime
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.define_global_var import LOCATION, INSTITUTION
@@ -13,46 +15,42 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
 
-    # Retrieve module data from the YAML file
-    module_data = yaml_data['proto_assembly']
-    # module_data = [item for item in yaml_data if 'module' in item['dbase_table']]
+    # Retrieve wirebond data from the YAML file
+    wb_data = yaml_data['bp_inspection']
     
-    if not module_data:
-        print("No 'module' data found in YAML file")
+    if not wb_data:
+        print("No wirebond data found in YAML file")
         return
-    db_tables = ['proto_assembly', 'proto_inspect']
-    
-    proto_tables = ['proto_assembly', 'proto_inspect']
-    
-    proto_list = set()
-    # Get the unique module names for the specified date
-    for dbase_table in db_tables:
-        if partsnamelist:
-            query = f"""SELECT REPLACE(proto_name,'-','') AS proto_name FROM {dbase_table} WHERE proto_name = ANY($1)"""
-            results = await conn.fetch(query, partsnamelist)
-        else:
-            if dbase_table.endswith('_inspect'):
-                module_query = f"""
-                SELECT DISTINCT REPLACE(proto_name,'-','') AS proto_name
-                FROM {dbase_table}
-                WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' 
-                """
-            elif dbase_table.endswith('_assembly'):
-                module_query = f"""
-                SELECT DISTINCT REPLACE(proto_name,'-','') AS proto_name
-                FROM {dbase_table}
-                WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' """
 
-            results = await conn.fetch(module_query)
+    # get the unique database tables that are directly associated with the xml creation for updating timestamp cols
+    db_tables = ['baseplate', 'bp_inspect']
+
+    # Construct the output file path
+    # output_file_path = os.path.join(output_dir, os.path.basename(xml_file_path))
+    bp_tables = ['baseplate', 'bp_inspect']
+    
+    bp_list = set()
+
+    if partsnamelist:
+        query = f"""SELECT REPLACE(bp_name,'-','') AS bp_name FROM bp_inspect WHERE bp_name = ANY($1)"""
+        results = await conn.fetch(query, partsnamelist)
+    else:
+        module_query = f"""
+        SELECT DISTINCT REPLACE(bp_name,'-','') AS bp_name
+        FROM bp_inspect
+        WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}'
+        """
+        results = await conn.fetch(module_query)
         
-        proto_list.update(row['proto_name'] for row in results if 'proto_name' in row)
+    bp_list.update(row['bp_name'] for row in results if 'bp_name' in row)
 
-    # Fetch database values for the XML template variables
-    for proto_name in proto_list:
-        print(f'--> {proto_name}...')
+    for bp_name in bp_list:
+        # Fetch database values for the XML template variables
+        print(f'--> {bp_name}...')
         try:
             db_values = {}
-            for entry in module_data:
+
+            for entry in wb_data:
                 xml_var = entry['xml_temp_val']
 
                 if xml_var in ['LOCATION']:
@@ -60,63 +58,60 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'INSTITUTION':
                     db_values[xml_var] = INSTITUTION
                 elif xml_var == 'ID':
-                    db_values[xml_var] = format_part_name(proto_name)
+                    db_values[xml_var] = format_part_name(bp_name)
                 elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var] = await get_kind_of_part(format_part_name(proto_name))
+                    db_values[xml_var] = await get_kind_of_part(bp_name, 'baseplate', conn)
                 elif xml_var == 'INITIATED_BY_USER':
                     db_values[xml_var] = lxplus_username
-                elif entry['default_value']:## something is wrong 
-                    db_values[xml_var] = entry['default_value']
-
                 else:
                     dbase_col = entry['dbase_col']
                     dbase_table = entry['dbase_table']
 
                     # Skip entries without a database column or table
-                    if not dbase_col or not dbase_table:
+                    if not dbase_col and not dbase_table:
                         continue
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE REPLACE(proto_assembly.proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
+                        query = entry['nested_query'] + f" WHERE REPLACE({dbase_table}.bp_name,'-','') = '{bp_name}' /* AND xml_upload_success IS NULL */;"
                         
+                        # print(f'Executing query: {query}')
+
                     else:
                         # Modify the query to get the latest entry
-                        if dbase_table == 'proto_assembly':
+                        if dbase_table in ['baseplate']:
                             query = f"""
-                            SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
+                            SELECT {dbase_col} FROM {dbase_table}
+                            WHERE REPLACE(bp_name,'-','') = '{bp_name}'
                             -- AND xml_upload_success IS NULL
-                            ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
+                            LIMIT 1;
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
+                            WHERE REPLACE(bp_name,'-','') = '{bp_name}'
                             -- AND xml_upload_success IS NULL
-                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
                             """
-                    
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
                     except Exception as e:
                         print('QUERY:', query)
                         print('ERROR:', e)
-                    
+
                     if results:
+                        local_timezone = tzlocal.get_localzone()
                         if xml_var == "RUN_BEGIN_TIMESTAMP_":
                             # Fetching both ass_run_date and ass_time_begin
-                            run_date = results.get("ass_run_date", "")
-                            time_begin = results.get("ass_time_begin", "")
+                            run_date = results.get("date_inspect", "")
+                            time_begin = results.get("time_inspect", "")
                             db_values[xml_var] = format_datetime(run_date, time_begin)
+
                         elif xml_var == "RUN_END_TIMESTAMP_":
-                            # Fetching both ass_run_date and ass_time_end
-                            run_date = results.get("ass_run_date", "")
-                            time_end = results.get("ass_time_end", "")
-                            db_values[xml_var] = format_datetime(run_date, time_end)
+                            db_values[xml_var] = db_values["RUN_BEGIN_TIMESTAMP_"]
                         elif xml_var == 'RUN_NUMBER':
-                            run_date = results.get("ass_run_date", "")
-                            time_begin = results.get("ass_time_begin", "")
+                            run_date = results.get("date_inspect", "")
+                            time_begin = results.get("time_inspect", "")
                             combined_str = f"{run_date} {time_begin}"
                 
                             try:
@@ -125,33 +120,41 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 dt_obj = datetime.datetime.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
                             
                             db_values[xml_var] = get_run_num(LOCATION, dt_obj)
-                        elif xml_var == 'BASEPLATE':
-                            db_values[xml_var] = format_part_name(results.get('bp_name'))
+                        elif xml_var == "CURE_BEGIN_TIMESTAMP_":
+                            run_date = results.get("ass_run_date", "")
+                            time_end = results.get("ass_time_begin", "")
+                            db_values[xml_var] = f"{run_date} {time_end}"
+                        elif xml_var == "CURE_END_TIMESTAMP_":
+                            run_date = results.get("cure_date_end", "")
+                            time_end = results.get("cure_time_end", "")
+                            db_values[xml_var] = f"{run_date} {time_end}"
+                        elif xml_var == "THICKNESS":
+                            db_values['THICKNESS'] = str(round(float(results.get("avg_thickness")), 3))
+                        elif xml_var == "FLATNESS":
+                            db_values['FLATNESS'] = str(round(float(results.get("flatness")), 3))
+
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
-                
-            # Update the XML with the database values
-            output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
+
+            output_file_name = f'{bp_name}_{LOCATION}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,
                                     column_name='xml_gen_datetime',
-                                    part='protomodule',
-                                    part_name=proto_name)
-        
+                                    part='baseplate',
+                                    part_name=bp_name)
         except Exception as e:
-            print('#'*15, f'ERROR for {proto_name}','#'*15 ); traceback.print_exc(); print('')
+            print('#'*15, f'ERROR for {bp_name}','#'*15 ); traceback.print_exc(); print('')
             
         
 
 async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
-    xml_file_path = 'export_data/template_examples/protomodule/assembly_upload.xml'# XML template file path
-    xml_output_dir = output_dir + '/protomodule'  # Directory to save the updated XML
-
+    xml_file_path = 'export_data/template_examples/baseplate/inspection_upload.xml'# XML template file path
+    xml_output_dir = output_dir + '/baseplate'  # Directory to save the updated XML
 
     # Create PostgreSQL connection pool
     conn = await get_conn(dbpassword, encryption_key)
@@ -175,8 +178,8 @@ if __name__ == "__main__":
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     args = parser.parse_args()   
 
-    lxplus_username = args.dbl_username
     dbpassword = args.dbpassword
+    lxplus_username = args.dbl_username
     output_dir = args.directory
     encryption_key = args.encrypt_key
     date_start = args.date_start
