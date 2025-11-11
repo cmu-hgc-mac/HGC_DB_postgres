@@ -8,15 +8,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None):
+async def process_module(conn, yaml_file, xml_file_path, xml_file_path_env, output_dir, date_start, date_end, lxplus_username, partsnamelist=None):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
 
     # Retrieve module data from the YAML file
-    module_data = yaml_data['proto_inspection']
-    # module_data = [item for item in yaml_data if 'module' in item['dbase_table']]
-    
+    xml_part_data = yaml_data['proto_inspection']
+    xml_env_data = yaml_data['proto_inspection_env']
+    for val in xml_part_data:
+        val['xml_type'] = 'part'
+    for val in xml_env_data:
+        val['xml_type'] = 'env'
+    module_data = xml_part_data + xml_env_data
+
     if not module_data:
         print("No 'module' data found in YAML file")
         return
@@ -51,9 +56,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     for proto_name in proto_list:
         print(f'--> {proto_name}...')
         try:
-            db_values = {}
+            db_values, db_values_env, db_values_part = {}, {}, {}
             for entry in module_data:
-                xml_var = entry['xml_temp_val']
+                xml_var, xml_type = entry['xml_temp_val'], entry['xml_type']
 
                 if xml_var in ['LOCATION']:
                     db_values[xml_var] = LOCATION
@@ -65,7 +70,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = await get_kind_of_part(format_part_name(proto_name))
                 elif xml_var == 'INITIATED_BY_USER':
                     db_values[xml_var] = lxplus_username
-                elif entry['default_value']:## something is wrong 
+                elif xml_var == 'COMMENT_DESCRIPTION':
+                    db_values[xml_var] = f'Si protomodule inspection environment condition for {proto_name}'
+                elif entry.get('default_value'):
                     db_values[xml_var] = entry['default_value']
 
                 else:
@@ -77,7 +84,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         continue
 
                     # Ignore nested queries for now
-                    if entry['nested_query']:
+                    if entry.get('nested_query'):
                         query = entry['nested_query'] + f" WHERE REPLACE(proto_assembly.proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
                         
                     else:
@@ -128,12 +135,21 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         elif xml_var == 'BASEPLATE':
                             db_values[xml_var] = format_part_name(results.get('bp_name'))
                         else:
-                            db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
+                            db_values[xml_var] = results.get(dbase_col, '') if not entry.get('nested_query', False) else list(results.values())[0]
                 
+                if xml_type == 'part':
+                    db_values_part[xml_var] = db_values[xml_var]
+                elif xml_type == 'env':
+                    db_values_env[xml_var] = db_values[xml_var]
+
             # Update the XML with the database values
-            output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
-            output_file_path = os.path.join(output_dir, output_file_name)
-            await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+            output_file_name_part = f'{proto_name}_{os.path.basename(xml_file_path)}'
+            output_file_name_env = f'{proto_name}_env_{os.path.basename(xml_file_path)}'
+            output_file_path_part = os.path.join(output_dir, output_file_name_part)
+            output_file_path_env = os.path.join(output_dir, output_file_name_env)
+
+            await update_xml_with_db_values(xml_file_path, output_file_path_part, db_values_part)
+            await update_xml_with_db_values(xml_file_path_env, output_file_path_env, db_values_env)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables,
@@ -150,14 +166,14 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/protomodule/inspection_upload.xml'# XML template file path
+    xml_file_path_env = 'export_data/template_examples/protomodule/qc_env_cond.xml'# XML template file path
     xml_output_dir = output_dir + '/protomodule'  # Directory to save the updated XML
-
 
     # Create PostgreSQL connection pool
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
+        await process_module(conn, yaml_file, xml_file_path, xml_file_path_env, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
     finally:
         await conn.close()
 
