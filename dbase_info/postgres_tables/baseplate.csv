@@ -16,4 +16,4 @@ comment,TEXT,imported from CMSR HGCAPI,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,,,
 date_verify_received,DATE,filled during MAC intake and if is being inspected/assembled without verification,,
-date_shipped,DATE,date of shipment of production baseplates
+date_shipped,DATE,date of shipment of production baseplates,,
