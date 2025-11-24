@@ -150,3 +150,4 @@ postgres_table_to_xml:
   'module_pedestal': ['module_pedestal_test']
   'module_iv': ['module_iv_test']
   'module_iv_cond': ['module_iv_test']
+  'hxb_pedestal': ['hxb_pedestal_test']
