@@ -60,9 +60,7 @@ def get_yaml_categories(xml_file_path):
         return "testing"
     else:
         xml_type = xml_file_path.split('_')[-2] ## e.g. cond, build, assembly, wirebond
-        print(f'xml_type -- {xml_type}')
         _yaml_cat = PART_TO_YAML_CATEGORIES[part_name]
-        print(f'_yaml_cat -- {_yaml_cat}')
         yaml_cat = [item for item in _yaml_cat if item.endswith(xml_type)][0]
         return yaml_cat
 
