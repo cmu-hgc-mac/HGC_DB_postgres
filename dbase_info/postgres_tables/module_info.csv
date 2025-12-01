@@ -27,3 +27,4 @@ shipped_datetime,TIMESTAMP,timestamp when box with this module is packed in a co
 dead_pad_to_be_ground,SMALLINT[],aggregate from the module pedestal tests based on criteria defined in the testing software,,
 noisy_pad_to_be_ground,SMALLINT[],aggregate from the module pedestal tests based on criteria defined in the testing software,,
 pad_to_attempt_rebond,SMALLINT[],aggregate from the module pedestal tests based on criteria defined in the testing software,,
+damage_to_module,BOOLEAN,indicator for whether module is damaged--TRUE if damaged and FALSE if not,,
