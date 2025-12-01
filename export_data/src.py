@@ -27,6 +27,7 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
+dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal") #"hgcaldbloader.cern.ch")  
 
 db_params = {
     'database': conn_info.get('dbname'),
@@ -446,7 +447,7 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
 
 def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False):
     controlpathname = "ctrl_dbloader"
-    test_cmd = ["ssh", 
+    test_cmd = ["ssh", "-Y",
                 "-o", f"ControlPath=~/.ssh/{controlpathname}",
                 "-O", "check",     # <-- ask the master process if it’s alive
                 f"{dbl_username}@{controlpathname}"]
@@ -498,13 +499,13 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print("")
 
                 scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"    
-                ### opens to only dbloader-hgcal via lxplus
-                ssh_cmd = ["ssh", "-MNf",
+                ### opens to only dbloader_hostname via lxplus
+                ssh_cmd = ["ssh", "-MNfY",
                     "-o", "ControlMaster=yes",
                     "-o", f"ControlPath=~/.ssh/{controlpathname}",    
                     "-o", f"ControlPersist={scp_timeout_cond}",
                     "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
-                    f"{dbl_username}@dbloader-hgcal"]    
+                    f"{dbl_username}@{dbloader_hostname}"]    
                 
                 subprocess.run(ssh_cmd, check=True)
 

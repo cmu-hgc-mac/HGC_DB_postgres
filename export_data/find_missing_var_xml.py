@@ -16,11 +16,11 @@ with open(YAML_FILE, "r") as f:
 
 # Mapping of part names (directory) to YAML categories
 PART_TO_YAML_CATEGORIES = {
-    "sensor": ["sensor_cond"],
-    "module": ["module_cond", "module_assembly", "module_build", "wirebond"],
-    "protomodule": ["proto_cond", "proto_assembly", "proto_build"],
-    "hexaboard": ["hxb_cond", "hxb_build"],
-    "baseplate": ["bp_cond", "bp_build"]
+    "sensor": ["sensor_inspection"],
+    "module": ["module_cure_cond", "module_assembly", "module_build", "wirebond", "module_inspection"],
+    "protomodule": ["proto_cure_cond", "proto_assembly", "proto_build", "module_inspection"],
+    "hexaboard": ["hxb_inspection", "hxb_build"],
+    "baseplate": ["bp_inspection", "bp_build"]
     }
 
 # Function to get XML files, with an optional time limit
