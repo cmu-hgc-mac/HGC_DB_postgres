@@ -115,12 +115,13 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
         rows = await conn.fetch(query)
-
+        
     if rows is None:
         raise ValueError("No data found in pedestal_table.")
-
+    
     test_data = {}
     for row in rows:
+        row = dict(row) ## type(row) = <class 'asyncpg.Record'>, so we need to convert it to a dictionary 
         if row['roc_name'] is None:
             hxb_data = read_from_cern_db(partID = row['hxb_name'], cern_db_url = 'hgcapi')
             hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
