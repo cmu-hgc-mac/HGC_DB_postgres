@@ -82,16 +82,47 @@ async def get_missing_batch_sen(pool):
     return [row['sen_name'] for row in rows]
 
 def get_query_write(table_name, column_names, check_conflict_col = None, db_upload_data = None):
-    pre_query = f""" INSERT INTO {table_name} ({', '.join(column_names)}) SELECT """
-    data_placeholder = ', '.join([f'${i+1}' for i in range(len(column_names))])
-    query = f""" {pre_query} {f'{data_placeholder}'}  """
+    # pre_query = f""" INSERT INTO {table_name} ({', '.join(column_names)}) SELECT """
+    # data_placeholder = ', '.join([f'${i+1}' for i in range(len(column_names))])
+    # query = f""" {pre_query} {f'{data_placeholder}'}  """
+    # if check_conflict_col is not None:
+    #     query += f" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}'); "
+
+    insert_clause = f""" INSERT INTO {table_name} ({', '.join(column_names)}) """
+    next_placeholder_index = len(column_names)
+    data_placeholder_select = ', '.join([f'${i+1}' for i in range(len(column_names))])
+    select_clause = f""" SELECT {data_placeholder_select} """
     if check_conflict_col is not None:
-        query += f" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}'); "
+        # This clause requires the N+1th argument to be the conflict value
+        where_not_exists = f""" WHERE NOT EXISTS ( 
+            SELECT 1 
+            FROM {table_name} 
+            WHERE {check_conflict_col} = ${next_placeholder_index}
+        ) """
+    else:
+        # If no conflict column is given, just insert unconditionally (though this isn't recommended)
+        where_not_exists = ""
+        
+    query = f"""{insert_clause} {select_clause} {where_not_exists};"""
     return query
 
 def get_query_update(table_name, column_names, check_conflict_col = None, db_upload_data = None):
-    update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
-    query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
+    # update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
+    # query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
+
+    insert_clause = f""" INSERT INTO {table_name} ({', '.join(column_names)}) """
+    next_placeholder_index = len(column_names)
+    data_placeholder_select = ', '.join([f'${i+1}' for i in range(len(column_names))])
+    select_clause = f""" SELECT {data_placeholder_select} """
+    if check_conflict_col is not None:
+        # This clause requires the N+1th argument to be the conflict value
+        where_not_exists = f""" WHERE NOT EXISTS ( SELECT 1 FROM {table_name} WHERE {check_conflict_col} = ${next_placeholder_index}) """
+    else:
+        # If no conflict column is given, just insert unconditionally (though this isn't recommended)
+        where_not_exists = ""
+        
+    query = f"""{insert_clause} {select_clause} {where_not_exists};"""
+
     return query
 
 def get_query_update_secondary(table_name, column_names, check_conflict_col = None, db_upload_data = None):
@@ -317,7 +348,7 @@ async def main():
                 
                 print(f"Writing {children_for_import[pt]['apikey']} to postgres from {cern_db_url.upper()} complete.")
                 print('-'*40); print('\n')
-
+            break
                             
     async with pool.acquire() as conn:
         try:
@@ -329,5 +360,4 @@ async def main():
     print('Refresh postgres tables')
 
 asyncio.run(main())
-
 
