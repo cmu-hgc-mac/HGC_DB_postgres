@@ -70,7 +70,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
     
-    if building_module and building_proto:  ### add protomodule serial number if both module and protomodule are being built for a given module
+    if partsnamelist and building_module and building_proto:  ### add protomodule serial number if both module and protomodule are being built for a given module
         proto_parts_list = [part.replace('320M', '320P') for part in partsnamelist if '320M' in part] 
         partsnamelist.extend(proto_parts_list)
     
