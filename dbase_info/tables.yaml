@@ -106,6 +106,19 @@ tables:
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
+    fname: 'module_ileak_estimate.csv' 
+    description: 'estimate of channel-by-channel leakage current estimate performed for modules observed with high leakage current; outputs updated config json to be used for further electrical testing'
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
     fname: 'module_pedestal_plots.csv'
     description: 'Will store both module and hexaboard pedestal plots'
     permission:
