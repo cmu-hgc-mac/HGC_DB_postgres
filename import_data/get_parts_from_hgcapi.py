@@ -237,6 +237,7 @@ async def main():
     parser.add_argument('-getbp', '--get_baseplate', default='True', required=False, help="Get baseplates.")
     parser.add_argument('-gethxb', '--get_hexaboard', default='True', required=False, help="Get hexaboards.")
     parser.add_argument('-getsen', '--get_sensor', default='True', required=False, help="Get sensors.")
+    parser.add_argument('-gettb', '--get_trophyboard', default='True', required=False, help="Get trophyboards.")
     args = parser.parse_args()
 
     if args.password is None:
@@ -266,6 +267,8 @@ async def main():
         part_types_to_get.append('hxb')
     if str2bool(args.get_sensor):
         part_types_to_get.append('sen')
+    if str2bool(args.get_trophyboard):
+        part_types_to_get.append('tb')
 
     for source_db_cern in db_list:
         cern_db_url = db_source_dict[source_db_cern]['url']
