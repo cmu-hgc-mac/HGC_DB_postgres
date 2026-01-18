@@ -75,6 +75,12 @@ async def get_missing_qc_bp(pool):
         rows = await conn.fetch(get_missing_qc_bp_query)
     return [row['bp_name'] for row in rows]
 
+async def get_mmts_inv_in_local(pool):
+    get_mmts_inv_in_local_query = """SELECT part_name FROM mmts_inventory WHERE kind IS NULL;"""
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(get_mmts_inv_in_local_query)
+    return [row['part_name'] for row in rows]
+
 async def get_missing_batch_sen(pool):
     get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE sen_batch_id IS NULL OR sen_batch_id = '';"""
     async with pool.acquire() as conn:
@@ -268,14 +274,18 @@ async def main():
     if str2bool(args.get_sensor):
         part_types_to_get.append('sen')
     if str2bool(args.mmts_inventory):
-        part_types_to_get.append('tb')
+        part_types_to_get.append('mmtsinv')
 
     for source_db_cern in db_list:
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
         for pt in part_types_to_get:  #, 'pml', 'ml']:
-            print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
-            parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
+            if pt != 'mmtsinv': ### We don't have a way to request mmts parts from the api based on institution    
+                print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
+                parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
+            else: 
+                print(f"Reading available {children_for_import[pt]['apikey']} from postgres ..." )
+                parts = await get_mmts_inv_in_local(pool)
             if parts:
                 for p in tqdm(parts['parts']):
                     try:
