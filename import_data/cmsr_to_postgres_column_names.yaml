@@ -31,13 +31,14 @@ children_for_import:
       kind: kind
       comment_description: comment
 
-  # tb:
-  #   apikey: tb
-  #   dbtabname: hexaboard
-  #   db_cols:
-  #     serial_number: hxb_name  ### column_name_in_cmsr: column_name_in_postgres
-  #     kind: kind
-  #     comment_description: comment
+  mmtsinv:
+    apikey: mmts_inventory
+    dbtabname: mmts_inventory
+    db_cols:
+      serial_number: part_name  ### column_name_in_cmsr: column_name_in_postgres
+      kind: kind
+      comment_description: comment
+      qc: qc_details
 
 # parts_for_upload_check:
 #   pml:
