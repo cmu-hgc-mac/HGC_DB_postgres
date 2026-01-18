@@ -195,8 +195,8 @@ def verify_shipin():
     radio_bp.pack(anchor="w", pady=2, padx=80)
     radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard", command=activate_geom)
     radio_hxb.pack(anchor="w", pady=2, padx=80)
-    radio_tb = Radiobutton(input_window, text="mmts_inventory", variable=selected_component, value="mmts_inventory", command=activate_geom)
-    radio_tb.pack(anchor="w", pady=2, padx=80)
+    radio_mmtsinv = Radiobutton(input_window, text="mmts_inventory", variable=selected_component, value="mmts_inventory", command=activate_geom)
+    radio_mmtsinv.pack(anchor="w", pady=2, padx=80)
     radio_sen = Radiobutton(input_window, text="sensor -- select geometry", variable=selected_component, value="sensor", command=activate_geom)
     radio_sen.pack(anchor="w", pady=2, padx=80)
     densgeomframe = Frame(input_window)
@@ -318,6 +318,7 @@ def import_data():
     # download_dev_var_entry.pack(pady=5)
     download_prod_var = BooleanVar(value=True)
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
+    download_prod_var_entry.config(state="disabled")
     download_prod_var_entry.pack(pady=2)
 
     baseplate_get_var = BooleanVar(value=True)
