@@ -76,7 +76,6 @@ def get_reflected_tables(xml_path: str) -> str:
             else:
                 return prefix, part_name, tables ##i.e., module, 320MLF2W2CM0102, [module_pedestal, module_cond]
 
-
 def get_upload_status_csv(csv_path):
     '''
     xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path     
@@ -140,6 +139,7 @@ async def update_upload_status(pool, csv_output, concurrency=10):
                     WHERE {prefix}_name = $2
                 """
             # tasks.append(conn.execute(query, success_flag, part_name))
+            print(f'Updating {part_name} in {table}...')
             tasks.append(_run_update(pool, query, success_flag, part_name, sem))
     if not tasks:
         print("No valid update tasks found.")
