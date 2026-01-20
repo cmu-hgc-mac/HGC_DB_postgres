@@ -11,7 +11,10 @@ import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
 from src import process_xml_list
 from find_missing_var_xml import find_missing_var_xml
-import check_successful_upload
+# import check_successful_upload
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
+from check_successful_upload import main as check_successful_upload
+
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
 GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the generated xmls. Feel free to change it. 
@@ -70,7 +73,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
     
-    if partsnamelist and building_module and building_proto:  ### add protomodule serial number if both module and protomodule are being built for a given module
+    if building_module and building_proto:  ### add protomodule serial number if both module and protomodule are being built for a given module
         proto_parts_list = [part.replace('320M', '320P') for part in partsnamelist if '320M' in part] 
         partsnamelist.extend(proto_parts_list)
     
@@ -154,7 +157,7 @@ async def main():
     if len(inst_code) == 0:
         print("Check institution abbreviation in conn.py"); exit()
 
-    ## Step 1: Generate XML files
+        ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
         generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist)
         find_missing_var_xml(time_limit=90)
@@ -173,10 +176,17 @@ async def main():
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
             scp_success = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
-        # if scp_success:
-        #     await check_upload(db_type)
-            # Step 3: Delete generated XMLs on success
+        if scp_success and upload_prod_stat:
+            result = subprocess.run(
+                [sys.executable, "export_data/check_successful_upload.py", "--dbpassword", dbpassword, "--encrypt_key", encryption_key or ""],
+                capture_output=True,
+                text=True
+            )
+            if result.stderr:
+                print("check_successful_upload.py errors:\n", result.stderr)
+
         if scp_success and str2bool(args.del_xml):
             clean_generated_xmls()
 if __name__ == '__main__':
     asyncio.run(main())
+
