@@ -94,11 +94,11 @@ def get_upload_status_csv(csv_path):
                 continue
         return csv_output ## [(part_name, upload_status, db_tables_to_be_updated), (...), ...]
 
-def get_api_data(search_id, db_type):
-    if db_type == 'cmsr':
-        url = f"https://hgcapi.web.cern.ch/mac/part/{search_id}/full"
-    elif db_type == 'int2r':
-        url = f"https://hgcapi-intg.web.cern.ch/mac/part/{search_id}/full"
+# def get_api_data(search_id, db_type):
+#     if db_type == 'cmsr':
+#         url = f"https://hgcapi.web.cern.ch/mac/part/{search_id}/full"
+#     elif db_type == 'int2r':
+#         url = f"https://hgcapi-intg.web.cern.ch/mac/part/{search_id}/full"
 
 async def _run_update(pool, query, success_flag, part_name, sem):
     async with sem:
@@ -170,36 +170,51 @@ def get_latest_upload_log():
     print(f"Latest upload log: {latest_file}")
     return latest_file
 
-async def main(dbpassword, encryption_key=None):
+async def main(dbpassword, db_type, encryption_key=None):
     # Connect to PostgreSQL
     pool = await get_conn(dbpassword, encryption_key, pool=True)
     print("Connected to database.")
 
-    try:
-        # Find and process latest CSV
-        massloader_log_csv = get_latest_upload_log()
-        if not massloader_log_csv:
-            print("No log file to process.")
-            return
-
-        # Assuming get_upload_status_csv() returns csv_output as described
-        csv_output = get_upload_status_csv(massloader_log_csv)
-
-        # Update DB
-        async with pool.acquire() as conn:
-            # await update_upload_status(conn, csv_output)
-            await update_upload_status(pool, csv_output, concurrency=10)
-
-    finally:
-        await pool.close()
-        print("Database connection closed.")
+    if db_type == 'int2r':
+        print("We do not update the upload status for INT2R")
         
+    elif db_type == 'cmsr':
+        try:
+            # Find and process latest CSV
+            massloader_log_csv = get_latest_upload_log()
+            if not massloader_log_csv:
+                print("No log file to process.")
+                return
+
+            # Assuming get_upload_status_csv() returns csv_output as described
+            csv_output = get_upload_status_csv(massloader_log_csv)
+
+            # Update DB
+            async with pool.acquire() as conn:
+                # await update_upload_status(conn, csv_output)
+                await update_upload_status(pool, csv_output, concurrency=10)
+
+        finally:
+            await pool.close()
+            print("Database connection closed.")
+            
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script to process files in a directory.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
+    parser.add_argument('-upld', '--upload_dev_stat', default='True', required=False, help="Upload to dev DBLoader without generate.")
+    parser.add_argument('-uplp', '--upload_prod_stat', default='True', required=False, help="Upload to prod DBLoader without generate.")
+    
     args = parser.parse_args()
     
     dbpassword = args.dbpassword
     encryption_key = args.encrypt_key
-    asyncio.run(main(dbpassword=dbpassword, encryption_key=encryption_key))
+    upload_dev_stat = args.upload_dev_stat
+    upload_prod_stat = args.upload_prod_stat
+
+    if upload_dev_stat:
+        db_type = 'int2r'
+        print("We do not update the upload status for INT2R")
+    if upload_prod_stat:
+        db_type = 'cmsr'
+        asyncio.run(main(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key))
