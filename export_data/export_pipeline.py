@@ -157,7 +157,7 @@ async def main():
     if len(inst_code) == 0:
         print("Check institution abbreviation in conn.py"); exit()
 
-    ## Step 1: Generate XML files
+        ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
         generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist)
         find_missing_var_xml(time_limit=90)
@@ -175,8 +175,8 @@ async def main():
     
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
-            ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
-        if ret and upload_prod_stat:
+            scp_success = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
+        if scp_success and upload_prod_stat:
             result = subprocess.run(
                 [sys.executable, "export_data/check_successful_upload.py", "--dbpassword", dbpassword, "--encrypt_key", encryption_key or ""],
                 capture_output=True,
@@ -185,12 +185,8 @@ async def main():
             if result.stderr:
                 print("check_successful_upload.py errors:\n", result.stderr)
 
-        if ret and upload_prod_stat is True:
-            await check_successful_upload(dbpassword=dbpassword, encryption_key=encryption_key, db_type=db_type)
-
-
-            # Step 3: Delete generated XMLs on success
-        if ret and str2bool(args.del_xml):
+        if scp_success and str2bool(args.del_xml):
             clean_generated_xmls()
 if __name__ == '__main__':
     asyncio.run(main())
+
