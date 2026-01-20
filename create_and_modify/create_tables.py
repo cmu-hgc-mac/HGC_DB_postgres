@@ -50,7 +50,8 @@ def get_table_info(loc, tables_subdir, fname):
         csvFile = csv.reader(file, quotechar='"')
         rows = []
         for row in csvFile:
-            rows.append(row)
+            if any(cell.strip() for cell in row):
+                rows.append(row)
         columns = np.array(rows).T
         comment_columns = columns[2] 
         fk = columns[0][(np.where(columns[-1] != ''))]

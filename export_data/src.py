@@ -27,6 +27,7 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
+dbloader_hostname = conn_info.get('dbloader_hostname', "hgcaldbloader.cern.ch")  
 
 db_params = {
     'database': conn_info.get('dbname'),
@@ -120,7 +121,7 @@ async def check_good_conn(dbpassword, encryption_key = None,  user_type = None):
     else:
         return False
 
-async def get_conn(dbpassword, encryption_key = None, user_type = None):
+async def get_conn(dbpassword, encryption_key = None, user_type = None, pool=False):
     user_type = user_type if user_type else 'shipper'
     '''
     Does: get connection to database
@@ -139,13 +140,16 @@ async def get_conn(dbpassword, encryption_key = None, user_type = None):
     else:
         cipher_suite = Fernet((encryption_key).encode())
         db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
-
-    try:
-        conn = await asyncpg.connect(**db_params)
-        return conn
-    except Exception as e:
-        print(e)
-        return None
+    if pool:
+        pool = await asyncpg.create_pool(**db_params)
+        return pool
+    else:
+        try:
+            conn = await asyncpg.connect(**db_params)
+            return conn
+        except Exception as e:
+            print(e)
+            return None
 
 
 async def fetch_from_db(query, conn):
@@ -309,6 +313,12 @@ async def get_kind_of_part(part_name, part=None, conn=None):
 
 def format_datetime(input_date, input_time):
     local_timezone = pytz.timezone(str(tzlocal.get_localzone()))
+    # Normalize input_date
+    if isinstance(input_date, datetime.date):
+        input_date = input_date.strftime("%Y-%m-%d")
+    if isinstance(input_time, datetime.time):
+        input_time = input_time.strftime("%H:%M:%S")
+        
     if input_time is None:
         # If time_begin is missing, use the current time with timezone
         current_dt = datetime.datetime.now(local_timezone).time()
@@ -392,6 +402,52 @@ def get_roc_version(module_name):
     else:
         raise ValueError(f"Cannot determine the roc version of {module_name}")
     
+async def get_nearest_temp_humidity(conn, table_name, date_inspect, time_inspect):
+    print(table_name, date_inspect, time_inspect)
+    print(type(table_name), type(date_inspect), type(time_inspect))
+    if isinstance(date_inspect, str):
+        date_inspect = datetime.datetime.strptime(date_inspect.strip(), "%Y-%m-%d").date()
+
+    if isinstance(time_inspect, str):
+        # handle both HH:MM and HH:MM:SS
+        time_format = "%H:%M:%S" if time_inspect.count(":") == 2 else "%H:%M"
+        time_inspect = datetime.datetime.strptime(time_inspect.strip(), time_format).time()
+
+    target_dt = datetime.datetime.combine(date_inspect, time_inspect)
+    
+    # Step 1: Check which columns exist
+    query_columns = """
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1
+    """
+    columns_result = await conn.fetch(query_columns, table_name)
+    columns = {row['column_name'] for row in columns_result}
+
+    temp_c, rel_hum = None, None
+
+    # Step 2: Try fetching from the target table (if columns exist)
+    if 'temp_c' in columns and 'rel_hum' in columns:
+        try:
+            row = await conn.fetchrow(f"SELECT temp_c, rel_hum FROM {table_name} LIMIT 1;")
+            if row:
+                temp_c, rel_hum = row['temp_c'], row['rel_hum']
+        except Exception:
+            pass  # In case the table is empty or fetch fails
+
+    # Step 3: If missing or None, get nearest from temp_humidity
+    if temp_c is None or rel_hum is None:
+        query_nearest = """
+            SELECT temp_c, rel_hum
+            FROM temp_humidity
+            ORDER BY ABS(EXTRACT(EPOCH FROM (log_timestamp - $1))) ASC
+            LIMIT 1;
+        """
+        row = await conn.fetchrow(query_nearest, target_dt)
+        if row:
+            temp_c, rel_hum = row['temp_c'], row['rel_hum']
+
+    return {'temp_c': temp_c, 'rel_hum': rel_hum}
 
 ################################################################################
 ### Below is for checking part exisistence and combination with location ###
@@ -444,9 +500,9 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         return []
 
 
-def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, mass_upload_xmls = False):
+def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False):
     controlpathname = "ctrl_dbloader"
-    test_cmd = ["ssh", 
+    test_cmd = ["ssh", "-Y",
                 "-o", f"ControlPath=~/.ssh/{controlpathname}",
                 "-O", "check",     # <-- ask the master process if it’s alive
                 f"{dbl_username}@{controlpathname}"]
@@ -498,13 +554,13 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print("")
 
                 scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"    
-                ### opens to only dbloader-hgcal via lxplus
-                ssh_cmd = ["ssh", "-MNf",
+                ### opens to only dbloader_hostname via lxplus
+                ssh_cmd = ["ssh", "-MNfY",
                     "-o", "ControlMaster=yes",
                     "-o", f"ControlPath=~/.ssh/{controlpathname}",    
                     "-o", f"ControlPersist={scp_timeout_cond}",
                     "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
-                    f"{dbl_username}@dbloader-hgcal"]    
+                    f"{dbl_username}@{dbloader_hostname}"]    
                 
                 subprocess.run(ssh_cmd, check=True)
 

@@ -41,7 +41,6 @@ delete_xmls = config_data.get('delete_xmls', True)
 php_port = config_data.get('php_port', '8083')
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit = config_data.get('scp_force_quit', True)
-mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_box_per_shipment', 42))
 institution_abbr = config_data.get('institution_abbr')
@@ -197,6 +196,8 @@ def verify_shipin():
     radio_bp.pack(anchor="w", pady=2, padx=80)
     radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard", command=activate_geom)
     radio_hxb.pack(anchor="w", pady=2, padx=80)
+    radio_mmtsinv = Radiobutton(input_window, text="mmts_inventory", variable=selected_component, value="mmts_inventory", command=activate_geom)
+    radio_mmtsinv.pack(anchor="w", pady=2, padx=80)
     radio_sen = Radiobutton(input_window, text="sensor -- select geometry", variable=selected_component, value="sensor", command=activate_geom)
     radio_sen.pack(anchor="w", pady=2, padx=80)
     densgeomframe = Frame(input_window)
@@ -318,6 +319,7 @@ def import_data():
     # download_dev_var_entry.pack(pady=5)
     download_prod_var = BooleanVar(value=True)
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
+    download_prod_var_entry.config(state="disabled")
     download_prod_var_entry.pack(pady=2)
 
     baseplate_get_var = BooleanVar(value=True)
@@ -332,12 +334,17 @@ def import_data():
     sensor_get_var_entry = Checkbutton(input_window, text="Get: sensors", variable=sensor_get_var)
     sensor_get_var_entry.pack(pady=2)
 
+    mmts_inventory_get_var = BooleanVar(value=True)
+    mmts_inventory_get_var_entry = Checkbutton(input_window, text="Get: other inventory", variable=mmts_inventory_get_var)
+    mmts_inventory_get_var_entry.pack(pady=2)
+
     def submit_import():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         download_dev_stat = download_dev_var.get()
         download_prod_stat = download_prod_var.get()
         basplate_get_stat = baseplate_get_var.get()
         hexaboard_get_stat = hexaboard_get_var.get()
+        mmts_inventory_get_stat = mmts_inventory_get_var.get()
         sensor_get_stat = sensor_get_var.get()
 
         if not download_prod_stat and not download_dev_stat:
@@ -351,7 +358,7 @@ def import_data():
                 show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
-                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getsen", str(sensor_get_stat)])
+                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getmmtsinv", str(mmts_inventory_get_stat), "-getsen", str(sensor_get_stat)])
                 # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
                 # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
                 show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
@@ -499,9 +506,9 @@ def export_data():
             
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
-                if open_scp_connection(dbl_username=lxp_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:
+                if open_scp_connection(dbl_username=lxp_username, get_scp_status=True) != 0:
                     show_message(f"Check terminal to enter LXPLUS credentials.")
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
             
             upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
             upload_prod_stat = upload_prod_stat if scp_status == 0 else False
@@ -511,7 +518,7 @@ def export_data():
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
             if (upload_dev_stat or upload_prod_stat) and scp_force_quit: ### only quit if it was opened at all
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, mass_upload_xmls=mass_upload_xmls)
+                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")           
 
     select_specific_button = Button(input_window, text="Select type of XMLs", command=select_specific)
@@ -673,7 +680,7 @@ def refresh_data():
     submit_refresh_button.pack(pady=10)
     bind_button_keys(submit_refresh_button)
 
-def open_adminerevo():   ### lsof -i :8083; kill <pid>
+def open_adminer():   ### lsof -i :8083; kill <pid>
     def close_adminer_process():
         try:
             pids = get_pid_result().stdout.strip().split("\n")
@@ -692,8 +699,8 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
                 adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
             
             webbrowser.open(php_url)
-            button_search_data.config(text="Stop AdminerEvo", fg="red")
-            print('AdminerEvo opened in browser...')
+            button_search_data.config(text="Stop Adminer", fg="red")
+            print('Adminer opened in browser...')
             print(php_url)
         except Exception as e:
             traceback.print_exc()
@@ -767,7 +774,7 @@ button_upload_xml.grid(row=5, column=1, pady=(15,1), sticky='ew')
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
 button_shipout.grid(row=6, column=1, pady=(1,15), sticky='ew')
 
-button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
+button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminer, width=button_width, height=button_height) 
 button_search_data.grid(row=7, column=1, pady=(15,1), sticky='ew')
 
 button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))  
@@ -785,7 +792,7 @@ button_stock_stt.grid(row=11, column=1, pady=(1,5), sticky='ew')
 
 for pid in get_pid_result().stdout.strip().split("\n"):
     if pid.isdigit():
-        button_search_data.config(text="Stop AdminerEvo", fg="red")
+        button_search_data.config(text="Stop Adminer", fg="red")
     else:
         button_search_data.config(text=adminer_process_button_face, fg="black")
         
