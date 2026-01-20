@@ -172,11 +172,11 @@ async def main():
     
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
-            ret = True and scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
+            scp_success = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
         # if ret:
         #     await check_upload(db_type)
             # Step 3: Delete generated XMLs on success
-        if ret and str2bool(args.del_xml):
+        if scp_success and str2bool(args.del_xml):
             clean_generated_xmls()
 if __name__ == '__main__':
     asyncio.run(main())
