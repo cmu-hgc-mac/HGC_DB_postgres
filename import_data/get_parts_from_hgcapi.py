@@ -5,6 +5,7 @@ from natsort import natsorted, natsort_keygen
 from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from export_data.src import read_from_cern_db
+RED = '\033[91m'; RESET = '\033[0m'
 
 """
 Logic of writing to parts tables:
@@ -74,6 +75,15 @@ async def get_missing_qc_bp(pool):
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_missing_qc_bp_query)
     return [row['bp_name'] for row in rows]
+
+async def get_mmts_inv_in_local(pool):
+    get_mmts_inv_in_local_query = """SELECT part_name FROM mmts_inventory WHERE kind IS NULL;"""
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(get_mmts_inv_in_local_query)
+        return [row['part_name'] for row in rows]
+    except Exception as e:
+        print(f"{RED}Error: {e}{RESET}")
 
 async def get_missing_batch_sen(pool):
     get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE sen_batch_id IS NULL OR sen_batch_id = '';"""
@@ -227,6 +237,19 @@ def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi'):
         # print('*'*100)
         return None
 
+def get_mmts_inv_for_db_upload(part_name, cern_db_url = 'hgcapi'):
+    try:
+        data_full = read_from_cern_db(partID = part_name, cern_db_url=cern_db_url)
+        db_dict = get_dict_for_db_upload(data_full, 'mmtsinv')
+        db_dict['qc_details'] = f"{db_dict['qc_details']}"
+        return db_dict
+    except Exception as e:
+        traceback.print_exc()
+        print(f"ERROR in acquiring sensor batch data from API output for {data_full['serial_number']}: ", e)
+        # print(json.dumps(data_full, indent=2))
+        # print('*'*100)
+        return None
+
 async def main():
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-p', '--password', default=None, required=False, help="Password to access database.")
@@ -237,6 +260,7 @@ async def main():
     parser.add_argument('-getbp', '--get_baseplate', default='True', required=False, help="Get baseplates.")
     parser.add_argument('-gethxb', '--get_hexaboard', default='True', required=False, help="Get hexaboards.")
     parser.add_argument('-getsen', '--get_sensor', default='True', required=False, help="Get sensors.")
+    parser.add_argument('-getmmtsinv', '--mmts_inventory', default='True', required=False, help="Get trophyboards, mezzanines, etc for the MMTS.")
     args = parser.parse_args()
 
     if args.password is None:
@@ -266,26 +290,29 @@ async def main():
         part_types_to_get.append('hxb')
     if str2bool(args.get_sensor):
         part_types_to_get.append('sen')
+    if str2bool(args.mmts_inventory):
+        part_types_to_get.append('mmtsinv')
 
     for source_db_cern in db_list:
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
         for pt in part_types_to_get:  #, 'pml', 'ml']:
-            print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
-            parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
-            if parts:
-                for p in tqdm(parts['parts']):
-                    try:
-                        db_dict = get_dict_for_db_upload(p, partType = pt)
-                        if db_dict is not None:
-                            try:
-                                await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
-                            except Exception as e:
-                                print(f"ERROR for single part upload for {p['serial_number']}", e)
-                                traceback.print_exc()
-                                print('Dictionary:', (db_dict))
-                    except:
-                        traceback.print_exc()
+            if pt != 'mmtsinv': ### We don't have a way to request mmts parts from the api based on institution    
+                print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
+                parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
+                if parts:
+                    for p in tqdm(parts['parts']): ### p is the data_full from the HGCAPI
+                        try:
+                            db_dict = get_dict_for_db_upload(p, partType = pt)
+                            if db_dict is not None:
+                                try:
+                                    await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
+                                except Exception as e:
+                                    print(f"ERROR for single part upload for {p['serial_number']}", e)
+                                    traceback.print_exc()
+                                    print('Dictionary:', (db_dict))
+                        except:
+                            traceback.print_exc()
 
             secondary_upload, db_dict_secondary = None, None
             if pt == 'hxb':
@@ -295,6 +322,9 @@ async def main():
                 part_qc_cols = children_for_import[pt]['qc_cols']
             elif pt == 'sen':
                 secondary_upload = await get_missing_batch_sen(pool)
+            elif pt == 'mmtsinv':
+                secondary_upload = await get_mmts_inv_in_local(pool)
+                # secondary_upload = ['320TSYMM1020192', '320TSYLFP010104']
             if secondary_upload:
                 print(f"Fetching other necessary {children_for_import[pt]['apikey']} data ...")
                 for p in tqdm(secondary_upload):
@@ -305,6 +335,8 @@ async def main():
                             db_dict_secondary = get_bp_qc_for_db_upload(p, cern_db_url = cern_db_url, part_qc_cols = part_qc_cols)
                         elif pt == 'sen':
                             db_dict_secondary = get_sen_batch_for_db_upload(p, cern_db_url = cern_db_url)
+                        elif pt == 'mmtsinv':
+                            db_dict_secondary = get_mmts_inv_for_db_upload(p, cern_db_url = cern_db_url)
                         if db_dict_secondary is not None:
                             try:
                                 await write_to_db_secondary(pool, db_dict_secondary, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
