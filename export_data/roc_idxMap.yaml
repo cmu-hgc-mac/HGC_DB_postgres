@@ -100,11 +100,11 @@ HD:
       config_json_key: roc_s0_0
     - chip: 1
       roc_index: IC2
-      config_json_key: roc_s0_1
+      config_json_key: roc_s1_0
   Left:
     - chip: 0
       roc_index: IC4
       config_json_key: roc_s0_0
     - chip: 1
       roc_index: IC3
-      config_json_key: roc_s1_1
+      config_json_key: roc_s1_0
