@@ -63,7 +63,7 @@ HD:
       roc_index: IC4
       config_json_key: roc_s1_0
     - chip: 3
-      roc_index: IC4
+      roc_index: IC3
       config_json_key: roc_s1_1
     - chip: 4
       roc_index: IC6
