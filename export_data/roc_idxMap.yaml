@@ -39,7 +39,7 @@ LD:
       config_json_key: roc_s0
     - chip: 1
       roc_index: IC3
-      config_json_key: roc_s0
+      config_json_key: roc_s1
   Five:
     - chip: 0
       roc_index: IC1
