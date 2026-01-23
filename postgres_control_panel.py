@@ -195,6 +195,8 @@ def verify_shipin():
     radio_bp.pack(anchor="w", pady=2, padx=80)
     radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard", command=activate_geom)
     radio_hxb.pack(anchor="w", pady=2, padx=80)
+    radio_mmtsinv = Radiobutton(input_window, text="mmts_inventory", variable=selected_component, value="mmts_inventory", command=activate_geom)
+    radio_mmtsinv.pack(anchor="w", pady=2, padx=80)
     radio_sen = Radiobutton(input_window, text="sensor -- select geometry", variable=selected_component, value="sensor", command=activate_geom)
     radio_sen.pack(anchor="w", pady=2, padx=80)
     densgeomframe = Frame(input_window)
@@ -316,6 +318,7 @@ def import_data():
     # download_dev_var_entry.pack(pady=5)
     download_prod_var = BooleanVar(value=True)
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
+    download_prod_var_entry.config(state="disabled")
     download_prod_var_entry.pack(pady=2)
 
     baseplate_get_var = BooleanVar(value=True)
@@ -330,12 +333,17 @@ def import_data():
     sensor_get_var_entry = Checkbutton(input_window, text="Get: sensors", variable=sensor_get_var)
     sensor_get_var_entry.pack(pady=2)
 
+    mmts_inventory_get_var = BooleanVar(value=True)
+    mmts_inventory_get_var_entry = Checkbutton(input_window, text="Get: other inventory", variable=mmts_inventory_get_var)
+    mmts_inventory_get_var_entry.pack(pady=2)
+
     def submit_import():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         download_dev_stat = download_dev_var.get()
         download_prod_stat = download_prod_var.get()
         basplate_get_stat = baseplate_get_var.get()
         hexaboard_get_stat = hexaboard_get_var.get()
+        mmts_inventory_get_stat = mmts_inventory_get_var.get()
         sensor_get_stat = sensor_get_var.get()
 
         if not download_prod_stat and not download_dev_stat:
@@ -349,7 +357,7 @@ def import_data():
                 show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
-                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getsen", str(sensor_get_stat)])
+                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getmmtsinv", str(mmts_inventory_get_stat), "-getsen", str(sensor_get_stat)])
                 # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
                 # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
                 show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")

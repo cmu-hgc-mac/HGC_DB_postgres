@@ -164,6 +164,10 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
             hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi')
             hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
             hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
+            print(f'type serial number -- f{type([roc['serial_number'] for roc in hgcroc_children_sorted])}')
+
+            print([roc['serial_number'] for roc in hgcroc_children_sorted], type([roc['serial_number'] for roc in hgcroc_children_sorted]))
+
             row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
 
         date_test = row['date_test']

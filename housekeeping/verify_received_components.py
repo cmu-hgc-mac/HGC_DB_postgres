@@ -2,6 +2,7 @@ import yaml, os, argparse, sys, csv, datetime
 import pwinput, asyncio, asyncpg, base64, traceback
 from cryptography.fernet import Fernet
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+RED = '\033[91m'; RESET = '\033[0m'
 
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
@@ -28,19 +29,23 @@ def get_query_update(table_name, part_id_col = None):
     return query
 
 async def write_to_db(partType=None, part_id_list=None, date_verified=None):
-    pk_dict = {'baseplate': 'bp_name', 'sensor':'sen_name', 'hexaboard':'hxb_name'}
-    part_id_col = pk_dict[partType]
-    conn = await asyncpg.connect(**db_params)
-    for pi, part_id in enumerate(part_id_list):
-        if part_id.strip():
-            query = get_query_write(table_name = partType, part_id_col = part_id_col)
-            await conn.execute(query, part_id)
-            query = get_query_update(table_name = partType, part_id_col = part_id_col)
-            if partType == "sensor":
-                await conn.execute(query, part_id, date_verified)
-            else:
-                await conn.execute(query, part_id, date_verified)
-    await conn.close()
+    try:
+        pk_dict = {'baseplate': 'bp_name', 'sensor':'sen_name', 'hexaboard':'hxb_name', 'mmts_inventory': 'part_name'}
+        part_id_col = pk_dict[partType]
+        conn = await asyncpg.connect(**db_params)
+        for pi, part_id in enumerate(part_id_list):
+            if part_id.strip():
+                query = get_query_write(table_name = partType, part_id_col = part_id_col)
+                await conn.execute(query, part_id)
+                query = get_query_update(table_name = partType, part_id_col = part_id_col)
+                if partType == "sensor":
+                    await conn.execute(query, part_id, date_verified)
+                else:
+                    await conn.execute(query, part_id, date_verified)
+        await conn.close()
+        print(f"--> {len(part_id_list)} {partType}(s) marked as verified.")
+    except Exception as e:
+        print(f"{RED}Error: {e}{RESET}")
 
 def read_parts_from_file(filename):
     file_name_non, file_extension = os.path.splitext(filename)
@@ -89,7 +94,6 @@ async def main():
         part_names = [f"{b.split('_')[0][-6:]}_{sensor_type_dict[args.geometry]}" for b in barcodes]
 
     await write_to_db(partType=partType, part_id_list=part_names, date_verified=date_verified)
-    print(f"--> {len(part_names)} {args.partType}(s) marked as verified.")
     
 
 asyncio.run(main())
