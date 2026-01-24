@@ -2,12 +2,12 @@ import asyncpg, asyncio
 import argparse, csv, datetime
 
 async def fetch_testing_data(macid, data_type, module_list = None):
-    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'database':'hgcdb'}, 
-                'UCSB': {'host': 'gut.physics.ucsb.edu',    'database':'hgcdb'}, 
-                'TIFR': {'host': 'lxhgcdb02.tifr.res.in',   'database':'hgcdb', 'password': 'hgcal'},
-                'IHEP': {'host': 'hgcal.ihep.ac.cn',        'database':'postgres',},
-                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'database':'hgcdb'}, }
-                # 'TTU' : {'host': '129.118.107.198',         'dbname':'ttu_mac_local'},}
+    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',      'port': '5432', 'database':'hgcdb'}, 
+                'UCSB': {'host': 'gut.physics.ucsb.edu',       'port': '5432', 'database':'hgcdb'}, 
+                'TIFR': {'host': 'lxhgcdb02.tifr.res.in',      'port': '5432', 'database':'hgcdb', 'password': 'hgcal'},
+                'IHEP': {'host': 'hgcal.ihep.ac.cn',           'port': '5432', 'database':'postgres',},
+                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',      'port': '5432', 'database':'hgcdb'}, 
+                'TTU' : {'host': 'dbod-ttu-mac-local.cern.ch', 'port': '6621', 'database':'ttu_mac_local'},}
     conn = await asyncpg.connect(user='viewer', **mac_dict[macid])
     
     placeholders = ', '.join(f'${i+1}' for i in range(len(module_list)))
