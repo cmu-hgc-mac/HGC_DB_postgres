@@ -76,6 +76,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.list_dead_cells,
                m.list_noisy_cells, 
                m.inverse_sqrt_n,
+               h.kind AS hxb_kop, 
                h.roc_name, 
                h.roc_index
         FROM hxb_pedestal_test m
@@ -106,6 +107,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.list_dead_cells,
                 m.list_noisy_cells,
                 m.inverse_sqrt_n,
+                h.kind AS hxb_kop, 
                 h.roc_name, 
                 h.roc_index
             FROM hxb_pedestal_test m
@@ -143,6 +145,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 'test_timestamp': f"{row['date_test']} {row['time_test']}",
                 'hxb_name': row['hxb_name'],
                 'hxb_no': row['hxb_no'],
+                'hxb_kop': row['hxb_kop'],
                 'inspector': row['inspector'],
                 'cell': row['cell'],
                 'chip': _chip,
@@ -203,11 +206,11 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
     
     os.makedirs(output_path, exist_ok=True)
     timestamp_formatted = str(run_begin_timestamp).replace(":","").split('.')[0]
-    file_path_test = os.path.join(output_path, f"{test_data['hxb_name']}_{timestamp_formatted}_pedestal.xml")
-    file_path_env = os.path.join(output_path, f"{test_data['hxb_name']}_{timestamp_formatted}_pedestal_cond.xml")
+    file_path_test   = os.path.join(output_path, f"{test_data['hxb_name']}_{timestamp_formatted}_pedestal.xml")
+    file_path_env    = os.path.join(output_path, f"{test_data['hxb_name']}_{timestamp_formatted}_pedestal_cond.xml")
     file_path_config = os.path.join(output_path, f"{test_data['hxb_name']}_{timestamp_formatted}_pedestal_config.xml")
     outfile_names = {'test': file_path_test, 'env': file_path_env, 'config': file_path_config}
-    xml_types = {'test': template_path_test, 'env': template_path_env, 'config': template_path_config}
+    xml_types     = {'test': template_path_test, 'env': template_path_env, 'config': template_path_config}
 
     test_timestamp = test_data['test_timestamp']
     test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
@@ -231,51 +234,64 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
         data_set = root.find("DATA_SET")  # Get and remove the original <DATA_SET> template block in all three XML types
         root.remove(data_set)
 
-        # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
-        for roc, entries in roc_grouped_data.items():
+        if xml_type in ['test', 'config']:
+            # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
+            for roc, entries in roc_grouped_data.items():
+                data_set = copy.deepcopy(data_set)       # Deep copy the template DATA_SET element for the test
+                data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data["comment"] else test_data["comment"].replace("\n","; ")  # Insert the comments from testing
+
+                serial_elem = data_set.find("PART/SERIAL_NUMBER") # Set the correct SERIAL_NUMBER inside PART
+                if serial_elem is not None:
+                    serial_elem.text = roc
+                kindofpart = data_set.find("PART/KIND_OF_PART")
+                if kindofpart is not None:
+                    kindofpart.text = f"{test_data['hxb_name'][4]}D HGCROC"
+
+                for data_elem in data_set.findall("DATA"): # Remove placeholder DATA blocks (direct children of DATA_SET)
+                    data_set.remove(data_elem)
+
+                if xml_type == 'test':
+                    for entry in entries:  # Add actual DATA blocks under DATA_SET (NOT under PART)
+                        data = ET.Element("DATA")
+                        ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
+                        ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
+                        ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
+                        flag = "0"      if entry["adc_mean"] == 0  else ""
+                        flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
+                        flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
+                        if flag:
+                            ET.SubElement(data, "FLAGS").text = flag
+                        if test_data["inverse_sqrt_n"]:
+                            ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
+                        data_set.append(data)  # <== append directly under DATA_SET
+                elif xml_type == 'config':
+                    data = ET.Element("DATA")
+                    toa_vref = find_toa_vref(chip_config[roc])
+                    ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                    ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
+                    data_set.append(data)  # <== append directly under DATA_SET 
+                
+                root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
+        
+        elif xml_type in ['env']:  ## do for hexaboard for cond 
             data_set = copy.deepcopy(data_set)       # Deep copy the template DATA_SET element for the test
             data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data["comment"] else test_data["comment"].replace("\n","; ")  # Insert the comments from testing
-
             serial_elem = data_set.find("PART/SERIAL_NUMBER") # Set the correct SERIAL_NUMBER inside PART
             if serial_elem is not None:
-                serial_elem.text = roc
+                serial_elem.text = test_data['hxb_name']
             kindofpart = data_set.find("PART/KIND_OF_PART")
             if kindofpart is not None:
-                kindofpart.text = f"{test_data['hxb_name'][4]}D HGCROC"
+                kindofpart.text = test_data['hxb_kop']
 
             for data_elem in data_set.findall("DATA"): # Remove placeholder DATA blocks (direct children of DATA_SET)
                 data_set.remove(data_elem)
+            data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
+            ET.SubElement(data, "TEMP_C").text = test_data['temp_c']
+            ET.SubElement(data, "HUMIDITY_REL").text = test_data['rel_hum']
+            ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
+            data_set.append(data)  # <== append directly under DATA_SET
+            root.append(data_set)  # Append the completed DATA_SET to ROOT for the part
 
-            if xml_type == 'test':
-                for entry in entries:  # Add actual DATA blocks under DATA_SET (NOT under PART)
-                    data = ET.Element("DATA")
-                    ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
-                    ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
-                    ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    flag = "0"      if entry["adc_mean"] == 0  else ""
-                    flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
-                    flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
-                    if flag:
-                        ET.SubElement(data, "FLAGS").text = flag
-                    if test_data["inverse_sqrt_n"]:
-                        ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
-                    # ET.SubElement(data, "FLAGS").text = "0"
-                    data_set.append(data)  # <== append directly under DATA_SET
-            elif xml_type == 'env':
-                data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
-                ET.SubElement(data, "TEMP_C").text = test_data['temp_c']
-                ET.SubElement(data, "HUMIDITY_REL").text = test_data['rel_hum']
-                ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
-                data_set.append(data)  # <== append directly under DATA_SET
-            elif xml_type == 'config':
-                data = ET.Element("DATA")
-                toa_vref = find_toa_vref(chip_config[roc])
-                ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
-                data_set.append(data)  # <== append directly under DATA_SET 
-            
-            root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
-        
         # Pretty-print the XML
         rough_string = ET.tostring(root, encoding="utf-8")
         pretty_xml = minidom.parseString(rough_string).toprettyxml(indent="\t")
