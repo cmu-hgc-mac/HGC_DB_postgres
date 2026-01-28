@@ -10,7 +10,7 @@ If the database already exists, and you wish to access the postgres control pane
 git clone https://github.com/cmu-hgc-mac/HGC_DB_postgres.git
 cd HGC_DB_postgres
 pip install -r housekeeping/requirements.txt
-## Create dbase_info/conn.yaml (see dbase_info/conn_example.yaml) and update with the right credentials.
+## Create dbase_info/conn.yaml (see dbase_info/conn_example.yaml) and update with the right credentials (`dbname`, `db_hostname`, `port`, `institution_abbr`).
 python3 postgres_control_panel.py
 ```
 
