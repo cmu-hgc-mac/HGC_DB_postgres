@@ -1,7 +1,7 @@
 import platform, os, argparse, base64, subprocess
 from pathlib import Path
 from scp import SCPClient
-from src import process_xml_list, open_scp_connection
+from src import process_xml_list, open_scp_connection, dbloader_hostname
 import numpy as np
 import datetime, time, yaml, paramiko, pwinput, sys, re, math
 from tqdm import tqdm
@@ -16,7 +16,6 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
-dbloader_hostname = config_data.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
 # cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
 # cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
