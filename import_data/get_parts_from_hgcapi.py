@@ -156,7 +156,11 @@ def get_part_type(partName, partType):
             None
             # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'sen':
-        return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+        if partName[:2] == 25:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[:2]][1]})  
+        else:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+
         return_dict.update({'geometry': kop_yaml['sensor_geometry'][partName[-1]]})  
         return_dict.update({'thickness': int(kop_yaml['sensor'][partName[0]][0])})  
     return return_dict
