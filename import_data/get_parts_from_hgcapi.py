@@ -248,7 +248,7 @@ def get_mmts_inv_for_db_upload(part_name, cern_db_url = 'hgcapi'):
         db_dict['qc_details'] = f"{db_dict['qc_details']}"
         return db_dict
     except Exception as e:
-        traceback.print_exc()
+        # traceback.print_exc()
         print(f"ERROR in acquiring data from API output for {part_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
