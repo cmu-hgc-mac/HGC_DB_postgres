@@ -29,10 +29,10 @@ macs:
 
   -
     mac_id: 'TTU'
-    hostname: ''
+    hostname: 'dbod-ttu-mac-local.cern.ch'
     password: ''  ## viewer password; optional, not required
-    port: '5432'
-    db_name: 'hgcdb'
+    port: '6621'
+    db_name: 'ttu_mac_local'
 
   -
     mac_id: 'UCSB'

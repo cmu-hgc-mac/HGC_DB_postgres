@@ -1,7 +1,7 @@
 import platform, os, argparse, base64, subprocess
 from pathlib import Path
 from scp import SCPClient
-from src import process_xml_list, open_scp_connection
+from src import process_xml_list, open_scp_connection, dbloader_hostname
 import numpy as np
 import datetime, time, yaml, paramiko, pwinput, sys, re, math
 from tqdm import tqdm
@@ -16,7 +16,6 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
-dbloader_hostname = config_data.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
 # cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
 # cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
@@ -69,15 +68,15 @@ def find_files_by_date(directory, target_date):
     return matched_files
 
 
-def get_build_files(files_list):
-    build_files = []
+def get_files_by_type(files_list, file_type = 'build'):
+    type_files = []
     other_files = []
     for fname in files_list:
-        if 'build' in fname.lower(): 
-            build_files.append(fname)
+        if file_type in fname.lower(): 
+            type_files.append(fname)
         else:
             other_files.append(fname)
-    return build_files, other_files
+    return type_files, other_files
 
 def get_proto_module_files(files_list):
     protomodule_files, module_files, other_files = [],[],[]
@@ -259,7 +258,8 @@ def main():
         for file in files_found: 
             print(file)
         print('\n')
-        build_files, other_files = get_build_files(files_found)
+        build_files, other_files = get_files_by_type(files_found, file_type='build')
+        cond_files,  other_files = get_files_by_type(other_files, file_type='cond')
         protomodule_build_files, module_build_files, other_build_files = get_proto_module_files(build_files)
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
         print(f"Uploading {len(protomodule_build_files)} protomodule 'build' files to {cern_dbname}...")
@@ -288,6 +288,17 @@ def main():
                 print("Waiting 10 seconds after module upload...")
                 print("")
                 time.sleep(10) ## DBLoader has some latency
+
+        print(f"Uploading {len(cond_files)} cond files to {cern_dbname}...")
+        if cond_files: ## upload cond files prior to other data to prevent duplication of run_number in CMSR due to mass_loader parallelization
+            if mass_upload_xmls:
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
+            else:
+                for fname in tqdm(cond_files):
+                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
+            if other_files:
+                print('Waiting 5 seconds after cond upload')
+                time.sleep(5) ## DBLoader has some latency
 
         print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
         if other_files:

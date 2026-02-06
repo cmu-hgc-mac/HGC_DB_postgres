@@ -2,11 +2,13 @@ import asyncpg, asyncio, argparse
 from tabulate import tabulate  
 
 async def fetch_unique_counts(month, year, macid):
-    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',   'database':'hgcdb'}, 
-                'UCSB': {'host': 'gut.physics.ucsb.edu',    'database':'hgcdb'}, 
-                'TIFR': {'host': 'lxhgcdb02.tifr.res.in',   'database':'hgcdb', 'password': 'hgcal'},
-                'IHEP': {'host': 'hgcal.ihep.ac.cn',        'database':'postgres',},
-                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',   'database':'hgcdb'}, }
+    mac_dict = {'CMU' : {'host': 'cmsmac04.phys.cmu.edu',      'port': '5432', 'database':'hgcdb'}, 
+                'UCSB': {'host': 'gut.physics.ucsb.edu',       'port': '5432', 'database':'hgcdb'}, 
+                'TIFR': {'host': 'lxhgcdb02.tifr.res.in',      'port': '5432', 'database':'hgcdb', 'password': 'hgcal'},
+                'IHEP': {'host': 'hgcal.ihep.ac.cn',           'port': '5432', 'database':'postgres',},
+                'NTU' : {'host': 'hep11.phys.ntu.edu.tw',      'port': '5432', 'database':'hgcdb'}, 
+                'TTU' : {'host': 'dbod-ttu-mac-local.cern.ch', 'port': '6621', 'database':'ttu_mac_local'},}
+    
     conn = await asyncpg.connect(user='viewer', **mac_dict[macid])
         #database=mac_dict[macid]['dbname'],
         #host= mac_dict[macid]['host'])  

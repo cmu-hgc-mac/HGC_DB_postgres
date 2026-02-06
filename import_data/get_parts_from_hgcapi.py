@@ -156,7 +156,11 @@ def get_part_type(partName, partType):
             None
             # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'sen':
-        return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+        if partName[:2] == 25:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[:2]][1]})  
+        else:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+
         return_dict.update({'geometry': kop_yaml['sensor_geometry'][partName[-1]]})  
         return_dict.update({'thickness': int(kop_yaml['sensor'][partName[0]][0])})  
     return return_dict
@@ -244,8 +248,8 @@ def get_mmts_inv_for_db_upload(part_name, cern_db_url = 'hgcapi'):
         db_dict['qc_details'] = f"{db_dict['qc_details']}"
         return db_dict
     except Exception as e:
-        traceback.print_exc()
-        print(f"ERROR in acquiring sensor batch data from API output for {data_full['serial_number']}: ", e)
+        # traceback.print_exc()
+        print(f"ERROR in acquiring data from API output for {part_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
