@@ -17,7 +17,7 @@ comment,TEXT,,,
 module_no,INT,,fk_mod_frontwire,module_info
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
-xml_upload_success,BOOLEAN,,,
+xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
 batch_no,INT,,,
 dead_pad_to_be_ground_init,SMALLINT[],values obtained from module_info for wirebonding,,
 noisy_pad_to_be_ground_init,SMALLINT[],values obtained from module_info for wirebonding,,

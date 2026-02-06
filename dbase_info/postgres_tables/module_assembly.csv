@@ -28,6 +28,6 @@ module_no,INT,,fk_mod_ass,module_info
 pos_col,INT,int((position+1)/2) for position 1/2/3/4,,
 pos_row,INT,1+((position+1)%2) for position 1/2/3/4,,
 xml_gen_datetime,TIMESTAMP,,,
-xml_upload_success,BOOLEAN,,,
+xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
 batch_no,INT,,,
 comment,TEXT,,,
