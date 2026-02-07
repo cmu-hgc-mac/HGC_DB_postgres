@@ -76,6 +76,18 @@ kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895
     'HR': 2
     'HT': 3
     'HB': 4
+  cell_count_for_res_geom: ### 
+    'LF': 200
+    'LL': 200
+    'LR': 200
+    'LT': 200
+    'LB': 200
+    'L5': 200
+    'HF': 200
+    'HL': 200
+    'HR': 200
+    'HT': 200
+    'HB': 200
 
 shipping_location:
   Alabama: 2401
