@@ -671,7 +671,7 @@ def refresh_data():
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "housekeeping/update_unique_components.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_unique_components.py", "-p", dbshipper_pass, "-k", encryption_key])
             print("******** Database refreshed ********")
             show_message(f"Check terminal and refresh pgAdmin4.")
 
