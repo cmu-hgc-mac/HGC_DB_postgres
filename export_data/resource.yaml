@@ -76,7 +76,7 @@ kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895
     'HR': 2
     'HT': 3
     'HB': 4
-  cell_count_for_res_geom: ### 
+  cell_count_for_res_geom: ### https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui/-/tree/master/hexmap/channel_maps?ref_type=heads
     'LF': 198
     'LL': 103
     'LR': 103
