@@ -27,7 +27,7 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
 max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
-dbloader_hostname = conn_info.get('dbloader_hostname', "hgcaldbloader.cern.ch")  
+dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
 
 db_params = {
     'database': conn_info.get('dbname'),
