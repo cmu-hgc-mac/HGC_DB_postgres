@@ -152,6 +152,7 @@ class set_automation_schedule(Toplevel):
             return
 
         days_str = ", ".join(self.selected_days)
+        self.save_encrypted_password()
         self.create_cron_schedule_config()
         print(f"Weekly on: {days_str} at {time} in localtime.")
         self.destroy() 
