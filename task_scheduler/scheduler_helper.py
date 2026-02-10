@@ -124,7 +124,7 @@ class set_automation_schedule(Toplevel):
         days_frame.pack()
 
         for day in days:
-            if day in ["Saturday", "Sunday"]:
+            if day in ["Sunday"]:
                 var = BooleanVar(value=False)
             else:
                 var = BooleanVar(value=True)

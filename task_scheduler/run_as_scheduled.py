@@ -17,10 +17,6 @@ sched_config_file = os.path.join('task_scheduler', 'schedule_config.yaml')
 sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit = config_data.get('scp_force_quit', True)
-today = datetime.today().date()
-today_str = today.strftime('%Y-%m-%d')
-yesterday = today - timedelta(days=1)
-yesterday_str = yesterday.strftime('%Y-%m-%d')
 
 with open(sched_config['encrypt_path'], "rb") as key_file:
     encryption_key = key_file.read()
@@ -50,7 +46,20 @@ if sched_config['import_from_HGCAPI']:
 
 
 if sched_config['upload_to_CMSR']:
+    
     print('LOGGING UPLOAD TO CMSR', datetime.now())
+    
+    schedule_days_list = sched_config['schedule_days'].split(',')
+    day_index_cron = str(datetime.today().weekday() + 1)  ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
+    today_index = schedule_days_list.index(day_index_cron)
+    previous_index_val_cron = schedule_days_list[today_index - 1]
+    days_since_upload = (int(day_index_cron)-int(previous_index_val_cron))%7
+
+    today_date = datetime.today().date()
+    today_str = today_date.strftime('%Y-%m-%d')
+    start_date = today_date - timedelta(days=days_since_upload)
+    start_date_str = start_date.strftime('%Y-%m-%d')
+
     restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
     lxp_username = sched_config['CERN_service_account_username']
 
@@ -64,6 +73,6 @@ if sched_config['upload_to_CMSR']:
                         "-gen", str(True), 
                         "-uplp", str(True), 
                         "-delx", str(True), 
-                        "-datestart", yesterday_str, 
+                        "-datestart", start_date_str, 
                         "-dateend", today_str]
         scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=True)
