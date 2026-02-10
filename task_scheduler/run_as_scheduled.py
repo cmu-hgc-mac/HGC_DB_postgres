@@ -18,7 +18,7 @@ cipher_suite = Fernet(encryption_key)
 with open(config_data['postgres_shipper_pass_path'], "rb") as f:
     encrypted_password_postgres = f.read()
 
-dbshipper_pass = cipher_suite.decrypt(encrypted_password_postgres).decode()
+dbshipper_pass = base64.urlsafe_b64encode( encrypted_password_postgres ).decode() 
 
 if config_data['import_from_HGCAPI']:
     sensor_get_stat = True
