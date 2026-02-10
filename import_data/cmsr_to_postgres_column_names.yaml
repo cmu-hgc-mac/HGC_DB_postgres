@@ -27,11 +27,11 @@ children_for_import:
   hxb:
     apikey: pcbs
     dbtabname: hexaboard
-    status: obsolete
     db_cols:
       serial_number: hxb_name  ### column_name_in_cmsr: column_name_in_postgres
       kind: kind
       comment_description: comment
+      status: obsolete
 
   mmtsinv:
     apikey: mmts_inventory
