@@ -8,6 +8,7 @@ from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel,
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime 
 from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
+from task_scheduler.scheduler_helper import set_automation_schedule
 from export_data.src import open_scp_connection, check_good_conn
 
 def run_git_pull_seq():
@@ -680,6 +681,20 @@ def refresh_data():
     submit_refresh_button.pack(pady=10)
     bind_button_keys(submit_refresh_button)
 
+
+def set_scheduler_task():
+    set_automation_schedule(root)
+    # input_window.transient(root)        
+    # input_window.attributes("-topmost", True)
+    # input_window.focus_force()
+    # input_window.title("Record outgoing shipment")
+    # Label(input_window, text="Enter local db USER password:").pack(pady=5)
+    # shipper_var = StringVar()
+    # shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    # shipper_var_entry.pack(pady=5)
+
+
+
 def open_adminer():   ### lsof -i :8083; kill <pid>
     def close_adminer_process():
         try:
@@ -767,27 +782,30 @@ button_shipin.grid(row=3, column=1, pady=(5,1), sticky='ew')
 button_download = Button(frame, text="    Import Parts Data      ", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=(1,15), sticky='ew')
 
+button_stock_stt = Button(frame, text="Automate import and upload of parts", command=set_scheduler_task, width=button_width, height=int(button_height/2)) 
+button_stock_stt.grid(row=5, column=1, pady=1, sticky='ew')
+
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
-button_upload_xml.grid(row=5, column=1, pady=(15,1), sticky='ew')
+button_upload_xml.grid(row=6, column=1, pady=(15,1), sticky='ew')
 # button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
-button_shipout.grid(row=6, column=1, pady=(1,15), sticky='ew')
+button_shipout.grid(row=7, column=1, pady=(1,15), sticky='ew')
 
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminer, width=button_width, height=button_height) 
-button_search_data.grid(row=7, column=1, pady=(15,1), sticky='ew')
+button_search_data.grid(row=8, column=1, pady=(15,1), sticky='ew')
 
 button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))  
-button_refresh_db.grid(row=8, column=1, pady=1, sticky='ew')
+button_refresh_db.grid(row=9, column=1, pady=1, sticky='ew')
 
 button_stock_stt = Button(frame, text=" Check stock on CMSR STT ", command=open_stt_stock, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=9, column=1, pady=1, sticky='ew')
-
-button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2)) 
 button_stock_stt.grid(row=10, column=1, pady=1, sticky='ew')
 
+button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2)) 
+button_stock_stt.grid(row=11, column=1, pady=1, sticky='ew')
+
 button_stock_stt = Button(frame, text=" Check QC data on CMSR-HGCAPI", command=get_electrical_test_hgcapi, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=11, column=1, pady=(1,5), sticky='ew')
+button_stock_stt.grid(row=12, column=1, pady=(1,5), sticky='ew')
 
 
 for pid in get_pid_result().stdout.strip().split("\n"):
