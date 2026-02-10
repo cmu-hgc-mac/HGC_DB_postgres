@@ -3,6 +3,7 @@ from cryptography.fernet import Fernet
 from datetime import datetime, timedelta
 from pathlib import Path
 
+print('RUNNING SCHEDULED CRON JOB', datetime.now())
 PROJECT_ROOT = Path(__file__).resolve().parents[1]  ## Global path of HGC_DB_postgres
 os.chdir(PROJECT_ROOT)                 ### Changes working directory from device main directory to HGC_DB_postgres
 sys.path.insert(0, str(PROJECT_ROOT))  ### Changes python import path to be relative to HGC_DB_postgres
@@ -32,6 +33,7 @@ with open(sched_config['postgres_shipper_pass_path'], "rb") as f:
 dbshipper_pass = base64.urlsafe_b64encode( encrypted_password_postgres ).decode() 
 
 if sched_config['import_from_HGCAPI']:
+    print('LOGGING IMPORT FROM HGCAPI', datetime.now())
     sensor_get_stat = True
     basplate_get_stat = True
     hexaboard_get_stat = True
@@ -48,6 +50,7 @@ if sched_config['import_from_HGCAPI']:
 
 
 if sched_config['upload_to_CMSR']:
+    print('LOGGING UPLOAD TO CMSR', datetime.now())
     restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
     lxp_username = sched_config['CERN_service_account_username']
 
