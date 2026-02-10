@@ -1,8 +1,8 @@
 
 import os, subprocess, yaml, base64, sys
 from datetime import datetime
+from cryptography.fernet import Fernet
 from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu, END, DISABLED
-import keyring as kr
 from pathlib import Path
 
 class cron_setter():
@@ -62,6 +62,10 @@ class set_automation_schedule(Toplevel):
     def __init__(self, parent): #, encryption_key):
         super().__init__(parent)
         self.title("Set automation schedule")
+        self.task_scheduler_path = os.path.join(os.getcwd(), 'task_scheduler')
+        self.encrypt_path = os.path.join(self.task_scheduler_path,"secret.key")
+        self.postgres_pass_path = os.path.join(self.task_scheduler_path,"password_postgres.enc")
+        self.lxplus_pass_path = os.path.join(self.task_scheduler_path,"password_lxplus.enc")
         self.selected_days_indices = []
         self.selected_days = []
         Label(self, text="**Enter local DB USER password:**").pack(pady=1)
@@ -153,6 +157,18 @@ class set_automation_schedule(Toplevel):
         self.destroy() 
         # self.result_label.config(text=f"Weekly on: {days_str} at {time}")
 
+    def save_encrypted_password(self):
+        encryption_key = Fernet.generate_key()
+        cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
+        encrypted_postgres_password = cipher_suite.encrypt(self.shipper_var.get().encode())
+        encrypted_lxplus_password = cipher_suite.encrypt(self.cern_pass_var.get().encode())
+        with open(self.encrypt_path, "wb") as key_file:
+            key_file.write(encryption_key)
+        with open(self.postgres_pass_path, "wb") as f:
+            f.write(encrypted_postgres_password)
+        with open(self.lxplus_pass_path, "wb") as f:
+            f.write(encrypted_lxplus_password)
+
     def create_cron_schedule_config(self):
         config_dict = {}
         config_dict['cron_job_name'] = "HGC_DB_SCHEDULE_JOB"
@@ -161,15 +177,17 @@ class set_automation_schedule(Toplevel):
         config_dict['python_path'] = sys.executable
         config_dict['HGC_DB_postgres_path'] = os.getcwd() # Path of HGC_DB_postgres folder
         config_dict['CERN_service_account_username'] = self.lxuser_var.get()
+        config_dict['CERN_service_account_pass_path'] = self.lxplus_pass_path
+        config_dict['postgres_shipper_pass_path'] = self.postgres_pass_path
+        config_dict['encrypt_path'] = self.encrypt_path
         config_dict['postgres_username'] = 'shipper'
         config_dict['import_from_HGCAPI'] = self.import_parts_var.get()
         config_dict['upload_to_CMSR'] = self.upload_parts_var.get()
-        kr.set_password("POSTGRES", config_dict['postgres_username'],             self.shipper_var.get())
-        # kr.set_password("LXPLUS",   config_dict['CERN_service_account_username'], self.cern_pass_var.get())
+        print(self.shipper_var.get())
         
-        py_job_fname = os.path.join(os.path.join(config_dict['HGC_DB_postgres_path'], 'task_scheduler'), 'run_as_scheduled.py')
-        py_log_fname = os.path.join(os.path.join(config_dict['HGC_DB_postgres_path'], 'task_scheduler'), 'schedule_job.log')
-        config_fname = os.path.join(os.path.join(config_dict['HGC_DB_postgres_path'], 'task_scheduler'), 'schedule_config.yaml')
+        py_job_fname = os.path.join(self.task_scheduler_path, 'run_as_scheduled.py')
+        py_log_fname = os.path.join(self.task_scheduler_path, 'schedule_job.log')
+        config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
         
         hr_time, min_time = config_dict['schedule_time'].split(':')
         cron_command_inputs = [min_time, hr_time, '*', '*', config_dict['schedule_days'],

@@ -1,5 +1,4 @@
 import subprocess, os, sys, yaml, base64
-import keyring as kr
 from cryptography.fernet import Fernet
 config_fname = os.path.join(os.path.join(os.getcwd(), 'task_scheduler'), 'schedule_config.yaml')
 config_data  = yaml.safe_load(open(config_fname, 'r'))
@@ -11,12 +10,15 @@ today_str = today.strftime('%Y-%m-%d')
 yesterday = today - timedelta(days=1)
 yesterday_str = yesterday.strftime('%Y-%m-%d')
 
-encryption_key = Fernet.generate_key()
-cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
-lxp_username = config_data['CERN_service_account_username']
-# kr.get_password('LXPLUS', config_data['CERN_service_account_username'])
+with open(config_data['encrypt_path'], "rb") as key_file:
+    encryption_key = key_file.read()
 
-dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt((kr.get_password('POSTGRES', config_data['postgres_username'])).encode()) ).decode()  ## Encrypt password and then convert to base64
+cipher_suite = Fernet(encryption_key)
+
+with open(config_data['postgres_shipper_pass_path'], "rb") as f:
+    encrypted_password_postgres = f.read()
+
+dbshipper_pass = cipher_suite.decrypt(encrypted_password_postgres).decode()
 
 if config_data['import_from_HGCAPI']:
     sensor_get_stat = True
@@ -35,6 +37,11 @@ if config_data['import_from_HGCAPI']:
 
 
 if config_data['upload_to_CMSR']:
+
+    lxp_username = config_data['CERN_service_account_username']
+    # with open(config_data['CERN_service_account_pass_path'], "rb") as f:
+    #     encrypted_password_lxplus = f.read()
+    
     export_data_cmd = [sys.executable, 
                     "export_data/export_pipeline.py", 
                     "-dbp", dbshipper_pass, 
