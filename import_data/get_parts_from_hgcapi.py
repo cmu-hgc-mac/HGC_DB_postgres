@@ -204,7 +204,7 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi'):
                 return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring ROC data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring ROC data from API output for {hxb_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -227,7 +227,7 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi', part_qc_cols = None
         return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring baseplate QC data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring baseplate QC data from API output for {bp_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -241,7 +241,7 @@ def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi'):
         return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring sensor batch data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring sensor batch data from API output for {sen_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
