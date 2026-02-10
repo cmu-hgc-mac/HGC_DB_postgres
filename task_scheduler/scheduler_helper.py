@@ -183,7 +183,6 @@ class set_automation_schedule(Toplevel):
         config_dict['postgres_username'] = 'shipper'
         config_dict['import_from_HGCAPI'] = self.import_parts_var.get()
         config_dict['upload_to_CMSR'] = self.upload_parts_var.get()
-        print(self.shipper_var.get())
         
         py_job_fname = os.path.join(self.task_scheduler_path, 'run_as_scheduled.py')
         py_log_fname = os.path.join(self.task_scheduler_path, 'schedule_job.log')
