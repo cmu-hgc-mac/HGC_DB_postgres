@@ -128,6 +128,7 @@ def create_database():
             subprocess.run([sys.executable, "create_and_modify/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "create_and_modify/create_tables.py", "-p", db_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "create_and_modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/create_triggers.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"Check terminal for PostgreSQL database tables. Refresh pgAdmin4.")
         else:
             if askyesno_on_top("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
@@ -494,8 +495,8 @@ def export_data():
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy(); input_window.update()  
-            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             
             # export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(False), "-uplp", str(False), "-delx", str(False), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
             # if partslistpre.strip():
@@ -670,6 +671,7 @@ def refresh_data():
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_unique_components.py", "-p", dbshipper_pass, "-k", encryption_key])
             print("******** Database refreshed ********")
             show_message(f"Check terminal and refresh pgAdmin4.")
 

@@ -64,6 +64,7 @@ kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895
     '3': 'Left'
     '4': 'Right'
     '5': 'Five'
+    '6': 'Three'
   roc_count_for_res_geom: ### https://gitlab.cern.ch/hgcal-database/new-attribute-schema/-/issues/6
     'LF': 3
     'LL': 2
@@ -76,6 +77,18 @@ kind_of_part: ## https://edms.cern.ch/ui/#!master/navigator/document?D:101675895
     'HR': 2
     'HT': 3
     'HB': 4
+  cell_count_for_res_geom: ### https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui/-/tree/master/hexmap/channel_maps?ref_type=heads
+    'LF': 198
+    'LL': 103
+    'LR': 103
+    'LT': 95
+    'LB': 103
+    'L5': 169
+    'HF': 444
+    'HL': 142
+    'HR': 142
+    'HT': 170
+    'HB': 274
 
 shipping_location:
   Alabama: 2401

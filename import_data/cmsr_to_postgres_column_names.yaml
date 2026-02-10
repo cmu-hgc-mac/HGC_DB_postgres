@@ -6,6 +6,7 @@ children_for_import:
       serial_number: bp_name  ### column_name_in_cmsr: column_name_in_postgres
       kind: kind
       comment_description: comment
+      status: obsolete
     qc_cols:   ### column_name_in_cmsr: column_name_in_postgres
       tolerance_grade: tolerance_grade
       flatness_grade: flatness_grade
@@ -26,6 +27,7 @@ children_for_import:
   hxb:
     apikey: pcbs
     dbtabname: hexaboard
+    status: obsolete
     db_cols:
       serial_number: hxb_name  ### column_name_in_cmsr: column_name_in_postgres
       kind: kind

@@ -101,7 +101,10 @@ def get_query_write(table_name, column_names, check_conflict_col = None, db_uplo
 
 def get_query_update(table_name, column_names, check_conflict_col = None, db_upload_data = None):
     update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
-    query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
+    if check_conflict_col in ['hxb_name', 'bp_name']:
+        query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL);"""
+    else:
+        query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
     return query
 
 def get_query_update_secondary(table_name, column_names, check_conflict_col = None, db_upload_data = None):
@@ -156,7 +159,11 @@ def get_part_type(partName, partType):
             None
             # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'sen':
-        return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+        if partName[:2] == 25:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[:2]][1]})  
+        else:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+
         return_dict.update({'geometry': kop_yaml['sensor_geometry'][partName[-1]]})  
         return_dict.update({'thickness': int(kop_yaml['sensor'][partName[0]][0])})  
     return return_dict
@@ -165,6 +172,8 @@ def get_dict_for_db_upload(data_full, partType):
     try:
         db_dict = {children_for_import[partType]["db_cols"][k]: data_full[k] for k in (children_for_import[partType]["db_cols"]).keys()}
         db_dict.update(get_part_type(data_full['serial_number'], partType))
+        if partType in ['hxb', 'bp']:
+            db_dict['obsolete'] = True if db_dict['obsolete'].lower() == 'obsolete' else False
         return db_dict
     except Exception as e:
         traceback.print_exc()
@@ -195,7 +204,7 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi'):
                 return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring ROC data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring ROC data from API output for {hxb_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -218,7 +227,7 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi', part_qc_cols = None
         return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring baseplate QC data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring baseplate QC data from API output for {bp_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -232,7 +241,7 @@ def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi'):
         return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring sensor batch data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring sensor batch data from API output for {sen_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -244,8 +253,8 @@ def get_mmts_inv_for_db_upload(part_name, cern_db_url = 'hgcapi'):
         db_dict['qc_details'] = f"{db_dict['qc_details']}"
         return db_dict
     except Exception as e:
-        traceback.print_exc()
-        print(f"ERROR in acquiring sensor batch data from API output for {data_full['serial_number']}: ", e)
+        # traceback.print_exc()
+        print(f"ERROR in acquiring data from API output for {part_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -349,7 +358,6 @@ async def main():
                 
                 print(f"Writing {children_for_import[pt]['apikey']} to postgres from {cern_db_url.upper()} complete.")
                 print('-'*40); print('\n')
-            break
                             
     async with pool.acquire() as conn:
         try:

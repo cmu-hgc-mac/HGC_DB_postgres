@@ -97,53 +97,23 @@ async def create_tables_sequence():
         #await conn.execute(f"GRANT SELECT ON information_schema.tables TO {user};")
         print(f"Schema permission access granted to {user}.")
 
-    # Function creation SQL
-    create_function_sql = """
-        CREATE OR REPLACE FUNCTION notify_insert()
-        RETURNS TRIGGER AS $$
-        BEGIN
-            PERFORM pg_notify('incoming_data_notification', '');
-            RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql;
-        """
-    
-    create_trigger_sql_template = """
-        CREATE TRIGGER {table_name}_insert_trigger
-        AFTER INSERT ON {table_name}
-        FOR EACH ROW
-        EXECUTE FUNCTION notify_insert();
-        """
-
     try:
-        # Create a cursor and execute the function creation SQL
-        async with conn.transaction():
-            await conn.execute(create_function_sql)
-
         ## Define the table name and schema
         with open(table_yaml_file, 'r') as file:
             data = yaml.safe_load(file)
-
-            # for i in data['users']:
-            #     username = f"{i['username']}"
-            #     await allow_schema_perm(username)
-
             print('\n')
 
             for i in data.get('tables'):
                 fname = f"{(i['fname'])}"
                 table_description = f"{(i['description'])}"
                 print(f'Getting info from {fname}...')
+
                 table_name, table_header, dat_type, fk_name, fk_ref, parent_table, comment_columns = get_table_info(loc, tables_subdir, fname)
                 table_columns_with_type = get_column_names(table_header, dat_type, fk_name, fk_ref, parent_table)
                 await create_table(table_name=table_name, table_columns_with_type=table_columns_with_type, comment_columns=comment_columns, table_headers=table_header, table_description=table_description)
                 pk_seq = f'{table_name}_{table_header[0]}_seq'
-                
-                try:
-                    create_trigger_sql = create_trigger_sql_template.format(table_name=table_name)
-                    await conn.execute(create_trigger_sql)
-                except:
-                    print('Trigger already exists..')
+                        
+                # Allow permissions:
                 for k in i['permission'].keys():
                     try:
                         await allow_perm(table_name, i['permission'][k], k)

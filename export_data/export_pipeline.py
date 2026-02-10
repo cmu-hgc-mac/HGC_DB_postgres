@@ -73,7 +73,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
                     script_path = os.path.join(subdir_path, file)
                     scripts_to_run.append(script_path)
     
-    if building_module and building_proto:  ### add protomodule serial number if both module and protomodule are being built for a given module
+    if partsnamelist and building_module and building_proto:  ### add protomodule serial number if both module and protomodule are being built for a given module
         proto_parts_list = [part.replace('320M', '320P') for part in partsnamelist if '320M' in part] 
         partsnamelist.extend(proto_parts_list)
     
@@ -134,7 +134,7 @@ async def main():
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-gen', '--generate_stat', default='True', required=False, help="Generate XMLs.")
-    parser.add_argument('-upld', '--upload_dev_stat', default='True', required=False, help="Upload to dev DBLoader without generate.")
+    parser.add_argument('-upld', '--upload_dev_stat', default='False', required=False, help="Upload to dev DBLoader without generate.")
     parser.add_argument('-uplp', '--upload_prod_stat', default='True', required=False, help="Upload to prod DBLoader without generate.")
     parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
