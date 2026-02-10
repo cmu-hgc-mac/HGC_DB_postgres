@@ -1,16 +1,21 @@
 import subprocess, os, sys, yaml, base64, pexpect
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta
-config_fname = os.path.join(os.path.join(os.getcwd(), 'task_scheduler'), 'schedule_config.yaml')
-sched_config  = yaml.safe_load(open(config_fname, 'r'))
-os.chdir(sched_config['HGC_DB_postgres_path'])
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]  ## Global path of HGC_DB_postgres
+os.chdir(PROJECT_ROOT)                 ### Changes working directory from device main directory to HGC_DB_postgres
+sys.path.insert(0, str(PROJECT_ROOT))  ### Changes python import path to be relative to HGC_DB_postgres
+
 from export_data.src import open_scp_connection
 from task_scheduler.scheduler_helper import JobIndicator
+
 conn_yaml_file = os.path.join('dbase_info', 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
+sched_config_file = os.path.join('task_scheduler', 'schedule_config.yaml')
+sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit = config_data.get('scp_force_quit', True)
-
 today = datetime.today().date()
 today_str = today.strftime('%Y-%m-%d')
 yesterday = today - timedelta(days=1)
