@@ -211,9 +211,8 @@ class set_automation_schedule(Toplevel):
         config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
         
         hr_time, min_time = config_dict['schedule_time'].split(':')
-        cron_command_inputs = [min_time, hr_time, '*', '*', config_dict['schedule_days'],
-                                config_dict['python_path'], py_job_fname,
-                                py_log_fname, '2>&1', ## both stderr and stdout appended
+        cron_command_inputs = [int(min_time), int(hr_time), '*', '*', config_dict['schedule_days'],
+                                config_dict['python_path'], py_job_fname, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
                                 '#', config_dict['cron_job_name']]
         
         config_dict['cron_command'] = " ".join(cron_command_inputs)        
