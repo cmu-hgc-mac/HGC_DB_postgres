@@ -358,7 +358,6 @@ async def main():
                 
                 print(f"Writing {children_for_import[pt]['apikey']} to postgres from {cern_db_url.upper()} complete.")
                 print('-'*40); print('\n')
-            break
                             
     async with pool.acquire() as conn:
         try:
