@@ -1,8 +1,9 @@
-import asyncio, asyncpg, pwinput
+import asyncio, asyncpg, pexpect
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, sys, base64, os, platform, subprocess, glob
+import yaml, sys, base64, os, platform, subprocess, glob 
+from pathlib import Path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from datetime import datetime
 from cryptography.fernet import Fernet
@@ -41,6 +42,16 @@ partTrans = {'bp' :{'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 
              'pml':{'apikey':'protomodules', 'dbtabname': 'proto_inspect', 'db_col': 'proto_name' ,'qc_cols':  {'prto_grade': 'grade', 'prto_thkns_mm': 'avg_thickness', "prto_thkns_mm": 'max_thickness', 'prto_fltns_mm': 'flatness', "snsr_x_offst": 'x_offset_mu', "snsr_y_offst": 'y_offset_mu',"snsr_ang_offst": 'ang_offset_deg'}},
              'ml' :{'apikey':'modules', 'dbtabname': 'module_inspect', 'db_col': 'module_name', 'qc_cols':  {'mod_grade': 'grade', 'mod_ave_thkns_mm': 'avg_thickness', "mod_max_thkns_mm": 'max_thickness', 'mod_fltns_mm': 'flatness', "pcb_plcment_x_offset": 'x_offset_mu', "pcb_plcment_y_offset": 'y_offset_mu',"pcb_plcment_ang_offset": 'ang_offset_deg'}},
             }
+
+def find_hgc_db_root(start_path=None):
+    if start_path is None:
+        start_path = Path.cwd()  # current working directory
+    path = Path(start_path).resolve()
+    for parent in [path] + list(path.parents):
+        if parent.name == "HGC_DB_postgres":
+            return parent
+    raise FileNotFoundError("HGC_DB_postgres directory not found in current path or parents")
+
 
 def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
     if partID is not None:
@@ -562,7 +573,23 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                     "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
                     f"{dbl_username}@{dbloader_hostname}"]    
                 
-                subprocess.run(ssh_cmd, check=True)
+                if Path("/tmp/my_cron_job.running").exists():
+                    hgc_root = find_hgc_db_root()
+                    with open(f"{hgc_root}/task_scheduler/secret.key", "rb") as key_file:
+                        encryption_key = key_file.read()
+                    with open(f"{hgc_root}/task_scheduler/password_lxplus.enc", "rb") as f:
+                        encrypted_password_lxplus = f.read()
+                    service_account_password = cipher_suite.decrypt(encrypted_password_lxplus).decode()
+                    cipher_suite = Fernet(encryption_key)
+                    service_account_password = 'd'
+                    child = pexpect.spawn("your_command_here", encoding="utf-8")
+                    child.expect(r"[Pp]assword:")
+                    child.sendline(service_account_password)
+                    child.expect(r"[Pp]assword:")
+                    child.sendline(service_account_password)
+                    child.expect(pexpect.EOF)
+                else:    
+                    subprocess.run(ssh_cmd, check=True)
 
                 print("** SSH ControlMaster session started. **")
                 print("****************************************")

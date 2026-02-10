@@ -1,9 +1,30 @@
 
-import os, subprocess, yaml, base64, sys
+import os, subprocess, yaml, base64, sys, time, atexit, signal
 from datetime import datetime
 from cryptography.fernet import Fernet
 from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu, END, DISABLED
 from pathlib import Path
+
+class JobIndicator:
+    def __init__(self, path):
+        self.path = Path(path)
+
+    def __enter__(self):
+        content = f"pid={os.getpid()}\nstarted={time.ctime()}\n"  # write indicator file
+        self.path.write_text(content)
+        atexit.register(self.cleanup) # ensure cleanup on normal exit
+        signal.signal(signal.SIGTERM, self.handle_signal)  # ensure cleanup on kill / ctrl+c
+        signal.signal(signal.SIGINT, self.handle_signal)
+        return self
+
+    def handle_signal(self, signum, frame):
+        self.cleanup()
+        sys.exit(1)
+
+    def cleanup(self):
+        if self.path.exists():
+            self.path.unlink()
+
 
 class cron_setter():
     def __init__(self, CRON_LINE, JOB_TAG):
