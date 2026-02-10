@@ -20,6 +20,19 @@ class cron_setter():
     def install_crontab(self, cron_text):
         subprocess.run(["crontab", "-"], input=cron_text, text=True, check=True)
 
+    def delete_cron_job(self):
+        current = self.get_current_crontab()
+        lines = current.splitlines()
+        new_lines = [line for line in lines if self.JOB_TAG not in line]
+
+        if len(new_lines) == len(lines):
+            print("No cron job found with that tag.")
+            return
+
+        new_cron = "\n".join(new_lines).strip() + "\n"
+        self.install_crontab(new_cron)
+        print("Cron job deleted.")
+
     def upsert_cron_job(self):
         current = self.get_current_crontab()
         lines = current.splitlines()
@@ -95,6 +108,7 @@ class set_automation_schedule(Toplevel):
             self.day_vars[day] = var
 
         Button(self, text="Save Schedule", command=self.get_schedule).pack(pady=15)
+        # Button(self, text="Delete Schedule", command=self.get_schedule).pack(pady=15)
 
     def validate_time(self, new_value):
         """Allow typing partial valid time like '1', '12:', '12:3', etc."""
@@ -136,6 +150,7 @@ class set_automation_schedule(Toplevel):
         days_str = ", ".join(self.selected_days)
         self.create_cron_schedule_config()
         print(f"Weekly on: {days_str} at {time} in localtime.")
+        self.destroy() 
         # self.result_label.config(text=f"Weekly on: {days_str} at {time}")
 
     def create_cron_schedule_config(self):
@@ -149,9 +164,9 @@ class set_automation_schedule(Toplevel):
         config_dict['postgres_username'] = 'shipper'
         config_dict['import_from_HGCAPI'] = self.import_parts_var.get()
         config_dict['upload_to_CMSR'] = self.upload_parts_var.get()
+        kr.set_password("POSTGRES", config_dict['postgres_username'],             self.shipper_var.get())
         # kr.set_password("LXPLUS",   config_dict['CERN_service_account_username'], self.cern_pass_var.get())
-        # kr.set_password("POSTGRES", config_dict['postgres_username'],             self.shipper_var.get())
-
+        
         py_job_fname = os.path.join(os.path.join(config_dict['HGC_DB_postgres_path'], 'task_scheduler'), 'run_as_scheduled.py')
         py_log_fname = os.path.join(os.path.join(config_dict['HGC_DB_postgres_path'], 'task_scheduler'), 'schedule_job.log')
         config_fname = os.path.join(os.path.join(config_dict['HGC_DB_postgres_path'], 'task_scheduler'), 'schedule_config.yaml')
@@ -163,7 +178,7 @@ class set_automation_schedule(Toplevel):
                                 '#', config_dict['cron_job_name']]
         
         config_dict['cron_command'] = " ".join(cron_command_inputs)        
-        # cron_setter(CRON_LINE=config_dict['cron_command'], JOB_TAG=config_dict['cron_job_name'])
+        cron_setter(CRON_LINE=config_dict['cron_command'], JOB_TAG=config_dict['cron_job_name'])
 
         with open(config_fname, 'w') as outfile:
             yaml.dump(config_dict, outfile, sort_keys=False) # sort_keys=False preserves original order
