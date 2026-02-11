@@ -1,9 +1,62 @@
 
-import os, subprocess, yaml, base64, sys, time, atexit, signal
+import os, subprocess, yaml, base64, sys, time, atexit, signal, re, shutil
 from datetime import datetime
 from cryptography.fernet import Fernet
 from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu, END, DISABLED
 from pathlib import Path
+
+class SSHConfigManager:
+    def __init__(self, path="~/.ssh/config"):
+        self.path = os.path.expanduser(path)
+
+    def _read(self):
+        if not os.path.exists(self.path):
+            return ""
+        with open(self.path, "r") as f:
+            return f.read()
+
+    def _write(self, content):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, "w") as f:
+            f.write(content)
+        os.chmod(self.path, 0o600)
+
+    def _backup(self):
+        if os.path.exists(self.path):
+            shutil.copy(self.path, self.path + ".bak")
+
+    def host_exists(self, host: str) -> bool:
+        content = self._read()
+        pattern = rf"(?im)^\s*Host\s+.*\b{re.escape(host)}\b"
+        return re.search(pattern, content) is not None
+
+    def ensure_host_exists(self, host: str, block: str):
+        if self.host_exists(host):
+            print(f"Host '{host}' already exists. Skipping.")
+            return
+
+        self._backup()
+        content = self._read()
+        new_content = content.rstrip() + "\n\n" + block.strip() + "\n"
+        self._write(new_content)
+        print(f"Host '{host}' added.")
+
+    def remove_host(self, host: str):
+        content = self._read()
+        if not content:
+            print("No ssh config found.")
+            return
+
+        pattern = rf"(?ims)^\s*Host\s+.*\b{re.escape(host)}\b.*?(?=^\s*Host\s+|\Z)"
+
+        if not re.search(pattern, content):
+            print(f"Host '{host}' not found.")
+            return
+
+        self._backup()
+        new_content = re.sub(pattern, "", content).strip() + "\n"
+        self._write(new_content)
+        print(f"Host '{host}' removed.")
 
 class JobIndicator:
     def __init__(self, path):
@@ -83,6 +136,7 @@ class set_automation_schedule(Toplevel):
     def __init__(self, parent): #, encryption_key):
         super().__init__(parent)
         self.title("Set automation schedule")
+        self.config_dict = {}
         self.task_scheduler_path = os.path.join(os.getcwd(), 'task_scheduler')
         self.encrypt_path = os.path.join(self.task_scheduler_path,"secret.key")
         self.postgres_pass_path = os.path.join(self.task_scheduler_path,"password_postgres.enc")
@@ -175,6 +229,7 @@ class set_automation_schedule(Toplevel):
         days_str = ", ".join(self.selected_days)
         self.save_encrypted_password()
         self.create_cron_schedule_config()
+        self.create_ssh_config_entry()
         print(f"Weekly on: {days_str} at {time} in localtime.")
         self.destroy() 
         # self.result_label.config(text=f"Weekly on: {days_str} at {time}")
@@ -192,38 +247,53 @@ class set_automation_schedule(Toplevel):
             f.write(encrypted_lxplus_password)
 
     def create_cron_schedule_config(self):
-        config_dict = {}
-        config_dict['cron_job_name'] = "HGC_DB_SCHEDULE_JOB"
-        config_dict['schedule_time'] = self.time_entry.get()
-        config_dict['schedule_days'] = ",".join(self.selected_days_indices)
-        config_dict['python_path'] = sys.executable
-        config_dict['HGC_DB_postgres_path'] = os.getcwd() # Path of HGC_DB_postgres folder
-        config_dict['CERN_service_account_username'] = self.lxuser_var.get()
-        config_dict['CERN_service_account_pass_path'] = self.lxplus_pass_path
-        config_dict['postgres_shipper_pass_path'] = self.postgres_pass_path
-        config_dict['encrypt_path'] = self.encrypt_path
-        config_dict['postgres_username'] = 'shipper'
-        config_dict['import_from_HGCAPI'] = self.import_parts_var.get()
-        config_dict['upload_to_CMSR'] = self.upload_parts_var.get()
+        self.config_dict['cron_job_name'] = "HGC_DB_SCHEDULE_JOB"
+        self.config_dict['schedule_time'] = self.time_entry.get()
+        self.config_dict['schedule_days'] = ",".join(self.selected_days_indices)
+        self.config_dict['python_path'] = sys.executable
+        self.config_dict['HGC_DB_postgres_path'] = os.getcwd() # Path of HGC_DB_postgres folder
+        self.config_dict['CERN_service_account_username'] = self.lxuser_var.get()
+        self.config_dict['CERN_service_account_pass_path'] = self.lxplus_pass_path
+        self.config_dict['postgres_shipper_pass_path'] = self.postgres_pass_path
+        self.config_dict['encrypt_path'] = self.encrypt_path
+        self.config_dict['postgres_username'] = 'shipper'
+        self.config_dict['import_from_HGCAPI'] = self.import_parts_var.get()
+        self.config_dict['upload_to_CMSR'] = self.upload_parts_var.get()
         
         py_job_fname = os.path.join(self.task_scheduler_path, 'run_as_scheduled.py')
         py_log_fname = os.path.join(self.task_scheduler_path, 'schedule_job.log')
         config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
         
-        hr_time, min_time = config_dict['schedule_time'].split(':')
-        cron_command_inputs = [str(int(min_time)), str(int(hr_time)), '*', '*', config_dict['schedule_days'],
-                                config_dict['python_path'], py_job_fname, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
-                                '#', config_dict['cron_job_name']]
+        hr_time, min_time = self.config_dict['schedule_time'].split(':')
+        cron_command_inputs = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
+                                self.config_dict['python_path'], py_job_fname, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
+                                '#', self.config_dict['cron_job_name']]
         
-        config_dict['cron_command'] = " ".join(cron_command_inputs)        
-        cron_setter(CRON_LINE=config_dict['cron_command'], JOB_TAG=config_dict['cron_job_name'])
+        self.config_dict['cron_command'] = " ".join(cron_command_inputs)        
+        cron_setter(CRON_LINE=self.config_dict['cron_command'], JOB_TAG=self.config_dict['cron_job_name'])
 
         with open(config_fname, 'w') as outfile:
-            yaml.dump(config_dict, outfile, sort_keys=False) # sort_keys=False preserves original order
+            yaml.dump(self.config_dict, outfile, sort_keys=False) # sort_keys=False preserves original order
 
         """
         ### Example below of cron job
         30 2 * * 1,2,3,4,5 /full/path/to/HGC_DB_postgres/task_scheduler/run_as_scheduled.py >> /full/path/to/HGC_DB_postgres/task_scheduler/schedule_job.log 2>&1 # HGC_DB_SCHEDULE_JOB
         """
         
+    def create_ssh_config_entry(self):
+        conn_info = yaml.safe_load(open( os.path.join('dbase_info', 'conn.yaml') , 'r'))
+        dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal")
+        manager = SSHConfigManager()
+        HOST_BLOCK = f"""
+        Host dbloader
+            HostName {dbloader_hostname}
+            User {self.config_dict['CERN_service_account_username']}
+            ProxyJump {self.config_dict['CERN_service_account_username']}@lxtunnel.cern.ch
+            ControlMaster auto
+            ControlPath ~/.ssh/ctrl_dbloader
+            ControlPersist yes
+            StrictHostKeyChecking no
+            ForwardX11Trusted yes
+        """
+        manager.ensure_host_exists("dbloader", HOST_BLOCK)
 

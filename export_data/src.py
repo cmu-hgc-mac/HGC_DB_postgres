@@ -573,16 +573,15 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                     "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
                     f"{dbl_username}@{dbloader_hostname}"]    
                 
-                if Path("/tmp/my_cron_job.running").exists():
+                if False: #Path("/tmp/my_cron_job.running").exists():
                     hgc_root = find_hgc_db_root()
                     with open(f"{hgc_root}/task_scheduler/secret.key", "rb") as key_file:
                         encryption_key = key_file.read()
                     with open(f"{hgc_root}/task_scheduler/password_lxplus.enc", "rb") as f:
                         encrypted_password_lxplus = f.read()
-                    service_account_password = cipher_suite.decrypt(encrypted_password_lxplus).decode()
                     cipher_suite = Fernet(encryption_key)
-                    service_account_password = 'd'
-                    child = pexpect.spawn("your_command_here", encoding="utf-8")
+                    service_account_password = cipher_suite.decrypt(encrypted_password_lxplus).decode()
+                    child = pexpect.spawn(" ".join(ssh_cmd), encoding="utf-8")
                     child.expect(r"[Pp]assword:")
                     child.sendline(service_account_password)
                     child.expect(r"[Pp]assword:")
@@ -601,6 +600,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
                 print(f"To force quit this open connection manually, run below command in your terminal:")
                 print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
+                # ssh -O exit -o ControlPath=~/.ssh/ctrl_dbloader cmumac@ctrl_dbloader
                 print("****************************************")
                 print("")
 

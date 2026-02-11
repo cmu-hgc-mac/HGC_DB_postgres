@@ -63,16 +63,16 @@ if sched_config['upload_to_CMSR']:
     restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
     lxp_username = sched_config['CERN_service_account_username']
 
-    with JobIndicator("/tmp/my_cron_job.running"):
-        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
-        export_data_cmd = [sys.executable, 
-                        "export_data/export_pipeline.py", 
-                        "-dbp", dbshipper_pass, 
-                        "-lxu", lxp_username, 
-                        "-k", encryption_key, 
-                        "-gen", str(True), 
-                        "-uplp", str(True), 
-                        "-delx", str(True), 
-                        "-datestart", start_date_str, 
-                        "-dateend", today_str]
-        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=True)
+    # with JobIndicator("/tmp/my_cron_job.running"):
+    scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
+    export_data_cmd = [sys.executable, 
+                    "export_data/export_pipeline.py", 
+                    "-dbp", dbshipper_pass, 
+                    "-lxu", lxp_username, 
+                    "-k", encryption_key, 
+                    "-gen", str(True), 
+                    "-uplp", str(True), 
+                    "-delx", str(True), 
+                    "-datestart", start_date_str, 
+                    "-dateend", today_str]
+    scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=True)
