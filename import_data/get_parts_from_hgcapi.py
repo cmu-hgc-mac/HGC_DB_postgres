@@ -27,7 +27,7 @@ kop_yaml = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r'
 inst_code  = conn_info.get('institution_abbr')
 # source_db_cern = conn_info.get('cern_db')
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
-max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
+max_cern_db_request = int(conn_info.get('max_cern_db_request', 6000))
 
 db_params = {
     'database': conn_info.get('dbname'),
