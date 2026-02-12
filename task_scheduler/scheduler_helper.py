@@ -136,7 +136,7 @@ class set_automation_schedule(Toplevel):
     def __init__(self, parent): #, encryption_key):
         super().__init__(parent)
         self.title("Set automation schedule")
-        self.config_dict = {}
+        self.config_dict = {'hgcapi_import': {}, 'cmsr_upload': {}}
         self.task_scheduler_path = os.path.join(os.getcwd(), 'task_scheduler')
         self.encrypt_path = os.path.join(self.task_scheduler_path,"secret.key")
         self.postgres_pass_path = os.path.join(self.task_scheduler_path,"password_postgres.enc")
@@ -253,8 +253,8 @@ class set_automation_schedule(Toplevel):
             f.write(encrypted_lxplus_password)
 
     def create_cron_schedule_config(self):
-        self.config_dict['cron_job_name_CMSR_upload'] = "HGC_DB_SCHEDULE_UPLOAD_JOB"
-        self.config_dict['cron_job_name_HGCAPI_import'] = "HGC_DB_SCHEDULE_IMPORT_JOB"
+        self.config_dict['hgcapi_import']['cron_job_name'] = "HGC_DB_SCHEDULE_UPLOAD_JOB"
+        self.config_dict['cmsr_upload']['cron_job_name']   = "HGC_DB_SCHEDULE_IMPORT_JOB"
         self.config_dict['schedule_time'] = self.time_entry.get()
         self.config_dict['schedule_days'] = ",".join(self.selected_days_indices)
         self.config_dict['python_path'] = sys.executable
