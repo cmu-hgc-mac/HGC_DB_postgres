@@ -88,21 +88,21 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = f"""SELECT hxb_inspect.avg_thickness FROM module_assembly  JOIN hxb_inspect  ON REPLACE(module_assembly.hxb_name, '-', '') = REPLACE(hxb_inspect.hxb_name, '-', '')  WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}' AND module_assembly.xml_upload_success IS NULL ORDER BY hxb_inspect.date_inspect DESC LIMIT 1;"""
+                        query = f"""SELECT hxb_inspect.avg_thickness FROM module_assembly  JOIN hxb_inspect  ON REPLACE(module_assembly.hxb_name, '-', '') = REPLACE(hxb_inspect.hxb_name, '-', '')  WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}' AND (module_assembly.xml_upload_success IS NULL OR FALSE) ORDER BY hxb_inspect.date_inspect DESC LIMIT 1;"""
                     else:
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}' 
-                            -- AND xml_upload_success IS NULL 
+                            AND (xml_upload_success IS NULL OR FALSE);
                             """
                             # ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}' 
-                            -- AND xml_upload_success IS NULL 
+                            AND (xml_upload_success IS NULL OR FALSE);
                             """
                             # ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
 
