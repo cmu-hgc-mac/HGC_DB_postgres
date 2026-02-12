@@ -78,7 +78,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE REPLACE(proto_assembly.proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
+                        query = entry['nested_query'] + f" WHERE REPLACE(proto_assembly.proto_name,'-','') = '{proto_name}' AND (xml_upload_success IS NULL OR FALSE);"
                         
                     else:
                         # Modify the query to get the latest entry
@@ -86,14 +86,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
-                            -- AND xml_upload_success IS NULL
+                            AND (xml_upload_success IS NULL OR FALSE)
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
-                            -- AND xml_upload_success IS NULL
+                            AND (xml_upload_success IS NULL OR FALSE)
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
                     
