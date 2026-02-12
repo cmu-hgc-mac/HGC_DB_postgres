@@ -273,7 +273,7 @@ class set_automation_schedule(Toplevel):
         
         hr_time, min_time = self.config_dict['schedule_time'].split(':')
         cron_command_inputs_import = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
-                                self.config_dict['python_path'], py_job_fname, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
+                                self.config_dict['python_path'], py_job_fname, '>', py_log_fname, '2>&1', ## both stderr and stdout appended
                                 '#', self.config_dict['cron_job_name_HGCAPI_import']]
         
         cron_command_inputs_upload = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
