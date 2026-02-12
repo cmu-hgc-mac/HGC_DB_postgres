@@ -79,11 +79,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE {dbase_table}.sen_name = '{sen_name}' /* AND xml_upload_success IS NULL */;"
+                        query = entry['nested_query'] + f" WHERE {dbase_table}.sen_name = '{sen_name}' AND (xml_upload_success IS NULL OR FALSE);"
                         
                     else:
                         # Modify the query to get the latest entry
-                        query = f"SELECT {dbase_col} FROM {dbase_table} WHERE sen_name = '{sen_name}' /* AND xml_upload_success IS NULL */;"
+                        query = f"SELECT {dbase_col} FROM {dbase_table} WHERE sen_name = '{sen_name}' AND (xml_upload_success IS NULL OR FALSE);"
                     
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
