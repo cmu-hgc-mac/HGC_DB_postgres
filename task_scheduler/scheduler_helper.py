@@ -171,6 +171,12 @@ class set_automation_schedule(Toplevel):
         self.time_entry.pack()
         self.time_entry.insert(0, "2:00")  # default time
 
+        # Label(self, text="Repeat every X hrs in that day").pack(pady=5)
+        # repeat_hr_options = [str(i) for i in range(1,25)] ### 24 hr options
+        # selected = StringVar(value=repeat_hr_options[-1])  ### Default repeat every 24 hrs
+        # dropdown = OptionMenu(self, selected, *repeat_hr_options)
+        # dropdown.pack(pady=20)
+
         Label(self, text="Select days of week to repeat weekly").pack(pady=10)
         days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
         self.day_vars = {}
@@ -247,7 +253,8 @@ class set_automation_schedule(Toplevel):
             f.write(encrypted_lxplus_password)
 
     def create_cron_schedule_config(self):
-        self.config_dict['cron_job_name'] = "HGC_DB_SCHEDULE_JOB"
+        self.config_dict['cron_job_name_CMSR_upload'] = "HGC_DB_SCHEDULE_UPLOAD_JOB"
+        self.config_dict['cron_job_name_HGCAPI_import'] = "HGC_DB_SCHEDULE_IMPORT_JOB"
         self.config_dict['schedule_time'] = self.time_entry.get()
         self.config_dict['schedule_days'] = ",".join(self.selected_days_indices)
         self.config_dict['python_path'] = sys.executable
@@ -265,12 +272,18 @@ class set_automation_schedule(Toplevel):
         config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
         
         hr_time, min_time = self.config_dict['schedule_time'].split(':')
-        cron_command_inputs = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
+        cron_command_inputs_import = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
                                 self.config_dict['python_path'], py_job_fname, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
-                                '#', self.config_dict['cron_job_name']]
+                                '#', self.config_dict['cron_job_name_HGCAPI_import']]
         
-        self.config_dict['cron_command'] = " ".join(cron_command_inputs)        
-        cron_setter(CRON_LINE=self.config_dict['cron_command'], JOB_TAG=self.config_dict['cron_job_name'])
+        cron_command_inputs_upload = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
+                                self.config_dict['python_path'], py_job_fname, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
+                                '#', self.config_dict['cron_job_name_CMSR_upload']]
+        
+        self.config_dict['cron_command_HGCAPI_import'] = " ".join(cron_command_inputs_import) if self.config_dict['import_from_HGCAPI'] else ""  
+        self.config_dict['cron_command_CMSR_upload'] = " ".join(cron_command_inputs_upload) if self.config_dict['upload_to_CMSR'] else ""         
+        if self.config_dict['import_from_HGCAPI']: cron_setter(CRON_LINE=self.config_dict['cron_command_HGCAPI_import'], JOB_TAG=self.config_dict['cron_job_name_HGCAPI_import'])
+        if self.config_dict['upload_to_HGCAPI']: cron_setter(CRON_LINE=self.config_dict['cron_command_CMSR_upload'], JOB_TAG=self.config_dict['cron_job_name_CMSR_upload'])
 
         with open(config_fname, 'w') as outfile:
             yaml.dump(self.config_dict, outfile, sort_keys=False) # sort_keys=False preserves original order
