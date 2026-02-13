@@ -246,8 +246,7 @@ class set_automation_schedule(Toplevel):
         days_str = ", ".join(self.selected_days)
         self.save_encrypted_password()
         self.create_cron_schedule_config()
-        if 'upload' in self.selected_job.get().lower(): 
-            self.create_ssh_config_entry()
+        if 'upload' in self.selected_job.get().lower():  self.create_ssh_config_entry()
         print(f"Weekly on: {days_str} at {time} in localtime.")
         self.destroy() 
         # self.result_label.config(text=f"Weekly on: {days_str} at {time}")
