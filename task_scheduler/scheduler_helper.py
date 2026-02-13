@@ -136,11 +136,14 @@ class set_automation_schedule(Toplevel):
     def __init__(self, parent): #, encryption_key):
         super().__init__(parent)
         self.title("Set automation schedule")
-        self.config_dict = {'hgcapi_import': {}, 'cmsr_upload': {}}
+        self.job_type_keys = {"Import parts from HGCAPI": 'import_from_HGCAPI', "Upload parts to CMSR": 'upload_to_CMSR'}
         self.task_scheduler_path = os.path.join(os.getcwd(), 'task_scheduler')
         self.encrypt_path = os.path.join(self.task_scheduler_path,"secret.key")
+        self.config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
         self.postgres_pass_path = os.path.join(self.task_scheduler_path,"password_postgres.enc")
         self.lxplus_pass_path = os.path.join(self.task_scheduler_path,"password_lxplus.enc")
+        self.config_dict = {}
+        self.load_existing_config_file()
         self.selected_days_indices = []
         self.selected_days = []
         Label(self, text="**Enter local DB USER password:**").pack(pady=1)
@@ -156,14 +159,11 @@ class set_automation_schedule(Toplevel):
         cern_pass_var_entry = Entry(self, textvariable=self.cern_pass_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
         cern_pass_var_entry.pack(pady=0)
 
-
-        self.import_parts_var = BooleanVar(value=True)
-        import_parts_var_entry = Checkbutton(self, text="Import parts from CMSR", variable=self.import_parts_var)
-        import_parts_var_entry.pack(pady=0)
-        self.upload_parts_var = BooleanVar(value=True)
-        upload_parts_var_entry = Checkbutton(self, text="Upload parts to CMSR", variable=self.upload_parts_var)
-        upload_parts_var_entry.pack(pady=0)
-
+        Label(self, text="Select type of job").pack(pady=1)
+        
+        self.selected_job = StringVar(value=list(self.job_type_keys.keys())[-1])  
+        dropdown_job_type = OptionMenu(self, self.selected_job, *list(self.job_type_keys.keys()))
+        dropdown_job_type.pack(pady=20)
 
         Label(self, text="Enter Time (HH:MM) in 24hr format").pack(pady=5)
         vcmd = (self.register(self.validate_time), '%P')
@@ -194,6 +194,17 @@ class set_automation_schedule(Toplevel):
 
         Button(self, text="Save Schedule", command=self.get_schedule).pack(pady=15)
         # Button(self, text="Delete Schedule", command=self.get_schedule).pack(pady=15)
+
+
+    def load_existing_config_file(self):                
+        path = Path(self.config_fname)
+        if path.exists():
+            with open(path, "r") as f:
+                self.config_dict = yaml.safe_load(f)
+                if self.config_dict is None:
+                    self.config_dict = {}
+        else:
+            self.config_dict = {}
 
     def validate_time(self, new_value):
         """Allow typing partial valid time like '1', '12:', '12:3', etc."""
@@ -253,10 +264,11 @@ class set_automation_schedule(Toplevel):
             f.write(encrypted_lxplus_password)
 
     def create_cron_schedule_config(self):
-        self.config_dict['hgcapi_import']['cron_job_name'] = "HGC_DB_SCHEDULE_UPLOAD_JOB"
-        self.config_dict['cmsr_upload']['cron_job_name']   = "HGC_DB_SCHEDULE_IMPORT_JOB"
-        self.config_dict['schedule_time'] = self.time_entry.get()
-        self.config_dict['schedule_days'] = ",".join(self.selected_days_indices)
+        type_of_job = self.job_type_keys[self.selected_job.get()]
+        self.config_dict[type_of_job] = {}
+        self.config_dict[type_of_job]['cron_job_name'] = f"{type_of_job}_job"
+        self.config_dict[type_of_job]['schedule_time'] = self.time_entry.get()
+        self.config_dict[type_of_job]['schedule_days'] = ",".join(self.selected_days_indices)
         self.config_dict['python_path'] = sys.executable
         self.config_dict['HGC_DB_postgres_path'] = os.getcwd() # Path of HGC_DB_postgres folder
         self.config_dict['CERN_service_account_username'] = self.lxuser_var.get()
@@ -264,33 +276,33 @@ class set_automation_schedule(Toplevel):
         self.config_dict['postgres_shipper_pass_path'] = self.postgres_pass_path
         self.config_dict['encrypt_path'] = self.encrypt_path
         self.config_dict['postgres_username'] = 'shipper'
-        self.config_dict['import_from_HGCAPI'] = self.import_parts_var.get()
-        self.config_dict['upload_to_CMSR'] = self.upload_parts_var.get()
         
         py_job_fname = os.path.join(self.task_scheduler_path, 'run_as_scheduled.py')
         py_log_fname = os.path.join(self.task_scheduler_path, 'schedule_job.log')
-        config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
-        
-        hr_time, min_time = self.config_dict['schedule_time'].split(':')
-        cron_command_inputs_import = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
-                                self.config_dict['python_path'], py_job_fname, '>', py_log_fname, '2>&1', ## both stderr and stdout appended
-                                '#', self.config_dict['cron_job_name_HGCAPI_import']]
-        
-        cron_command_inputs_upload = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict['schedule_days'],
-                                self.config_dict['python_path'], py_job_fname, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
-                                '#', self.config_dict['cron_job_name_CMSR_upload']]
-        
-        self.config_dict['cron_command_HGCAPI_import'] = " ".join(cron_command_inputs_import) if self.config_dict['import_from_HGCAPI'] else ""  
-        self.config_dict['cron_command_CMSR_upload'] = " ".join(cron_command_inputs_upload) if self.config_dict['upload_to_CMSR'] else ""         
-        if self.config_dict['import_from_HGCAPI']: cron_setter(CRON_LINE=self.config_dict['cron_command_HGCAPI_import'], JOB_TAG=self.config_dict['cron_job_name_HGCAPI_import'])
-        if self.config_dict['upload_to_HGCAPI']: cron_setter(CRON_LINE=self.config_dict['cron_command_CMSR_upload'], JOB_TAG=self.config_dict['cron_job_name_CMSR_upload'])
+    
+        hr_time, min_time = self.config_dict[type_of_job]['schedule_time'].split(':')
 
-        with open(config_fname, 'w') as outfile:
+        if type_of_job == 'import_from_HGCAPI':
+            cron_command_inputs = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict[type_of_job]['schedule_days'],
+                                    self.config_dict['python_path'], py_job_fname, 
+                                    '-jt', type_of_job, '>', py_log_fname, '2>&1', ## both stderr and stdout appended
+                                    '#', self.config_dict[type_of_job]['cron_job_name']]
+        elif type_of_job == 'upload_to_CMSR':
+            cron_command_inputs = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict[type_of_job]['schedule_days'],
+                                    self.config_dict['python_path'], py_job_fname, 
+                                    '-jt', type_of_job, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
+                                    '#', self.config_dict[type_of_job]['cron_job_name']]
+            
+        self.config_dict[type_of_job]['cron_command'] = " ".join(cron_command_inputs)
+
+        cron_setter(CRON_LINE=self.config_dict[type_of_job]['cron_command'], JOB_TAG=self.config_dict[type_of_job]['cron_job_name'])
+        
+        with open(self.config_fname, 'w') as outfile:
             yaml.dump(self.config_dict, outfile, sort_keys=False) # sort_keys=False preserves original order
 
         """
         ### Example below of cron job
-        30 2 * * 1,2,3,4,5 /full/path/to/HGC_DB_postgres/task_scheduler/run_as_scheduled.py >> /full/path/to/HGC_DB_postgres/task_scheduler/schedule_job.log 2>&1 # HGC_DB_SCHEDULE_JOB
+        30 2 * * 1,2,3,4,5 /full/path/to/python3 /full/path/to/HGC_DB_postgres/task_scheduler/run_as_scheduled.py -jt upload_to_CMSR >> /full/path/to/HGC_DB_postgres/task_scheduler/schedule_job.log 2>&1 # CMSR_UPLOAD_SCHEDULE_JOB
         """
         
     def create_ssh_config_entry(self):

@@ -1,4 +1,4 @@
-import subprocess, os, sys, yaml, base64, pexpect
+import subprocess, os, sys, yaml, base64, pexpect, argparse
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -28,51 +28,59 @@ with open(sched_config['postgres_shipper_pass_path'], "rb") as f:
 
 dbshipper_pass = base64.urlsafe_b64encode( encrypted_password_postgres ).decode() 
 
-if sched_config['import_from_HGCAPI']:
-    print('LOGGING IMPORT FROM HGCAPI', datetime.now())
-    sensor_get_stat = True
-    basplate_get_stat = True
-    hexaboard_get_stat = True
-    mmts_inventory_get_stat = True
-    import_data_cmd = [sys.executable,
-                        "import_data/get_parts_from_hgcapi.py", 
-                        "-p", dbshipper_pass, 
+def run_job(job_type):
+    if job_type == 'import_from_HGCAPI':
+        print('LOGGING IMPORT FROM HGCAPI', datetime.now())
+        sensor_get_stat = True
+        basplate_get_stat = True
+        hexaboard_get_stat = True
+        mmts_inventory_get_stat = True
+        import_data_cmd = [sys.executable,
+                            "import_data/get_parts_from_hgcapi.py", 
+                            "-p", dbshipper_pass, 
+                            "-k", encryption_key, 
+                            "-getbp", str(basplate_get_stat), 
+                            "-gethxb", str(hexaboard_get_stat), 
+                            "-getmmtsinv", str(mmts_inventory_get_stat), 
+                            "-getsen", str(sensor_get_stat)]
+        subprocess.run(import_data_cmd)
+
+
+    if job_type == 'upload_to_CMSR':
+        print('LOGGING UPLOAD TO CMSR', datetime.now())
+        schedule_days_list = sched_config[job_type]['schedule_days'].split(',')
+        day_index_cron = str(datetime.today().weekday() + 1)  ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
+        today_index = schedule_days_list.index(day_index_cron)
+        previous_index_val_cron = schedule_days_list[today_index - 1]
+        days_since_upload = (int(day_index_cron)-int(previous_index_val_cron))%7
+
+        today_date = datetime.today().date()
+        today_str = today_date.strftime('%Y-%m-%d')
+        start_date = today_date - timedelta(days=days_since_upload)
+        start_date_str = start_date.strftime('%Y-%m-%d')
+
+        restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
+        lxp_username = sched_config['CERN_service_account_username']
+
+        # with JobIndicator("/tmp/my_cron_job.running"):
+        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
+        export_data_cmd = [sys.executable, 
+                        "export_data/export_pipeline.py", 
+                        "-dbp", dbshipper_pass, 
+                        "-lxu", lxp_username, 
                         "-k", encryption_key, 
-                        "-getbp", str(basplate_get_stat), 
-                        "-gethxb", str(hexaboard_get_stat), 
-                        "-getmmtsinv", str(mmts_inventory_get_stat), 
-                        "-getsen", str(sensor_get_stat)]
-    subprocess.run(import_data_cmd)
+                        "-gen", str(True), 
+                        "-uplp", str(True), 
+                        "-delx", str(True), 
+                        "-datestart", start_date_str, 
+                        "-dateend", today_str]
+        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=True)
 
 
-if sched_config['upload_to_CMSR']:
-    
-    print('LOGGING UPLOAD TO CMSR', datetime.now())
-    
-    schedule_days_list = sched_config['schedule_days'].split(',')
-    day_index_cron = str(datetime.today().weekday() + 1)  ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
-    today_index = schedule_days_list.index(day_index_cron)
-    previous_index_val_cron = schedule_days_list[today_index - 1]
-    days_since_upload = (int(day_index_cron)-int(previous_index_val_cron))%7
+def main():
+    parser = argparse.ArgumentParser(description="A script that that runs as scheduled by the cron job.")
+    parser.add_argument('-jt', '--job_type', default='import_from_HGCAPI', required=False, help="Password to access database.")
+    args = parser.parse_args()
+    run_job(job_type = args.job_type)
 
-    today_date = datetime.today().date()
-    today_str = today_date.strftime('%Y-%m-%d')
-    start_date = today_date - timedelta(days=days_since_upload)
-    start_date_str = start_date.strftime('%Y-%m-%d')
-
-    restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
-    lxp_username = sched_config['CERN_service_account_username']
-
-    # with JobIndicator("/tmp/my_cron_job.running"):
-    scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
-    export_data_cmd = [sys.executable, 
-                    "export_data/export_pipeline.py", 
-                    "-dbp", dbshipper_pass, 
-                    "-lxu", lxp_username, 
-                    "-k", encryption_key, 
-                    "-gen", str(True), 
-                    "-uplp", str(True), 
-                    "-delx", str(True), 
-                    "-datestart", start_date_str, 
-                    "-dateend", today_str]
-    scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=True)
+main()
