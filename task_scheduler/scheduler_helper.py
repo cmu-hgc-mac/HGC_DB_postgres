@@ -202,6 +202,8 @@ class set_automation_schedule(Toplevel):
         self.load_existing_config_file()
         self.selected_days_indices = []
         self.selected_days = []
+        Label(self, text="See ./task_scheduler/schedule_config.yaml", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
+        Label(self, text="for any existing jobs.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
         Label(self, text="**Enter local DB USER password:**").pack(pady=1)
         self.shipper_var = StringVar()
         shipper_var_entry = Entry(self, textvariable=self.shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
@@ -219,7 +221,7 @@ class set_automation_schedule(Toplevel):
         
         self.selected_job = StringVar(value=list(self.job_type_keys.keys())[-1])  
         dropdown_job_type = OptionMenu(self, self.selected_job, *list(self.job_type_keys.keys()))
-        dropdown_job_type.pack(pady=20)
+        dropdown_job_type.pack(pady=(1,15))
 
         Label(self, text="Enter Time (HH:MM) in 24hr format").pack(pady=0)
         Label(self, text="(Ideally, early in the morning)").pack(pady=0)
