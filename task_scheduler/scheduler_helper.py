@@ -345,7 +345,7 @@ class set_automation_schedule(Toplevel):
         self.config_dict['postgres_username'] = 'shipper'
         
         py_job_fname = os.path.join(self.task_scheduler_path, 'run_as_scheduled.py')
-        py_log_fname = os.path.join(self.task_scheduler_path, 'schedule_job.log')
+        py_log_fname = os.path.join(self.task_scheduler_path, f'schedule_job_{type_of_job}.log')
     
         hr_time, min_time = self.config_dict[type_of_job]['schedule_time'].split(':')
 
