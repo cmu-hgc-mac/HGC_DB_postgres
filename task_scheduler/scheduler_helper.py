@@ -353,8 +353,9 @@ class set_automation_schedule(Toplevel):
             writeout_type = '>'
         elif type_of_job == 'upload_to_CMSR':
             writeout_type = '>>'
-    
-        cron_command_inputs = [str(int(min_time)), f"{str(int(hr_time))}-23/{self.selected_repeat.get()}", '*', '*', self.config_dict[type_of_job]['schedule_days'],
+
+        cron_time = f"{hr_time}-23/{self.selected_repeat.get()}" if self.selected_repeat.get() != '0' else hr_time
+        cron_command_inputs = [str(int(min_time)), cron_time, '*', '*', self.config_dict[type_of_job]['schedule_days'],
                                 self.config_dict['python_path'], py_job_fname, 
                                 '-jt', type_of_job, writeout_type, py_log_fname, '2>&1', ## both stderr and stdout appended
                                 '#', self.config_dict[type_of_job]['cron_job_name']]
