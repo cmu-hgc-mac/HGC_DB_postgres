@@ -629,8 +629,6 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
         print("ControlMaster process alive.")
     else:
         print("ControlMaster process failed.")
-    ## ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@{controlpathname} {dbl_username}@{controlpathname} ## To kill process
-    # ssh -O exit -o ControlPath=~/.ssh/ctrl_lxplus_dbloader simurthy@ctrl_lxplus_dbloader
     return result.returncode
     
     # print(result.stdout)
