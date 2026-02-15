@@ -220,17 +220,18 @@ class set_automation_schedule(Toplevel):
         dropdown_job_type = OptionMenu(self, self.selected_job, *list(self.job_type_keys.keys()))
         dropdown_job_type.pack(pady=20)
 
-        Label(self, text="Enter Time (HH:MM) in 24hr format").pack(pady=5)
+        Label(self, text="Enter Time (HH:MM) in 24hr format").pack(pady=0)
+        Label(self, text="(Ideally, early in the morning)").pack(pady=0)
         vcmd = (self.register(self.validate_time), '%P')
         self.time_entry = Entry(self, validate="key", validatecommand=vcmd)
         self.time_entry.pack()
         self.time_entry.insert(0, "2:00")  # default time
 
-        # Label(self, text="Repeat every X hrs in that day").pack(pady=5)
-        # repeat_hr_options = [str(i) for i in range(1,25)] ### 24 hr options
-        # selected = StringVar(value=repeat_hr_options[-1])  ### Default repeat every 24 hrs
-        # dropdown = OptionMenu(self, selected, *repeat_hr_options)
-        # dropdown.pack(pady=20)
+        Label(self, text="Repeat every X hrs in that day").pack(pady=2)
+        self.repeat_hr_options = [str(i) for i in range(0,21)] ### 24 hr options
+        self.selected_repeat = StringVar(value=self.repeat_hr_options[6])
+        self.repeat_dropdown = OptionMenu(self, self.selected_repeat, *self.repeat_hr_options)
+        self.repeat_dropdown.pack(pady=2)
 
         Label(self, text="Select days of week to repeat weekly").pack(pady=10)
         days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -278,6 +279,17 @@ class set_automation_schedule(Toplevel):
         if len(parts) == 2 and parts[1]:
             if not parts[1].isdigit() or int(parts[1]) > 59:
                 return False
+        if parts[0] and (0 <= int(parts[0]) <= 23):
+            max_intervals = 24 - int(parts[0])
+            self.repeat_hr_options = list(range(0, max_intervals)) if int(parts[0]) < 12 else [0]
+            try:
+                self.selected_repeat.set(self.repeat_hr_options[-1])
+                menu = self.repeat_dropdown["menu"]
+                menu.delete(0, "end")  # clear old options
+                for option in self.repeat_hr_options:
+                    menu.add_command(label=option, command=lambda value=option: self.selected_repeat.set(value))
+            except:
+                None
         return True
     
 
@@ -338,15 +350,15 @@ class set_automation_schedule(Toplevel):
         hr_time, min_time = self.config_dict[type_of_job]['schedule_time'].split(':')
 
         if type_of_job == 'import_from_HGCAPI':
-            cron_command_inputs = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict[type_of_job]['schedule_days'],
-                                    self.config_dict['python_path'], py_job_fname, 
-                                    '-jt', type_of_job, '>', py_log_fname, '2>&1', ## both stderr and stdout appended
-                                    '#', self.config_dict[type_of_job]['cron_job_name']]
+            writeout_type = '>'
         elif type_of_job == 'upload_to_CMSR':
-            cron_command_inputs = [str(int(min_time)), str(int(hr_time)), '*', '*', self.config_dict[type_of_job]['schedule_days'],
-                                    self.config_dict['python_path'], py_job_fname, 
-                                    '-jt', type_of_job, '>>', py_log_fname, '2>&1', ## both stderr and stdout appended
-                                    '#', self.config_dict[type_of_job]['cron_job_name']]
+            writeout_type = '>>'
+    
+        cron_command_inputs = [str(int(min_time)), f"{str(int(hr_time))}-23/{self.selected_repeat.get()}", '*', '*', self.config_dict[type_of_job]['schedule_days'],
+                                self.config_dict['python_path'], py_job_fname, 
+                                '-jt', type_of_job, writeout_type, py_log_fname, '2>&1', ## both stderr and stdout appended
+                                '#', self.config_dict[type_of_job]['cron_job_name']]
+    
             
         self.config_dict[type_of_job]['cron_command'] = " ".join(cron_command_inputs)
 
