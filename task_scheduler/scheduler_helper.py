@@ -234,7 +234,7 @@ class set_automation_schedule(Toplevel):
         self.repeat_dropdown.pack(pady=2)
 
         Label(self, text="Select days of week to repeat weekly").pack(pady=10)
-        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
         self.day_vars = {}
         days_frame = Frame(self)
         days_frame.pack()
@@ -296,7 +296,7 @@ class set_automation_schedule(Toplevel):
     def get_schedule(self):
         time = self.time_entry.get()
         self.selected_days = [day for day, var in self.day_vars.items() if var.get()]
-        self.selected_days_indices = [str(1+self.selected_days.index(day)) for day in self.selected_days]
+        self.selected_days_indices = [str(1+self.selected_days.index(day)) for day in self.selected_days] ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
 
         try:   # Validate final time format HH:MM
             hour, minute = map(int, time.split(":"))
@@ -310,11 +310,9 @@ class set_automation_schedule(Toplevel):
             self.result_label.config(text="Please select at least one day.")
             return
 
-        days_str = ", ".join(self.selected_days)
         self.save_encrypted_password()
         self.create_cron_schedule_config()
         ### if 'upload' in self.selected_job.get().lower():  self.create_ssh_config_entry()  ### Skip this
-        print(f"Weekly on: {days_str} at {time} in localtime.")
         self.destroy() 
         # self.result_label.config(text=f"Weekly on: {days_str} at {time}")
 
@@ -362,6 +360,9 @@ class set_automation_schedule(Toplevel):
     
             
         self.config_dict[type_of_job]['cron_command'] = " ".join(cron_command_inputs)
+
+        days_str = ", ".join(self.selected_days)
+        self.config_dict[type_of_job]['description'] = f"Run {type_of_job} weekly on: {days_str} at {self.config_dict[type_of_job]['schedule_time']} repeating every {self.selected_repeat.get()} hour(s) in localtime."
 
         cron_setter(CRON_LINE=self.config_dict[type_of_job]['cron_command'], JOB_TAG=self.config_dict[type_of_job]['cron_job_name'])
         
