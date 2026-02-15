@@ -230,8 +230,8 @@ class set_automation_schedule(Toplevel):
         self.time_entry.pack()
         self.time_entry.insert(0, "2:00")  # default time
 
-        Label(self, text="Repeat every X hrs in that day").pack(pady=2)
-        self.repeat_hr_options = [str(i) for i in range(0,21)] ### 24 hr options
+        Label(self, text="Repeat every X hours on that day").pack(pady=2)
+        self.repeat_hr_options = ['Do not repeat'] + [str(i) for i in range(1,21)] ### 24 hr options
         self.selected_repeat = StringVar(value=self.repeat_hr_options[6])
         self.repeat_dropdown = OptionMenu(self, self.selected_repeat, *self.repeat_hr_options)
         self.repeat_dropdown.pack(pady=2)
@@ -284,7 +284,7 @@ class set_automation_schedule(Toplevel):
                 return False
         if parts[0] and (0 <= int(parts[0]) <= 23):
             max_intervals = 24 - int(parts[0])
-            self.repeat_hr_options = list(range(0, max_intervals)) if int(parts[0]) < 12 else [0]
+            self.repeat_hr_options = ['Do not repeat'] + list(range(1, max_intervals)) 
             try:
                 self.selected_repeat.set(self.repeat_hr_options[-1])
                 menu = self.repeat_dropdown["menu"]
@@ -354,7 +354,7 @@ class set_automation_schedule(Toplevel):
         elif type_of_job == 'upload_to_CMSR':
             writeout_type = '>>'
 
-        cron_time = f"{hr_time}-23/{self.selected_repeat.get()}" if self.selected_repeat.get() != '0' else hr_time
+        cron_time = f"{hr_time}-23/{self.selected_repeat.get()}" if self.selected_repeat.get().isdigit() else hr_time
         cron_command_inputs = [str(int(min_time)), cron_time, '*', '*', self.config_dict[type_of_job]['schedule_days'],
                                 self.config_dict['python_path'], py_job_fname, 
                                 '-jt', type_of_job, writeout_type, py_log_fname, '2>&1', ## both stderr and stdout appended
