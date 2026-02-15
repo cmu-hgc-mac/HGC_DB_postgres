@@ -530,7 +530,6 @@ async def run_async_subprocess():
     print('Waiting for asynchronous control master process to start...')
     time.sleep(15)  ### Wait a good few seconds for process to start!
     cp_check = Path(f"~/.ssh/{controlpathname}").expanduser().exists()
-    print(cp_check, 'THISS')
     return cp_check 
 
 

@@ -41,6 +41,9 @@ def run_job(job_type):
                             "-getmmtsinv", str(mmts_inventory_get_stat), 
                             "-getsen", str(sensor_get_stat)]
         subprocess.run(import_data_cmd)
+        print('FINISHING IMPORT FROM HGCAPI', datetime.now())
+        print("###################################################")
+        print("")
 
 
     if job_type == 'upload_to_CMSR':
@@ -72,6 +75,9 @@ def run_job(job_type):
                             "-dateend", today_str]
             subprocess.run(export_data_cmd)
             scp_status = open_scp_connection(dbl_username=lxp_username, scp_force_quit=True)
+            print('FINISHING UPLOAD TO CMSR', datetime.now())
+            print("###################################################")
+            print("")
 
 
 def main():
