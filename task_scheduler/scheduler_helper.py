@@ -230,7 +230,7 @@ class set_automation_schedule(Toplevel):
         self.time_entry.pack()
         self.time_entry.insert(0, "2:00")  # default time
 
-        Label(self, text="Repeat every X hours on that day").pack(pady=2)
+        Label(self, text="Repeat every X hour(s) on that day").pack(pady=2)
         self.repeat_hr_options = ['Do not repeat'] + [str(i) for i in range(1,21)] ### 24 hr options
         self.selected_repeat = StringVar(value=self.repeat_hr_options[6])
         self.repeat_dropdown = OptionMenu(self, self.selected_repeat, *self.repeat_hr_options)
