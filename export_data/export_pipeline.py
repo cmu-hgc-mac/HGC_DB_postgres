@@ -91,7 +91,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
 def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db'):
     """Call the scp script to transfer files."""
     try:
-        scp_command = ['python3', 
+        scp_command = [sys.executable, 
                        'export_data/dbloader_scp_xml.py', 
                        '-lxu', lxplus_username, 
                        '-dir', directory,
