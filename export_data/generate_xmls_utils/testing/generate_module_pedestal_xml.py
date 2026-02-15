@@ -119,7 +119,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
         WHERE m.module_name = ANY($1)
         AND m.bias_vol > 0
-        AND (xml_upload_success IS NULL OR FALSE);
+        AND (xml_upload_success IS NULL OR FALSE)
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -155,7 +155,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
             LEFT JOIN hexaboard h ON m.module_no = h.module_no
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
             AND m.bias_vol > 0
-            AND (m.xml_upload_success IS NULL OR FALSE);
+            AND (m.xml_upload_success IS NULL OR FALSE)
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
