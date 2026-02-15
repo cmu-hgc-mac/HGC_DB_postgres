@@ -28,6 +28,7 @@ dbshipper_pass = base64.urlsafe_b64encode( encrypted_password_postgres ).decode(
 def run_job(job_type):
     if job_type == 'import_from_HGCAPI':
         print('LOGGING IMPORT FROM HGCAPI', datetime.now())
+        print('See above for full terminal output ↑↑↑')
         sensor_get_stat = True
         basplate_get_stat = True
         hexaboard_get_stat = True
@@ -48,6 +49,7 @@ def run_job(job_type):
 
     if job_type == 'upload_to_CMSR':
         print('LOGGING UPLOAD TO CMSR', datetime.now())
+        print('See above for full terminal output ↑↑↑')
         schedule_days_list = sched_config[job_type]['schedule_days'].split(',')
         day_index_cron = str(datetime.today().weekday() + 1)  ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
         today_index = schedule_days_list.index(day_index_cron)
