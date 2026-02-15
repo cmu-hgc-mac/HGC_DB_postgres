@@ -683,11 +683,12 @@ def refresh_data():
 
 
 def set_scheduler_task():
-    set_automation_schedule(root)
+    set_automation_schedule(root, encryption_key = encryption_key, title = "Set automation schedule") #, job_type = 'import_from_HGCAPI')
+    # input_window = Toplevel(root)
     # input_window.transient(root)        
     # input_window.attributes("-topmost", True)
     # input_window.focus_force()
-    # input_window.title("Record outgoing shipment")
+    # input_window.title("Set schduled jobs")
     # Label(input_window, text="Enter local db USER password:").pack(pady=5)
     # shipper_var = StringVar()
     # shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)

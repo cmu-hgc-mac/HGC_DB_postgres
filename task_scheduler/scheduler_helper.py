@@ -188,9 +188,10 @@ class cron_setter():
 
 
 class set_automation_schedule(Toplevel):
-    def __init__(self, parent): #, encryption_key):
+    def __init__(self, parent, encryption_key = None, title = "Set automation schedule", job_type = 'import_from_HGCAPI'):
         super().__init__(parent)
-        self.title("Set automation schedule")
+        self.title(title)
+        self.encryption_key = encryption_key
         self.job_type_keys = {"Import parts from HGCAPI": 'import_from_HGCAPI', "Upload parts to CMSR": 'upload_to_CMSR'}
         self.task_scheduler_path = os.path.join(os.getcwd(), 'task_scheduler')
         self.encrypt_path = os.path.join(self.task_scheduler_path,"secret.key")
@@ -317,12 +318,11 @@ class set_automation_schedule(Toplevel):
         # self.result_label.config(text=f"Weekly on: {days_str} at {time}")
 
     def save_encrypted_password(self):
-        encryption_key = Fernet.generate_key()
-        cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
+        cipher_suite = Fernet(self.encryption_key) ## Generate or load a key. 
         encrypted_postgres_password = cipher_suite.encrypt(self.shipper_var.get().encode())
         encrypted_lxplus_password = cipher_suite.encrypt(self.cern_pass_var.get().encode())
         with open(self.encrypt_path, "wb") as key_file:
-            key_file.write(encryption_key)
+            key_file.write(self.encryption_key)
         with open(self.postgres_pass_path, "wb") as f:
             f.write(encrypted_postgres_password)
         with open(self.lxplus_pass_path, "wb") as f:
