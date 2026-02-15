@@ -58,20 +58,20 @@ def run_job(job_type):
 
         restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
         
-        # with JobIndicator("/tmp/my_cron_job.running"):
-        scp_status = open_scp_connection(dbl_username=lxp_username)
-        export_data_cmd = [sys.executable, 
-                        "export_data/export_pipeline.py", 
-                        "-dbp", dbshipper_pass, 
-                        "-lxu", lxp_username, 
-                        "-k", encryption_key, 
-                        "-gen", str(True), 
-                        "-uplp", str(True), 
-                        "-delx", str(True), 
-                        "-datestart", start_date_str, 
-                        "-dateend", today_str]
-        # subprocess.run(export_data_cmd)
-        scp_status = open_scp_connection(dbl_username=lxp_username, scp_force_quit=True)
+        with JobIndicator("/tmp/hgc_postgres_cron_job.running"):  ### This is required for open_scp_connection to default to Service Account
+            scp_status = open_scp_connection(dbl_username=lxp_username)
+            export_data_cmd = [sys.executable, 
+                            "export_data/export_pipeline.py", 
+                            "-dbp", dbshipper_pass, 
+                            "-lxu", lxp_username, 
+                            "-k", encryption_key, 
+                            "-gen", str(True), 
+                            "-uplp", str(True), 
+                            "-delx", str(True), 
+                            "-datestart", start_date_str, 
+                            "-dateend", today_str]
+            subprocess.run(export_data_cmd)
+            scp_status = open_scp_connection(dbl_username=lxp_username, scp_force_quit=True)
 
 
 def main():

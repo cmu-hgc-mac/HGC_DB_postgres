@@ -104,6 +104,12 @@ class SSHConfigManager:
         print(f"Host '{host}' removed.")
 
 class JobIndicator:
+    """
+    When the job starts, it creates a marker file
+    If the script exits normally, it deletes the file
+    If you press Ctrl+C, it deletes the file
+    If the process is killed (SIGTERM), it delete the file
+    """
     def __init__(self, path):
         self.path = Path(path)
 
@@ -115,6 +121,10 @@ class JobIndicator:
         signal.signal(signal.SIGINT, self.handle_signal)
         return self
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cleanup()  # always cleanup when leaving the with-block
+        return False     # return False so exceptions are not suppressed
+    
     def handle_signal(self, signum, frame):
         self.cleanup()
         sys.exit(1)

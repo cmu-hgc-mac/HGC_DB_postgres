@@ -596,7 +596,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                     "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
                     f"{dbl_username}@{dbloader_hostname}"]    
                 
-                if False: #Path("/tmp/my_cron_job.running").exists():
+                if Path("/tmp/hgc_postgres_cron_job.running").exists():
                     asyncio.run(run_async_subprocess())
                     print("** SSH ControlMaster session started. **")
                     print("****************************************")
