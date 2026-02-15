@@ -11,12 +11,9 @@ sys.path.insert(0, str(PROJECT_ROOT))  ### Changes python import path to be rela
 from export_data.src import open_scp_connection
 from task_scheduler.scheduler_helper import JobIndicator
 
-conn_yaml_file = os.path.join('dbase_info', 'conn.yaml')
-config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 sched_config_file = os.path.join('task_scheduler', 'schedule_config.yaml')
 sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
-scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
-scp_force_quit = config_data.get('scp_force_quit', True)
+lxp_username = sched_config['CERN_service_account_username']
 
 with open(sched_config['encrypt_path'], "rb") as key_file:
     encryption_key = key_file.read()
@@ -60,10 +57,9 @@ def run_job(job_type):
         start_date_str = start_date.strftime('%Y-%m-%d')
 
         restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
-        lxp_username = sched_config['CERN_service_account_username']
-
+        
         # with JobIndicator("/tmp/my_cron_job.running"):
-        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes)
+        scp_status = open_scp_connection(dbl_username=lxp_username)
         export_data_cmd = [sys.executable, 
                         "export_data/export_pipeline.py", 
                         "-dbp", dbshipper_pass, 
@@ -74,7 +70,8 @@ def run_job(job_type):
                         "-delx", str(True), 
                         "-datestart", start_date_str, 
                         "-dateend", today_str]
-        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=True)
+        # subprocess.run(export_data_cmd)
+        scp_status = open_scp_connection(dbl_username=lxp_username, scp_force_quit=True)
 
 
 def main():

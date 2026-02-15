@@ -4,6 +4,51 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu, END, DISABLED
 from pathlib import Path
+import pexpect
+
+def run_ssh_master(dbloader_hostname = 'dbloader-hgcal', scp_persist = 'yes'):
+    current_file = Path(__file__).resolve()
+    PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
+    
+    conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
+    conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
+    dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
+    
+    sched_config_file = os.path.join(PROJECT_ROOT, os.path.join('task_scheduler', 'schedule_config.yaml'))
+    sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
+    dbl_username = sched_config['CERN_service_account_username']
+
+    with open(sched_config['encrypt_path'], "rb") as key_file:
+        encryption_key = key_file.read()
+    cipher_suite = Fernet(encryption_key)
+    
+    with open(sched_config['CERN_service_account_pass_path'], "rb") as f:
+        encrypted_password_lxplus = f.read()
+    
+    service_account_password = cipher_suite.decrypt(encrypted_password_lxplus).decode()
+    controlpathname = "ctrl_dbloader"
+    sockpath = os.path.expanduser(f"~/.ssh/{controlpathname}")
+    os.makedirs(os.path.dirname(sockpath), exist_ok=True)
+
+    ssh_cmd = [ "ssh", "-MY",                       
+                "-o", "StrictHostKeyChecking=no",
+                "-o", f"ControlPath={sockpath}",
+                "-o", f"ControlPersist={scp_persist}", 
+                "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
+                f"{dbl_username}@{dbloader_hostname}" ]
+
+    cmd_str = " ".join(ssh_cmd)
+
+    if dbl_username and service_account_password:
+        child = pexpect.spawn(cmd_str, encoding="utf-8", timeout=60)
+        password_prompt_index1 = child.expect(r'.*?[Pp]assword:', timeout=60)
+        if password_prompt_index1 == 0:
+            child.sendline(service_account_password)
+            password_prompt_index2 = child.expect(r'.*?[Pp]assword:', timeout=60)
+            if password_prompt_index2 == 0:
+                child.sendline(service_account_password)
+                exit_status = child.expect([pexpect.EOF, pexpect.TIMEOUT])  ### This is important. Do not remove!
+
 
 class SSHConfigManager:
     def __init__(self, path="~/.ssh/config"):
@@ -246,7 +291,7 @@ class set_automation_schedule(Toplevel):
         days_str = ", ".join(self.selected_days)
         self.save_encrypted_password()
         self.create_cron_schedule_config()
-        if 'upload' in self.selected_job.get().lower():  self.create_ssh_config_entry()
+        ### if 'upload' in self.selected_job.get().lower():  self.create_ssh_config_entry()  ### Skip this
         print(f"Weekly on: {days_str} at {time} in localtime.")
         self.destroy() 
         # self.result_label.config(text=f"Weekly on: {days_str} at {time}")

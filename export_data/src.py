@@ -15,6 +15,7 @@ import re
 import requests
 import json
 import webbrowser
+import time
 # from zoneinfo import ZoneInfo
 
 resource_yaml = 'export_data/resource.yaml'
@@ -510,6 +511,28 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         print(f"Exception occurred while querying part_id = {part_id}: {e}")
         return []
 
+async def run_async_subprocess():
+    controlpathname = "ctrl_dbloader"
+    current_file = Path(__file__).resolve()
+    PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
+    print('Running run_async_subprocess')
+    process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-c",
+        f"import sys; sys.path.insert(0, r'{PROJECT_ROOT}'); "
+        "from task_scheduler.scheduler_helper import run_ssh_master; "
+        "run_ssh_master()",
+        stdout=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
+        stderr=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
+        stdin=asyncio.subprocess.DEVNULL,   ### Comment these to see terminal output for debugging
+        start_new_session=True  )
+
+    print('Waiting for asynchronous control master process to start...')
+    time.sleep(15)  ### Wait a good few seconds for process to start!
+    cp_check = Path(f"~/.ssh/{controlpathname}").expanduser().exists()
+    print(cp_check, 'THISS')
+    return cp_check 
+
 
 def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False):
     controlpathname = "ctrl_dbloader"
@@ -574,35 +597,27 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                     f"{dbl_username}@{dbloader_hostname}"]    
                 
                 if False: #Path("/tmp/my_cron_job.running").exists():
-                    hgc_root = find_hgc_db_root()
-                    with open(f"{hgc_root}/task_scheduler/secret.key", "rb") as key_file:
-                        encryption_key = key_file.read()
-                    with open(f"{hgc_root}/task_scheduler/password_lxplus.enc", "rb") as f:
-                        encrypted_password_lxplus = f.read()
-                    cipher_suite = Fernet(encryption_key)
-                    service_account_password = cipher_suite.decrypt(encrypted_password_lxplus).decode()
-                    child = pexpect.spawn(" ".join(ssh_cmd), encoding="utf-8")
-                    child.expect(r"[Pp]assword:")
-                    child.sendline(service_account_password)
-                    child.expect(r"[Pp]assword:")
-                    child.sendline(service_account_password)
-                    child.expect(pexpect.EOF)
+                    asyncio.run(run_async_subprocess())
+                    print("** SSH ControlMaster session started. **")
+                    print("****************************************")
+                    print(f"To force quit this open connection manually, run below command in your terminal:")
+                    print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
+                    print("****************************************")
+                    print("")
                 else:    
                     subprocess.run(ssh_cmd, check=True)
-
-                print("** SSH ControlMaster session started. **")
-                print("****************************************")
-                print("")
-                print("************* PLEASE NOTE **************")
-                print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
-                print(f"To change this, define 'scp_persist_minutes: 240' in dbase_info/conn.yaml.")
-                print(f"To allow password-free SCP to your LXPLUS for {scp_persist_minutes} minutes...")
-                print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
-                print(f"To force quit this open connection manually, run below command in your terminal:")
-                print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
-                # ssh -O exit -o ControlPath=~/.ssh/ctrl_dbloader cmumac@ctrl_dbloader
-                print("****************************************")
-                print("")
+                    print("** SSH ControlMaster session started. **")
+                    print("****************************************")
+                    print("")
+                    print("************* PLEASE NOTE **************")
+                    print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
+                    print(f"To change this, define 'scp_persist_minutes: 240' in dbase_info/conn.yaml.")
+                    print(f"To allow password-free SCP to your LXPLUS for {scp_persist_minutes} minutes...")
+                    print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
+                    print(f"To force quit this open connection manually, run below command in your terminal:")
+                    print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
+                    print("****************************************")
+                    print("")
 
 
         except Exception as e:
