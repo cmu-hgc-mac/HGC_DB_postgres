@@ -1,3 +1,10 @@
+# Why is uploading to `dbloader` so complicated?
+Uploading to `dbloader` is straightforward if uploading just one file using the [manual upload method](https://github.com/cmu-hgc-mac/HGC_DB_postgres/tree/main/export_data#manual-upload-to-hgcal-dbloader-spool). The `scp` will request the LXPLUS password, 2FA code, and the LXPLUS password another time. Unfortunately `dbloader-hgcal` (the old version of `dbloader`) can only process one file at a time. Therefore, if we wish to upload multiple XML files to `dbloader`, each file needs to be uploaded with the [manual upload method](https://github.com/cmu-hgc-mac/HGC_DB_postgres/tree/main/export_data#manual-upload-to-hgcal-dbloader-spool) one at a time -- requiring two passwords and 2FA codes each time. 
+
+To skip needing the two passwords and 2FA every single time, we use the [control master method](https://github.com/cmu-hgc-mac/HGC_DB_postgres/tree/main/export_data#method-1-scp-to-dbloader-hgcal-via-lxtunnel) where we leave the LXTUNNEL connection open until `scp` of all files is complete. However, this is still one file at a time and can be quite slow.
+
+An alternative to this is to `scp` the files in bulk to LXPLUS and log into LXPLUS and upload to `dbloader` from there. This is what we do with [mass upload method](https://github.com/cmu-hgc-mac/HGC_DB_postgres/tree/main/export_data#method-2-scp-to-lxplus-and-upload-via-mass_uploadpy) which parallelizes the upload of files to the `dbloader` and allows processing of multiple files at once. This is currently in use in this project.
+
 # Allow SCP to LXPLUS with Two-factor authentication
 
 ## Method 1: SCP to dbloader-hgcal via LXTUNNEL
