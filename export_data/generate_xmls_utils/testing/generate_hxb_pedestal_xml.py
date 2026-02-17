@@ -82,7 +82,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
         FROM hxb_pedestal_test m
         LEFT JOIN hexaboard h ON m.hxb_name = h.hxb_name
         WHERE m.hxb_name = ANY($1)
-        AND (m.xml_upload_success IS NULL OR FALSE)
+        AND (m.xml_upload_success IS NULL OR m.xml_upload_success = FALSE)
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -114,7 +114,7 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
             FROM hxb_pedestal_test m
             LEFT JOIN hexaboard h ON m.hxb_name = h.hxb_name
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}' 
-            AND (m.xml_upload_success IS NULL OR FALSE)
+            AND (m.xml_upload_success IS NULL OR m.xml_upload_success = FALSE)
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"

@@ -101,7 +101,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         continue
                 
                     query = f"""
-                    SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module_name}' AND mod_ivtest_no = {mod_ivtest_no} AND (xml_upload_success IS NULL OR FALSE)
+                    SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module_name}' AND mod_ivtest_no = {mod_ivtest_no} AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                     """
                     try:
                         results = await fetch_from_db(query, conn)

@@ -101,7 +101,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 SELECT comment AS back_wirebond_comment
                                 FROM back_wirebond
                                 WHERE REPLACE(module_name,'-','') = '{module}'
-                                AND (xml_upload_success IS NULL OR FALSE)
+                                AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
                             )
@@ -110,13 +110,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 SELECT comment AS front_wirebond_comment
                                 FROM front_wirebond
                                 WHERE REPLACE(module_name,'-','') = '{module}'
-                                AND (xml_upload_success IS NULL OR FALSE)
+                                AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
                             );
                             """
                         else:
-                            query = entry['nested_query'] + f" WHERE {dbase_table}.module_name = '{module}' AND (xml_upload_success IS NULL OR FALSE);"
+                            query = entry['nested_query'] + f" WHERE {dbase_table}.module_name = '{module}' AND (xml_upload_success IS NULL OR xml_upload_success = FALSE);"
                         
                         # print(f'Executing query: {query}')
 
@@ -126,7 +126,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND (xml_upload_success IS NULL OR FALSE)
+                            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                             LIMIT 1;
                             """
                         elif dbase_table in ['hexaboard']:
@@ -135,13 +135,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             FROM {dbase_table}
                             JOIN module_assembly ON {dbase_table}.hxb_name = module_assembly.hxb_name
                             WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}'
-                            AND (module_assembly.xml_upload_success IS NULL OR FALSE);
+                            AND (module_assembly.xml_upload_success IS NULL OR module_assembly.xml_upload_success = FALSE);
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND (xml_upload_success IS NULL OR FALSE);
+                            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE);
                             """
                             # ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1;
                     try:
