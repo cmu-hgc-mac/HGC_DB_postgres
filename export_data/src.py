@@ -45,10 +45,15 @@ partTrans = {'bp' :{'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 
 def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
     if partID is not None:
         return f"https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full"
-    elif partType is not None:
+    elif partType.lower() in partTrans.keys():
         if macID is not None:
             return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}&location={macID}"
         return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}"
+    elif partType is not None: ### for other MMTS parts
+        if macID is not None:
+            nospace_partType = partType.replace(" ", "%20")
+            return f"https://{cern_db_url}.web.cern.ch/mac/parts/kinds/?kind_of_part={nospace_partType}&limit={max_cern_db_request}&location={macID}"
+        return f"https://{cern_db_url}.web.cern.ch/mac/parts/kinds/?kind_of_part={nospace_partType}&limit={max_cern_db_request}"
     return
 
 def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):
@@ -452,32 +457,6 @@ async def get_nearest_temp_humidity(conn, table_name, date_inspect, time_inspect
 ################################################################################
 ### Below is for checking part exisistence and combination with location ###
 ################################################################################
-def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
-    if partID is not None:
-        return f'https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full'
-    elif partType is not None:
-        if macID is not None:
-            return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}&location={macID}'
-        return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}'
-    return
-
-def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):
-    headers = {'Accept': 'application/json'}
-    response = requests.get(get_url(partID = partID, macID = macID, partType = partType, cern_db_url = cern_db_url), headers=headers)
-    if response.status_code == 200:
-        data = response.json() ; 
-#         print(json.dumps(data, indent=2))
-        return data
-    elif response.status_code == 500:
-        print(f'Internal Server ERROR for {cern_db_url.upper()}. Try again later.')
-    elif response.status_code == 404:
-        print(f'Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.')
-    else:
-        if partType:
-            print(f'ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}')
-        if partID:
-            print(f'ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}')
-        return None
 
 def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hgcapi") -> list:
     try:
