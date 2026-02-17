@@ -24,6 +24,7 @@ loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 kop_yaml = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r')).get('kind_of_part')
+mmts_kops = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r')).get('MMTS_kinds_of_parts')
 inst_code  = conn_info.get('institution_abbr')
 # source_db_cern = conn_info.get('cern_db')
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
@@ -77,7 +78,7 @@ async def get_missing_qc_bp(pool):
     return [row['bp_name'] for row in rows]
 
 async def get_mmts_inv_in_local(pool):
-    get_mmts_inv_in_local_query = """SELECT part_name FROM mmts_inventory WHERE kind IS NULL;"""
+    get_mmts_inv_in_local_query = """SELECT part_name FROM mmts_inventory WHERE kind IS NULL OR qc_details IS NULL;"""
     try:
         async with pool.acquire() as conn:
             rows = await conn.fetch(get_mmts_inv_in_local_query)
@@ -170,7 +171,8 @@ def get_part_type(partName, partType):
 
 def get_dict_for_db_upload(data_full, partType):
     try:
-        db_dict = {children_for_import[partType]["db_cols"][k]: data_full[k] for k in (children_for_import[partType]["db_cols"]).keys()}
+        available_keys = [k for k in children_for_import[partType]["db_cols"].keys() if k in data_full.keys()]
+        db_dict = {children_for_import[partType]["db_cols"][k]: data_full[k] for k in available_keys}
         db_dict.update(get_part_type(data_full['serial_number'], partType))
         if partType in ['hxb', 'bp']:
             db_dict['obsolete'] = True if db_dict['obsolete'].lower() == 'obsolete' else False
@@ -305,8 +307,8 @@ async def main():
     for source_db_cern in db_list:
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
-        for pt in part_types_to_get:  #, 'pml', 'ml']:
-            if pt != 'mmtsinv': ### We don't have a way to request mmts parts from the api based on institution    
+        for pt in part_types_to_get:
+            if pt != 'mmtsinv':   
                 print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
                 parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
                 if parts:
@@ -322,6 +324,22 @@ async def main():
                                     print('Dictionary:', (db_dict))
                         except:
                             traceback.print_exc()
+            elif pt == 'mmtsinv':
+                for kop in mmts_kops:
+                    parts = (read_from_cern_db(macID = inst_code.upper(), partType = kop, cern_db_url = cern_db_url))
+                    if parts:
+                        for p in tqdm(parts['parts']): ### p is the data_full from the HGCAPI
+                            try:
+                                db_dict = get_dict_for_db_upload(p, partType = pt)
+                                if db_dict is not None:
+                                    try:
+                                        await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
+                                    except Exception as e:
+                                        print(f"ERROR for single part upload for {p['serial_number']}", e)
+                                        traceback.print_exc()
+                                        print('Dictionary:', (db_dict))
+                            except:
+                                traceback.print_exc()                
 
             secondary_upload, db_dict_secondary = None, None
             if pt == 'hxb':
