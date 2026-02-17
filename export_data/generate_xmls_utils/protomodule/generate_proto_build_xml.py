@@ -56,7 +56,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'RECORD_INSERTION_USER':
                     db_values[xml_var] = lxplus_username
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
-                    _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' AND (xml_upload_success IS NULL OR FALSE);"
+                    _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' AND (xml_upload_success IS NULL OR xml_upload_success = FALSE);"
                     _bp_name = await conn.fetch(_query)
                     # if _bp_name:
                     #     bp_name = _bp_name[0]['bp_name']
@@ -71,7 +71,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     _bp_name = _bp_name[0]['bp_name']
                     db_values[xml_var] = await get_kind_of_part(part_name=_bp_name, part='baseplate', conn=conn)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
-                    _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' AND (xml_upload_success IS NULL OR FALSE);"
+                    _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' AND (xml_upload_success IS NULL OR xml_upload_success = FALSE);"
                     _sen_name = await conn.fetch(_query)
                     # if _sen_name:
                     #     sen_name = _sen_name[0]['sen_name']
@@ -105,14 +105,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
-                            AND (xml_upload_success IS NULL OR FALSE)
+                            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
-                            AND (xml_upload_success IS NULL OR FALSE)
+                            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
                     
