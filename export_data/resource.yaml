@@ -164,3 +164,19 @@ postgres_table_to_xml:
   'module_iv': ['module_iv_test']
   'module_iv_cond': ['module_iv_test']
   'hxb_pedestal': ['hxb_pedestal_test']
+
+MMTS_kinds_of_parts:
+  - MMTS Multiplexer Bottom Connector
+  - MMTS Multiplexer Top Connector
+  - Trophy Mezzanine
+  - Trophy HD Bottom production
+  - Trophy HD Full production
+  - Trophy HD Left production
+  - Trophy HD Right production
+  - Trophy HD Top production
+  - Trophy LD Bottom production
+  - Trophy LD Five production
+  - Trophy LD Full production
+  - Trophy LD Left production
+  - Trophy LD Right production
+  - Trophy LD Top production
