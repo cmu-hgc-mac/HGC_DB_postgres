@@ -74,7 +74,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 SELECT comment AS back_wirebond_comment
                                 FROM back_wirebond
                                 WHERE REPLACE(module_name,'-','') = '{module}'
-                                AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
                             )
@@ -83,7 +82,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                 SELECT comment AS front_wirebond_comment
                                 FROM front_wirebond
                                 WHERE REPLACE(module_name,'-','') = '{module}'
-                                AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                                 ORDER BY date_bond DESC, time_bond DESC
                                 LIMIT 1
                             );
@@ -99,21 +97,18 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                             LIMIT 1;
                             """
                         elif dbase_table in ['module_inspect']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
                             """
                         elif dbase_table in ['module_assembly']:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}'
-                            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1;
                             """
                     try:
