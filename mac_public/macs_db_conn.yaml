@@ -8,7 +8,7 @@ macs:
 
   -
     mac_id: 'IHEP'
-    hostname: '' 
+    hostname: 'hgcal.ihep.ac.cn' 
     password: ''  ## viewer password; optional, not required
     port: '5432'
     db_name: 'hgcdb'
