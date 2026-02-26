@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<HEADER>
+    <TYPE>
+        <EXTENSION_TABLE_NAME>HGC_SI_MODULE_GRADING</EXTENSION_TABLE_NAME>
+        <NAME>HGC Eight Inch Module Grading</NAME>
+    </TYPE>
+    <RUN>
+        <RUN_TYPE>{{ run_type }}</RUN_TYPE>
+		<RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
+        <INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
+        <LOCATION>{{ location }}</LOCATION>
+        <COMMENT_DESCRIPTION>{{ comment_description }}</COMMENT_DESCRIPTION>
+    </RUN>
+</HEADER>
+    <DATA_SET>
+        <COMMENT_DESCRIPTION>{{ test_comments }}</COMMENT_DESCRIPTION>
+        <VERSION>1</VERSION>
+        <PART mode="auto">
+            <SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
+            <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
+        </PART>
+        <DATA>
+            <INSTALLATION_MODULE>{{ installation_module }}</INSTALLATION_MODULE>
+            <OVERALL_GRADE>{{ overall_grade }}</OVERALL_GRADE>
+            <GRADE_CRITERIA>{{ grade_criteria }}</GRADE_CRITERIA>
+            <PROTO_MECH_GRADE>{{ proto_mech_grade }}</PROTO_MECH_GRADE>
+            <PROTO_MECH_GRADE_CRITERIA>{{ proto_mech_grade_criteria }}</PROTO_MECH_GRADE_CRITERIA>
+            <MODULE_MECH_GRADE>{{ module_mech_grade }}</MODULE_MECH_GRADE>
+            <MODULE_MECH_GRADE_CRITERIA>{{ module_mech_grade_criteria }}</MODULE_MECH_GRADE_CRITERIA>
+            <READOUT_GRADE>{{ readout_grade }}</READOUT_GRADE>
+            <READOUT_GRADE_CRITERIA>{{ readout_grade_criteria }}</READOUT_GRADE_CRITERIA>
+            <IV_GRADE>{{ iv_grade }}</IV_GRADE>
+            <IV_GRADE_CRITERIA>{{ iv_grade_criteria }}</IV_GRADE_CRITERIA>
+            <PERCENT_BAD_CELLS>{{ percent_bad_cells }}</PERCENT_BAD_CELLS>
+            <MODULE_CORNER_COLORGRADE>{{ module_corner_colorgrade }}</MODULE_CORNER_COLORGRADE>
+            <MODULE_CORNER_COLORS>{{ module_corner_colors }}</MODULE_CORNER_COLORS>
+            <CORNER_COLORGRADE_CRITERIA>{{ corner_colorgrade_criteria }}</CORNER_COLORGRADE_CRITERIA>
+            <PROTO_CORNER_COLORS>{{ proto_corner_colors }}</PROTO_CORNER_COLORS>
+        </DATA>
+    </DATA_SET>
+</ROOT>
