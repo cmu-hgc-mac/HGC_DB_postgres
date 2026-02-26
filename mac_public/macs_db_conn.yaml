@@ -11,7 +11,7 @@ macs:
     hostname: 'hgcal.ihep.ac.cn' 
     password: ''  ## viewer password; optional, not required
     port: '5432'
-    db_name: 'hgcdb'
+    db_name: 'postgres'
   
   -
     mac_id: 'NTU'
