@@ -7,7 +7,6 @@ module:
 - module_inspection_xml: true
 - module_build_xml: true
 - module_cure_cond_xml: true
-- module_grading_xml: true
 - wirebond_xml: true
 protomodule:
 - proto_assembly_xml: true
