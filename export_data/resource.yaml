@@ -155,6 +155,7 @@ postgres_table_to_xml:
   'module_assembly': ['module_assembly']
   'module_cure_cond': ['module_assembly']
   'module_inspection': ['module_inspect']
+  'module_grading': ['module_qc_summary']
   'wirebond': ['back_wirebond', 'front_wirebond', 'back_encap', 'front_encap', 'bond_pull_test']
   'proto_assembly': ['proto_assembly']
   'proto_inspection': ['proto_inspect']
