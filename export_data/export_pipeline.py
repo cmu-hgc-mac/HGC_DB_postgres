@@ -9,7 +9,7 @@
 import os, sys, argparse, base64, subprocess, traceback, asyncio
 import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
-from src import process_xml_list
+from src import process_xml_list, str2bool
 from find_missing_var_xml import find_missing_var_xml
 # import check_successful_upload
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
@@ -21,10 +21,6 @@ GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the gen
 
 # Ensure the generated XML directory exists
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
-
-def str2bool(boolstr):
-    dictstr = {'True': True, 'False': False}
-    return dictstr[boolstr]
 
 def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, output_dir=GENERATED_XMLS_DIR, encryption_key = None, partsnamelist = None):
     """Run a Python script as a subprocess."""
