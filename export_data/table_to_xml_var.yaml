@@ -1324,6 +1324,18 @@ module_iv_cond:
   default_value: 0
 
 module_grading:
+- xml_temp_val: RUN_BEGIN_TIMESTAMP_
+  dbase_col: date_test, time_test
+  dbase_table: module_iv_test
+  xml_tag: RUN_BEGIN_TIMESTAMP
+  nested_query: null
+  nullable: 'no'
+- xml_temp_val: RUN_END_TIMESTAMP_
+  dbase_col: date_test, time_test
+  dbase_table: module_iv_test
+  xml_tag: RUN_END_TIMESTAMP
+  nested_query: null
+  nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
 - xml_temp_val: LOCATION

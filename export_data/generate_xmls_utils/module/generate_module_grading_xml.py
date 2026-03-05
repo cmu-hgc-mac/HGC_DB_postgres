@@ -71,6 +71,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var]     = await get_kind_of_part(module_name, 'module', conn)
                 elif xml_var == 'INITIATED_BY_USER':
                     db_values[xml_var]     = lxplus_username
+                elif xml_var == "RUN_BEGIN_TIMESTAMP_":
+                    db_values[xml_var] = datetimenow
+                elif xml_var == "RUN_END_TIMESTAMP_":
+                    db_values[xml_var] = datetimenow
                 elif xml_var == "RUN_TYPE":
                     db_values[xml_var] = "Si module grading" 
                 elif xml_var == 'RUN_NUMBER':
@@ -118,7 +122,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             # Update the XML with the database values
             combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]
             output_file_name = f"{module_name}_{combined_str_mod}_grading_upload.xml"
-            # output_file_name = f"{module_name}_grading_upload.xml"
             output_file_path = os.path.join(output_dir, output_file_name)
             print(output_file_path)
             await update_xml_with_db_values(xml_file_path,     output_file_path,  db_values)
