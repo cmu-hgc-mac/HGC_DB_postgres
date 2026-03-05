@@ -25,7 +25,7 @@ def fetch_module_grades(mod_corner_colors = None, all_letter_grades = None):
     installation_score = 0 if (MODULE_CORNER_COLORGRADE == 'red' or worst_letter_grade.upper() == 'F') else 1
     return installation_score, MODULE_CORNER_COLORGRADE
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, skip_uploaded=True):
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
     xml_data  = yaml_data['module_grading']
@@ -33,22 +33,18 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     ## list module_names that we want to generate xmls
     module_list = set()
     if partsnamelist:
-        query = f"""
-            SELECT module_name, mod_qc_no
-            FROM module_qc_summary
-            WHERE module_name = ANY($1) 
-            AND ((xml_gen_datetime IS NULL) OR (xml_gen_datetime IS NOT NULL AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)))
-            ORDER BY mod_qc_no DESC LIMIT 1
-        """  ### Get the latest for that module
+        if skip_uploaded:
+            query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+        else:
+            query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
         results = await conn.fetch(query, partsnamelist)
     else:
-        query = f"""
-            SELECT m.module_name, m.mod_qc_no
-            FROM module_qc_summary m
-            JOIN (
-            SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no
-            FROM module_qc_summary WHERE xml_gen_datetime IS NULL OR (xml_upload_success IS NULL OR xml_upload_success = FALSE) GROUP BY module_name) latest
-            ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
+        if skip_uploaded:
+            query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) GROUP BY module_name) latest
+                ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
+        else:
+            query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary GROUP BY module_name) latest
+                ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
         results = await conn.fetch(query)
 
     module_list = set((row['module_name'], row['mod_qc_no']) for row in results if 'module_name' in row)
@@ -135,7 +131,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         except Exception as e:
             print('#'*15, f'ERROR for {module_name}','#'*15 ); traceback.print_exc(); print('')
 
-async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None):
+async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None, skip_uploaded=True):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/module/grading_upload.xml'# XML template file path
@@ -143,7 +139,7 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
 
     conn = await get_conn(dbpassword, encryption_key)
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded)
     finally:
         await conn.close()
 
@@ -158,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
     args = parser.parse_args()   
 
     lxplus_username = args.dbl_username
@@ -167,8 +164,9 @@ if __name__ == "__main__":
     date_start = args.date_start
     date_end = args.date_end
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, skip_uploaded = skip_uploaded))
 
 
 """
