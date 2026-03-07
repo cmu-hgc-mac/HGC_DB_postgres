@@ -86,19 +86,20 @@ def check_duplicate_combo(chip, channel):
         print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
         return False
     
-async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
+async def fetch_test_data(conn, date_start, date_end, partsnamelist=None, skip_uploaded=True):
+    skip_filter = "AND (m.xml_upload_success IS NULL OR m.xml_upload_success = FALSE)" if skip_uploaded else ""
     # Retrieve the first row of chip and channel arrays
     if partsnamelist:
         query = f"""
         SELECT m.module_name,
-               m.module_no, 
-               m.chip, 
-               m.channel, 
+               m.module_no,
+               m.chip,
+               m.channel,
                m.cell,
-               m.adc_mean, 
-               m.adc_stdd, 
-               m.channeltype, 
-               m.date_test, 
+               m.adc_mean,
+               m.adc_stdd,
+               m.channeltype,
+               m.date_test,
                m.time_test,
                m.inspector,
                m.temp_c,
@@ -111,15 +112,15 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.inverse_sqrt_n,
                m.bias_vol,
                m.meas_leakage_current,
-               h.hxb_name, 
-               h.kind AS hxb_kop, 
-               h.roc_name, 
+               h.hxb_name,
+               h.kind AS hxb_kop,
+               h.roc_name,
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
         WHERE m.module_name = ANY($1)
         AND m.bias_vol > 0
-        AND (m.xml_upload_success IS NULL OR m.xml_upload_success = FALSE)
+        {skip_filter}
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -127,14 +128,14 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     else:
         query = f"""
             SELECT m.module_name,
-                m.module_no, 
-                m.chip, 
-                m.channel, 
+                m.module_no,
+                m.chip,
+                m.channel,
                 m.cell,
-                m.adc_mean, 
-                m.adc_stdd, 
-                m.channeltype, 
-                m.date_test, 
+                m.adc_mean,
+                m.adc_stdd,
+                m.channeltype,
+                m.date_test,
                 m.time_test,
                 m.inspector,
                 m.temp_c,
@@ -147,15 +148,15 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.inverse_sqrt_n,
                 m.bias_vol,
                 m.meas_leakage_current,
-                h.hxb_name, 
+                h.hxb_name,
                 h.kind AS hxb_kop,
-                h.roc_name, 
+                h.roc_name,
                 h.roc_index
             FROM module_pedestal_test m
             LEFT JOIN hexaboard h ON m.module_no = h.module_no
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
             AND m.bias_vol > 0
-            AND (m.xml_upload_success IS NULL OR m.xml_upload_success = FALSE)
+            {skip_filter}
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -384,7 +385,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
     return outfile_names
 
 
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None, skip_uploaded=True):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
     temp_dir_config = 'export_data/template_examples/testing/module_pedestal_config.xml'
@@ -395,7 +396,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
+        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist, skip_uploaded)
         for timestamp_key in tqdm(list(test_data.keys())):
             try:
                 float(test_data[timestamp_key]['rel_hum'])
@@ -422,7 +423,8 @@ if __name__ == "__main__":
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
-    args = parser.parse_args()   
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    args = parser.parse_args()
 
     lxplus_username = args.dbl_username
     dbpassword = args.dbpassword
@@ -431,5 +433,6 @@ if __name__ == "__main__":
     date_start = args.date_start
     date_end = args.date_end
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist, lxplus_username = lxplus_username))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist, lxplus_username = lxplus_username, skip_uploaded=skip_uploaded))

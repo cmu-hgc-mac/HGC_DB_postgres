@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, skip_uploaded=True):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -24,9 +24,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     hxb_tables = ['hexaboard', 'hxb_inspect', 'hxb_pedestal_test']
     
     hxb_list = set()
+    skip_filter = "WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE)" if skip_uploaded else ""
     module_query = f"""
     SELECT hxb_name
     FROM hexaboard
+    {skip_filter}
     """
     results = await conn.fetch(module_query)
     hxb_list.update(row['hxb_name'] for row in results if 'hxb_name' in row)
@@ -115,7 +117,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         except Exception as e:
             print('#'*15, f'ERROR for {hxb_name}','#'*15 ); traceback.print_exc(); print('')
         
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key = None, skip_uploaded=True):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/hexaboard/build_upload.xml'# XML template file path
@@ -126,7 +128,7 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key = No
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, skip_uploaded)
     finally:
         await conn.close()
 
@@ -140,13 +142,14 @@ if __name__ == "__main__":
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
-
-    args = parser.parse_args()   
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    args = parser.parse_args()
 
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
+    skip_uploaded = str2bool(args.skip_uploaded)
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, skip_uploaded=skip_uploaded))
