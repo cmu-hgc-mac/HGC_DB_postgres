@@ -60,6 +60,7 @@ def get_reflected_tables(xml_path: str) -> str:
     
     suffix_matching = {
         "wirebond": "wirebond",
+        "_grading": f"{prefix}_grading",
         "_cure_cond": f"{prefix}_cure_cond",
         "_inspection": f"{prefix}_inspection",
         "_build_upload": f"{prefix}_build",

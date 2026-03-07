@@ -222,10 +222,17 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi', part_qc_cols = None
         db_dict = None
         if data_full:
             if "baseplate_raw" in data_full["qc"]:
+                part_qc_cols = part_qc_cols['qc_cols_ka']
                 db_dict = {"bp_name": bp_name}
                 child_dict, bp_name = data_full["qc"]["baseplate_raw"], data_full["serial_number"]
                 for qck in part_qc_cols.keys():
                     db_dict.update({part_qc_cols[qck]: child_dict[qck]})
+            elif "baseplate" in data_full["qc"]:
+                part_qc_cols = part_qc_cols['qc_cols_ih']
+                db_dict = {"bp_name": bp_name}
+                child_dict, bp_name = data_full["qc"]["baseplate"], data_full["serial_number"]
+                for qck in part_qc_cols.keys():
+                    db_dict.update({part_qc_cols[qck]: form(child_dict[qck]) })
         return db_dict
     except Exception as e:
         traceback.print_exc()
@@ -319,7 +326,7 @@ async def main():
                                 try:
                                     await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
                                 except Exception as e:
-                                    print(f"ERROR for single part upload for {p['serial_number']}", e)
+                                    print(f"ERROR for single part upload for {p}", e)
                                     traceback.print_exc()
                                     print('Dictionary:', (db_dict))
                         except:
@@ -328,14 +335,14 @@ async def main():
                 for kop in mmts_kops:
                     parts = (read_from_cern_db(macID = inst_code.upper(), partType = kop, cern_db_url = cern_db_url))
                     if parts:
-                        for p in tqdm(parts['parts']): ### p is the data_full from the HGCAPI
+                        for p in tqdm(parts['parts']): ### p is parts from the HGCAPI
                             try:
                                 db_dict = get_dict_for_db_upload(p, partType = pt)
                                 if db_dict is not None:
                                     try:
                                         await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
                                     except Exception as e:
-                                        print(f"ERROR for single part upload for {p['serial_number']}", e)
+                                        print(f"ERROR for single part upload for {p}", e)
                                         traceback.print_exc()
                                         print('Dictionary:', (db_dict))
                             except:
@@ -368,7 +375,7 @@ async def main():
                             try:
                                 await write_to_db_secondary(pool, db_dict_secondary, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
                             except Exception as e:
-                                print(f"ERROR for single part upload for {p['serial_number']}", e)
+                                print(f"ERROR for single part upload for {p}", e)
                                 traceback.print_exc()
                                 print('Dictionary:', (db_dict_secondary))
                     except:

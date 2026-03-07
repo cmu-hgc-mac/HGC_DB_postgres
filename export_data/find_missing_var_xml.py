@@ -17,7 +17,7 @@ with open(YAML_FILE, "r") as f:
 # Mapping of part names (directory) to YAML categories
 PART_TO_YAML_CATEGORIES = {
     "sensor": ["sensor_inspection"],
-    "module": ["module_cure_cond", "module_assembly", "module_build", "wirebond", "module_inspection"],
+    "module": ["module_cure_cond", "module_assembly", "module_build", "wirebond", "module_inspection", "module_grading"],
     "protomodule": ["proto_cure_cond", "proto_assembly", "proto_build", "module_inspection"],
     "hexaboard": ["hxb_inspection", "hxb_build"],
     "baseplate": ["bp_inspection", "bp_build"]
@@ -58,7 +58,7 @@ def get_yaml_categories(xml_file_path):
     if part_name == 'testing':
         return "testing"
     else:
-        xml_type = xml_file_path.split('_')[-2] ## e.g. cond, build, assembly, wirebond
+        xml_type = xml_file_path.split('_')[-2] ## e.g. cond, build, assembly, wirebond, grading
         _yaml_cat = PART_TO_YAML_CATEGORIES[part_name]
         yaml_cat = [item for item in _yaml_cat if item.endswith(xml_type)][0]
         return yaml_cat

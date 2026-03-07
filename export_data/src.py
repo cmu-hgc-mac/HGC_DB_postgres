@@ -53,6 +53,9 @@ def find_hgc_db_root(start_path=None):
             return parent
     raise FileNotFoundError("HGC_DB_postgres directory not found in current path or parents")
 
+def str2bool(boolstr):
+    dictstr = {'True': True, 'False': False}
+    return dictstr[boolstr]
 
 def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
     if partID is not None:

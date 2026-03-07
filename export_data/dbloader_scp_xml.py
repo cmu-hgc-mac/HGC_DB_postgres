@@ -105,7 +105,7 @@ def scp_to_dbloader(dbl_username, fname, cern_dbname = '', dbloader_hostname = '
         # traceback.print_exc()
 
 class mass_upload_to_dbloader:
-    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose  = False, dbloader_hostname = 'hgcaldbloader.cern.ch'):
+    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'hgcaldbloader.cern.ch', dbl_password = None, encryption_key=None):
         self.mass_upload_logs_fp = "export_data/mass_upload_logs"
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )#_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt")
