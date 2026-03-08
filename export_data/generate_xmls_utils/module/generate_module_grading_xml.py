@@ -3,7 +3,7 @@ import asyncpg
 import argparse
 import json
 import numpy as np
-import sys, os, yaml, argparse, datetime
+import sys, os, yaml, argparse, datetime, time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
@@ -53,7 +53,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
     module_list = set((row['module_name'], row['mod_qc_no']) for row in results if 'module_name' in row)
     for module_name, mod_qc_no in module_list:
-        ### time.sleep(2)
+        time.sleep(1)  ### this is to ensure unique run numbers!
         datetimenow = datetime.datetime.now()
         combined_str = datetimenow ### "" ### initialize
         
