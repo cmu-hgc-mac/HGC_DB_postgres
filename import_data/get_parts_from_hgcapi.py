@@ -72,7 +72,7 @@ async def get_missing_roc_hxb(pool):
     return [row['hxb_name'] for row in rows]
 
 async def get_missing_qc_bp(pool):
-    get_missing_qc_bp_query = """SELECT REPLACE(bp_name,'-','') AS bp_name FROM baseplate WHERE tolerance_grade IS NULL OR flatness_grade IS NULL;"""
+    get_missing_qc_bp_query = """SELECT REPLACE(bp_name,'-','') AS bp_name FROM baseplate WHERE tolerance_grade IS NULL OR flatness_grade IS NULL OR flatness_init IS NULL OR avg_thickness_init IS NULL;"""
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_missing_qc_bp_query)
     return [row['bp_name'] for row in rows]
