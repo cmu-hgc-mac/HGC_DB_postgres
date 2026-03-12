@@ -565,6 +565,8 @@ class set_automation_schedule(Toplevel):
         self.job_panel = None
         self.selected_job.set("")
         messagebox.showinfo("Schedule Saved", f"{reverse[job_key]} schedule saved.\nCheck ./task_scheduler/schedule_config.yaml.")
+        self.lift()
+        self.focus_force()
 
     def _delete_schedule(self, job_key):
         job_name = f"{job_key}_job"
@@ -581,6 +583,8 @@ class set_automation_schedule(Toplevel):
         self.job_panel = None
         self.selected_job.set("")
         messagebox.showinfo("Schedule Deleted", f"{job_key} cron job removed.")
+        self.lift()
+        self.focus_force()
 
     # keep old name as alias so nothing external breaks
     def get_schedule(self):
