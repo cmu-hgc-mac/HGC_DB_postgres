@@ -552,7 +552,7 @@ class set_automation_schedule(Toplevel):
             try:
                 ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect('lxtunnel.cern.ch', port=22, username=self.lxuser_var.get().strip(), password=self.cern_pass_var.get().strip(), timeout=15)
+                ssh.connect('lxplus.cern.ch', username=self.lxuser_var.get().strip(), password=self.cern_pass_var.get().strip(), timeout=15)
                 ssh.close()
             except Exception as e:
                 print(e)
