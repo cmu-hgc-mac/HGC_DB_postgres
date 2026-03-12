@@ -1,6 +1,6 @@
 import platform, os, argparse, base64, subprocess
 from pathlib import Path
-from src import process_xml_list, open_scp_connection, dbloader_hostname
+from src import process_xml_list, open_scp_connection, str2bool, dbloader_hostname
 import numpy as np
 import datetime, time, yaml, paramiko, pwinput, sys, re, math, shutil
 from tqdm import tqdm
@@ -17,7 +17,7 @@ conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
-mass_upload_method = config_data.get('mass_upload_metho', 'via_paramiko')
+mass_upload_method = config_data.get('mass_upload_method', 'via_paramiko')
 # cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
 # cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
@@ -112,7 +112,7 @@ def scp_to_dbloader(dbl_username, fname, cern_dbname = '', dbloader_hostname = '
 ##########################################################################################
 
 class mass_upload_to_dbloader_via_ssh_controlmaster:
-    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, encryption_key=None):
+    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, encryption_key=None, cern_auto_upload=False):
         self.mass_upload_logs_fp = "export_data/mass_upload_logs"
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )#_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt")
@@ -128,9 +128,14 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         self.remote_xml_dir = remote_xml_dir
         self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         self.files_to_retry = 0
-        self.times_to_retry = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
-        
-        self.controlpathname = "ctrl_dbloader"  ### Unique to ssh controlmaster method:
+        self.times_to_retry_upload = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
+        self.times_to_retry_reconnect = 5
+
+        ### Unique to ssh controlmaster method
+        self.controlpathname = "ctrl_dbloader"
+        self.cern_auto_upload = cern_auto_upload  
+        if open_scp_connection(dbl_username=self.dbl_username, get_scp_status=True) != 0:    ### connection is missing
+            scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=self.cern_auto_upload)
         
     def make_lxplus_dir(self):
         makedir_cmd = ["ssh", f"{self.dbl_username}@{self.dbloader_hostname}", "-o", f"ProxyJump={self.dbl_username}@lxtunnel.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"mkdir -p {self.remote_xml_dir}"]
@@ -219,10 +224,11 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         steps = [self.make_lxplus_dir, self.rm_xml_lxplus, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.check_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
 
         current_step = 0
-        while current_step < len(steps):
+        while (current_step < len(steps)) and (self.times_to_retry_reconnect != 0):
             if open_scp_connection(dbl_username=self.dbl_username, get_scp_status=True) != 0:    ### connection is missing
                 print("Reconnect to LXPLUS -- preexisting connection broken -- retry this step")
-                scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+                scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=self.cern_auto_upload)
+                self.times_to_retry_reconnect -= 1
                 continue  ### keeps requesting credentials until connection is successful
             try:
                 return_status = steps[current_step]()
@@ -231,22 +237,22 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
                     print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
                 if current_step == 3: ## mass_upload_xml_dbl
-                    if self.files_to_retry > 0 and self.times_to_retry > 0 and return_status == 0:
-                        print(f"Reattempting the {self.files_to_retry} timed-out file(s) -- ({self.times_to_retry-1} reattempt(s) left) ")
-                        self.times_to_retry -= 1 ### attempt only upto 5 times
+                    if self.files_to_retry > 0 and self.times_to_retry_upload > 0 and return_status == 0:
+                        print(f"Reattempting the {self.files_to_retry} timed-out file(s) -- ({self.times_to_retry_upload-1} reattempt(s) left) ")
+                        self.times_to_retry_upload -= 1 ### attempt only upto 5 times
                         continue ### repeat current step
                 if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
 
             except Exception as e:
                 print(f"An error occurred at step {current_step+1}: {e}")
-                scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)        
+                scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=self.cern_auto_upload)        
     
 ##########################################################################################
 ################################# Mass upload with Paramiko ##############################
 ##########################################################################################
 
 class mass_upload_to_dbloader_via_paramiko:
-    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, encryption_key=None):
+    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, encryption_key=None, cern_auto_upload=False):
         self.mass_upload_logs_fp = "export_data/mass_upload_logs"
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )
@@ -263,7 +269,8 @@ class mass_upload_to_dbloader_via_paramiko:
         self.remote_xml_dir = remote_xml_dir
         self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         self.files_to_retry = 0  ### what is the best way to use this?
-        self.times_to_retry = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
+        self.times_to_retry_upload = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
+        self.times_to_retry_reconnect = 5
 
         ### Unique to paramiko method:
         self.encryption_key = encryption_key
@@ -275,6 +282,7 @@ class mass_upload_to_dbloader_via_paramiko:
         self.ssh_server1 = None
         self.ssh_server2 = None
         self.ssh_conn = None
+        self.connect()
         
     def connect(self):
         self.ssh_server1 = paramiko.SSHClient()
@@ -401,7 +409,6 @@ class mass_upload_to_dbloader_via_paramiko:
             return exit_status
     
     def scp_logs_local(self):
-
         if ".csv" in self.terminal_output:
             print("----> Saving log files to export_data/mass_upload_logs <----")
             log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
@@ -424,19 +431,18 @@ class mass_upload_to_dbloader_via_paramiko:
                     sftp.remove(log_outfile)  # Remove remote log after download
                 except FileNotFoundError:
                     pass
-
             print("")
             return 0  # success
 
     def run_steps(self):
         ### remove any existing XML files from that directory to prevent reuploads
         steps = [self.make_lxplus_dir, self.rm_xml_lxplus, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.check_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
-
         current_step = 0
-        while current_step < len(steps):
+        while (current_step < len(steps)) and (self.times_to_retry_reconnect != 0):
             if not self.ssh_conn.is_active():    ### connection is missing
                 print("Reconnect to LXPLUS -- preexisting connection broken -- retry this step")
                 self.connect()
+                self.times_to_retry_reconnect -= 1
                 continue  ### keeps requesting credentials until connection is successful
             try:
                 return_status = steps[current_step]()
@@ -445,9 +451,9 @@ class mass_upload_to_dbloader_via_paramiko:
                     print("Time elapsed:", current_time - self.starttime)
                     self.starttime = current_time
                 if current_step == 3: ## mass_upload_xml_dbl
-                    if self.files_to_retry > 0 and self.times_to_retry > 0 and return_status == 0:
-                        print(f"Reattempting the {self.files_to_retry} timed-out file(s) -- ({self.times_to_retry-1} reattempt(s) left) ")
-                        self.times_to_retry -= 1 ### attempt only upto n times
+                    if self.files_to_retry > 0 and self.times_to_retry_upload > 0 and return_status == 0:
+                        print(f"Reattempting the {self.files_to_retry} timed-out file(s) -- ({self.times_to_retry_upload-1} reattempt(s) left) ")
+                        self.times_to_retry_upload -= 1 ### attempt only upto n times
                         continue ### repeat current step
                 if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
 
@@ -468,12 +474,15 @@ def main():
     parser.add_argument('-date', '--date', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-cerndb', '--cern_dbase', default='dev_db', required=False, help="Name of cern db to upload to - dev_db/prod_db.")
+    parser.add_argument('-autoupload', '--cern_auto_upload', default='False', required=False, help="True if the upload is automated via a service account")
     args = parser.parse_args()
 
     dbl_username = args.dbl_username
     directory_to_search = args.directory
     search_date = args.date
-
+    cern_auto_upload = str2bool(args.cern_auto_upload)
+    dbl_password, encryption_key = None, None  ## default
+    
     mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
                           "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
     
@@ -496,7 +505,7 @@ def main():
 
         if protomodule_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(protomodule_build_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
@@ -509,7 +518,7 @@ def main():
         print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
         if module_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(module_build_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
@@ -522,7 +531,7 @@ def main():
         print(f"Uploading {len(cond_files)} cond files to {cern_dbname}...")
         if cond_files: ## upload cond files prior to other data to prevent duplication of run_number in CMSR due to mass_loader parallelization
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(cond_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
@@ -533,10 +542,14 @@ def main():
         print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
         if other_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(other_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
+        
+        if open_scp_connection(dbl_username=dbl_username, get_scp_status=True) == 0:
+                scp_status = open_scp_connection(dbl_username=dbl_username, scp_force_quit=True)
+
     else:
         print("No files found for the given date.")
 

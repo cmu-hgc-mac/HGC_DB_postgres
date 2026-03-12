@@ -84,7 +84,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
         print(f"Progress: {completed_scripts}/{total_scripts} XML file types generated.")
         print('-'*10); print('')
 
-def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db'):
+def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_auto_upload = False):
     """Call the scp script to transfer files."""
     try:
         scp_command = [sys.executable, 
@@ -92,6 +92,7 @@ def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db'):
                        '-lxu', lxplus_username, 
                        '-dir', directory,
                        '-date', str(search_date),
+                       '-autoupload', str(cern_auto_upload),
                        '-cerndb', cerndb]
     
         process = subprocess.run(scp_command, check=True)
@@ -134,6 +135,7 @@ async def main():
     parser.add_argument('-uplp', '--upload_prod_stat', default='True', required=False, help="Upload to prod DBLoader without generate.")
     parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
+    parser.add_argument('-autoupload', '--cern_auto_upload', default='False', required=False, help="True if the upload is automated via a service account")
 
     args = parser.parse_args()
 
@@ -171,7 +173,7 @@ async def main():
     
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
-            scp_success = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb)
+            scp_success = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb, cern_auto_upload=str2bool(args.cern_auto_upload))
         if scp_success and upload_prod_stat:
             result = subprocess.run(
                 [sys.executable, "export_data/check_successful_upload.py", "--dbpassword", dbpassword, "--encrypt_key", encryption_key or ""],

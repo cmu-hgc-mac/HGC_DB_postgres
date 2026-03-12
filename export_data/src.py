@@ -515,7 +515,7 @@ async def run_async_subprocess():
     return cp_check 
 
 
-def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False):
+def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, cern_auto_upload = False):
     controlpathname = "ctrl_dbloader"
     test_cmd = ["ssh", "-Y",
                 "-o", f"ControlPath=~/.ssh/{controlpathname}",
@@ -577,7 +577,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                     "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
                     f"{dbl_username}@{dbloader_hostname}"]    
                 
-                if Path("/tmp/hgc_postgres_cron_job.running").exists():
+                if cern_auto_upload and Path("/tmp/hgc_postgres_cron_job.running").exists():
                     asyncio.run(run_async_subprocess())
                     print("** SSH ControlMaster session started. **")
                     print("****************************************")
