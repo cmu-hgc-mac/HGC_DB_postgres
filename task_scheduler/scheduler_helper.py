@@ -6,26 +6,27 @@ from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Ent
 from pathlib import Path
 import pexpect, paramiko
 
-def run_ssh_master(dbloader_hostname = 'dbloader-hgcal', scp_persist = 'yes'):
+def get_lxplus_username_password():
     current_file = Path(__file__).resolve()
     PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
-    
-    conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
-    conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
-    dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
-    
+    # conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
+    # conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
+    # dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
     sched_config_file = os.path.join(PROJECT_ROOT, os.path.join('task_scheduler', 'schedule_config.yaml'))
     sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
     dbl_username = sched_config['CERN_service_account_username']
-
     with open(sched_config['encrypt_path'], "rb") as key_file:
         encryption_key = key_file.read()
     cipher_suite = Fernet(encryption_key)
-    
     with open(sched_config['CERN_service_account_pass_path'], "rb") as f:
         encrypted_password_lxplus = f.read()
     
     service_account_password = cipher_suite.decrypt(encrypted_password_lxplus).decode()
+    return dbl_username, service_account_password
+
+
+def run_ssh_master(dbloader_hostname = 'dbloader-hgcal', scp_persist = 'yes'):
+    dbl_username, service_account_password = get_lxplus_username_password()
     controlpathname = "ctrl_dbloader"
     sockpath = os.path.expanduser(f"~/.ssh/{controlpathname}")
     os.makedirs(os.path.dirname(sockpath), exist_ok=True)

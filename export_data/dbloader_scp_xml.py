@@ -112,7 +112,7 @@ def scp_to_dbloader(dbl_username, fname, cern_dbname = '', dbloader_hostname = '
 ##########################################################################################
 
 class mass_upload_to_dbloader_via_ssh_controlmaster:
-    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, encryption_key=None, cern_auto_upload=False):
+    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, service_account_password=None, cern_auto_upload=False):
         self.mass_upload_logs_fp = "export_data/mass_upload_logs"
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )#_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt")
@@ -252,7 +252,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
 ##########################################################################################
 
 class mass_upload_to_dbloader_via_paramiko:
-    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, encryption_key=None, cern_auto_upload=False):
+    def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, service_account_password=None, cern_auto_upload=False):
         self.mass_upload_logs_fp = "export_data/mass_upload_logs"
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )
@@ -273,12 +273,8 @@ class mass_upload_to_dbloader_via_paramiko:
         self.times_to_retry_reconnect = 5
 
         ### Unique to paramiko method:
-        self.encryption_key = encryption_key
-        if self.encryption_key is not None:
-            cipher_suite = Fernet(self.encryption_key.encode())  ## Decode base64 to get encrypted string and then decrypt
-            self.dbl_password = cipher_suite.decrypt( base64.urlsafe_b64decode(self.dbl_password)).decode()
-        else:
-            self.dbl_password = dbl_password
+        self.service_account_password = service_account_password
+        self.dbl_password = dbl_password
         self.ssh_server1 = None
         self.ssh_server2 = None
         self.ssh_conn = None
@@ -440,7 +436,7 @@ class mass_upload_to_dbloader_via_paramiko:
         steps = [self.make_lxplus_dir, self.rm_xml_lxplus, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.check_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
         current_step = 0
         while (current_step < len(steps)) and (self.times_to_retry_reconnect != 0):
-            if self.ssh_conn and (not self.ssh_conn.is_active()):    ### connection is missing
+            if self.ssh_conn and self.ssh_server2 and self.ssh_server1 and (not self.ssh_conn.is_active()):    ### connection is missing
                 print("Reconnect to LXPLUS -- preexisting connection broken -- retry this step")
                 self.connect()
                 self.times_to_retry_reconnect -= 1
@@ -482,8 +478,11 @@ def main():
     directory_to_search = args.directory
     search_date = args.date
     cern_auto_upload = str2bool(args.cern_auto_upload)
-    dbl_password, encryption_key = None, None  ## default
-    
+    dbl_password, service_account_password = None, None  ## default
+    if cern_auto_upload:
+        from task_scheduler.scheduler_helper import get_lxplus_username_password
+        dbl_username, service_account_password = get_lxplus_username_password()
+
     mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
                           "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
     
@@ -506,7 +505,7 @@ def main():
 
         if protomodule_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, service_account_password=service_account_password, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(protomodule_build_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
@@ -519,7 +518,7 @@ def main():
         print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
         if module_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, service_account_password=service_account_password, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(module_build_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
@@ -532,7 +531,7 @@ def main():
         print(f"Uploading {len(cond_files)} cond files to {cern_dbname}...")
         if cond_files: ## upload cond files prior to other data to prevent duplication of run_number in CMSR due to mass_loader parallelization
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, service_account_password=service_account_password, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(cond_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
@@ -543,7 +542,7 @@ def main():
         print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
         if other_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, encryption_key=encryption_key, cern_auto_upload=cern_auto_upload).run_steps()
+                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, service_account_password=service_account_password, cern_auto_upload=cern_auto_upload).run_steps()
             else:
                 for fname in tqdm(other_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
