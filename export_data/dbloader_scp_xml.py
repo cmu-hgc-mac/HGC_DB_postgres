@@ -283,6 +283,7 @@ class mass_upload_to_dbloader_via_paramiko:
         self.ssh_server2 = None
         self.ssh_conn = None
         self.connect()
+        time.sleep(5) ## wait for the connection to happen
         
     def connect(self):
         self.ssh_server1 = paramiko.SSHClient()
@@ -439,7 +440,7 @@ class mass_upload_to_dbloader_via_paramiko:
         steps = [self.make_lxplus_dir, self.rm_xml_lxplus, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.check_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
         current_step = 0
         while (current_step < len(steps)) and (self.times_to_retry_reconnect != 0):
-            if not self.ssh_conn.is_active():    ### connection is missing
+            if self.ssh_conn and (not self.ssh_conn.is_active()):    ### connection is missing
                 print("Reconnect to LXPLUS -- preexisting connection broken -- retry this step")
                 self.connect()
                 self.times_to_retry_reconnect -= 1
