@@ -76,7 +76,6 @@ def run_job(job_type):
                             "-datestart", start_date_str, 
                             "-dateend", today_str]
             subprocess.run(export_data_cmd)
-            
             print('FINISHING UPLOAD TO CMSR', datetime.now())
             print("###################################################")
             print("")
