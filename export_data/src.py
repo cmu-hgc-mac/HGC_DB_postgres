@@ -576,7 +576,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                     "-o", "ControlMaster=yes",
                     "-o", f"ControlPath=~/.ssh/{controlpathname}",    
                     "-o", f"ControlPersist={scp_timeout_cond}",
-                    "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
+                    "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
                     f"{dbl_username}@{dbloader_hostname}"]    
                 
                 if cern_auto_upload and Path("/tmp/hgc_postgres_cron_job.running").exists():
