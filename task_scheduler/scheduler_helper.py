@@ -542,7 +542,8 @@ class set_automation_schedule(Toplevel):
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 ssh.connect('lxtunnel.cern.ch', port=22, username=self.lxuser_var.get().strip(), password=self.cern_pass_var.get().strip(), timeout=15)
                 ssh.close()
-            except Exception:
+            except Exception as e:
+                print(e)
                 messagebox.showerror("Password Error", "LXPLUS authentication failed. Please check your CERN username and password.")
                 return
 
