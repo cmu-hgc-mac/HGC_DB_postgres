@@ -548,9 +548,11 @@ def main():
                 for fname in tqdm(other_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
         
-        if open_scp_connection(dbl_username=dbl_username, get_scp_status=True) == 0:
+        try:
+            if str2bool(cern_auto_upload) and open_scp_connection(dbl_username=dbl_username, get_scp_status=True) == 0:
                 scp_status = open_scp_connection(dbl_username=dbl_username, scp_force_quit=True)
-
+        except:
+            "I don't know what is going on!!!"
     else:
         print("No files found for the given date.")
 
