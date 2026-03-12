@@ -96,8 +96,10 @@ def update_yaml_with_checkboxes(xml_list, checkbox_vars):
         return {key: update_yaml_with_checkboxes(value, checkbox_vars[key]) for key, value in xml_list.items()}
     return xml_list  
 
-def process_xml_list(xml_list = None, get_yaml_data = False):
+def process_xml_list(xml_list = None, get_yaml_data = False, cern_auto_upload = False): ### variable `xml_list` is used for recursion
     list_of_xmls_yaml = 'export_data/list_of_xmls.yaml'
+    if cern_auto_upload:
+        list_of_xmls_yaml = 'task_scheduler/list_of_xmls_auto.yaml'
         
     if get_yaml_data:
         with open(list_of_xmls_yaml, "r") as file:

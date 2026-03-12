@@ -1,4 +1,4 @@
-import subprocess, os, sys, yaml, base64, pexpect, argparse
+import subprocess, os, sys, yaml, base64, pexpect, argparse, shutil
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -29,17 +29,18 @@ def run_job(job_type):
     if job_type == 'import_from_HGCAPI':
         print('LOGGING IMPORT FROM HGCAPI', datetime.now())
         print('See above for full terminal output ↑↑↑')
-        sensor_get_stat = True
-        basplate_get_stat = True
-        hexaboard_get_stat = True
-        mmts_inventory_get_stat = True
+        import_cfg = sched_config.get('import_from_HGCAPI', {})
+        basplate_get_stat       = import_cfg.get('getbp',       True)
+        hexaboard_get_stat      = import_cfg.get('gethxb',      True)
+        sensor_get_stat         = import_cfg.get('getsen',       True)
+        mmts_inventory_get_stat = import_cfg.get('getmmtsinv',  True)
         import_data_cmd = [sys.executable,
-                            "import_data/get_parts_from_hgcapi.py", 
-                            "-p", dbshipper_pass, 
-                            "-k", encryption_key, 
-                            "-getbp", str(basplate_get_stat), 
-                            "-gethxb", str(hexaboard_get_stat), 
-                            "-getmmtsinv", str(mmts_inventory_get_stat), 
+                            "import_data/get_parts_from_hgcapi.py",
+                            "-p", dbshipper_pass,
+                            "-k", encryption_key,
+                            "-getbp", str(basplate_get_stat),
+                            "-gethxb", str(hexaboard_get_stat),
+                            "-getmmtsinv", str(mmts_inventory_get_stat),
                             "-getsen", str(sensor_get_stat)]
         subprocess.run(import_data_cmd)
         print('FINISHING IMPORT FROM HGCAPI', datetime.now())
@@ -60,8 +61,6 @@ def run_job(job_type):
         today_str = today_date.strftime('%Y-%m-%d')
         start_date = today_date - timedelta(days=days_since_upload)
         start_date_str = start_date.strftime('%Y-%m-%d')
-
-        restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
         
         with JobIndicator("/tmp/hgc_postgres_cron_job.running"):  ### This is required for open_scp_connection to default to Service Account
             export_data_cmd = [sys.executable, 

@@ -42,11 +42,11 @@ def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, o
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
-def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist = None):
+def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist = None, cern_auto_upload=None):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
-    xml_list = process_xml_list(get_yaml_data = True)
+    xml_list = process_xml_list(get_yaml_data = True, cern_auto_upload=cern_auto_upload)
     subdirs = list(xml_list.keys())    # subdirs = ['baseplate', 'hexaboard', 'module', 'protomodule', 'sensor', 'testing']
     scripts_to_run = []
     building_module, building_proto = False, False ## initialize 
@@ -157,7 +157,7 @@ async def main():
 
         ## Step 1: Generate XML files
     if str2bool(args.generate_stat):
-        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist)
+        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cern_auto_upload=str2bool(args.cern_auto_upload))
         find_missing_var_xml(time_limit=90)
         print("Waiting 3 seconds ...")
         time.sleep(3) ### XMLs take a few seconds to get saved
