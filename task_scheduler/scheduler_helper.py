@@ -1,10 +1,10 @@
 
-import os, subprocess, yaml, base64, sys, time, atexit, signal, re, shutil
+import os, subprocess, yaml, base64, sys, time, atexit, signal, re, shutil, asyncio
 from datetime import datetime
 from cryptography.fernet import Fernet
 from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu, END, DISABLED
 from pathlib import Path
-import pexpect
+import pexpect, paramiko
 
 def run_ssh_master(dbloader_hostname = 'dbloader-hgcal', scp_persist = 'yes'):
     current_file = Path(__file__).resolve()
@@ -196,63 +196,51 @@ class set_automation_schedule(Toplevel):
         self.task_scheduler_path = os.path.join(os.getcwd(), 'task_scheduler')
         self.encrypt_path = os.path.join(self.task_scheduler_path,"secret.key")
         self.config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
+        self.xml_source_yaml = os.path.join(os.getcwd(), 'export_data', 'list_of_xmls.yaml')
+        self.xml_auto_yaml   = os.path.join(self.task_scheduler_path, 'list_of_xmls_auto.yaml')
         self.postgres_pass_path = os.path.join(self.task_scheduler_path,"password_postgres.enc")
         self.lxplus_pass_path = os.path.join(self.task_scheduler_path,"password_lxplus.enc")
         self.config_dict = {}
         self.load_existing_config_file()
         self.selected_days_indices = []
         self.selected_days = []
-        Label(self, text="See ./task_scheduler/schedule_config.yaml", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-        Label(self, text="for any existing jobs.", fg="blue",wraplength=370,justify="left").pack(pady=1, anchor="w")
-        Label(self, text="**Enter local DB USER password:**").pack(pady=1)
+        self.selected_job = StringVar()
+        self.job_panel = None   # left column job-schedule panel
+        self._side_panel = None  # right column side panel
+
+        # Two-column layout: left holds credentials + buttons + job panel;
+        # right holds the XML / parts side panel (starts at same height as credentials)
+        self.columns_frame = Frame(self)
+        self.columns_frame.pack(fill="both", expand=True, padx=5, pady=(2, 0))
+        self.left_col  = Frame(self.columns_frame)
+        self.left_col.pack(side="left", fill="y", anchor="n")
+        self.right_col = Frame(self.columns_frame)
+        self.right_col.pack(side="left", fill="both", expand=True, anchor="n")
+
+        # Credentials go into left_col
+        Label(self.left_col, text="See ./task_scheduler/schedule_config.yaml", fg="blue", wraplength=280, justify="left").pack(pady=1, anchor="w")
+        Label(self.left_col, text="for any existing jobs.", fg="blue", wraplength=280, justify="left").pack(pady=1, anchor="w")
+        Label(self.left_col, text="**Enter local DB USER password:**").pack(pady=1)
         self.shipper_var = StringVar()
-        shipper_var_entry = Entry(self, textvariable=self.shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+        shipper_var_entry = Entry(self.left_col, textvariable=self.shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
         shipper_var_entry.pack(pady=0)
-        Label(self, text="**Enter CERN Service Account username:**").pack(pady=1)
+        Label(self.left_col, text="**Enter CERN Service Account username:**").pack(pady=1)
         self.lxuser_var = StringVar()
-        lxuser_var_entry = Entry(self, textvariable=self.lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+        lxuser_var_entry = Entry(self.left_col, textvariable=self.lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
         lxuser_var_entry.pack(pady=0)
-        Label(self, text="**Enter CERN Service Account password:**").pack(pady=1)
+        Label(self.left_col, text="**Enter CERN Service Account password:**").pack(pady=1)
         self.cern_pass_var = StringVar()
-        cern_pass_var_entry = Entry(self, textvariable=self.cern_pass_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+        cern_pass_var_entry = Entry(self.left_col, textvariable=self.cern_pass_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
         cern_pass_var_entry.pack(pady=0)
 
-        Label(self, text="Select type of job").pack(pady=1)
-        
-        self.selected_job = StringVar(value=list(self.job_type_keys.keys())[-1])  
-        dropdown_job_type = OptionMenu(self, self.selected_job, *list(self.job_type_keys.keys()))
-        dropdown_job_type.pack(pady=(1,15))
+        buttons_frame = Frame(self.left_col)
+        buttons_frame.pack(pady=(5, 0))
 
-        Label(self, text="Enter Time (HH:MM) in 24hr format").pack(pady=0)
-        Label(self, text="(Ideally, early in the morning)").pack(pady=0)
-        vcmd = (self.register(self.validate_time), '%P')
-        self.time_entry = Entry(self, validate="key", validatecommand=vcmd)
-        self.time_entry.pack()
-        self.time_entry.insert(0, "2:00")  # default time
-
-        Label(self, text="Repeat every X hour(s) on that day").pack(pady=2)
-        self.repeat_hr_options = ['Do not repeat'] + [str(i) for i in range(1,21)] ### 24 hr options
-        self.selected_repeat = StringVar(value=self.repeat_hr_options[6])
-        self.repeat_dropdown = OptionMenu(self, self.selected_repeat, *self.repeat_hr_options)
-        self.repeat_dropdown.pack(pady=2)
-
-        Label(self, text="Select days of week to repeat weekly").pack(pady=10)
-        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
-        self.day_vars = {}
-        days_frame = Frame(self)
-        days_frame.pack()
-
-        for day in days:
-            if day in ["Sunday"]:
-                var = BooleanVar(value=False)
-            else:
-                var = BooleanVar(value=True)
-            chk = Checkbutton(days_frame, text=day, variable=var)
-            chk.pack(anchor="w")
-            self.day_vars[day] = var
-
-        Button(self, text="Save Schedule", command=self.get_schedule).pack(pady=15)
-        # Button(self, text="Delete Schedule", command=self.get_schedule).pack(pady=15)
+        for label, key in self.job_type_keys.items():
+            short = label.split()[0]  # "Import" or "Upload"
+            btn = Button(buttons_frame, text=f"Set {short} job",
+                         command=lambda k=key, l=label: self._toggle_job_panel(k, l))
+            btn.pack(side="left", padx=5)
 
 
     def load_existing_config_file(self):                
@@ -265,59 +253,325 @@ class set_automation_schedule(Toplevel):
         else:
             self.config_dict = {}
 
-    def validate_time(self, new_value):
-        """Allow typing partial valid time like '1', '12:', '12:3', etc."""
+    def _load_existing_job_values(self, job_key):
+        """Return (time_str, repeat_val, active_day_indices) from yaml/crontab, or None if not found."""
+        job_cfg = self.config_dict.get(job_key)
+        if job_cfg:
+            time_str  = job_cfg.get('schedule_time', '2:00')
+            days_str  = job_cfg.get('schedule_days', '')   # e.g. "1,2,3,4,5,6"
+            # recover repeat from cron_command hour field: "2" or "2-23/6"
+            repeat_val = 'Do not repeat'
+            cron_cmd = job_cfg.get('cron_command', '')
+            if cron_cmd:
+                parts = cron_cmd.split()
+                if len(parts) >= 2:
+                    hr_field = parts[1]   # e.g. "2" or "2-23/6"
+                    if '/' in hr_field:
+                        repeat_val = hr_field.split('/')[1]  # "6"
+            active_indices = set(days_str.split(',')) if days_str else set()
+            return time_str, repeat_val, active_indices
+        # fallback: check crontab directly
+        job_name = f"{job_key}_job"
+        result = subprocess.run(["crontab", "-l"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        for line in result.stdout.splitlines():
+            if job_name in line and not line.strip().startswith('#'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    min_f, hr_f = parts[0], parts[1]
+                    hr_start = hr_f.split('-')[0].split('/')[0]
+                    time_str = f"{hr_start}:{min_f.zfill(2)}"
+                    repeat_val = hr_f.split('/')[1] if '/' in hr_f else 'Do not repeat'
+                    days_f = parts[4] if len(parts) >= 5 else ''
+                    active_indices = set(days_f.split(',')) if days_f and days_f != '*' else set()
+                    return time_str, repeat_val, active_indices
+        return None
+
+    def _toggle_job_panel(self, job_key, job_label):
+        """Show the schedule sub-panel for the chosen job, collapsing any other open one."""
+        # collapse existing panels
+        if self._side_panel is not None:
+            self._side_panel.destroy()
+            self._side_panel = None
+        if self.job_panel is not None:
+            self.job_panel.destroy()
+            self.job_panel = None
+            if self.selected_job.get() == job_key:
+                self.selected_job.set("")
+                return  # clicking same button again just closes it
+
+        self.selected_job.set(job_key)
+        panel = Frame(self.left_col, relief="groove", bd=1)
+        panel.pack(fill="x", padx=0, pady=(5, 0))
+        self.job_panel = panel
+
+        if job_key == 'upload_to_CMSR' and not os.path.exists(self.xml_auto_yaml):
+            shutil.copy(self.xml_source_yaml, self.xml_auto_yaml)
+
+        existing = self._load_existing_job_values(job_key)
+        default_time   = existing[0] if existing else "2:00"
+        default_repeat = existing[1] if existing else "6"
+        active_indices = existing[2] if existing else set()
+
+        status_text = "(existing schedule loaded)" if existing else "(no existing schedule)"
+        Label(panel, text=f"--- {job_label} schedule --- {status_text}", fg="blue").pack(pady=(4, 0))
+
+        Label(panel, text="Enter Time (HH:MM) in 24hr format").pack(pady=0)
+        Label(panel, text="(Ideally, early in the morning)").pack(pady=0)
+        vcmd = (self.register(self.validate_time_panel), '%P')
+        time_entry = Entry(panel, validate="key", validatecommand=vcmd)
+        time_entry.pack()
+        time_entry.insert(0, default_time)
+
+        Label(panel, text="Repeat every X hour(s) on that day").pack(pady=2)
+        repeat_hr_options = ['Do not repeat'] + [str(i) for i in range(1, 21)]
+        selected_repeat = StringVar(value=str(default_repeat))
+        repeat_dropdown = OptionMenu(panel, selected_repeat, *repeat_hr_options)
+        repeat_dropdown.pack(pady=2)
+
+        # store refs so validate_time_panel can update the dropdown
+        panel._repeat_hr_options = repeat_hr_options
+        panel._selected_repeat = selected_repeat
+        panel._repeat_dropdown = repeat_dropdown
+        panel._time_entry = time_entry
+        self._active_panel = panel  # used by validate_time_panel
+
+        Label(panel, text="Select days of week to repeat weekly").pack(pady=(8, 0))
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        day_vars = {}
+        days_frame = Frame(panel)
+        days_frame.pack()
+        for i, day in enumerate(days):
+            if active_indices:
+                checked = str(i + 1) in active_indices  # cron day index 1=Monday … 7=Sunday
+            else:
+                checked = (day != "Sunday")
+            var = BooleanVar(value=checked)
+            chk = Checkbutton(days_frame, text=day, variable=var)
+            chk.pack(anchor="w")
+            day_vars[day] = var
+
+        result_label = Label(panel, text="", fg="red")
+        result_label.pack(pady=2)
+
+        if job_key == 'upload_to_CMSR':
+            Button(panel, text="Select type of XMLs",
+                   command=lambda: self._toggle_side_panel('xml')).pack(pady=(2, 0))
+        elif job_key == 'import_from_HGCAPI':
+            Button(panel, text="Select type of parts",
+                   command=lambda: self._toggle_side_panel('parts')).pack(pady=(2, 0))
+
+        btns_frame = Frame(panel)
+        btns_frame.pack(pady=(5, 8))
+        Button(btns_frame, text="Save Schedule",
+               command=lambda: self._save_schedule(job_key, time_entry, selected_repeat, day_vars, result_label)).pack(side="left", padx=5)
+        Button(btns_frame, text="Delete Schedule", fg="red",
+               command=lambda: self._delete_schedule(job_key)).pack(side="left", padx=5)
+
+    # ------------------------------------------------------------------ #
+    #  Side-panel helpers                                                  #
+    # ------------------------------------------------------------------ #
+
+    def _toggle_side_panel(self, panel_type):
+        if self._side_panel is not None:
+            self._side_panel.destroy()
+            self._side_panel = None
+        side = Frame(self.right_col, relief="groove", bd=1)
+        side.pack(fill="both", expand=True, pady=0)
+        self._side_panel = side
+        if panel_type == 'xml':
+            self._build_xml_side_panel(side)
+        else:
+            self._build_parts_side_panel(side)
+
+    def _load_xml_yaml(self):
+        """Return the xml list from list_of_xmls_auto.yaml."""
+        with open(self.xml_auto_yaml, 'r') as f:
+            return yaml.safe_load(f)
+
+    def _build_xml_side_panel(self, parent):
+        Label(parent, text="Select XMLs to upload", fg="blue").pack(pady=(4, 0))
+        xml_list = self._load_xml_yaml()
+        checkbox_vars = {}
+
+        def create_checkboxes(data, container):
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    frame = LabelFrame(container, text=key, padx=5, pady=0.5)
+                    frame.pack(fill="x", expand=True, padx=10, pady=0.5)
+                    checkbox_vars[key] = create_checkboxes(value, frame)
+            elif isinstance(data, list):
+                vars_list = []
+                for item in data:
+                    for key, value in item.items():
+                        var = IntVar(value=1 if value else 0)
+                        Checkbutton(container, text=key, variable=var).pack(anchor="w", padx=10, pady=0.5)
+                        vars_list.append({key: var})
+                return vars_list
+            return {}
+
+        create_checkboxes(xml_list, parent)
+        toggle_state = {"all_selected": True}
+
+        def toggle_all():
+            toggle_state["all_selected"] = not toggle_state["all_selected"]
+            new_state = 1 if toggle_state["all_selected"] else 0
+            def apply_toggle(data):
+                if isinstance(data, list):
+                    for item in data:
+                        for _, var in item.items():
+                            var.set(new_state)
+                elif isinstance(data, dict):
+                    for v in data.values():
+                        apply_toggle(v)
+            apply_toggle(checkbox_vars)
+
+        Button(parent, text="(De)Select All", command=toggle_all).pack(pady=2)
+
+        def save_xml_selection():
+            def collect(data, cvars):
+                if isinstance(data, dict):
+                    return {k: collect(v, cvars[k]) for k, v in data.items()}
+                elif isinstance(data, list):
+                    return [{k: (cvars[i][k].get() == 1) for k in item.keys()} for i, item in enumerate(data)]
+                return data
+            updated = collect(xml_list, checkbox_vars)
+            with open(self.xml_auto_yaml, 'w') as f:
+                yaml.dump(updated, f, sort_keys=False)
+            self._side_panel.destroy()
+            self._side_panel = None
+            # messagebox.showinfo("Saved", f"XML selection saved to\n{self.xml_auto_yaml}")
+
+        Button(parent, text="Save selection", command=save_xml_selection).pack(pady=(4, 8))
+
+    def _build_parts_side_panel(self, parent):
+        Frame(parent, height=340).pack()  # spacer to align with time entry on the left
+        Label(parent, text="Select parts to import", fg="blue").pack(pady=(4, 0))
+        # load existing choices from config if present
+        saved = self.config_dict.get('import_from_HGCAPI', {})
+        part_keys = [("baseplates",      "getbp"),
+                     ("hexaboards",      "gethxb"),
+                     ("sensors",         "getsen"),
+                     ("other inventory", "getmmtsinv")]
+        part_vars = {}
+        for label, flag in part_keys:
+            var = BooleanVar(value=saved.get(flag, True))
+            Checkbutton(parent, text=label, variable=var).pack(anchor="w", padx=15, pady=1)
+            part_vars[flag] = var
+
+        def save_parts_selection():
+            if 'import_from_HGCAPI' not in self.config_dict:
+                self.config_dict['import_from_HGCAPI'] = {}
+            for flag, var in part_vars.items():
+                self.config_dict['import_from_HGCAPI'][flag] = var.get()
+            with open(self.config_fname, 'w') as f:
+                yaml.dump(self.config_dict, f, sort_keys=False)
+            self._side_panel.destroy()
+            self._side_panel = None
+            # messagebox.showinfo("Saved", "Part-type selection saved.")
+
+        Button(parent, text="Save selection", command=save_parts_selection).pack(pady=(4, 8))
+
+    def validate_time_panel(self, new_value):
+        """Validate time entry and update the repeat dropdown on the active panel."""
+        panel = getattr(self, '_active_panel', None)
         if new_value == "":
             return True
         if len(new_value) > 5:
             return False
-        if not all(c.isdigit() or c==":" for c in new_value):      # Only allow digits and one colon
+        if not all(c.isdigit() or c == ":" for c in new_value):
             return False
-        if new_value.count(":") > 1:    # Only one colon allowed
+        if new_value.count(":") > 1:
             return False
-        parts = new_value.split(":")   # Split by colon if present
+        parts = new_value.split(":")
         if len(parts) >= 1 and parts[0]:
             if not parts[0].isdigit() or int(parts[0]) > 23:
                 return False
         if len(parts) == 2 and parts[1]:
             if not parts[1].isdigit() or int(parts[1]) > 59:
                 return False
-        if parts[0] and (0 <= int(parts[0]) <= 23):
+        if panel and parts[0] and (0 <= int(parts[0]) <= 23):
             max_intervals = 24 - int(parts[0])
-            self.repeat_hr_options = ['Do not repeat'] + list(range(1, max_intervals)) 
+            new_options = ['Do not repeat'] + list(range(1, max_intervals))
             try:
-                self.selected_repeat.set(self.repeat_hr_options[-1])
-                menu = self.repeat_dropdown["menu"]
-                menu.delete(0, "end")  # clear old options
-                for option in self.repeat_hr_options:
-                    menu.add_command(label=option, command=lambda value=option: self.selected_repeat.set(value))
-            except:
-                None
+                panel._selected_repeat.set(new_options[-1])
+                menu = panel._repeat_dropdown["menu"]
+                menu.delete(0, "end")
+                for opt in new_options:
+                    menu.add_command(label=opt, command=lambda v=opt: panel._selected_repeat.set(v))
+            except Exception:
+                pass
         return True
-    
 
-    def get_schedule(self):
-        time = self.time_entry.get()
-        self.selected_days = [day for day, var in self.day_vars.items() if var.get()]
-        self.selected_days_indices = [str(1+self.selected_days.index(day)) for day in self.selected_days] ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
+    def _save_schedule(self, job_key, time_entry, selected_repeat, day_vars, result_label):
+        time_val = time_entry.get()
+        selected_days = [day for day, var in day_vars.items() if var.get()]
+        self.selected_days_indices = [str(1 + list(day_vars.keys()).index(day)) for day in selected_days]
+        self.selected_days = selected_days
 
-        try:   # Validate final time format HH:MM
-            hour, minute = map(int, time.split(":"))
+        # store so create_cron_schedule_config can read them
+        self._current_time_entry = time_entry
+        self._current_selected_repeat = selected_repeat
+
+        try:
+            hour, minute = map(int, time_val.split(":"))
             if not (0 <= hour <= 23 and 0 <= minute <= 59):
                 raise ValueError
-        except:
-            self.result_label.config(text="Invalid time! Use HH:MM format (00:00 to 23:59).")
+        except Exception:
+            result_label.config(text="Invalid time! Use HH:MM format (00:00 to 23:59).")
             return
 
-        if not self.selected_days:
-            self.result_label.config(text="Please select at least one day.")
+        if not selected_days:
+            result_label.config(text="Please select at least one day.")
             return
+
+        # resolve key → display label for create_cron_schedule_config
+        reverse = {v: k for k, v in self.job_type_keys.items()}
+        self.selected_job.set(reverse[job_key])
+
+        # Validate DB password
+        from export_data.src import check_good_conn
+        if not asyncio.run(check_good_conn(self.shipper_var.get().strip(), user_type='editor')):
+            messagebox.showerror("Password Error", "Database password is incorrect. Please update and try again.")
+            return
+
+        # Validate LXPLUS password only if an upload job exists or this is an upload job
+        upload_job_exists = job_key == 'upload_to_CMSR' or 'upload_to_CMSR' in self.config_dict
+        if upload_job_exists:
+            try:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect('lxtunnel.cern.ch', port=22, username=self.lxuser_var.get().strip(), password=self.cern_pass_var.get().strip(), timeout=15)
+                ssh.close()
+            except Exception:
+                messagebox.showerror("Password Error", "LXPLUS authentication failed. Please check your CERN username and password.")
+                return
 
         self.save_encrypted_password()
         self.create_cron_schedule_config()
-        ### if 'upload' in self.selected_job.get().lower():  self.create_ssh_config_entry()  ### Skip this
-        self.destroy() 
-        # self.result_label.config(text=f"Weekly on: {days_str} at {time}")
+        self.job_panel.destroy()
+        self.job_panel = None
+        self.selected_job.set("")
+        messagebox.showinfo("Schedule Saved", f"{reverse[job_key]} schedule saved.\nCheck ./task_scheduler/schedule_config.yaml.")
+
+    def _delete_schedule(self, job_key):
+        job_name = f"{job_key}_job"
+        cs = object.__new__(cron_setter)
+        cs.CRON_LINE = ""
+        cs.JOB_TAG = job_name
+        cs.delete_cron_job()
+        # remove from yaml config
+        if job_key in self.config_dict:
+            del self.config_dict[job_key]
+            with open(self.config_fname, 'w') as f:
+                yaml.dump(self.config_dict, f, sort_keys=False)
+        self.job_panel.destroy()
+        self.job_panel = None
+        self.selected_job.set("")
+        messagebox.showinfo("Schedule Deleted", f"{job_key} cron job removed.")
+
+    # keep old name as alias so nothing external breaks
+    def get_schedule(self):
+        pass
 
     def save_encrypted_password(self):
         cipher_suite = Fernet(self.encryption_key) ## Generate or load a key. 
@@ -334,7 +588,7 @@ class set_automation_schedule(Toplevel):
         type_of_job = self.job_type_keys[self.selected_job.get()]
         self.config_dict[type_of_job] = {}
         self.config_dict[type_of_job]['cron_job_name'] = f"{type_of_job}_job"
-        self.config_dict[type_of_job]['schedule_time'] = self.time_entry.get()
+        self.config_dict[type_of_job]['schedule_time'] = self._current_time_entry.get()
         self.config_dict[type_of_job]['schedule_days'] = ",".join(self.selected_days_indices)
         self.config_dict['python_path'] = sys.executable
         self.config_dict['HGC_DB_postgres_path'] = os.getcwd() # Path of HGC_DB_postgres folder
@@ -354,17 +608,18 @@ class set_automation_schedule(Toplevel):
         elif type_of_job == 'upload_to_CMSR':
             writeout_type = '>>'
 
-        cron_time = f"{hr_time}-23/{self.selected_repeat.get()}" if self.selected_repeat.get().isdigit() else hr_time
+        repeat_val = self._current_selected_repeat.get()
+        cron_time = f"{hr_time}-23/{repeat_val}" if str(repeat_val).isdigit() else hr_time
         cron_command_inputs = [str(int(min_time)), cron_time, '*', '*', self.config_dict[type_of_job]['schedule_days'],
-                                self.config_dict['python_path'], py_job_fname, 
+                                self.config_dict['python_path'], py_job_fname,
                                 '-jt', type_of_job, writeout_type, py_log_fname, '2>&1', ## both stderr and stdout appended
                                 '#', self.config_dict[type_of_job]['cron_job_name']]
-    
-            
+
+
         self.config_dict[type_of_job]['cron_command'] = " ".join(cron_command_inputs)
 
         days_str = ", ".join(self.selected_days)
-        self.config_dict[type_of_job]['description'] = f"Run {type_of_job} weekly on: {days_str} at {self.config_dict[type_of_job]['schedule_time']} repeating every {self.selected_repeat.get()} hour(s) in localtime."
+        self.config_dict[type_of_job]['description'] = f"Run {type_of_job} weekly on: {days_str} at {self.config_dict[type_of_job]['schedule_time']} repeating every {repeat_val} hour(s) in localtime."
 
         cron_setter(CRON_LINE=self.config_dict[type_of_job]['cron_command'], JOB_TAG=self.config_dict[type_of_job]['cron_job_name'])
         
