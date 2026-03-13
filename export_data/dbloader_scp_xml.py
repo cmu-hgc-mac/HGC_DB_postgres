@@ -143,7 +143,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         return result.returncode
 
     def rm_xml_lxplus(self):
-        remove_xml_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm {self.remote_xml_dir}/*",]
+        remove_xml_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f {self.remote_xml_dir}/*",]
         if self.verbose: print(f"Removing files from {self.dbl_username}@{self.dbloader_hostname}:~/hgc_xml_temp ...")
         result = subprocess.run(remove_xml_cmd,  text=True, capture_output=True)
         if "No such file or directory" in result.stderr: return 0
@@ -214,7 +214,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
             result = subprocess.run(scp_masslog_file,     text=True)
             local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
             if os.path.isfile(local_csv_path) and os.path.isfile(local_log_path):
-                rm_masslog_file = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm ~/{self.csv_outfile}"] # ~/{log_outfile}"]
+                rm_masslog_file = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f ~/{self.csv_outfile}"] # ~/{log_outfile}"]
                 result = subprocess.run(rm_masslog_file,     text=True)
             print("")
             return result.returncode
@@ -260,7 +260,6 @@ class mass_upload_to_dbloader_via_paramiko:
         self.verbose = verbose
         self.starttime = datetime.datetime.now()
         self.run_on_remote_fpath = 'export_data/mass_loader.py'
-        self.run_on_remote_fpath = 'export_data/remote_python.py'
         
         self.cern_dbname = cern_dbname
         self.dbloader_hostname = dbloader_hostname
@@ -318,8 +317,7 @@ class mass_upload_to_dbloader_via_paramiko:
         return result
 
     def rm_xml_lxplus(self):
-        remove_xml_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm {self.remote_xml_dir}/*",]
-        stdin, stdout, stderr = self.ssh_server2.exec_command(f"rm {self.remote_xml_dir}/*")
+        stdin, stdout, stderr = self.ssh_server2.exec_command(f"rm -f {self.remote_xml_dir}/*")
         if self.verbose: print(f"Removing files from {self.dbl_username}@{self.dbloader_hostname}:~/hgc_xml_temp ...")
         result = stdout.channel.recv_exit_status()
         return result
@@ -336,10 +334,9 @@ class mass_upload_to_dbloader_via_paramiko:
                 return 255
 
     def mass_upload_xml_dbl(self):
+        print(f"Uploading to {self.dbloader_hostname} with mass_loader ... patience, please")
         print("="*65)
-        with open(self.run_on_remote_fpath, "r") as massloadfile, \
-            open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:
-
+        with open(self.run_on_remote_fpath, "r") as massloadfile, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:
             script = massloadfile.read()
             command = f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"
             stdin, stdout, stderr = self.ssh_server2.exec_command(command)
@@ -463,10 +460,10 @@ class mass_upload_to_dbloader_via_paramiko:
 ###################################################################################################
 
 def main():
-    default_dir = os.path.abspath(os.path.join(os.getcwd(), "../../xmls_for_dbloader_upload"))
+    GENERATED_XMLS_DIR = os.path.abspath(os.path.join(os.getcwd(), "export_date/xmls_for_upload/"))
     today = str(datetime.datetime.today().strftime('%Y-%m-%d'))
     parser = argparse.ArgumentParser(description="Script to process files in a directory.")
-    parser.add_argument('-dir','--directory', type=valid_directory, default=default_dir, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
+    parser.add_argument('-dir','--directory', type=valid_directory, default=GENERATED_XMLS_DIR, help=f"The directory to process. Default is {GENERATED_XMLS_DIR}.")
     parser.add_argument('-date', '--date', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=today, help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-cerndb', '--cern_dbase', default='dev_db', required=False, help="Name of cern db to upload to - dev_db/prod_db.")
@@ -479,9 +476,9 @@ def main():
     cern_auto_upload = str2bool(args.cern_auto_upload)
     dbl_password = None  ## default
     if cern_auto_upload:
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
         from task_scheduler.scheduler_helper import get_lxplus_username_password
         dbl_username, dbl_password = get_lxplus_username_password()
-        print(dbl_username, )
 
     mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
                           "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
