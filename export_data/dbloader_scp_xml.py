@@ -401,27 +401,31 @@ class mass_upload_to_dbloader_via_paramiko:
     
     def scp_logs_local(self):
         if ".csv" in self.terminal_output:
-            print("----> Saving log files to export_data/mass_upload_logs <----")
-            log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
-            terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
-            local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
-            shutil.move(self.temp_txt_file_name, local_terminal_path)
-            print(terminal_outfile)
-            local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
-            sftp = self.ssh_server2.open_sftp()
+            try:
+                print("----> Saving log files to export_data/mass_upload_logs <----")
+                log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
+                terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
+                local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
+                shutil.move(self.temp_txt_file_name, local_terminal_path)
+                print(terminal_outfile)
+                local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
+                sftp = self.ssh_server2.open_sftp()
+            except Exception as e:
+                print(e)
+                return 255
 
             try:
                 sftp.get(self.csv_outfile, local_csv_path)              # Copy remote CSV to local
                 sftp.get(log_outfile, local_log_path)
             except FileNotFoundError as e:
-                return 1  # indicate failure
+                return 255  # indicate failure
 
             if os.path.isfile(local_csv_path) and os.path.isfile(local_terminal_path):
                 try:          
                     sftp.remove(self.csv_outfile)  # Remove remote CSV after download
                     sftp.remove(log_outfile)  # Remove remote log after download
                 except FileNotFoundError:
-                    pass
+                    return 255
             print("")
             return 0  # success
 
