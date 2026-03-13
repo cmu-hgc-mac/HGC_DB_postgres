@@ -342,7 +342,6 @@ class mass_upload_to_dbloader_via_paramiko:
             stdin, stdout, stderr = self.ssh_server2.exec_command(command)
             stdin.write(script)
             stdin.channel.shutdown_write()  # signal EOF
-            self.terminal_output = ""
             self.files_to_retry = 0
 
             for line in iter(stdout.readline, ""):
@@ -384,7 +383,6 @@ class mass_upload_to_dbloader_via_paramiko:
             stdin, stdout, stderr = self.ssh_server2.exec_command(f"python3 - -lfp ~/{self.csv_outfile}")
             stdin.write(python_code)
             stdin.channel.shutdown_write()  # Important: signal EOF to remote Python
-            self.terminal_output = ""
             self.files_to_retry = 0
 
             for line in iter(stdout.readline, ""):
@@ -448,7 +446,10 @@ class mass_upload_to_dbloader_via_paramiko:
                         print(f"Reattempting the {self.files_to_retry} timed-out file(s) -- ({self.times_to_retry_upload-1} reattempt(s) left) ")
                         self.times_to_retry_upload -= 1 ### attempt only upto n times
                         continue ### repeat current step
-                if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
+                if return_status == 0: 
+                    current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
+                else:
+                    self.times_to_retry_reconnect -= 1  ### prevent infinite loop in case of error    
 
             except Exception as e:
                 print(f"An error occurred at step {current_step+1}: {e}")
@@ -460,7 +461,7 @@ class mass_upload_to_dbloader_via_paramiko:
 ###################################################################################################
 
 def main():
-    GENERATED_XMLS_DIR = os.path.abspath(os.path.join(os.getcwd(), "export_date/xmls_for_upload/"))
+    GENERATED_XMLS_DIR = os.path.abspath(os.path.join(os.getcwd(), "export_data/xmls_for_upload/"))
     today = str(datetime.datetime.today().strftime('%Y-%m-%d'))
     parser = argparse.ArgumentParser(description="Script to process files in a directory.")
     parser.add_argument('-dir','--directory', type=valid_directory, default=GENERATED_XMLS_DIR, help=f"The directory to process. Default is {GENERATED_XMLS_DIR}.")
