@@ -158,7 +158,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         print(f"Uploading to {self.dbloader_hostname} with mass_loader ... patience, please")
         print("="*65)
         with open(self.run_on_remote_fpath, "r") as massloadfile:
-            mass_upload_cmd = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"]
+            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"]
             with subprocess.Popen(mass_upload_cmd, stdin=massloadfile, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -184,8 +184,9 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
             
     def check_upload_xml_dbl(self):
         print("="*65)
-        with open("export_data/check_upload_xml_logs.py", "r") as checkuploadfile:
-            check_upload_cmd = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - -lfp ~/{self.csv_outfile}"]
+        _check_upload_script = str(Path(__file__).resolve().parent / "check_upload_xml_logs.py")
+        with open(_check_upload_script, "r") as checkuploadfile:
+            check_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - -lfp ~/{self.csv_outfile}"]
             with subprocess.Popen(check_upload_cmd, stdin=checkuploadfile, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile: 
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -204,16 +205,15 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
     def scp_logs_local(self):
         if '.csv' in self.terminal_output:
             print("----> Saving log files to export_data/mass_upload_logs <----")
-            # csv_outfile = f"{self.terminal_output.split('.csv')[0].split(' ')[-1]}.csv"
             log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
             terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
-            os.rename(self.temp_txt_file_name, os.path.join(self.mass_upload_logs_fp, terminal_outfile))
-            print(terminal_outfile)
+            local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
+            shutil.move(self.temp_txt_file_name, local_terminal_path)
             scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}:~/{self.csv_outfile}", self.mass_upload_logs_fp ] #f"{self.dbl_username}@{self.dbloader_hostname}:~/{log_outfile}", self.mass_upload_logs_fp]
             result = subprocess.run(scp_masslog_file,     text=True)
             local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
-            if os.path.isfile(local_csv_path) and os.path.isfile(local_log_path):
-                rm_masslog_file = ["ssh", "-Y", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f ~/{self.csv_outfile}"] # ~/{log_outfile}"]
+            if os.path.isfile(local_csv_path): # and os.path.isfile(local_log_path):
+                rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f ~/{self.csv_outfile} ~/mass_loader*.log"]
                 result = subprocess.run(rm_masslog_file,     text=True)
             print("")
             return result.returncode
@@ -247,8 +247,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
 
             except Exception as e:
                 print(f"An error occurred at step {current_step+1}: {e}")
-                self.times_to_retry_reconnect -= 1  ### prevent infinite loop in case of error    
-                # scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=self.cern_auto_upload)        
+                self.times_to_retry_reconnect -= 1  ### prevent infinite loop in case of error 
     
 ##########################################################################################
 ################################# Mass upload with Paramiko ##############################
@@ -550,7 +549,7 @@ def main():
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
         
         try:
-            if str2bool(cern_auto_upload) and open_scp_connection(dbl_username=dbl_username, get_scp_status=True) == 0:
+            if cern_auto_upload and open_scp_connection(dbl_username=dbl_username, get_scp_status=True) == 0:
                 scp_status = open_scp_connection(dbl_username=dbl_username, scp_force_quit=True)
         except:
             "I don't know what is going on!!!"
