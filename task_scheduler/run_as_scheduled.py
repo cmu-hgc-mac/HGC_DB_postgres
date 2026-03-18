@@ -52,15 +52,22 @@ def run_job(job_type):
         print('LOGGING UPLOAD TO CMSR', datetime.now())
         print('See above for full terminal output ↑↑↑')
         schedule_days_list = sched_config[job_type]['schedule_days'].split(',')
-        day_index_cron = str(datetime.today().weekday() + 1)  ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
-        today_index = schedule_days_list.index(day_index_cron)
-        previous_index_val_cron = schedule_days_list[today_index - 1]
-        days_since_upload = (int(day_index_cron)-int(previous_index_val_cron))%7
+        upload_date_range_type = sched_config[job_type]['upload_date_range']
 
         today_date = datetime.today().date()
         today_str = today_date.strftime('%Y-%m-%d')
-        start_date = today_date - timedelta(days=days_since_upload)
-        start_date_str = start_date.strftime('%Y-%m-%d')
+        if upload_date_range_type == 'since_last_upload':
+            day_index_cron = str(datetime.today().weekday() + 1)  ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
+            today_index = schedule_days_list.index(day_index_cron)
+            previous_index_val_cron = schedule_days_list[today_index - 1]
+            days_since_upload = (int(day_index_cron)-int(previous_index_val_cron))%7
+            start_date = today_date - timedelta(days=days_since_upload)
+            start_date_str = start_date.strftime('%Y-%m-%d')
+        elif upload_date_range_type == 'this_week':
+            start_of_week = today_date - timedelta(days=today_date.weekday())
+            start_date_str = start_of_week.strftime('%Y-%m-%d')
+        else:
+            start_date_str = "2020-01-01"  ### representative of 'all_time'
         
         with JobIndicator("/tmp/hgc_postgres_cron_job.running"):  ### This is required for open_scp_connection to default to Service Account
             export_data_cmd = [sys.executable, 

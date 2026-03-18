@@ -208,6 +208,7 @@ class set_automation_schedule(Toplevel):
         self.selected_job = StringVar()
         self.job_panel = None   # left column job-schedule panel
         self._side_panel = None  # right column side panel
+        self._upload_date_range = StringVar(value='since_last_upload')
 
         # Two-column layout: left holds credentials + buttons + job panel;
         # right holds the XML / parts side panel (starts at same height as credentials)
@@ -219,14 +220,14 @@ class set_automation_schedule(Toplevel):
         self.right_col.pack(side="left", fill="both", expand=True, anchor="n")
 
         # Credentials go into left_col
-        Label(self.left_col, text="See ./task_scheduler/schedule_config.yaml", fg="blue", wraplength=280, justify="left").pack(pady=1, anchor="w")
-        Label(self.left_col, text="for any existing jobs.", fg="blue", wraplength=280, justify="left").pack(pady=1, anchor="w")
+        # Label(self.left_col, text="See ./task_scheduler/schedule_config.yaml", fg="blue", wraplength=280, justify="left").pack(pady=1, anchor="w")
+        # Label(self.left_col, text="for any existing jobs.", fg="blue", wraplength=280, justify="left").pack(pady=1, anchor="w")
         Label(self.left_col, text="**Enter local DB USER password:**").pack(pady=1)
         self.shipper_var = StringVar()
         _row1 = Frame(self.left_col); _row1.pack(pady=0)
         shipper_var_entry = Entry(_row1, textvariable=self.shipper_var, show='*', width=27, bd=1.5, highlightbackground="black", highlightthickness=1)
         shipper_var_entry.pack(side="left")
-        _peek1 = Button(_row1, text="see", padx=2, pady=0)
+        _peek1 = Button(_row1, text="see", padx=2, pady=0, takefocus=0)
         _peek1.pack(side="left", padx=(2, 0))
         _peek1.bind("<ButtonPress-1>",   lambda _: shipper_var_entry.config(show=''))
         _peek1.bind("<ButtonRelease-1>", lambda _: shipper_var_entry.config(show='*'))
@@ -241,7 +242,7 @@ class set_automation_schedule(Toplevel):
         _row2 = Frame(self.left_col); _row2.pack(pady=0)
         cern_pass_var_entry = Entry(_row2, textvariable=self.cern_pass_var, show='*', width=27, bd=1.5, highlightbackground="black", highlightthickness=1)
         cern_pass_var_entry.pack(side="left")
-        _peek2 = Button(_row2, text="see", padx=2, pady=0)
+        _peek2 = Button(_row2, text="see", padx=2, pady=0, takefocus=0)
         _peek2.pack(side="left", padx=(2, 0))
         _peek2.bind("<ButtonPress-1>",   lambda _: cern_pass_var_entry.config(show=''))
         _peek2.bind("<ButtonRelease-1>", lambda _: cern_pass_var_entry.config(show='*'))
@@ -251,7 +252,7 @@ class set_automation_schedule(Toplevel):
 
         for label, key in self.job_type_keys.items():
             short = label.split()[0]  # "Import" or "Upload"
-            btn = Button(buttons_frame, text=f"Set {short} job",
+            btn = Button(buttons_frame, text=f"View {short} job",
                          command=lambda k=key, l=label: self._toggle_job_panel(k, l))
             btn.pack(side="left", padx=5)
 
@@ -328,18 +329,22 @@ class set_automation_schedule(Toplevel):
         status_text = "(existing schedule loaded)" if existing else "(no existing schedule)"
         Label(panel, text=f"--- {job_label} schedule --- {status_text}", fg="blue").pack(pady=(4, 0))
 
-        Label(panel, text="Enter Time (HH:MM) in 24hr format").pack(pady=0)
-        Label(panel, text="(Ideally, early in the morning)").pack(pady=0)
+        # Label(panel, text="(Ideally, early in the morning)").pack(pady=0)
+        time_row = Frame(panel)
+        time_row.pack(pady=0)
+        Label(time_row, text="Enter Time (HH:MM) in 24hr format:").pack(side="left")
         vcmd = (self.register(self.validate_time_panel), '%P')
-        time_entry = Entry(panel, validate="key", validatecommand=vcmd)
-        time_entry.pack()
+        time_entry = Entry(time_row, validate="key", validatecommand=vcmd, width=7, bd=1.5, highlightbackground="black", highlightthickness=1)
+        time_entry.pack(side="left", padx=(4, 0))
         time_entry.insert(0, default_time)
 
-        Label(panel, text="Repeat every X hour(s) on that day").pack(pady=2)
+        repeat_row = Frame(panel)
+        repeat_row.pack(pady=2)
+        Label(repeat_row, text="Repeat every X hour(s) on that day").pack(side="left")
         repeat_hr_options = ['Do not repeat'] + [str(i) for i in range(1, 21)]
         selected_repeat = StringVar(value=str(default_repeat))
-        repeat_dropdown = OptionMenu(panel, selected_repeat, *repeat_hr_options)
-        repeat_dropdown.pack(pady=2)
+        repeat_dropdown = OptionMenu(repeat_row, selected_repeat, *repeat_hr_options)
+        repeat_dropdown.pack(side="left", padx=(4, 0))
 
         # store refs so validate_time_panel can update the dropdown
         panel._repeat_hr_options = repeat_hr_options
@@ -367,8 +372,19 @@ class set_automation_schedule(Toplevel):
         result_label.pack(pady=2)
 
         if job_key == 'upload_to_CMSR':
-            Button(panel, text="Select type of XMLs",
-                   command=lambda: self._toggle_side_panel('xml')).pack(pady=(2, 0))
+            # Date range radio buttons
+            saved_range = self.config_dict.get('upload_to_CMSR', {}).get('upload_date_range', 'since_last_upload')
+            self._upload_date_range.set(saved_range)
+            Label(panel, text="Upload XMLs generated:").pack(pady=(2, 0))
+            radio_frame = Frame(panel)
+            radio_frame.pack(pady=(2, 0))
+            for label, val in [("Since last upload", "since_last_upload"),
+                                ("For this week",     "this_week"),
+                                ("For all time",      "all_time")]:
+                Radiobutton(radio_frame, text=label, variable=self._upload_date_range, value=val).pack(side="left", padx=4)
+
+            Button(panel, text="Select type of XMLs", command=lambda: self._toggle_side_panel('xml')).pack(pady=(10, 0))
+
         elif job_key == 'import_from_HGCAPI':
             Button(panel, text="Select type of parts",
                    command=lambda: self._toggle_side_panel('parts')).pack(pady=(2, 0))
@@ -635,6 +651,9 @@ class set_automation_schedule(Toplevel):
 
 
         self.config_dict[type_of_job]['cron_command'] = " ".join(cron_command_inputs)
+
+        if type_of_job == 'upload_to_CMSR':
+            self.config_dict[type_of_job]['upload_date_range'] = self._upload_date_range.get()
 
         days_str = ", ".join(self.selected_days)
         self.config_dict[type_of_job]['description'] = f"Run {type_of_job} weekly on: {days_str} at {self.config_dict[type_of_job]['schedule_time']} repeating every {repeat_val} hour(s) in localtime."
