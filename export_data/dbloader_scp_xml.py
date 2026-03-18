@@ -480,14 +480,14 @@ def main():
     search_date = args.date
     cern_auto_upload = str2bool(args.cern_auto_upload)
     dbl_password = None  ## default
+    mass_upload_to_dbloader = mass_upload_to_dbloader_via_ssh_controlmaster  ## default for user guided
+
     if cern_auto_upload:
         from task_scheduler.scheduler_helper import get_lxplus_username_password
         dbl_username, dbl_password = get_lxplus_username_password()
-
-    mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
-                          "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
-    
-    mass_upload_to_dbloader = mass_upload_methods[mass_upload_method]
+        mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
+                            "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
+        mass_upload_to_dbloader = mass_upload_methods[mass_upload_method]
 
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
     files_found_all = find_files_by_date(directory_to_search, search_date)
