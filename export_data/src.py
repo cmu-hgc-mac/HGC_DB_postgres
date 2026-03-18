@@ -519,7 +519,7 @@ async def run_async_subprocess():
 
 def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, cern_auto_upload = False):
     controlpathname = "ctrl_dbloader"
-    test_cmd = ["ssh", "-Y",
+    test_cmd = ["ssh", 
                 "-o", f"ControlPath=~/.ssh/{controlpathname}",
                 "-O", "check",     # <-- ask the master process if it’s alive
                 f"{dbl_username}@{controlpathname}"]
@@ -572,7 +572,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
 
                 scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"    
                 ### opens to only dbloader_hostname via lxplus
-                ssh_cmd = ["ssh", "-MNfY",
+                ssh_cmd = ["ssh", "-MNf",
                     "-o", "ControlMaster=yes",
                     "-o", f"ControlPath=~/.ssh/{controlpathname}",    
                     "-o", f"ControlPersist={scp_timeout_cond}",
