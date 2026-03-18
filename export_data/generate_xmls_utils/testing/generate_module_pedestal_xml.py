@@ -166,7 +166,8 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None, skip_u
         raise ValueError("No data found in pedestal_table.")
 
     test_data = {}
-    for row in rows:
+    for _row in rows:
+        row = dict(_row)
         if row['roc_name'] is None:
             module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi')
             hxb_child_320X = [child["serial_number"] for child in module_data["children"] if child["serial_number"].startswith("320X")][0]
