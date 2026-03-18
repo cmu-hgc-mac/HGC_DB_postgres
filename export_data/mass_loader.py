@@ -505,7 +505,8 @@ class MassLoader:
         timeout: int = None,
         csv_path: str = None,
         verbose: bool = False,
-        force: bool = False
+        force: bool = False,
+        delete_on_success: bool = False
     ) -> UploadStatistics:
         """
         Run the batch upload process.
@@ -547,6 +548,16 @@ class MassLoader:
             csv_path = f"mass_loader_{timestamp}.csv"
         csv_writer = CSVResultWriter(csv_path)
 
+        # Load existing rows so retries update rather than overwrite
+        existing_rows = {}  # xml_path -> row list
+        if Path(csv_path).exists():
+            with open(csv_path, newline='', encoding='utf-8') as existing_f:
+                reader = csv.reader(existing_f)
+                next(reader, None)  # skip header
+                for row in reader:
+                    if row:
+                        existing_rows[row[0]] = row
+
         total_files = len(xml_files)
         tracker = ProgressTracker(total_files, verbose)
 
@@ -556,47 +567,41 @@ class MassLoader:
             if force:
                 logger.info("Force mode: will upload files even if already uploaded")
 
-        # Process uploads
+        # Process uploads — collect new results then merge with existing
+        new_results = {}  # xml_path -> csv row
         try:
-            with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(CSVResultWriter.HEADERS)
-                csvfile.flush()
+            with ThreadPoolExecutor(max_workers=chunk_size) as executor:
+                future_to_file = {
+                    executor.submit(
+                        self.processor.process_file,
+                        file_path,
+                        db,
+                        force,
+                        timeout
+                    ): file_path
+                    for file_path in xml_files
+                }
 
-                with ThreadPoolExecutor(max_workers=chunk_size) as executor:
-                    # Submit all tasks
-                    future_to_file = {
-                        executor.submit(
-                            self.processor.process_file,
-                            file_path,
-                            db,
-                            force,
-                            timeout
-                        ): file_path
-                        for file_path in xml_files
-                    }
-
-                    # Process results as they complete
-                    if verbose:
-                        self._process_results_verbose(
-                            future_to_file,
-                            writer,
-                            csvfile,
-                            csv_writer,
-                            tracker
-                        )
-                    else:
-                        self._process_results_with_progress_bar(
-                            future_to_file,
-                            writer,
-                            csvfile,
-                            csv_writer,
-                            tracker
-                        )
+                if verbose:
+                    self._process_results_verbose(
+                        future_to_file, new_results, tracker, delete_on_success
+                    )
+                else:
+                    self._process_results_with_progress_bar(
+                        future_to_file, new_results, tracker, delete_on_success
+                    )
 
         except Exception as e:
             logger.error(f"Error during processing: {e}")
             sys.exit(1)
+
+        # Merge new results into existing rows and rewrite CSV
+        existing_rows.update(new_results)
+        with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(CSVResultWriter.HEADERS)
+            for row in existing_rows.values():
+                writer.writerow(row)
 
         # Log final statistics
         tracker.stats.log_summary()
@@ -604,21 +609,31 @@ class MassLoader:
 
         return tracker.stats
 
+    def _delete_if_success(self, result: UploadResult) -> None:
+        """Delete source XML if upload was successful or already uploaded."""
+        if result.status in (UploadStatus.SUCCESS.value, UploadStatus.ALREADY_UPLOADED.value):
+            try:
+                os.remove(result.source_path)
+                logger.info(f"Deleted {result.source_path} after {result.status}")
+            except Exception as e:
+                logger.warning(f"Could not delete {result.source_path}: {e}")
+
     def _process_results_verbose(
         self,
         future_to_file,
-        writer,
-        csvfile,
-        csv_writer: CSVResultWriter,
-        tracker: ProgressTracker
+        new_results: dict,
+        tracker: ProgressTracker,
+        delete_on_success: bool = False
     ) -> None:
         """Process results with verbose logging."""
         for future in as_completed(future_to_file):
             file_path = future_to_file[future]
             try:
                 result = future.result()
-                csv_writer.write_result(writer, csvfile, result)
+                new_results[result.source_path] = result.to_csv_row()
                 tracker.stats.update_from_result(result)
+                if delete_on_success:
+                    self._delete_if_success(result)
                 tracker.log_progress()
             except Exception as exc:
                 logger.error(f"Error processing {file_path}: {exc}")
@@ -629,17 +644,16 @@ class MassLoader:
                     '',
                     ''
                 )
-                csv_writer.write_result(writer, csvfile, error_result)
+                new_results[error_result.source_path] = error_result.to_csv_row()
                 tracker.stats.update_from_result(error_result)
                 tracker.log_progress()
 
     def _process_results_with_progress_bar(
         self,
         future_to_file,
-        writer,
-        csvfile,
-        csv_writer: CSVResultWriter,
-        tracker: ProgressTracker
+        new_results: dict,
+        tracker: ProgressTracker,
+        delete_on_success: bool = False
     ) -> None:
         """Process results with tqdm progress bar."""
         with tqdm(
@@ -651,8 +665,10 @@ class MassLoader:
                 file_path = future_to_file[future]
                 try:
                     result = future.result()
-                    csv_writer.write_result(writer, csvfile, result)
+                    new_results[result.source_path] = result.to_csv_row()
                     tracker.stats.update_from_result(result)
+                    if delete_on_success:
+                        self._delete_if_success(result)
                 except Exception as exc:
                     logger.error(f"Error processing {file_path}: {exc}")
                     error_result = UploadResult(
@@ -662,7 +678,7 @@ class MassLoader:
                         '',
                         ''
                     )
-                    csv_writer.write_result(writer, csvfile, error_result)
+                    new_results[error_result.source_path] = error_result.to_csv_row()
                     tracker.stats.update_from_result(error_result)
 
                 pbar.update(1)
@@ -720,6 +736,11 @@ def parse_arguments() -> argparse.Namespace:
         action='store_true',
         help='Force upload even if file was already uploaded successfully'
     )
+    parser.add_argument(
+        '-d', '--delete_on_success',
+        action='store_true',
+        help='Delete local XML file after successful or already-uploaded result'
+    )
 
     return parser.parse_args()
 
@@ -749,7 +770,8 @@ def main() -> None:
         timeout=args.timeout,
         csv_path=args.csv_path,
         verbose=args.verbose,
-        force=args.force
+        force=args.force,
+        delete_on_success=args.delete_on_success
     )
 
 

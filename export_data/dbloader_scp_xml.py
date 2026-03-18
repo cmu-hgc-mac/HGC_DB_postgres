@@ -158,7 +158,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         print(f"Uploading to {self.dbloader_hostname} with mass_loader ... patience, please")
         print("="*65)
         with open(self.run_on_remote_fpath, "r") as massloadfile:
-            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"]
+            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile} -d"]
             with subprocess.Popen(mass_upload_cmd, stdin=massloadfile, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -342,7 +342,7 @@ class mass_upload_to_dbloader_via_paramiko:
         print("="*65)
         with open(self.run_on_remote_fpath, "r") as massloadfile, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:
             script = massloadfile.read()
-            command = f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile}"
+            command = f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile} -d"
             stdin, stdout, stderr = self.ssh_server2.exec_command(command)
             stdin.write(script)
             stdin.channel.shutdown_write()  # signal EOF
