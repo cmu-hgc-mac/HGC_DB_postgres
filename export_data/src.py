@@ -579,7 +579,7 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                     "-o", f"ProxyJump={dbl_username}@lxplus.cern.ch",
                     f"{dbl_username}@{dbloader_hostname}"]    
                 
-                if cern_auto_upload and Path("/tmp/hgc_postgres_cron_job.running").exists():
+                if cern_auto_upload: # and Path("/tmp/hgc_postgres_cron_job.running").exists():
                     asyncio.run(run_async_subprocess())
                     print("** SSH ControlMaster session started. **")
                     print("****************************************")
