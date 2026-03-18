@@ -205,6 +205,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
     def scp_logs_local(self):
         if '.csv' in self.terminal_output:
             print("----> Saving log files to export_data/mass_upload_logs <----")
+            print(self.csv_outfile)
             log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
             terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
             local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
@@ -406,6 +407,7 @@ class mass_upload_to_dbloader_via_paramiko:
         if ".csv" in self.terminal_output:
             try:
                 print("----> Saving log files to export_data/mass_upload_logs <----")
+                print(self.csv_outfile)
                 log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
                 terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
                 local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
@@ -421,6 +423,7 @@ class mass_upload_to_dbloader_via_paramiko:
             if os.path.isfile(local_csv_path) and os.path.isfile(local_terminal_path):
                 try:          
                     sftp.remove(self.csv_outfile)  # Remove remote CSV after download
+                    stdin, stdout, stderr = self.ssh_server2.exec_command(f"rm -f ~/mass_loader*.log")
                     # sftp.remove(log_outfile)  # Remove remote log after download
                 except FileNotFoundError:
                     return 255
