@@ -1,6 +1,10 @@
 ## Positions: https://confluence.cern.ch/download/attachments/443678998/DB_ROC_LDO_positions_v2.pdf?version=1&modificationDate=1737368955982&api=v2
 ## v2 (Nov. 2025): https://docs.google.com/spreadsheets/d/149sx-y1YbuUQBFFXs6VTDwGwsUDVobdtwLLJ76xv-g0/edit?gid=0#gid=0
-## v1(Dec. 2024): https://indico.cern.ch/event/1492551/contributions/6289012/attachments/2992039/5270825/Tsionou_DB_ROCpositions_6Jan25.pdf
+## v1 (Dec. 2024): https://indico.cern.ch/event/1492551/contributions/6289012/attachments/2992039/5270825/Tsionou_DB_ROCpositions_6Jan25.pdf
+
+## roc_index: ROC position as tracked in CMSR DB 
+## chip: indices used by the testing software when reporting pedestals
+## config_json_key: indices reported in the configuration settings yaml file
 
 LD: 
   Full:
