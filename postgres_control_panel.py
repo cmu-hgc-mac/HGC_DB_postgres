@@ -423,6 +423,9 @@ def export_data():
     deleteXML_var = BooleanVar(value=delete_xmls)
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
     deleteXML_var_entry.pack(pady=0)
+    skip_uploaded_var = BooleanVar(value=True)
+    skip_uploaded_var_entry = Checkbutton(input_window, text="Skip already uploaded parts", variable=skip_uploaded_var)
+    skip_uploaded_var_entry.pack(pady=0)
     
     def select_specific():
         popup = Toplevel(input_window)
@@ -487,6 +490,7 @@ def export_data():
         upload_dev_stat = upload_dev_var.get()
         upload_prod_stat = upload_prod_var.get()
         deleteXML_stat = deleteXML_var.get()
+        skip_uploaded_stat = skip_uploaded_var.get()
         partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if not (dbshipper_pass.strip() and lxp_username.strip()) :
@@ -513,7 +517,7 @@ def export_data():
             
             upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
             upload_prod_stat = upload_prod_stat if scp_status == 0 else False
-            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
+            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-skup", str(skip_uploaded_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
             if partslistpre.strip():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist

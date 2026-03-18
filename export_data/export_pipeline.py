@@ -22,7 +22,7 @@ GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the gen
 # Ensure the generated XML directory exists
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
 
-def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, output_dir=GENERATED_XMLS_DIR, encryption_key=None, partsnamelist=None, cerndb=None):
+def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, output_dir=GENERATED_XMLS_DIR, encryption_key=None, partsnamelist=None, cerndb=None, skip_uploaded=True):
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     command = [
@@ -37,6 +37,7 @@ def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, o
         command += ['-pn'] + partsnamelist
     if cerndb:
         command += ['-cerndb', cerndb]
+    command += ['-skup', str(skip_uploaded)]
 
     try:
         subprocess.run(command, check=True)
@@ -44,7 +45,7 @@ def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, o
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
-def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None, cern_auto_upload=None, cerndb='prod_db'):
+def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None, cern_auto_upload=None, cerndb='prod_db', skip_uploaded=True):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
@@ -80,7 +81,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
     completed_scripts = 0
     for script_path in scripts_to_run:
         is_build = 'module_build' in script_path or 'proto_build' in script_path
-        run_script(script_path=script_path, dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cerndb=cerndb if is_build else None)
+        run_script(script_path=script_path, dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cerndb=cerndb if is_build else None, skip_uploaded=skip_uploaded)
         completed_scripts += 1
         print('-'*10)
         print(f'Executed -- {script_path}.')
@@ -139,6 +140,7 @@ async def main():
     parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     parser.add_argument('-autoupload', '--cern_auto_upload', default='False', required=False, help="True if the upload is automated via a service account")
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip parts already uploaded to CERN DB")
 
     args = parser.parse_args()
 
@@ -152,6 +154,7 @@ async def main():
     upload_dev_stat = str2bool(args.upload_dev_stat)
     upload_prod_stat = str2bool(args.upload_prod_stat)
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
 
 
     inst_code  = (yaml.safe_load(open(os.path.join('dbase_info', 'conn.yaml'), 'r'))).get('institution_abbr')
@@ -161,7 +164,7 @@ async def main():
         ## Step 1: Generate XML files
     cerndb = 'dev_db' if upload_dev_stat else 'prod_db'
     if str2bool(args.generate_stat):
-        generate_xmls(dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cern_auto_upload=str2bool(args.cern_auto_upload), cerndb=cerndb)
+        generate_xmls(dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cern_auto_upload=str2bool(args.cern_auto_upload), cerndb=cerndb, skip_uploaded=skip_uploaded)
         find_missing_var_xml(time_limit=90)
         print("Waiting 3 seconds ...")
         time.sleep(3) ### XMLs take a few seconds to get saved
