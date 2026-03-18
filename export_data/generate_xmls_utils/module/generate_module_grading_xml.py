@@ -108,7 +108,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades=None)
                             db_values[xml_var] = mod_colorgrade
                         elif xml_var == 'PERCENT_BAD_CELLS':
-                            count_bad_cells = results.get('count_bad_cells', "0")
+                            count_bad_cells = results.get('count_bad_cells') or 0
                             total_cell_count = int(cell_count_for_res_geom[module_name[4:6]])
                             db_values[xml_var] = str(round(int(count_bad_cells)*100/total_cell_count,3))
                         else:
