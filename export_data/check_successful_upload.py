@@ -63,7 +63,7 @@ def get_reflected_tables(xml_path: str) -> str:
         "_grading": f"{prefix}_grading",
         "_cure_cond": f"{prefix}_cure_cond",
         "_inspection": f"{prefix}_inspection",
-        "_build_upload": f"{prefix}_assembly",
+        "_build_upload": f"{prefix}_info" if prefix == 'module' else f"{prefix}_assembly",
         "_assembly": f"{prefix}_assembly",
         "_iv_cond": f"{prefix}_iv_cond",
         "_iv": f"{prefix}_iv",
@@ -71,6 +71,8 @@ def get_reflected_tables(xml_path: str) -> str:
     }
     for suffix, xml_type in suffix_matching.items():
         if suffix in xml_path:
+            if suffix == '_build_upload' and prefix == 'proto':
+                return None
             tables = table_map[xml_type]
             if not suffix:
                 raise ValueError(f"Cannot determine xml type for part={part_name}, path={xml_path}")
@@ -87,7 +89,10 @@ def get_upload_status_csv(csv_path):
         for row in reader:
             xml_path = row["xml_path"]
             upload_status = row["upload_status"].strip()## Refer to UPLOAD_STATUS_MAP
-            prefix, part_name, db_tables_to_be_updated = get_reflected_tables(xml_path)
+            result = get_reflected_tables(xml_path)
+            if result is None:
+                continue
+            prefix, part_name, db_tables_to_be_updated = result
             csv_output.append((prefix, part_name, upload_status, db_tables_to_be_updated))
 
             # Skip if unknown status
