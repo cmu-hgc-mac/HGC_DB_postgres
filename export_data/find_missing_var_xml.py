@@ -92,6 +92,9 @@ def find_missing_var_xml(time_limit=90):
     if not xml_files:
         print("No XML files found.")
 
+    # group_key -> {'tags': {tag: (table, col)}, 'files': [filenames]}
+    groups = {}
+
     for xml_file in xml_files:
         if xml_file.split('/')[2] != 'testing':
             xml_data = extract_xml_tags_and_values(xml_file)
@@ -101,15 +104,23 @@ def find_missing_var_xml(time_limit=90):
                 expected_tags_map = get_expected_tags(yaml_category)
                 missing_tags = find_missing_or_empty_tags(expected_tags_map, xml_data)
 
-                if missing_tags:
+                # drop nullable tags
+                non_nullable = {tag: (tbl, col) for tag, (tbl, col, nullable) in missing_tags.items() if not nullable}
 
-                    print(f"\n===== MISSING OR EMPTY TAGS FOUND for {xml_file.split('/')[-1]}! =====")
-                    print(f"  Referencing YAML categories: {yaml_category}")
-                    print("------------------------------------------------------------")
-
-                    for tag, (dbase_table, dbase_col, nullable) in missing_tags.items():
-                        print(f" - {tag}:\n   → dbase_table: {dbase_table}\n   → dbase_col: {dbase_col}, nullable: {nullable}")
-                    print("============================================================")
+                if non_nullable:
+                    key = tuple(sorted(non_nullable.keys()))
+                    if key not in groups:
+                        groups[key] = {'tags': non_nullable, 'files': []}
+                    groups[key]['files'].append(xml_file.split('/')[-1])
 
             else:
                 print(f"\nNo matching YAML categories found for {xml_file}. Skipping.")
+
+    for key, info in groups.items():
+        print(f"\n===== MISSING OR EMPTY TAGS =====")
+        for tag, (dbase_table, dbase_col) in info['tags'].items():
+            print(f" - {tag}:  table={dbase_table}, col={dbase_col}")
+        print(f"  Affects {len(info['files'])} file(s):")
+        for fname in info['files']:
+            print(f"    • {fname}")
+        print("=" * 36)
