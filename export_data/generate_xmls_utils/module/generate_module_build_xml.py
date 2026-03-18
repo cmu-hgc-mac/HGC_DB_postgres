@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, skip_uploaded=True):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, skip_uploaded=True, cern_db_url='hgcapi'):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -19,25 +19,38 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     if not xml_data:
         print("No data found in YAML file")
         return
-    db_tables = ['module_assembly']
-    module_tables = ['module_assembly', 'mod_hxb_other_test', 'module_info', 'module_inspect', 'module_iv_test', 
+    db_tables_for_tracking = ['module_info']
+    module_tables = ['module_assembly', 'mod_hxb_other_test', 'module_info', 'module_inspect', 'module_iv_test',
                      'module_pedestal_test', 'module_pedestal_plots', 'module_qc_summary']
-    
+
+    # Fetch modules already known to the HGCAPI for this location
+    api_data = read_from_cern_db(macID=LOCATION, partType='ml', cern_db_url=cern_db_url)
+    api_modules = set()
+    if api_data and 'parts' in api_data:
+        api_modules = {p['serial_number'].replace('-', '') for p in api_data['parts'] if p.get('serial_number')}
+
     # get applicable modules based on the specified time range
     module_list = set()
-    skip_filter = "AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)" if skip_uploaded else ""
     if partsnamelist:
-        query = f"""SELECT REPLACE(module_name,'-','') AS module_name FROM module_assembly WHERE module_name = ANY($1) {skip_filter}"""
+        query = f"""SELECT REPLACE(module_name,'-','') AS module_name FROM module_assembly WHERE module_name = ANY($1)"""
         results = await conn.fetch(query, partsnamelist)
     else:
         module_query = f"""
         SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
         FROM module_assembly
-        WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' {skip_filter}
+        WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}'
         """
         results = await conn.fetch(module_query)
-    
-    module_list.update(row['module_name'] for row in results if 'module_name' in row)
+
+    all_modules = {row['module_name'] for row in results if 'module_name' in row}
+    # Only generate XMLs for modules not yet in the HGCAPI
+    module_list = all_modules - api_modules
+    if not module_list:
+        db_label = next((v['dbname'] for v in db_source_dict.values() if v['url'] == cern_db_url), cern_db_url)
+        print(f"All modules already present in {db_label}. Nothing to generate.")
+        return
+    db_label = next((v['dbname'] for v in db_source_dict.values() if v['url'] == cern_db_url), cern_db_url)
+    print(f"Modules in postgres not in {db_label} ({len(module_list)}): {sorted(module_list)}")
     
     for module in module_list:
         # Fetch database values for the XML template variables
@@ -159,7 +172,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
             await update_timestamp_col(conn,
                                     update_flag=True,
-                                    table_list=db_tables,
+                                    table_list=db_tables_for_tracking,
                                     column_name='xml_gen_datetime',
                                     part='module',
                                     part_name=module)
@@ -169,7 +182,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
         
 
-async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None, skip_uploaded=True):
+async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None, skip_uploaded=True, cern_db_url='hgcapi'):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/module/build_upload.xml'# XML template file path
@@ -179,7 +192,7 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded, cern_db_url)
     finally:
         await conn.close()
 
@@ -195,6 +208,7 @@ if __name__ == "__main__":
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    parser.add_argument('-cerndb', '--cerndb', default='prod_db', required=False, help="CERN DB target: 'prod_db' (hgcapi) or 'dev_db' (hgcapi-intg)")
     args = parser.parse_args()
 
     lxplus_username = args.dbl_username
@@ -205,5 +219,6 @@ if __name__ == "__main__":
     date_end = args.date_end
     partsnamelist = args.partnameslist
     skip_uploaded = str2bool(args.skip_uploaded)
+    cern_db_url = db_source_dict[args.cerndb]['url']
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, skip_uploaded=skip_uploaded))
+    asyncio.run(main(dbpassword=dbpassword, output_dir=output_dir, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, skip_uploaded=skip_uploaded, cern_db_url=cern_db_url))

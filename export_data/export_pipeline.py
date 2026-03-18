@@ -22,7 +22,7 @@ GENERATED_XMLS_DIR = 'export_data/xmls_for_upload'##  directory to store the gen
 # Ensure the generated XML directory exists
 os.makedirs(GENERATED_XMLS_DIR, exist_ok=True)
 
-def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, output_dir=GENERATED_XMLS_DIR, encryption_key = None, partsnamelist = None):
+def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, output_dir=GENERATED_XMLS_DIR, encryption_key=None, partsnamelist=None, cerndb=None):
     """Run a Python script as a subprocess."""
     # process = subprocess.run([sys.executable, script_path])
     command = [
@@ -35,6 +35,8 @@ def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, o
         '-lxu', lxplus_username]
     if partsnamelist:
         command += ['-pn'] + partsnamelist
+    if cerndb:
+        command += ['-cerndb', cerndb]
 
     try:
         subprocess.run(command, check=True)
@@ -42,7 +44,7 @@ def run_script(script_path, dbpassword, date_start, date_end, lxplus_username, o
         traceback.print_exc()
         print(f"Error occurred while running the script: {e}")
 
-def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist = None, cern_auto_upload=None):
+def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None, cern_auto_upload=None, cerndb='prod_db'):
     """Recursively loop through specific subdirectories under generate_xmls directory and run all Python scripts."""
     tasks = []
     # Specific subdirectories to process
@@ -77,7 +79,8 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
     total_scripts = len(scripts_to_run)
     completed_scripts = 0
     for script_path in scripts_to_run:
-        run_script(script_path = script_path, dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist)
+        is_build = 'module_build' in script_path or 'proto_build' in script_path
+        run_script(script_path=script_path, dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cerndb=cerndb if is_build else None)
         completed_scripts += 1
         print('-'*10)
         print(f'Executed -- {script_path}.')
@@ -156,8 +159,9 @@ async def main():
         print("Check institution abbreviation in conn.py"); exit()
 
         ## Step 1: Generate XML files
+    cerndb = 'dev_db' if upload_dev_stat else 'prod_db'
     if str2bool(args.generate_stat):
-        generate_xmls(dbpassword = dbpassword, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cern_auto_upload=str2bool(args.cern_auto_upload))
+        generate_xmls(dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cern_auto_upload=str2bool(args.cern_auto_upload), cerndb=cerndb)
         find_missing_var_xml(time_limit=90)
         print("Waiting 3 seconds ...")
         time.sleep(3) ### XMLs take a few seconds to get saved
