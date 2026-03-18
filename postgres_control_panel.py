@@ -783,8 +783,8 @@ button_shipin.grid(row=3, column=1, pady=(5,1), sticky='ew')
 button_download = Button(frame, text="    Import Parts Data      ", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=(1,15), sticky='ew')
 
-button_stock_stt = Button(frame, text="Automate import and upload of parts", command=set_scheduler_task, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=5, column=1, pady=1, sticky='ew')
+button_automate = Button(frame, text="Automate import and upload of parts", command=set_scheduler_task, width=button_width, height=int(button_height/2)) 
+button_automate.grid(row=5, column=1, pady=1, sticky='ew')
 
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
 button_upload_xml.grid(row=6, column=1, pady=(15,1), sticky='ew')
