@@ -1,11 +1,11 @@
 import platform, os, argparse, base64, subprocess
 from pathlib import Path
-from src import process_xml_list, open_scp_connection, str2bool, dbloader_hostname
-import numpy as np
 import datetime, time, yaml, paramiko, pwinput, sys, re, math, shutil
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from export_data.src import process_xml_list, open_scp_connection, str2bool, dbloader_hostname
+import numpy as np
 from tqdm import tqdm
 import traceback, datetime
-from cryptography.fernet import Fernet
 from scp import SCPClient
 GREEN = "\033[32m"; RED = "\033[31m"; YELLOW = "\033[33m"; RESET = "\033[0m"; 
 
@@ -18,8 +18,6 @@ config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
 mass_upload_xmls = config_data.get('mass_upload_xmls', True)
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 mass_upload_method = config_data.get('mass_upload_method', 'via_paramiko')
-# cern_dbase  = yaml.safe_load(open(conn_yaml_file, 'r')).get('cern_db')
-# cern_dbase  = 'dev_db'## for testing purpose, otherwise uncomment above.
 cerndb_types = {"dev_db": {'dbtype': 'Development', 'dbname': 'INT2R'}, 
                 "prod_db": {'dbtype': 'Production','dbname':'CMSR'}}
 
@@ -113,13 +111,14 @@ def scp_to_dbloader(dbl_username, fname, cern_dbname = '', dbloader_hostname = '
 
 class mass_upload_to_dbloader_via_ssh_controlmaster:
     def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, cern_auto_upload=False):
-        self.mass_upload_logs_fp = "export_data/mass_upload_logs"
+        _project_root = Path(__file__).resolve().parent.parent  ## HGC_DB_postgres/
+        self.mass_upload_logs_fp = str(_project_root / "export_data" / "mass_upload_logs")
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )#_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt")
         self.terminal_output = ""
         self.verbose = verbose
         self.starttime = datetime.datetime.now()
-        self.run_on_remote_fpath = 'export_data/mass_loader.py'
+        self.run_on_remote_fpath = str(_project_root / "export_data" / "mass_loader.py")
         
         self.cern_dbname = cern_dbname
         self.dbloader_hostname = dbloader_hostname
@@ -241,11 +240,15 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
                         print(f"Reattempting the {self.files_to_retry} timed-out file(s) -- ({self.times_to_retry_upload-1} reattempt(s) left) ")
                         self.times_to_retry_upload -= 1 ### attempt only upto 5 times
                         continue ### repeat current step
-                if return_status == 0: current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
+                if return_status == 0: 
+                    current_step += 1  ### if current step was successful (success = 0, fail = 255), go to next step. 
+                else:
+                    self.times_to_retry_reconnect -= 1  ### prevent infinite loop in case of error    
 
             except Exception as e:
                 print(f"An error occurred at step {current_step+1}: {e}")
-                scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=self.cern_auto_upload)        
+                self.times_to_retry_reconnect -= 1  ### prevent infinite loop in case of error    
+                # scp_status = open_scp_connection(dbl_username=self.dbl_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=self.cern_auto_upload)        
     
 ##########################################################################################
 ################################# Mass upload with Paramiko ##############################
@@ -253,13 +256,14 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
 
 class mass_upload_to_dbloader_via_paramiko:
     def __init__(self, dbl_username, fnames, cern_dbname = '', remote_xml_dir = "~/hgc_xml_temp", verbose = False, dbloader_hostname = 'dbloader-hgcal', dbl_password = None, cern_auto_upload=False):
-        self.mass_upload_logs_fp = "export_data/mass_upload_logs"
+        _project_root = Path(__file__).resolve().parent.parent  ## HGC_DB_postgres/
+        self.mass_upload_logs_fp = str(_project_root / "export_data" / "mass_upload_logs")
         os.makedirs(self.mass_upload_logs_fp, exist_ok=True)
         self.temp_txt_file_name = os.path.join(self.mass_upload_logs_fp, f"terminal_out.txt" )
         self.terminal_output = ""
         self.verbose = verbose
         self.starttime = datetime.datetime.now()
-        self.run_on_remote_fpath = 'export_data/mass_loader.py'
+        self.run_on_remote_fpath = str(_project_root / "export_data" / "mass_loader.py")
         
         self.cern_dbname = cern_dbname
         self.dbloader_hostname = dbloader_hostname
@@ -407,23 +411,18 @@ class mass_upload_to_dbloader_via_paramiko:
                 terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
                 local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
                 shutil.move(self.temp_txt_file_name, local_terminal_path)
-                print(terminal_outfile)
                 local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
-                sftp = self.ssh_server2.open_sftp()
+                sftp = self.ssh_server2.open_sftp()                
+                sftp.get(self.csv_outfile, local_csv_path)              # Copy remote CSV to local
+                # sftp.get(log_outfile, local_log_path) 
             except Exception as e:
                 print(e)
-                return 255
-
-            try:
-                sftp.get(self.csv_outfile, local_csv_path)              # Copy remote CSV to local
-                sftp.get(log_outfile, local_log_path)
-            except FileNotFoundError as e:
                 return 255  # indicate failure
 
             if os.path.isfile(local_csv_path) and os.path.isfile(local_terminal_path):
                 try:          
                     sftp.remove(self.csv_outfile)  # Remove remote CSV after download
-                    sftp.remove(log_outfile)  # Remove remote log after download
+                    # sftp.remove(log_outfile)  # Remove remote log after download
                 except FileNotFoundError:
                     return 255
             print("")
@@ -434,7 +433,8 @@ class mass_upload_to_dbloader_via_paramiko:
         steps = [self.make_lxplus_dir, self.rm_xml_lxplus, self.scp_xml_lxplus, self.mass_upload_xml_dbl, self.check_upload_xml_dbl, self.scp_logs_local, self.rm_xml_lxplus]
         current_step = 0
         while (current_step < len(steps)) and (self.times_to_retry_reconnect != 0):
-            if self.ssh_conn and self.ssh_server2 and self.ssh_server1 and (not self.ssh_conn.is_active()):    ### connection is missing
+            connection_missing = (self.ssh_server2 is None) or (self.ssh_conn is None) or (not self.ssh_conn.is_active())
+            if connection_missing:
                 print("Reconnect to LXPLUS -- preexisting connection broken -- retry this step")
                 self.connect()
                 self.times_to_retry_reconnect -= 1
@@ -456,6 +456,7 @@ class mass_upload_to_dbloader_via_paramiko:
                     self.times_to_retry_reconnect -= 1  ### prevent infinite loop in case of error    
 
             except Exception as e:
+                self.times_to_retry_reconnect -= 1  ### prevent infinite loop in case of error    
                 print(f"An error occurred at step {current_step+1}: {e}")
         
         self.close_scp()
@@ -465,7 +466,7 @@ class mass_upload_to_dbloader_via_paramiko:
 ###################################################################################################
 
 def main():
-    GENERATED_XMLS_DIR = os.path.abspath(os.path.join(os.getcwd(), "export_data/xmls_for_upload/"))
+    GENERATED_XMLS_DIR = str(Path(__file__).resolve().parent / "xmls_for_upload")
     today = str(datetime.datetime.today().strftime('%Y-%m-%d'))
     parser = argparse.ArgumentParser(description="Script to process files in a directory.")
     parser.add_argument('-dir','--directory', type=valid_directory, default=GENERATED_XMLS_DIR, help=f"The directory to process. Default is {GENERATED_XMLS_DIR}.")
@@ -481,7 +482,6 @@ def main():
     cern_auto_upload = str2bool(args.cern_auto_upload)
     dbl_password = None  ## default
     if cern_auto_upload:
-        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
         from task_scheduler.scheduler_helper import get_lxplus_username_password
         dbl_username, dbl_password = get_lxplus_username_password()
 
