@@ -63,7 +63,7 @@ def get_reflected_tables(xml_path: str) -> str:
         "_grading": f"{prefix}_grading",
         "_cure_cond": f"{prefix}_cure_cond",
         "_inspection": f"{prefix}_inspection",
-        "_build_upload": f"{prefix}_build",
+        "_build_upload": f"{prefix}_assembly",
         "_assembly": f"{prefix}_assembly",
         "_iv_cond": f"{prefix}_iv_cond",
         "_iv": f"{prefix}_iv",
