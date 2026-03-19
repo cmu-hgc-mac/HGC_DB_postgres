@@ -52,7 +52,8 @@ def launch_stt_form_webbrowser():
         webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
     
 def see_my_shipments_cmsr():
-    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
+    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/trackings")
+    # webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
 
 def get_pid_result():
     try:
