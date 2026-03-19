@@ -33,10 +33,10 @@ ssh USERNAME@dbloader-hgcal -o ProxyJump=USERNAME@lxtunnel.cern.ch -o ControlPat
 scp -o ProxyJump=USERNAME@lxtunnel.cern.ch -o ControlPath=~/.ssh/ctrl_dbloader /directory_to_the_xml_file/xxx.xml USERNAME@dbloader-hgcal:~/hgc_xml_temp
 ```
 
-#### Upload with `mass_loader.py`
-The `mass_loader.py` file is sourced from https://gitlab.cern.ch/hgcal-database/usefull-scripts/-/blob/master/mass_loader.py
+#### Upload with `mass_loader_modified.py`
+The `mass_loader_modified.py` file is sourced from https://gitlab.cern.ch/hgcal-database/usefull-scripts/-/blob/master/mass_loader.py
 ```
-ssh USERNAME@dbloader-hgcal -o ProxyJump=USERNAME@lxtunnel.cern.ch -o ControlPath=~/.ssh/ctrl_dbloader 'python3 - --int2r ~/hgc_xml_temp/*.xml' < export_data/mass_loader.py
+ssh USERNAME@dbloader-hgcal -o ProxyJump=USERNAME@lxtunnel.cern.ch -o ControlPath=~/.ssh/ctrl_dbloader 'python3 - --int2r ~/hgc_xml_temp/*.xml' < export_data/mass_loader_modified.py
 ```
 
 #### Exit the control process 

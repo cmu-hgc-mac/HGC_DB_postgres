@@ -118,7 +118,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         self.terminal_output = ""
         self.verbose = verbose
         self.starttime = datetime.datetime.now()
-        self.run_on_remote_fpath = str(_project_root / "export_data" / "mass_loader.py")
+        self.run_on_remote_fpath = str(_project_root / "export_data" / "mass_loader_modified.py")
         
         self.cern_dbname = cern_dbname
         self.dbloader_hostname = dbloader_hostname
@@ -263,7 +263,7 @@ class mass_upload_to_dbloader_via_paramiko:
         self.terminal_output = ""
         self.verbose = verbose
         self.starttime = datetime.datetime.now()
-        self.run_on_remote_fpath = str(_project_root / "export_data" / "mass_loader.py")
+        self.run_on_remote_fpath = str(_project_root / "export_data" / "mass_loader_modified.py")
         
         self.cern_dbname = cern_dbname
         self.dbloader_hostname = dbloader_hostname

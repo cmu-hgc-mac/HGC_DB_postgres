@@ -6,6 +6,8 @@ Last Update: 2025-10-07
 
 This tool uploads XML files to CMSR or INT2R databases in parallel batches,
 monitoring the upload state and providing detailed progress reporting.
+This was modified such that it deletes the XMLs that were successfully uploaded.
+The output CSV file gets modified if it already exists to account for progress made in subsequent attempts.
 
 main repository: https://gitlab.cern.ch/dboncukc/mass-loader
 new file source: https://gitlab.cern.ch/dboncukc/mass-loader/-/blob/master/mass_loader.py?ref_type=heads

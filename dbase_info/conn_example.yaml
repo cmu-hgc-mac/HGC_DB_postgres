@@ -17,7 +17,7 @@ cern_db: 'prod_db'           ## default upload database: dev_db vs prod_db; cont
 scp_persist_minutes: 240     ## duration for which the scp connection is open; set to 'yes' (with quotes) for unlimited
 scp_force_quit: True         ## If False, scp connection will be open without password as long as the panel is open. Set True for shared computers.             
 delete_xmls: False           ## If True, deletes local xmls after upload; controls postgres panel
-mass_upload_xmls: True       ## If True, uses mass_loader.py
+mass_upload_xmls: True       ## If True, uses mass_loader_modified.py.py
 dbloader_hostname: 'dbloader-hgcal' ## Choose between old "dbloader-hgcal" and new "hgcaldbloader.cern.ch"
 
 ### For XML upload to the CERN database -- electrical testing
