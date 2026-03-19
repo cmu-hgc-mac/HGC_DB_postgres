@@ -332,7 +332,7 @@ class set_automation_schedule(Toplevel):
         # Label(panel, text="(Ideally, early in the morning)").pack(pady=0)
         time_row = Frame(panel)
         time_row.pack(pady=0)
-        Label(time_row, text="Enter Time (HH:MM) in 24hr format:").pack(side="left")
+        Label(time_row, text="Enter Start Time (HH:MM) in 24hr format:").pack(side="left")
         vcmd = (self.register(self.validate_time_panel), '%P')
         time_entry = Entry(time_row, validate="key", validatecommand=vcmd, width=7, bd=1.5, highlightbackground="black", highlightthickness=1)
         time_entry.pack(side="left", padx=(4, 0))
@@ -340,7 +340,7 @@ class set_automation_schedule(Toplevel):
 
         repeat_row = Frame(panel)
         repeat_row.pack(pady=2)
-        Label(repeat_row, text="Repeat every X hour(s) on that day").pack(side="left")
+        Label(repeat_row, text="Repeat every X hour(s) till end of day").pack(side="left")
         repeat_hr_options = ['Do not repeat'] + [str(i) for i in range(1, 21)]
         selected_repeat = StringVar(value=str(default_repeat))
         repeat_dropdown = OptionMenu(repeat_row, selected_repeat, *repeat_hr_options)
