@@ -402,7 +402,7 @@ async def verify_modules_in_cmsr(pool):
     check if the part exists in CMSR. If it does, mark xml_upload_success = True
     and set xml_gen_datetime to today if it is null.
     """
-    get_unverified_query = """SELECT module_name FROM module_info WHERE xml_upload_success IS NOT TRUE AND module_name IS NOT NULL;
+    get_unverified_query = """SELECT module_name FROM module_info WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) AND module_name IS NOT NULL;
     """
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_unverified_query)
