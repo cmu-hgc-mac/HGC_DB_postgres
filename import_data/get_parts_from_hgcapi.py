@@ -402,7 +402,7 @@ async def verify_modules_in_cmsr(pool):
     check if the part exists in CMSR. If it does, mark xml_upload_success = True
     and set xml_gen_datetime to today if it is null.
     """
-    get_unverified_query = """SELECT module_name FROM module_info WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) AND module_name IS NOT NULL;
+    get_unverified_query = """SELECT module_name FROM module_info WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) AND module_name IS NOT NULL AND assembled IS NOT NULL;
     """
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_unverified_query)
@@ -415,6 +415,7 @@ async def verify_modules_in_cmsr(pool):
     print(f"Checking {len(module_names)} module(s) against CMSR ...")
     today = datetime.date.today()
     updated = 0
+    missing_list = []
     for module_name in tqdm(module_names):
         try:
             data = read_from_cern_db(partID=module_name.replace('-', ''), cern_db_url='hgcapi')
@@ -422,11 +423,14 @@ async def verify_modules_in_cmsr(pool):
                 async with pool.acquire() as conn:
                     await conn.execute("""UPDATE module_info SET xml_upload_success = TRUE, xml_gen_datetime = COALESCE(xml_gen_datetime, $1) WHERE module_name = $2;""", today, module_name)
                 updated += 1
+            else:
+                missing_list.append(module_name.replace('-', ''))
         except Exception as e:
             print(f"ERROR checking {module_name} against CMSR: {e}")
             traceback.print_exc()
 
     print(f"verify_modules_in_cmsr: updated {updated}/{len(module_names)} module(s).")
+    print(f"Missing modules: ", ", ".join(missing_list))
 
 
 asyncio.run(main())
