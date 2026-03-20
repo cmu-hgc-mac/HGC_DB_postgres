@@ -165,6 +165,7 @@ postgres_table_to_xml:
   'module_iv': ['module_iv_test']
   'module_iv_cond': ['module_iv_test']
   'hxb_pedestal': ['hxb_pedestal_test']
+  'module_info': ['module_info']
 
 MMTS_kinds_of_parts:
   - MMTS Multiplexer Bottom Connector
