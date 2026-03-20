@@ -1,0 +1,6 @@
+log_no,serial PRIMARY KEY,primary key,,
+log_timestamp,TIMESTAMP,,,
+log_location,TEXT,,,
+device_name,TEXT,,,
+value,"NUMERIC(6,2)",,,
+metric,TEXT,,,
