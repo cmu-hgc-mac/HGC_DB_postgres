@@ -81,7 +81,8 @@ def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url
     elif response.status_code == 500:
         print(f"Internal Server ERROR for {cern_db_url.upper()}. Try again later.")
     elif response.status_code == 404:
-        print(f"Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
+        if partID[0:4] != '320M':
+            print(f"Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
     else:
         if partType:
             print(f"ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}")
