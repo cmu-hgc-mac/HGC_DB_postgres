@@ -167,56 +167,60 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None, skip_u
 
     test_data = {}
     for _row in rows:
-        row = dict(_row)
-        if row['roc_name'] is None:
-            module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi')
-            hxb_child_320X = [child["serial_number"] for child in module_data["children"] if child["serial_number"].startswith("320X")][0]
-            hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi')
-            hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
-            hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
-            row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
+        try:
+            row = dict(_row)
+            if row['roc_name'] is None:
+                print(f"Fetching ROC info from API for {row['module_name']} with {row['hxb_name']} ...")
+                module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi')
+                hxb_child_320X = [child["serial_number"] for child in module_data["children"] if child["serial_number"].startswith("320X")][0]
+                hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi')
+                hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
+                hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
+                row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
 
-        date_test = row['date_test']
-        time_test = str(row['time_test']).split('.')[0]
-        run_begin_timestamp = f"{date_test}T{time_test}"
+            date_test = row['date_test']
+            time_test = str(row['time_test']).split('.')[0]
+            run_begin_timestamp = f"{date_test}T{time_test}"
 
-        module_kop = await get_kind_of_part(part_name = row['module_name'], conn=conn)
+            module_kop = await get_kind_of_part(part_name = row['module_name'], conn=conn)
 
-        if run_begin_timestamp not in test_data:  ### add to list if already doesn't exist
-            _channel = list(row['channel'])
-            _channeltype = list(row['channeltype'])
-            _chip = list(row['chip'])
-            channel, channeltype = remap_channels(_channel, _channeltype)
-            check_duplicate_combo(_chip, channel)
+            if run_begin_timestamp not in test_data:  ### add to list if already doesn't exist
+                _channel = list(row['channel'])
+                _channeltype = list(row['channeltype'])
+                _chip = list(row['chip'])
+                channel, channeltype = remap_channels(_channel, _channeltype)
+                check_duplicate_combo(_chip, channel)
 
-            test_data[run_begin_timestamp] = {
-                'test_timestamp': f"{row['date_test']} {row['time_test']}",
-                'module_name': row['module_name'],
-                'module_kop' : module_kop,
-                'hxb_name': row['hxb_name'],
-                'hxb_kop': row['hxb_kop'],
-                'module_no': row['module_no'],
-                'inspector': row['inspector'],
-                'cell': row['cell'],
-                'chip': _chip,
-                'channel': channel,
-                'channeltype': channeltype,
-                'adc_mean': row['adc_mean'],
-                'adc_stdd': row['adc_stdd'],
-                'roc_name': row['roc_name'],
-                'roc_index': row['roc_index'],
-                'comment' : row['comment'],
-                'meas_leakage_current': row['meas_leakage_current'],
-                'bias_vol': row['bias_vol'],
-                'inverse_sqrt_n': row['inverse_sqrt_n'],
-                'status_desc': row["status_desc"],
-                'inspector': row['inspector'],  ###### for env
-                'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
-                'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
-                'list_dead_cells': row['list_dead_cells'],
-                'list_noisy_cells': row['list_noisy_cells'],
-                'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
-            }
+                test_data[run_begin_timestamp] = {
+                    'test_timestamp': f"{row['date_test']} {row['time_test']}",
+                    'module_name': row['module_name'],
+                    'module_kop' : module_kop,
+                    'hxb_name': row['hxb_name'],
+                    'hxb_kop': row['hxb_kop'],
+                    'module_no': row['module_no'],
+                    'inspector': row['inspector'],
+                    'cell': row['cell'],
+                    'chip': _chip,
+                    'channel': channel,
+                    'channeltype': channeltype,
+                    'adc_mean': row['adc_mean'],
+                    'adc_stdd': row['adc_stdd'],
+                    'roc_name': row['roc_name'],
+                    'roc_index': row['roc_index'],
+                    'comment' : row['comment'],
+                    'meas_leakage_current': row['meas_leakage_current'],
+                    'bias_vol': row['bias_vol'],
+                    'inverse_sqrt_n': row['inverse_sqrt_n'],
+                    'status_desc': row["status_desc"],
+                    'inspector': row['inspector'],  ###### for env
+                    'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
+                    'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
+                    'list_dead_cells': row['list_dead_cells'],
+                    'list_noisy_cells': row['list_noisy_cells'],
+                    'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
+                }
+        except:
+            print(f"Error for {row['module_name']} {row['date_test']} {row['time_test']}...")
     return test_data
 
 
