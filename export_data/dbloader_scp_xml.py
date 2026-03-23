@@ -28,16 +28,16 @@ def get_selected_type_files(files_found_all):
         file_type = str(Path(fi).name)
 
         if parent_directory == 'sensor':
-            file_type = (file_type.split('_',2)[2]).replace('upload.xml', 'xml') ## since sensor name has extra _
+            file_type = (file_type.split('_',2)[2]).replace('upload.xml', 'xml').replace('upload.zip', 'zip') ## since sensor name has extra _
         elif parent_directory == 'iv' or parent_directory == 'pedestal':
-            # file_type = 'module' + (file_type[file_type.index('_'+ parent_directory):]).replace('.xml', '')
             file_type = f"module_{parent_directory}_xml" if "320M" in str(fi) else f"hxb_{parent_directory}_xml"
             parent_directory = 'testing'
         else:
-            parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').split('_',2)[-1]
+            parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').replace('upload.zip', 'zip').split('_',2)[-1]
         
+        file_type_stem = file_type.replace('.xml', '').replace('.zip', '')
         for xmlt in list(xml_list[parent_directory].keys()):
-            if xml_list[parent_directory][xmlt] and file_type in xmlt:
+            if xml_list[parent_directory][xmlt] and file_type_stem in xmlt:
                 files_selected.append(fi)
     return list(set(files_selected))
 
@@ -58,7 +58,7 @@ def find_files_by_date(directory, target_date):
 
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.lower().endswith('.xml'):
+            if file.lower().endswith('.xml') or file.lower().endswith('.zip'):
                 file_path = os.path.join(root, file)
                 file_stat = os.stat(file_path)
                 mod_time = datetime.date.fromtimestamp(file_stat.st_mtime)
@@ -142,7 +142,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         return result.returncode
 
     def rm_xml_lxplus(self):
-        remove_xml_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f {self.remote_xml_dir}/*",]
+        remove_xml_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f {self.remote_xml_dir}/*.xml {self.remote_xml_dir}/*.zip",]
         if self.verbose: print(f"Removing files from {self.dbl_username}@{self.dbloader_hostname}:~/hgc_xml_temp ...")
         result = subprocess.run(remove_xml_cmd,  text=True, capture_output=True)
         if "No such file or directory" in result.stderr: return 0
@@ -158,7 +158,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         print(f"Uploading to {self.dbloader_hostname} with mass_loader ... patience, please")
         print("="*65)
         with open(self.run_on_remote_fpath, "r") as massloadfile:
-            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile} -d"]
+            mass_upload_cmd = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", f"-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml {self.remote_xml_dir}/*.zip -t 15 -c 5 -s {self.csv_outfile} -d"]
             with subprocess.Popen(mass_upload_cmd, stdin=massloadfile, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:                        
                 for line in process.stdout:
                     self.terminal_output += line   # save terminal output from mass_upload to log txt file
@@ -321,7 +321,7 @@ class mass_upload_to_dbloader_via_paramiko:
         return result
 
     def rm_xml_lxplus(self):
-        stdin, stdout, stderr = self.ssh_server2.exec_command(f"rm -f {self.remote_xml_dir}/*")
+        stdin, stdout, stderr = self.ssh_server2.exec_command(f"rm -f {self.remote_xml_dir}/*.xml {self.remote_xml_dir}/*.zip")
         if self.verbose: print(f"Removing files from {self.dbl_username}@{self.dbloader_hostname}:~/hgc_xml_temp ...")
         result = stdout.channel.recv_exit_status()
         return result
@@ -342,7 +342,7 @@ class mass_upload_to_dbloader_via_paramiko:
         print("="*65)
         with open(self.run_on_remote_fpath, "r") as massloadfile, open(self.temp_txt_file_name, "a", encoding="utf-8") as txtfile:
             script = massloadfile.read()
-            command = f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml -t 15 -c 5 -s {self.csv_outfile} -d"
+            command = f"python3 - --{self.cern_dbname.lower()} {self.remote_xml_dir}/*.xml {self.remote_xml_dir}/*.zip -t 15 -c 5 -s {self.csv_outfile} -d"
             stdin, stdout, stderr = self.ssh_server2.exec_command(command)
             stdin.write(script)
             stdin.channel.shutdown_write()  # signal EOF
