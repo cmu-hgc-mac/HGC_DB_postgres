@@ -3,7 +3,7 @@ import asyncpg
 import argparse
 import json
 import numpy as np
-import sys, os, yaml, argparse, datetime
+import sys, os, yaml, argparse, datetime, zipfile
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
@@ -189,6 +189,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_path_env = os.path.join(output_dir, output_file_name_env)
             await update_xml_with_db_values(xml_file_path,     output_file_path_iv,  db_values_iv)
             await update_xml_with_db_values(xml_file_path_env, output_file_path_env, db_values_env)
+            zip_path = output_file_path_iv.replace("_iv.xml", "_iv.zip")
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for xml_file in [output_file_path_iv, output_file_path_env]:
+                    if os.path.exists(xml_file):
+                        zf.write(xml_file, os.path.basename(xml_file))
+                        os.remove(xml_file)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=['module_iv_test'],

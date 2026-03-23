@@ -7,7 +7,7 @@ import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
-import sys, os, yaml, argparse, json, traceback
+import sys, os, yaml, argparse, json, traceback, zipfile
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
@@ -387,7 +387,13 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
         with open(outfile_names[xml_type], "w", encoding="utf-8") as f:  ### Write to output file
             f.write(pretty_xml)
 
-    return outfile_names
+    zip_path = file_path_test.replace("_pedestal.xml", "_pedestal.zip")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for xml_file in outfile_names.values():
+            if os.path.exists(xml_file):
+                zf.write(xml_file, os.path.basename(xml_file))
+                os.remove(xml_file)
+    return zip_path
 
 
 async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None, skip_uploaded=True):
