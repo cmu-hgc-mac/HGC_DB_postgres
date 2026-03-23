@@ -191,7 +191,8 @@ class FileHandler:
         return True
 
     def gather_xml_files(self, paths: List[str]) -> List[Path]:
-        """Collect all XML files from provided paths/patterns."""
+        """Collect all XML and ZIP files from provided paths/patterns."""
+        VALID_SUFFIXES = {'.xml', '.zip'}
         xml_files: List[Path] = []
 
         for pattern in paths:
@@ -199,10 +200,10 @@ class FileHandler:
 
             # Handle directories
             if path.is_dir():
-                logger.info(f"Directory provided: {path}, gathering all XML files")
+                logger.info(f"Directory provided: {path}, gathering all XML/ZIP files")
                 xml_files.extend(
-                    p for p in path.glob("*.xml")
-                    if p.is_file() and p.suffix.lower() == '.xml'
+                    p for p in path.iterdir()
+                    if p.is_file() and p.suffix.lower() in VALID_SUFFIXES
                 )
                 continue
 
@@ -213,23 +214,23 @@ class FileHandler:
                     expanded = list(parent.glob(path.name))
                     xml_files.extend(
                         p for p in expanded
-                        if p.is_file() and p.suffix.lower() == '.xml'
+                        if p.is_file() and p.suffix.lower() in VALID_SUFFIXES
                     )
                 except Exception as e:
                     logger.error(f"Error processing glob pattern {pattern}: {e}")
                 continue
 
             # Handle individual files
-            if path.is_file() and path.suffix.lower() == '.xml':
+            if path.is_file() and path.suffix.lower() in VALID_SUFFIXES:
                 xml_files.append(path)
             else:
-                logger.error(f"No files matched or invalid XML file: {pattern}")
+                logger.error(f"No files matched or invalid XML/ZIP file: {pattern}")
 
         # Remove duplicates while preserving order
         xml_files = list(dict.fromkeys(xml_files))
 
         if not xml_files:
-            logger.warning("No XML files found in the specified paths")
+            logger.warning("No XML/ZIP files found in the specified paths")
         else:
             logger.info(f"Found {len(xml_files)} XML files")
             if logger.isEnabledFor(logging.INFO):
@@ -340,16 +341,24 @@ class UploadProcessor:
             status = UploadStatus.ERROR.value
 
         # --- NEW SECTION: check log content for special cases ---
-        try:
-            if os.path.exists(log_path):
-                with open(log_path, 'r', encoding='utf-8', errors='ignore') as logf:
-                    log_text = logf.read().lower()
-                    if "dataset already exists" in log_text or "already uploaded" in log_text:
-                        status = UploadStatus.ALREADY_UPLOADED.value
-                    elif "timeout" in log_text and status != UploadStatus.SUCCESS.value:
-                        status = UploadStatus.TIMEOUT.value
-        except Exception as log_err:
-            logger.warning(f"Could not read log file {log_path}: {log_err}")
+        def _read_log_status(log_path, current_status):
+            try:
+                if os.path.exists(log_path):
+                    with open(log_path, 'r', encoding='utf-8', errors='ignore') as logf:
+                        log_text = logf.read().lower()
+                        if "dataset already exists" in log_text or "already uploaded" in log_text:
+                            return UploadStatus.ALREADY_UPLOADED.value
+                        elif "timeout" in log_text and current_status != UploadStatus.SUCCESS.value:
+                            return UploadStatus.TIMEOUT.value
+            except Exception as log_err:
+                logger.warning(f"Could not read log file {log_path}: {log_err}")
+            return current_status
+
+        status = _read_log_status(log_path, status)
+        if status not in (UploadStatus.SUCCESS.value, UploadStatus.ALREADY_UPLOADED.value, UploadStatus.TIMEOUT.value):
+            logger.info(f"Status not conclusive for {file_path.name}, waiting 5s before re-checking log ...")
+            time.sleep(5)
+            status = _read_log_status(log_path, status)
         # --------------------------------------------------------
 
         logger.info(f"Final status for {file_path.name}: {status}")
@@ -542,7 +551,7 @@ class MassLoader:
         # Gather XML files
         xml_files = self.file_handler.gather_xml_files(file_paths)
         if not xml_files:
-            logger.error("No valid XML files to process")
+            logger.error("No valid XML/ZIP files to process")
             sys.exit(1)
 
         # Setup CSV output
