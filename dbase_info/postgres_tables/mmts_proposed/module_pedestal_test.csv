@@ -44,8 +44,6 @@ run_no,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
 trophy_board_name,TEXT,,,
+station_name,TEXT,Station ID,,
 batch_name,TEXT,batch of modules in MMTS,,
 iteration,TEXT,thermal cycle iteration,,
-station_name,TEXT,Station ID,,
-
-
