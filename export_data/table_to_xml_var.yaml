@@ -940,8 +940,6 @@ proto_build:
   xml_tag: LOCATION
 - xml_temp_val: INSTITUTION
   xml_tag: INSTITUTION
-- xml_temp_val: RECORD_INSERTION_USER
-  xml_tag: RECORD_INSERTION_USER
 - xml_temp_val: MANUFACTURER
   xml_tag: MANUFACTURER
 - xml_temp_val: KIND_OF_PART_BASEPLATE
