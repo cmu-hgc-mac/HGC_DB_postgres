@@ -167,9 +167,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
 
+            template = os.path.join(os.path.dirname(xml_file_path), 'build_no_hxb_upload.xml') if not db_values.get('PCB') else xml_file_path
             output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
-            await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+            await update_xml_with_db_values(template, output_file_path, db_values)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=db_tables_for_tracking,
