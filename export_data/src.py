@@ -279,7 +279,7 @@ def format_part_name(part_name):
 def get_run_num(location, timestamp):
     ##  format: SSSSYYMMDDTTTTTT
     shipping_code = shipping_loc_yaml[location]
-    formatted_timestamp = timestamp.strftime('%y%m%d%S%f')[:12]
+    formatted_timestamp = timestamp.strftime('%y%m%d%H%M%S%f')[:12]
     run_num = f"{shipping_code}{formatted_timestamp}"
     return run_num
 
