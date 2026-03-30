@@ -178,7 +178,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values_iv[xml_var] = db_values[xml_var]
                 elif xml_type == 'env':
                     db_values_env[xml_var] = db_values[xml_var]
-                    db_values_env['RUN_TYPE'] = 'MAC Module IV Test Environmental Condition'
                        
             # Update the XML with the database values
             # db_values_env['tempsensor_id'] = 'null' ## change this to Null in the future   
