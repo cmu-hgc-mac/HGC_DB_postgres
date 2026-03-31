@@ -132,7 +132,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
             if db_values['COMMENTS_UPLOAD'] == None:
                 db_values['COMMENTS_UPLOAD'] = ''
-            output_file_name = f"{hxb_name}_{LOCATION}_{os.path.basename(xml_file_path)}"
+            
+            combined_str_mod = str(dt_obj).replace("-","").replace(" ","T").replace(":","").split('.')[0]
+            output_file_name = f"{hxb_name}_{LOCATION}_{combined_str_mod}_{os.path.basename(xml_file_path)}"
             output_file_path = os.path.join(output_dir, output_file_name)
 
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
@@ -162,7 +164,8 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
         await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded)
     finally:
         await conn.close()
-
+    zip_xmls_by_timestamp(xml_output_dir, os.path.basename(xml_file_path))
+    
 # Run the asyncio program
 if __name__ == "__main__":
     today = datetime.datetime.today().strftime('%Y-%m-%d')

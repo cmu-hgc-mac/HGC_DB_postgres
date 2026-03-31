@@ -208,7 +208,7 @@ async def generate_hxb_pedestal_xml(test_data, run_begin_timestamp, output_path,
         chip_config[roc] = pedestal_config_json_full[key]["sc"] if test_data['pedestal_config_json'] else None   
     
     os.makedirs(output_path, exist_ok=True)
-    timestamp_formatted = str(run_begin_timestamp).replace(":","").split('.')[0]
+    timestamp_formatted = str(run_begin_timestamp).replace("-","").replace(":","").split('.')[0]
     file_path_test   = os.path.join(output_path, f"{test_data['hxb_name']}_{LOCATION}_{timestamp_formatted}_pedestal.xml")
     file_path_env    = os.path.join(output_path, f"{test_data['hxb_name']}_{LOCATION}_{timestamp_formatted}_pedestal_cond.xml")
     file_path_config = os.path.join(output_path, f"{test_data['hxb_name']}_{LOCATION}_{timestamp_formatted}_pedestal_config.xml")

@@ -181,7 +181,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                        
             # Update the XML with the database values
             # db_values_env['tempsensor_id'] = 'null' ## change this to Null in the future   
-            combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]
+            combined_str_mod = str(dt_obj).replace("-","").replace(" ","T").replace(":","").split('.')[0]
             output_file_name_iv = f"{module_name}_{combined_str_mod}_iv.xml"
             output_file_path_iv = os.path.join(output_dir, output_file_name_iv)
             output_file_name_env = f"{module_name}_{combined_str_mod}_iv_cond.xml"
