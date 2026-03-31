@@ -108,7 +108,8 @@ def zip_xmls_by_timestamp(output_dir, xml_basename):
                 os.remove(os.path.join(output_dir, fname))
             # print(f'Zipped {len(entries)} file(s) -> {zip_name}')
     except Exception as e:
-        print("Effor in zip_xmls_by_timestamp", e)
+        None
+        # print("Error in zip_xmls_by_timestamp", e)
 
 
 def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):
