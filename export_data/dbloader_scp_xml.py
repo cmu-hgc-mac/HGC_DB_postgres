@@ -26,18 +26,14 @@ def get_selected_type_files(files_found_all):
     for fi in files_found_all:
         parent_directory = str(Path(fi).parent.name)
         file_type = str(Path(fi).name)
-
-        if parent_directory == 'sensor':
-            file_type = (file_type.split('_',2)[2]).replace('upload.xml', 'xml').replace('upload.zip', 'zip') ## since sensor name has extra _
-        elif parent_directory == 'iv' or parent_directory == 'pedestal':
+        
+        if parent_directory == 'iv' or parent_directory == 'pedestal':
             file_type = f"module_{parent_directory}_xml" if "320M" in str(fi) else f"hxb_{parent_directory}_xml"
             parent_directory = 'testing'
-        else:
-            parent_directory, file_type = str(Path(fi).parent.name) , str(Path(fi).name).replace('upload.xml', 'xml').replace('upload.zip', 'zip').split('_',2)[-1]
-        
-        file_type_stem = file_type.replace('.xml', '').replace('.zip', '')
+
         for xmlt in list(xml_list[parent_directory].keys()):
-            if xml_list[parent_directory][xmlt] and file_type_stem in xmlt:
+            xmlt_mod = xmlt.split('_', 1)[-1].replace("_xml", "") if parent_directory != "testing" else xmlt.replace("_xml", "")
+            if xml_list[parent_directory][xmlt] and xmlt_mod in file_type:
                 files_selected.append(fi)
     return list(set(files_selected))
 
@@ -554,8 +550,8 @@ def main():
         try:
             if cern_auto_upload and open_scp_connection(dbl_username=dbl_username, get_scp_status=True) == 0:
                 scp_status = open_scp_connection(dbl_username=dbl_username, scp_force_quit=True)
-        except:
-            "I don't know what is going on!!!"
+        except Exception as e:
+            print("I don't know what is going on!!!", e)
     else:
         print("No files found for the given date.")
 
