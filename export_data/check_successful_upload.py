@@ -2,6 +2,7 @@ import asyncio
 import asyncpg
 import csv
 import os
+import zipfile
 from pathlib import Path
 from datetime import datetime
 import re, base64
@@ -39,66 +40,127 @@ YAML_MAP = "export_data/resource.yaml"        # local mapping file
 with open(YAML_MAP) as f:
     yaml_data = yaml.safe_load(f)
 
-def get_reflected_tables(xml_path: str) -> str:
-    """Return mapping key like 'bp_cond' based on part name and path."""
-    """xml_path: /afs/cern.ch/user/u/username/hgc_xml_temp/320MLF2W2CM0102_wirebond_upload.xml"""
+def _parse_part_from_fname(fname: str):
+    """
+    Given a filename (no directory), return (prefix, part_name) or None.
 
-    table_map = yaml_data["postgres_table_to_xml"]
-    
-    ## get prefix
-    part_name = xml_path.split('/')[-1].split('_')[0]
-    if part_name.isdigit():
-        prefix = 'sensor'
-        mm = xml_path.split('/')[-1].split('_')[:2]
-        part_name = '_'.join(mm)
-    else:
-        m = part_name.strip('320')[0] ## B, M, P, X
-        prefix = PART_NAME_MAP.get(m, "")
+    Filename formats:
+      module/proto : 320MLF2WDCM0005_{ts}_{stem}.xml   -> part = 320MLF2WDCM0005
+      hxb          : 320XLF4DME00891_CMU_{ts}_{stem}.xml -> part = 320XLF4DME00891
+      bp           : 320BAFLWIH00996_CMU_{ts}_{stem}.xml  -> part = 320BAFLWIH00996
+      sensor       : 200339_0_CMU_{ts}_{stem}.xml         -> part = 200339_0  (digits + _N)
+    """
+    tokens = os.path.splitext(fname)[0].split('_')
+    first = tokens[0]
 
+    if first.isdigit():
+        # sensor: part_name = "{digits}_{N}"
+        if len(tokens) < 2:
+            return None
+        part_name = f"{first}_{tokens[1]}"
+        return 'sensor', part_name
+
+    # 320-prefixed parts
+    m = first.lstrip('320')
+    if not m:
+        return None
+    prefix = PART_NAME_MAP.get(m[0], "")
     if not prefix:
-        raise ValueError(f"Cannot determine part type for part={part_name}, path={xml_path}")
-    
+        return None
+    return prefix, first
+
+
+def get_reflected_tables(file_path: str):
+    """
+    Return (prefix, part_name, tables) for a given xml or zip path.
+    For zip files, returns a list of such tuples (one per member).
+    For xml files, returns a single tuple (or None).
+    """
+    table_map = yaml_data["postgres_table_to_xml"]
+    fname = os.path.basename(file_path)
+
     suffix_matching = {
-        "wirebond": "wirebond",
-        "_grading": f"{prefix}_grading",
-        "_cure_cond": f"{prefix}_cure_cond",
-        "_inspection": f"{prefix}_inspection",
-        "_build_upload": f"{prefix}_info" if prefix == 'module' else f"{prefix}_assembly",
-        "_assembly": f"{prefix}_assembly",
-        "_iv_cond": f"{prefix}_iv_cond",
-        "_iv": f"{prefix}_iv",
-        "_pedestal": f"{prefix}_pedestal"
+        "wirebond":     "wirebond",
+        "_grading":     "{prefix}_grading",
+        "_cure_cond":   "{prefix}_cure_cond",
+        "_inspection":  "{prefix}_inspection",
+        "_build_upload":"{prefix}_info_or_assembly",
+        "_assembly":    "{prefix}_assembly",
+        "_iv_cond":     "{prefix}_iv_cond",
+        "_iv":          "{prefix}_iv",
+        "_pedestal":    "{prefix}_pedestal",
     }
-    for suffix, xml_type in suffix_matching.items():
-        if suffix in xml_path:
-            if suffix == '_build_upload' and prefix == 'proto':
-                return None
-            tables = table_map[xml_type]
-            if not suffix:
-                raise ValueError(f"Cannot determine xml type for part={part_name}, path={xml_path}")
-            else:
-                return prefix, part_name, tables ##i.e., module, 320MLF2W2CM0102, [module_pedestal, module_cond]
+
+    def _resolve_tables(prefix, path_str):
+        for suffix, xml_type_tpl in suffix_matching.items():
+            if suffix in path_str:
+                xml_type = xml_type_tpl.replace("{prefix}", prefix)
+                if xml_type == f"{prefix}_info_or_assembly":
+                    if prefix == 'proto':
+                        return None
+                    xml_type = f"{prefix}_info" if prefix == 'module' else f"{prefix}_assembly"
+                return table_map.get(xml_type)
+        return None
+
+    if fname.endswith('.zip'):
+        results = []
+        try:
+            with zipfile.ZipFile(file_path, 'r') as zf:
+                member_names = zf.namelist()
+        except Exception:
+            # zip may be on a remote path in the CSV; parse members from zip filename pattern instead
+        	# e.g. 320MLF2WDCM0005x4_20260327T150612_assembly_upload.zip
+            # We can only resolve the type, not individual part names — skip
+            member_names = []
+
+        for member in member_names:
+            parsed = _parse_part_from_fname(member)
+            if parsed is None:
+                continue
+            prefix, part_name = parsed
+            tables = _resolve_tables(prefix, member)
+            if tables:
+                results.append((prefix, part_name, tables))
+        return results  # list of tuples
+
+    else:
+        parsed = _parse_part_from_fname(fname)
+        if parsed is None:
+            return None
+        prefix, part_name = parsed
+        tables = _resolve_tables(prefix, fname)
+        if not tables:
+            return None
+        return prefix, part_name, tables  # single tuple
+
 
 def get_upload_status_csv(csv_path):
     '''
-    xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path     
+    xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path
     '''
     csv_output = []
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             xml_path = row["xml_path"]
-            upload_status = row["upload_status"].strip()## Refer to UPLOAD_STATUS_MAP
+            upload_status = row["upload_status"].strip()  # Refer to UPLOAD_STATUS_MAP
+
+            if upload_status not in UPLOAD_STATUS_MAP:
+                continue
+
             result = get_reflected_tables(xml_path)
             if result is None:
                 continue
-            prefix, part_name, db_tables_to_be_updated = result
-            csv_output.append((prefix, part_name, upload_status, db_tables_to_be_updated))
 
-            # Skip if unknown status
-            if upload_status not in UPLOAD_STATUS_MAP:
-                continue
-        return csv_output ## [(part_name, upload_status, db_tables_to_be_updated), (...), ...]
+            # zip returns a list; xml returns a single tuple
+            if isinstance(result, list):
+                for prefix, part_name, tables in result:
+                    csv_output.append((prefix, part_name, upload_status, tables))
+            else:
+                prefix, part_name, tables = result
+                csv_output.append((prefix, part_name, upload_status, tables))
+
+    return csv_output  # [(prefix, part_name, upload_status, db_tables), ...]
 
 # def get_api_data(search_id, db_type):
 #     if db_type == 'cmsr':
