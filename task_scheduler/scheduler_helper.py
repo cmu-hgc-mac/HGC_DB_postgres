@@ -11,7 +11,7 @@ def get_lxplus_username_password():
     PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
     # conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
     # conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
-    # dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
+    # dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal.cern.ch") #, "hgcaldbloader.cern.ch")  
     sched_config_file = os.path.join(PROJECT_ROOT, os.path.join('task_scheduler', 'schedule_config.yaml'))
     sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
     dbl_username = sched_config['CERN_service_account_username']
@@ -25,7 +25,7 @@ def get_lxplus_username_password():
     return dbl_username, service_account_password
 
 
-def run_ssh_master(dbloader_hostname = 'dbloader-hgcal', scp_persist = 'yes'):
+def run_ssh_master(dbloader_hostname = 'dbloader-hgcal.cern.ch', scp_persist = 'yes'):
     dbl_username, service_account_password = get_lxplus_username_password()
     controlpathname = "ctrl_dbloader"
     sockpath = os.path.expanduser(f"~/.ssh/{controlpathname}")
@@ -671,7 +671,7 @@ class set_automation_schedule(Toplevel):
         
     def create_ssh_config_entry(self):
         conn_info = yaml.safe_load(open( os.path.join('dbase_info', 'conn.yaml') , 'r'))
-        dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal")
+        dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal.cern.ch")
         manager = SSHConfigManager()
         HOST_BLOCK = f"""
         Host dbloader
