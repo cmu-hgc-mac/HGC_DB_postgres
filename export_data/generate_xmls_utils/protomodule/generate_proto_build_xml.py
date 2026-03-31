@@ -66,8 +66,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = proto_name
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = await get_kind_of_part(proto_name)
-                elif xml_var == 'RECORD_INSERTION_USER':
-                    db_values[xml_var] = lxplus_username
+                # elif xml_var == 'RECORD_INSERTION_USER':
+                #     db_values[xml_var] = lxplus_username
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
                     _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' ;"
                     _bp_name = await conn.fetch(_query)
