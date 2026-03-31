@@ -189,7 +189,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
             
             combined_str_mod = str(dt_obj).replace("-","").replace(" ","T").replace(":","").split('.')[0]
-            output_file_name = f"{module}_{combined_str_mod}__{os.path.basename(xml_file_path)}"
+            output_file_name = f"{module}_{combined_str_mod}_{os.path.basename(xml_file_path)}"
             output_file_path = os.path.join(output_dir, output_file_name)
             if 'IS_TEST_BOND_MODULE' not in db_values:
                 db_values['IS_TEST_BOND_MODULE'] = 'False'
