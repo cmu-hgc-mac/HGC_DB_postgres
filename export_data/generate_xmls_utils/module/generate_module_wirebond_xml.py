@@ -188,8 +188,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
             
-            
-            output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
+            combined_str_mod = str(dt_obj).replace("-","").replace(" ","T").replace(":","").split('.')[0]
+            output_file_name = f"{module}_{combined_str_mod}__{os.path.basename(xml_file_path)}"
             output_file_path = os.path.join(output_dir, output_file_name)
             if 'IS_TEST_BOND_MODULE' not in db_values:
                 db_values['IS_TEST_BOND_MODULE'] = 'False'
@@ -226,6 +226,7 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
         await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded)
     finally:
         await conn.close()
+    zip_xmls_by_timestamp(xml_output_dir, os.path.basename(xml_file_path))
 
 # Run the asyncio program
 if __name__ == "__main__":

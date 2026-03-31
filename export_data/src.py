@@ -76,35 +76,38 @@ def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'
 def zip_xmls_by_timestamp(output_dir, xml_basename):
     groups = defaultdict(list)
     suffix = f"_{xml_basename}"
-    for fname in os.listdir(output_dir):
-        if not fname.endswith(suffix):
-            continue
-        # strip the trailing _{xml_basename} then split on _ to get last token as timestamp
-        stem = fname[: -len(suffix)]          # e.g. "320MLF2WDCM0005_20241015T123456"
-        parts = stem.rsplit('_', 1)
-        if len(parts) != 2:
-            continue
-        module_name, ts = parts
-        groups[ts].append((module_name, fname))
+    try:
+        for fname in os.listdir(output_dir):
+            if not fname.endswith(suffix):
+                continue
+            # strip the trailing _{xml_basename} then split on _ to get last token as timestamp
+            stem = fname[: -len(suffix)]          # e.g. "320MLF2WDCM0005_20241015T123456"
+            parts = stem.rsplit('_', 1)
+            if len(parts) != 2:
+                continue
+            module_name, ts = parts
+            groups[ts].append((module_name, fname))
 
-    for ts, entries in groups.items():
-        if len(entries) <= 1:
-            continue
+        for ts, entries in groups.items():
+            if len(entries) <= 1:
+                continue
 
-        entries.sort(key=lambda x: x[0])  # Sort by module name so range is computed correctly
-        module_names = [e[0] for e in entries]
-        first = module_names[0] # Build label: {first_module}xN, e.g. 320MLF2WDCM0005x4
-        n = len(module_names)
-        range_label = first if n == 1 else f"{first}x{n}"
-        xml_stem = os.path.splitext(xml_basename)[0]
-        zip_name = f"{range_label}_{ts}_{xml_stem}.zip"
-        zip_path = os.path.join(output_dir, zip_name)
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            entries.sort(key=lambda x: x[0])  # Sort by module name so range is computed correctly
+            module_names = [e[0] for e in entries]
+            first = module_names[0] # Build label: {first_module}xN, e.g. 320MLF2WDCM0005x4
+            n = len(module_names)
+            range_label = first if n == 1 else f"{first}x{n}"
+            xml_stem = os.path.splitext(xml_basename)[0]
+            zip_name = f"{range_label}_{ts}_{xml_stem}.zip"
+            zip_path = os.path.join(output_dir, zip_name)
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for _, fname in entries:
+                    zf.write(os.path.join(output_dir, fname), arcname=fname)
             for _, fname in entries:
-                zf.write(os.path.join(output_dir, fname), arcname=fname)
-        for _, fname in entries:
-            os.remove(os.path.join(output_dir, fname))
-        # print(f'Zipped {len(entries)} file(s) -> {zip_name}')
+                os.remove(os.path.join(output_dir, fname))
+            # print(f'Zipped {len(entries)} file(s) -> {zip_name}')
+    except Exception as e:
+        print("Effor in zip_xmls_by_timestamp", e)
 
 
 def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):

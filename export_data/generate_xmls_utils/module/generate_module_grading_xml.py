@@ -116,7 +116,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 
                         
             # Update the XML with the database values
-            combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]
+            combined_str_mod = str(combined_str).replace("-","").replace(" ","T").replace(":","").split('.')[0]
             output_file_name = f"{module_name}_{combined_str_mod}_grading_upload.xml"
             output_file_path = os.path.join(output_dir, output_file_name)
             print(output_file_path)
