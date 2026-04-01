@@ -411,11 +411,32 @@ async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None
         for timestamp_key in tqdm(list(test_data.keys())):
             try:
                 float(test_data[timestamp_key]['rel_hum'])
-                float(test_data[timestamp_key]['temp_c'])                
+                float(test_data[timestamp_key]['temp_c'])
             except:
-                print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
+                print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}")
                 continue
             output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, template_path_bias=temp_dir_bias, lxplus_username=lxplus_username)
+            module_name = test_data[timestamp_key]['module_name']
+            date_part, time_part = timestamp_key.split('T')
+            await update_timestamp_col(conn,
+                                       update_flag=True,
+                                       table_list=['module_pedestal_test'],
+                                       column_name='xml_gen_datetime',
+                                       part='module',
+                                       part_name=module_name,
+                                       extra_where=f"AND date_test = '{date_part}' AND time_test::text LIKE '{time_part}%'")
+            # Stamp rows that don't satisfy statusdict_select with sentinel (now - 100 years)
+            if statusdict_select:
+                now = datetime.datetime.now()
+                sentinel_ts = now.replace(year=now.year - 100)
+                await update_timestamp_col(conn,
+                                           update_flag=True,
+                                           table_list=['module_pedestal_test'],
+                                           column_name='xml_gen_datetime',
+                                           part='module',
+                                           part_name=module_name,
+                                           extra_where=f"AND status_desc NOT IN {statusdict_select}",
+                                           timestamp=sentinel_ts)
     except Exception as e:
         print(f"{RED}An error occurred: {traceback.print_exc()}.{RESET}")
     finally:

@@ -199,7 +199,20 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                                     table_list=['module_iv_test'],
                                     column_name='xml_gen_datetime',
                                     part='module',
-                                    part_name=module_name)
+                                    part_name=module_name,
+                                    extra_where=f"AND mod_ivtest_no = {mod_ivtest_no}")
+            # Stamp rows that don't satisfy statusdict_select with sentinel (now - 100 years)
+            if statusdict_select:
+                now = datetime.datetime.now()
+                sentinel_ts = now.replace(year=now.year - 100)
+                await update_timestamp_col(conn,
+                                        update_flag=True,
+                                        table_list=['module_iv_test'],
+                                        column_name='xml_gen_datetime',
+                                        part='module',
+                                        part_name=module_name,
+                                        extra_where=f"AND status_desc NOT IN {statusdict_select}",
+                                        timestamp=sentinel_ts)
         
         except Exception as e:
             print('#'*15, f'ERROR for {module_name}','#'*15 ); traceback.print_exc(); print('')

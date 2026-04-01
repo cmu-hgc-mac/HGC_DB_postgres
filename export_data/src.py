@@ -288,25 +288,25 @@ async def get_parts_name(name, table, conn):
     name_list = [record[name] for record in fetched_query]
     return name_list
 
-async def update_timestamp_col(conn, update_flag: bool, table_list: list, column_name: str,  part: str, part_name: str):
+async def update_timestamp_col(conn, update_flag: bool, table_list: list, column_name: str,  part: str, part_name: str, extra_where: str = "", timestamp: datetime.datetime = None):
     if not update_flag:
         print("Update flag is False. No update performed.")
         return
     try:
-        _part_name_col = {'module':'module_name', 
-                          'hexaboard':'hxb_name', 
-                          'protomodule':'proto_name', 
+        _part_name_col = {'module':'module_name',
+                          'hexaboard':'hxb_name',
+                          'protomodule':'proto_name',
                           'sensor': 'sen_name',
                           'baseplate':'bp_name'}
         part_name_col = _part_name_col[part]
 
         # Generate the current timestamp
-        current_timestamp = datetime.datetime.now()
+        current_timestamp = timestamp if timestamp is not None else datetime.datetime.now()
         for table in table_list:
             query = f"""
             UPDATE {table}
             SET {column_name} = $1
-            WHERE {part_name_col} = $2;
+            WHERE {part_name_col} = $2 {extra_where};
             """
             await conn.execute(query, current_timestamp, part_name)
     except Exception as e:
