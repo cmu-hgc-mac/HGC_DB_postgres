@@ -195,14 +195,14 @@ async def main():
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
             scp_success, consolidated_csv = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb, cern_auto_upload=str2bool(args.cern_auto_upload))
+        
         if scp_success and upload_prod_stat and consolidated_csv:
-            result = subprocess.run(
-                [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv  ,"--dbpassword", dbpassword, "--encrypt_key", encryption_key or ""],
-                capture_output=True,
-                text=True
-            )
-            if result.stderr:
-                print("check_successful_upload.py errors:\n", result.stderr)
+            command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True"]
+            result = subprocess.run(command)
+            # sys.stdout.write(result.stdout)
+            # sys.stdout.flush()
+            # if result.stderr:
+            #     print("check_successful_upload.py errors:\n", result.stderr)
 
         if scp_success and str2bool(args.del_xml):
             clean_generated_xmls()

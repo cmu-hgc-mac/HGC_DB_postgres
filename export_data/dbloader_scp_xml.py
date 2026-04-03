@@ -615,7 +615,7 @@ def main():
                 for fname in tqdm(other_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
 
-        if len(upload_instances) > 1:
+        if len(upload_instances) >= 1:
             consolidate_mass_upload_logs(upload_instances)
 
         try:

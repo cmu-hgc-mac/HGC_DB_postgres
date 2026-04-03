@@ -358,11 +358,13 @@ if __name__ == "__main__":
     encryption_key = args.encrypt_key
     upload_dev_stat = args.upload_dev_stat
     upload_prod_stat = args.upload_prod_stat
-    consolidated_csv = f"{LOG_DIR}/{args.consolidated_csv}"
+    consolidated_csv = args.consolidated_csv
+    ###### consolidated_csv = f"{LOG_DIR}/{args.consolidated_csv}"
 
     if str2bool(upload_dev_stat):
         db_type = 'int2r'
         print("We do not update the upload status for INT2R")
     if str2bool(upload_prod_stat):
         db_type = 'cmsr'
+        print("Updating Postgres with XML upload status ...")
         asyncio.run(main(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=consolidated_csv))
