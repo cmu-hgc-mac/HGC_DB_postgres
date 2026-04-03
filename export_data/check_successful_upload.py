@@ -10,7 +10,7 @@ import yaml
 from cryptography.fernet import Fernet
 import argparse
 import glob
-from src import get_conn
+from src import get_conn, str2bool
 
 ## get the latest log csv file under mass_upload_logs (dbloader_batch_uploader_YYYYMMDDTTTTTT.csv)
 ## Open the csv file, find the value for "upload_status"
@@ -35,6 +35,7 @@ PART_NAME_MAP = {
     'M': 'module'
 }
 
+XML_UPLOAD_DIR = Path("export_data/xmls_for_upload")
 
 YAML_MAP = "export_data/resource.yaml"        # local mapping file
 with open(YAML_MAP) as f:
@@ -68,6 +69,48 @@ def _parse_part_from_fname(fname: str):
     if not prefix:
         return None
     return prefix, first
+
+
+def _find_local_zip(fname: str) -> Path:
+    """
+    Given a zip filename (no directory), find it under XML_UPLOAD_DIR by
+    determining the likely subdirectory from the filename:
+      - '_iv' in fname         -> testing/iv
+      - '_pedestal' in fname   -> testing/pedestal
+      - starts with '320M'     -> module
+      - starts with '320P'     -> protomodule
+      - starts with '320X'     -> hexaboard
+      - starts with '320B'     -> baseplate
+      - starts with digits     -> sensor
+    Falls back to a recursive glob if not found in the expected directory.
+    """
+    first = fname.split('_')[0]
+    if '_iv' in fname:
+        candidate_dir = XML_UPLOAD_DIR / 'testing' / 'iv'
+    elif '_pedestal' in fname:
+        candidate_dir = XML_UPLOAD_DIR / 'testing' / 'pedestal'
+    elif first.startswith('320M'):
+        candidate_dir = XML_UPLOAD_DIR / 'module'
+    elif first.startswith('320P'):
+        candidate_dir = XML_UPLOAD_DIR / 'protomodule'
+    elif first.startswith('320X'):
+        candidate_dir = XML_UPLOAD_DIR / 'hexaboard'
+    elif first.startswith('320B'):
+        candidate_dir = XML_UPLOAD_DIR / 'baseplate'
+    elif first.isdigit():
+        candidate_dir = XML_UPLOAD_DIR / 'sensor'
+    else:
+        candidate_dir = XML_UPLOAD_DIR
+
+    candidate = candidate_dir / fname
+    if candidate.exists():
+        return candidate
+
+    # Fallback: search recursively
+    matches = list(XML_UPLOAD_DIR.rglob(fname))
+    if matches:
+        return matches[0]
+    return candidate  # return expected path even if missing (will raise on open)
 
 
 def get_reflected_tables(file_path: str):
@@ -104,13 +147,12 @@ def get_reflected_tables(file_path: str):
 
     if fname.endswith('.zip'):
         results = []
+        local_zip = _find_local_zip(fname)
         try:
-            with zipfile.ZipFile(file_path, 'r') as zf:
+            with zipfile.ZipFile(local_zip, 'r') as zf:
                 member_names = zf.namelist()
-        except Exception:
-            # zip may be on a remote path in the CSV; parse members from zip filename pattern instead
-        	# e.g. 320MLF2WDCM0005x4_20260327T150612_assembly_upload.zip
-            # We can only resolve the type, not individual part names — skip
+        except Exception as e:
+            print(f"Could not open local zip {local_zip}:", e)
             member_names = []
 
         for member in member_names:
@@ -198,16 +240,20 @@ async def update_upload_status(pool, csv_output, concurrency=10):
                 query = f"""
                     UPDATE {table}
                     SET xml_upload_success = $1
-                    WHERE sen_name = $2
+                    WHERE sen_name = $2 
+                    AND xml_gen_datetime IS NOT NULL
+                    AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                 """
             else:
                 query = f"""
                     UPDATE {table}
                     SET xml_upload_success = $1
                     WHERE {prefix}_name = $2
+                    AND xml_gen_datetime IS NOT NULL
+                    AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                 """
             # tasks.append(conn.execute(query, success_flag, part_name))
-            print(f'Updating {part_name} in {table}...')
+            # print(f'Updating {part_name} in {table}...') #, query)
             tasks.append(_run_update(pool, query, success_flag, part_name, sem))
     if not tasks:
         print("No valid update tasks found.")
@@ -238,18 +284,18 @@ def get_latest_upload_log():
     print(f"Latest upload log: {latest_file}")
     return latest_file
 
-async def main(dbpassword, db_type, encryption_key=None):
+async def main(dbpassword, db_type, encryption_key=None, consolidated_csv=None):
     # Connect to PostgreSQL
     pool = await get_conn(dbpassword, encryption_key, pool=True)
-    print("Connected to database.")
+    # print("Connected to database.")
 
     if db_type == 'int2r':
         print("We do not update the upload status for INT2R")
-        
+
     elif db_type == 'cmsr':
         try:
-            # Find and process latest CSV
-            massloader_log_csv = get_latest_upload_log()
+            # Use provided consolidated CSV or fall back to latest log
+            massloader_log_csv = consolidated_csv if consolidated_csv else get_latest_upload_log()
             if not massloader_log_csv:
                 print("No log file to process.")
                 return
@@ -264,14 +310,15 @@ async def main(dbpassword, db_type, encryption_key=None):
 
         finally:
             await pool.close()
-            print("Database connection closed.")
+            # print("Database connection closed.")
             
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script to process files in a directory.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
-    parser.add_argument('-upld', '--upload_dev_stat', default='True', required=False, help="Upload to dev DBLoader without generate.")
-    parser.add_argument('-uplp', '--upload_prod_stat', default='True', required=False, help="Upload to prod DBLoader without generate.")
+    parser.add_argument('-upld', '--upload_dev_stat', default='False', required=False, help="Upload to dev DBLoader without generate.")
+    parser.add_argument('-uplp', '--upload_prod_stat', default='False', required=False, help="Upload to prod DBLoader without generate.")
+    parser.add_argument('-conscsv', '--consolidated_csv', default=None, required=True, help="Name of the consolidated log file to check logs")
     
     args = parser.parse_args()
     
@@ -279,10 +326,11 @@ if __name__ == "__main__":
     encryption_key = args.encrypt_key
     upload_dev_stat = args.upload_dev_stat
     upload_prod_stat = args.upload_prod_stat
+    consolidated_csv = f"{LOG_DIR}/{args.consolidated_csv}"
 
-    if upload_dev_stat:
+    if str2bool(upload_dev_stat):
         db_type = 'int2r'
         print("We do not update the upload status for INT2R")
-    if upload_prod_stat:
+    if str2bool(upload_prod_stat):
         db_type = 'cmsr'
-        asyncio.run(main(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key))
+        asyncio.run(main(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=consolidated_csv))
