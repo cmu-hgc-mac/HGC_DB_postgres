@@ -1,6 +1,6 @@
 import asyncio
 import asyncpg
-import csv
+import csv, pwinput
 import os
 import zipfile
 from pathlib import Path
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    dbpassword = args.dbpassword
+    dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
     encryption_key = args.encrypt_key
     upload_dev_stat = args.upload_dev_stat
     upload_prod_stat = args.upload_prod_stat
