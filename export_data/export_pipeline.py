@@ -199,8 +199,8 @@ async def main():
         if scp_success and upload_prod_stat and consolidated_csv:
             command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True"]
             result = subprocess.run(command)
-            # sys.stdout.write(result.stdout)
-            # sys.stdout.flush()
+            sys.stdout.write(result.stdout)
+            sys.stdout.flush()
             # if result.stderr:
             #     print("check_successful_upload.py errors:\n", result.stderr)
 
