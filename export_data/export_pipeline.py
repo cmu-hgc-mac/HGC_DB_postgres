@@ -90,22 +90,36 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
 
 def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_auto_upload = False):
     """Call the scp script to transfer files."""
+    consolidated_csv = None
     try:
-        scp_command = [sys.executable, 
-                       'export_data/dbloader_scp_xml.py', 
-                       '-lxu', lxplus_username, 
+        scp_command = [sys.executable,
+                       'export_data/dbloader_scp_xml.py',
+                       '-lxu', lxplus_username,
                        '-dir', directory,
                        '-date', str(search_date),
                        '-autoupload', str(cern_auto_upload),
                        '-cerndb', cerndb]
-    
-        process = subprocess.run(scp_command, check=True)
-        return True
+
+        process = subprocess.run(scp_command, check=True, capture_output=True, text=True)
+        sys.stdout.write(process.stdout)
+        sys.stdout.flush()
+
+        lines = process.stdout.splitlines()
+        for i, line in enumerate(lines):
+            if '----> Consolidated logs saved:' in line:
+                for subsequent_line in lines[i+1:]:
+                    stripped = subsequent_line.strip()
+                    if stripped.endswith('.csv'):
+                        consolidated_csv = stripped
+                        break
+                break
+
+        return True, consolidated_csv
 
     except Exception as e:
         traceback.print_exc()
         print(f"Error during SCP: {e}")
-        return False
+        return False, consolidated_csv
 
 def clean_generated_xmls():
     """Delete all files in the generated XMLs directory after successful SCP."""
@@ -180,10 +194,10 @@ async def main():
     
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
-            scp_success = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb, cern_auto_upload=str2bool(args.cern_auto_upload))
-        if scp_success and upload_prod_stat:
+            scp_success, consolidated_csv = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb, cern_auto_upload=str2bool(args.cern_auto_upload))
+        if scp_success and upload_prod_stat and consolidated_csv:
             result = subprocess.run(
-                [sys.executable, "export_data/check_successful_upload.py", "--dbpassword", dbpassword, "--encrypt_key", encryption_key or ""],
+                [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv  ,"--dbpassword", dbpassword, "--encrypt_key", encryption_key or ""],
                 capture_output=True,
                 text=True
             )

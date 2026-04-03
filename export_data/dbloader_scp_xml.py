@@ -460,6 +460,64 @@ class mass_upload_to_dbloader_via_paramiko:
         self.close_scp()
 
 ###################################################################################################
+################################## Consolidate Logs ###############################################
+###################################################################################################
+
+def consolidate_mass_upload_logs(instances):
+    """Combine csv and txt log files from multiple mass_upload instances into single files.
+
+    Output filename: mass_upload_YYYYMMDD_HHMMSS_HHMMSS_... where YYYYMMDD is from the
+    first instance's start time and each HHMMSS corresponds to each instance's start time.
+    """
+    if not instances:
+        return
+
+    logs_fp = instances[0].mass_upload_logs_fp
+    time_parts = [inst.starttime.strftime("%H%M%S") for inst in instances]
+    date_part  = instances[0].starttime.strftime("%Y%m%d")
+    base_name  = f"mass_upload_{date_part}_" + "_".join(time_parts)
+
+    combined_csv_path = os.path.join(logs_fp, base_name + ".csv")
+    combined_txt_path = os.path.join(logs_fp, base_name + ".txt")
+
+    # --- Combine CSVs (keep header from first file, skip headers in rest) ---
+    header_written = False
+    with open(combined_csv_path, "w", encoding="utf-8") as out_csv:
+        for inst in instances:
+            csv_name = os.path.basename(inst.csv_outfile)
+            local_csv = os.path.join(logs_fp, csv_name)
+            if not os.path.isfile(local_csv):
+                continue
+            with open(local_csv, "r", encoding="utf-8") as in_csv:
+                for i, line in enumerate(in_csv):
+                    if i == 0:  # header row
+                        if not header_written:
+                            out_csv.write(line)
+                            header_written = True
+                    else:
+                        out_csv.write(line)
+
+    # --- Combine TXTs (append sequentially with a separator) ---
+    with open(combined_txt_path, "w", encoding="utf-8") as out_txt:
+        for idx, inst in enumerate(instances):
+            csv_stem = os.path.splitext(os.path.basename(inst.csv_outfile))[0]
+            local_txt = os.path.join(logs_fp, csv_stem + ".txt")
+            out_txt.write(f"{'='*65}\n")
+            out_txt.write(f"=== Upload {idx+1} of {len(instances)}: {csv_stem} ===\n")
+            out_txt.write(f"{'='*65}\n")
+            if os.path.isfile(local_txt):
+                with open(local_txt, "r", encoding="utf-8") as in_txt:
+                    out_txt.write(in_txt.read())
+            else:
+                out_txt.write(f"(log file not found: {local_txt})\n")
+            out_txt.write("\n")
+
+    print(f"----> Consolidated logs saved:")
+    print(f"      {combined_csv_path}")
+    print(f"      {combined_txt_path}")
+
+
+###################################################################################################
 ################################## Main Function ##################################################
 ###################################################################################################
 
@@ -494,22 +552,26 @@ def main():
 
     if files_found:
         print("Files found: ")
-        for file in files_found: 
+        for file in files_found:
             print(file)
         print('\n')
         build_files, other_files = get_files_by_type(files_found, file_type='build')
         cond_files,  other_files = get_files_by_type(other_files, file_type='cond')
         protomodule_build_files, module_build_files, other_build_files = get_proto_module_files(build_files)
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
-        print(f"Uploading {len(protomodule_build_files)} protomodule 'build' files to {cern_dbname}...")
 
+        upload_instances = []
+
+        print(f"Uploading {len(protomodule_build_files)} protomodule 'build' files to {cern_dbname}...")
         if protomodule_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload).run_steps()
+                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
+                inst.run_steps()
+                upload_instances.append(inst)
             else:
                 for fname in tqdm(protomodule_build_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
-        
+
             if module_build_files or other_files:
                 print("Waiting 10 seconds after protomodule upload...")
                 print("")
@@ -518,11 +580,13 @@ def main():
         print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
         if module_build_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload).run_steps()
+                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
+                inst.run_steps()
+                upload_instances.append(inst)
             else:
                 for fname in tqdm(module_build_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
-        
+
             if other_files:
                 print("Waiting 10 seconds after module upload...")
                 print("")
@@ -531,7 +595,9 @@ def main():
         print(f"Uploading {len(cond_files)} cond files to {cern_dbname}...")
         if cond_files: ## upload cond files prior to other data to prevent duplication of run_number in CMSR due to mass_loader parallelization
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload).run_steps()
+                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
+                inst.run_steps()
+                upload_instances.append(inst)
             else:
                 for fname in tqdm(cond_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
@@ -542,11 +608,16 @@ def main():
         print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
         if other_files:
             if mass_upload_xmls:
-                mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload).run_steps()
+                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
+                inst.run_steps()
+                upload_instances.append(inst)
             else:
                 for fname in tqdm(other_files):
                     scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
-        
+
+        if len(upload_instances) > 1:
+            consolidate_mass_upload_logs(upload_instances)
+
         try:
             if cern_auto_upload and open_scp_connection(dbl_username=dbl_username, get_scp_status=True) == 0:
                 scp_status = open_scp_connection(dbl_username=dbl_username, scp_force_quit=True)
