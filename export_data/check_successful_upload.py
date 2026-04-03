@@ -147,6 +147,22 @@ def get_reflected_tables(file_path: str):
 
     if fname.endswith('.zip'):
         results = []
+
+        # For IV and pedestal zips, derive part info from the zip filename itself
+        # without opening the archive (the path may be remote).
+        # Filename pattern: {part_name}_{YYYYMMDDThhmmss}_{type}.zip
+        is_testing = '_iv' in fname or '_pedestal' in fname
+        if is_testing:
+            ts_match = re.search(r'_(\d{8}T\d{6})_', fname)
+            timestamp = ts_match.group(1) if ts_match else None
+            parsed = _parse_part_from_fname(fname)
+            if parsed is not None:
+                prefix, part_name = parsed
+                tables = _resolve_tables(prefix, fname)
+                if tables:
+                    results.append((prefix, part_name, tables, timestamp))
+            return results
+
         local_zip = _find_local_zip(fname)
         try:
             with zipfile.ZipFile(local_zip, 'r') as zf:
@@ -162,7 +178,7 @@ def get_reflected_tables(file_path: str):
             prefix, part_name = parsed
             tables = _resolve_tables(prefix, member)
             if tables:
-                results.append((prefix, part_name, tables))
+                results.append((prefix, part_name, tables, None))
         return results  # list of tuples
 
     else:
@@ -173,7 +189,7 @@ def get_reflected_tables(file_path: str):
         tables = _resolve_tables(prefix, fname)
         if not tables:
             return None
-        return prefix, part_name, tables  # single tuple
+        return prefix, part_name, tables, None  # single tuple
 
 
 def get_upload_status_csv(csv_path):
@@ -196,13 +212,13 @@ def get_upload_status_csv(csv_path):
 
             # zip returns a list; xml returns a single tuple
             if isinstance(result, list):
-                for prefix, part_name, tables in result:
-                    csv_output.append((prefix, part_name, upload_status, tables))
+                for prefix, part_name, tables, timestamp in result:
+                    csv_output.append((prefix, part_name, upload_status, tables, timestamp))
             else:
-                prefix, part_name, tables = result
-                csv_output.append((prefix, part_name, upload_status, tables))
+                prefix, part_name, tables, timestamp = result
+                csv_output.append((prefix, part_name, upload_status, tables, timestamp))
 
-    return csv_output  # [(prefix, part_name, upload_status, db_tables), ...]
+    return csv_output  # [(prefix, part_name, upload_status, db_tables, timestamp), ...]
 
 # def get_api_data(search_id, db_type):
 #     if db_type == 'cmsr':
@@ -210,51 +226,67 @@ def get_upload_status_csv(csv_path):
 #     elif db_type == 'int2r':
 #         url = f"https://hgcapi-intg.web.cern.ch/mac/part/{search_id}/full"
 
-async def _run_update(pool, query, success_flag, part_name, sem):
+async def _run_update(pool, query, args, sem):
     async with sem:
         async with pool.acquire() as conn:
-            return await conn.execute(query, success_flag, part_name)
-        
+            return await conn.execute(query, *args)
+
 async def update_upload_status(pool, csv_output, concurrency=10):
     """
     Update 'xml_upload_success' column for relevant tables based on csv_output.
 
     Args:
-        conn: An existing asyncpg.Connection object.
-        csv_output: List of tuples in the form (part_name, status, [table_names]).
+        pool: asyncpg connection pool.
+        csv_output: List of tuples (prefix, part_name, status, [table_names], timestamp).
+                    timestamp is a 'YYYYMMDDThhmmss' string for IV/pedestal rows, else None.
     """
     sem = asyncio.Semaphore(concurrency)
     tasks = []
 
-    for prefix, part_name, status, tables in csv_output:
+    for prefix, part_name, status, tables, timestamp in csv_output:
         success_flag = UPLOAD_STATUS_MAP.get(status)
         if success_flag is None:
             print(f"Unknown status '{status}' for part {part_name}, skipping.")
             continue
+
+        # Parse timestamp into date/time for IV/pedestal rows
+        test_date = test_time = None
+        if timestamp:
+            try:
+                ts_dt = datetime.strptime(timestamp, "%Y%m%dT%H%M%S")
+                test_date = ts_dt.date()
+                test_time = ts_dt.time()
+            except ValueError:
+                print(f"Could not parse timestamp '{timestamp}' for {part_name}, skipping timestamp filter.")
+
         for table in tables:
             # Sanitize table name for safety: ensure it's alphanumeric + underscore only
             if not table.replace("_", "").isalnum():
                 print(f"Skipping suspicious table name: {table}")
                 continue
-            if prefix == 'sensor':
+            name_col = 'sen_name' if prefix == 'sensor' else f'{prefix}_name'
+            if test_date is not None:
                 query = f"""
                     UPDATE {table}
                     SET xml_upload_success = $1
-                    WHERE sen_name = $2 
+                    WHERE {name_col} = $2
+                    AND date_test = $3
+                    AND time_test = $4
                     AND xml_gen_datetime IS NOT NULL
                     AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                 """
+                args = (success_flag, part_name, test_date, test_time)
             else:
                 query = f"""
                     UPDATE {table}
                     SET xml_upload_success = $1
-                    WHERE {prefix}_name = $2
+                    WHERE {name_col} = $2
                     AND xml_gen_datetime IS NOT NULL
                     AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                 """
-            # tasks.append(conn.execute(query, success_flag, part_name))
-            # print(f'Updating {part_name} in {table}...') #, query)
-            tasks.append(_run_update(pool, query, success_flag, part_name, sem))
+                args = (success_flag, part_name)
+            # print(f'Updating {part_name} in {table}...')
+            tasks.append(_run_update(pool, query, args, sem))
     if not tasks:
         print("No valid update tasks found.")
         return
