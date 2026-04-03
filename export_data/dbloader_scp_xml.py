@@ -123,6 +123,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
         self.remote_xml_dir = remote_xml_dir
         self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         self.files_to_retry = 0
+        self.log_save_time = None
         self.times_to_retry_upload = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
         self.times_to_retry_reconnect = 5
 
@@ -200,6 +201,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
             
     def scp_logs_local(self):
         if '.csv' in self.terminal_output:
+            self.log_save_time = datetime.datetime.now()
             print("----> Saving log files to export_data/mass_upload_logs <----")
             print(self.csv_outfile)
             log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
@@ -268,6 +270,7 @@ class mass_upload_to_dbloader_via_paramiko:
         self.remote_xml_dir = remote_xml_dir
         self.csv_outfile = f"mass_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"
         self.files_to_retry = 0  ### what is the best way to use this?
+        self.log_save_time = None
         self.times_to_retry_upload = int(5+round(math.log2(len(self.fnames)))) ### Assume 50% of files will fail with each attempt. Will need log2(number of files) attempte for uploads to go through.
         self.times_to_retry_reconnect = 5
 
@@ -402,6 +405,7 @@ class mass_upload_to_dbloader_via_paramiko:
     def scp_logs_local(self):
         if ".csv" in self.terminal_output:
             try:
+                self.log_save_time = datetime.datetime.now()
                 print("----> Saving log files to export_data/mass_upload_logs <----")
                 print(self.csv_outfile)
                 log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
@@ -473,8 +477,8 @@ def consolidate_mass_upload_logs(instances):
         return
 
     logs_fp = instances[0].mass_upload_logs_fp
-    time_parts = [inst.starttime.strftime("%H%M%S") for inst in instances]
-    date_part  = instances[0].starttime.strftime("%Y%m%d")
+    time_parts = [(inst.log_save_time or inst.starttime).strftime("%H%M%S") for inst in instances]
+    date_part  = (instances[0].log_save_time or instances[0].starttime).strftime("%Y%m%d")
     base_name  = f"mass_upload_{date_part}_" + "_".join(time_parts)
 
     combined_csv_path = os.path.join(logs_fp, base_name + ".csv")
@@ -511,6 +515,16 @@ def consolidate_mass_upload_logs(instances):
             else:
                 out_txt.write(f"(log file not found: {local_txt})\n")
             out_txt.write("\n")
+
+    # --- Remove original per-instance files ---
+    for inst in instances:
+        csv_name = os.path.basename(inst.csv_outfile)
+        local_csv = os.path.join(logs_fp, csv_name)
+        csv_stem = os.path.splitext(csv_name)[0]
+        local_txt = os.path.join(logs_fp, csv_stem + ".txt")
+        for f in [local_csv, local_txt]:
+            if os.path.isfile(f):
+                os.remove(f)
 
     print(f"----> Consolidated logs saved:")
     print(f"      {combined_csv_path}")
