@@ -2,6 +2,7 @@ import os
 import time
 import yaml
 import re
+import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -30,17 +31,36 @@ def get_xml_files(base_dir, time_limit=None):
 
     for root, _, files in os.walk(base_dir):
         for file in files:
+            file_path = os.path.join(root, file)
+            within_time = time_limit is None or (current_time - os.path.getmtime(file_path)) <= time_limit
+            if not within_time:
+                continue
             if file.endswith(".xml"):
-                file_path = os.path.join(root, file)
-                if time_limit is None or (current_time - os.path.getmtime(file_path)) <= time_limit:
-                    xml_files.append(file_path)
-    
+                xml_files.append(file_path)
+            elif file.endswith(".zip"):
+                try:
+                    with zipfile.ZipFile(file_path, 'r') as zf:
+                        for member in zf.namelist():
+                            if member.endswith(".xml"):
+                                xml_files.append(os.path.join(file_path, member))
+                except zipfile.BadZipFile:
+                    print(f"Could not open zip: {file_path}")
+
     return xml_files
 
 # Function to extract all tags and their values from an XML file
 def extract_xml_tags_and_values(xml_file):
     try:
-        tree = ET.parse(xml_file)
+        # Handle virtual paths like "path/to/archive.zip/member.xml"
+        zip_idx = xml_file.find('.zip' + os.sep)
+        if zip_idx != -1:
+            zip_path = xml_file[:zip_idx + 4]
+            member = xml_file[zip_idx + 5:]
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                with zf.open(member) as f:
+                    tree = ET.parse(f)
+        else:
+            tree = ET.parse(xml_file)
         root = tree.getroot()
         tags_with_values = {}
         for elem in root.iter():
@@ -54,7 +74,10 @@ def extract_xml_tags_and_values(xml_file):
 # Function to determine the YAML categories based on directory name
 def get_yaml_categories(xml_file_path):
     """Determine the correct YAML sections based on the directory name."""
-    part_name = Path(xml_file_path).parts[-2]  # Get directory name (e.g., 'sensor')
+    parts = Path(xml_file_path).parts
+    # For zip members, skip the .zip component to get the actual subdirectory
+    non_zip_parts = [p for p in parts if not p.endswith('.zip')]
+    part_name = non_zip_parts[-2]  # Get directory name (e.g., 'sensor')
     if part_name == 'testing':
         return "testing"
     else:
