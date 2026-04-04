@@ -297,7 +297,7 @@ async def update_upload_status(pool, csv_output, concurrency=10):
     # Report results
     total_updates = len(results)
     errors = [r for r in results if isinstance(r, Exception)]
-    print(f"Attempted {total_updates} updates; {len(errors)} errors.")
+    print(f"Attempted {total_updates} updates; {len(errors)} issues with updates.")
 
     # Optional: print specific error info
     for e in errors:
