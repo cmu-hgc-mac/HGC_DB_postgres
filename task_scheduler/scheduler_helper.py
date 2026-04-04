@@ -324,7 +324,7 @@ class set_automation_schedule(Toplevel):
 
         existing = self._load_existing_job_values(job_key)
         default_time   = existing[0] if existing else "2:00"
-        default_repeat = existing[1] if existing else "6"
+        default_repeat = existing[1] if existing else "Do not repeat"
         active_indices = existing[2] if existing else set()
 
         status_text = "(existing schedule loaded)" if existing else "(no existing schedule)"
