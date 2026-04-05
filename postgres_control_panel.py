@@ -9,7 +9,7 @@ from tkinter import END, DISABLED, Label as Label
 from datetime import datetime 
 from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
 from task_scheduler.scheduler_helper import set_automation_schedule
-from export_data.src import open_scp_connection, check_good_conn
+from export_data.src import open_scp_connection, check_good_conn, dbloader_hostname
 
 def run_git_pull_seq():
     restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
@@ -687,6 +687,66 @@ def refresh_data():
     bind_button_keys(submit_refresh_button)
 
 
+def check_dbloader_logs():
+    input_window = Toplevel(root)
+    input_window.transient(root)
+    input_window.attributes("-topmost", True)
+    input_window.title("Check DBLoader logs of uploads")
+
+    lxuser_frame = Frame(input_window)
+    lxuser_frame.pack(pady=(15, 2))
+    Label(lxuser_frame, text="Enter LXPLUS username:").pack(side="left")
+    lxuser_var = StringVar()
+    lxuser_var_entry = Entry(lxuser_frame, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    lxuser_var_entry.pack(side="left", padx=5)
+
+    Label(input_window, text="Provide filename with .xml/.zip extension. (Path not required)").pack(pady=(10, 2))
+    Label(input_window, text="Example: 320MLF3TDCM0732_20260403T163742_iv.zip", fg="blue").pack(pady=(1))
+    Label(input_window, text="Logs will be saved under export_data/dbloader_logs", fg="blue").pack(pady=(1))
+
+    filename_var = StringVar()
+    filename_entry = Entry(input_window, textvariable=filename_var, width=60)
+    filename_entry.pack(padx=20, pady=(2, 10))
+
+    server_var = StringVar(master=input_window)
+    radio_frame = Frame(input_window)
+    radio_frame.pack(pady=5)
+    radio_int2r = Radiobutton(radio_frame, text="INT2R (Dev)", variable=server_var, value="INT2R", takefocus=False)
+    radio_int2r.pack(side="left", padx=15)
+    radio_cmsr = Radiobutton(radio_frame, text="CMSR (Prod)", variable=server_var, value="CMSR", takefocus=False)
+    radio_cmsr.pack(side="left", padx=15)
+    radio_cmsr.select()
+    input_window.after(10, lambda: server_var.set("CMSR"))
+
+    def submit_logfname():
+        lxp_username = lxuser_var.get().strip()
+        fname = os.path.basename(filename_entry.get().strip())
+        if not fname or not lxp_username:
+            return
+        if open_scp_connection(dbl_username=lxp_username, get_scp_status=True) != 0:
+            show_message("Check terminal to enter LXPLUS credentials.")
+        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+        if scp_status == 0:
+            server = server_var.get().lower()
+            remote_path = f"/home/dbspool/logs/hgc/{server}/{fname}"
+            abspath = os.path.dirname(os.path.abspath(__file__))
+            log_dir = os.path.join(abspath, "export_data", "dbloader_logs")
+            os.makedirs(log_dir, exist_ok=True)
+            local_path = os.path.join(log_dir, fname + ".log")
+            scp_cmd = ["scp", "-o", "ControlPath=~/.ssh/ctrl_dbloader", f"{lxp_username}@{dbloader_hostname}:{remote_path}", local_path]
+            result = subprocess.run(scp_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("DBLoader log:", local_path)
+                webbrowser.open(f"file://{local_path}")
+            else:
+                show_message(f"Failed to retrieve log file:\n{result.stderr}")
+
+    submit_button = Button(input_window, text="Get log details", command=submit_logfname)
+    submit_button.pack(pady=(0, 15))
+    bind_button_keys(submit_button)
+    input_window.focus_force()
+    
+
 def set_scheduler_task():
     set_automation_schedule(root, encryption_key = encryption_key, title = "Set automation schedule") #, job_type = 'import_from_HGCAPI')
     # input_window = Toplevel(root)
@@ -788,30 +848,33 @@ button_shipin.grid(row=3, column=1, pady=(5,1), sticky='ew')
 button_download = Button(frame, text="    Import Parts Data      ", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=(1,15), sticky='ew')
 
-button_automate = Button(frame, text="Automate import and upload of parts", command=set_scheduler_task, width=button_width, height=int(button_height/2)) 
+button_automate = Button(frame, text="Automate import and upload of parts", command=set_scheduler_task, width=button_width, height=int(button_height/2))
 button_automate.grid(row=5, column=1, pady=1, sticky='ew')
 
+button_check_dbl_logs = Button(frame, text="Check DBLoader logs of uploads", command=check_dbloader_logs, width=button_width, height=int(button_height/2))
+button_check_dbl_logs.grid(row=6, column=1, pady=1, sticky='ew')
+
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
-button_upload_xml.grid(row=6, column=1, pady=(15,1), sticky='ew')
+button_upload_xml.grid(row=7, column=1, pady=(15,1), sticky='ew')
 # button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
-button_shipout.grid(row=7, column=1, pady=(1,15), sticky='ew')
+button_shipout.grid(row=8, column=1, pady=(1,15), sticky='ew')
 
-button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminer, width=button_width, height=button_height) 
-button_search_data.grid(row=8, column=1, pady=(15,1), sticky='ew')
+button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminer, width=button_width, height=button_height)
+button_search_data.grid(row=9, column=1, pady=(15,1), sticky='ew')
 
-button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))  
-button_refresh_db.grid(row=9, column=1, pady=1, sticky='ew')
+button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))
+button_refresh_db.grid(row=10, column=1, pady=1, sticky='ew')
 
-button_stock_stt = Button(frame, text=" Check stock on CMSR STT ", command=open_stt_stock, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=10, column=1, pady=1, sticky='ew')
-
-button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2)) 
+button_stock_stt = Button(frame, text=" Check stock on CMSR STT ", command=open_stt_stock, width=button_width, height=int(button_height/2))
 button_stock_stt.grid(row=11, column=1, pady=1, sticky='ew')
 
-button_stock_stt = Button(frame, text=" Check QC data on CMSR-HGCAPI", command=get_electrical_test_hgcapi, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=12, column=1, pady=(1,5), sticky='ew')
+button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2))
+button_stock_stt.grid(row=12, column=1, pady=1, sticky='ew')
+
+button_stock_stt = Button(frame, text=" Check QC data on CMSR-HGCAPI", command=get_electrical_test_hgcapi, width=button_width, height=int(button_height/2))
+button_stock_stt.grid(row=13, column=1, pady=(1,5), sticky='ew')
 
 
 for pid in get_pid_result().stdout.strip().split("\n"):
