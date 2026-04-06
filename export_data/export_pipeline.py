@@ -121,15 +121,6 @@ def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_a
         print(f"Error during SCP: {e}")
         return False, consolidated_csv
 
-def clean_generated_xmls():
-    """Delete all files in the generated XMLs directory after successful SCP."""
-    try:
-        shutil.rmtree(GENERATED_XMLS_DIR)
-        print(f"Deleted all files in {GENERATED_XMLS_DIR}.")
-    except Exception as e:
-        traceback.print_exc()
-        print(f"Error while deleting files: {e}")
-
 def valid_directory(path):
     if os.path.isdir(path):
         return path
@@ -197,15 +188,13 @@ async def main():
             scp_success, consolidated_csv = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb, cern_auto_upload=str2bool(args.cern_auto_upload))
         
         if scp_success and upload_prod_stat and consolidated_csv:
-            command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True"]
+            command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True", "-delx", args.del_xml]
             result = subprocess.run(command, check=True, capture_output=True, text=True)
             sys.stdout.write(result.stdout)
             sys.stdout.flush()
             # if result.stderr:
             #     print("check_successful_upload.py errors:\n", result.stderr)
 
-        if scp_success and str2bool(args.del_xml):
-            clean_generated_xmls()
 if __name__ == '__main__':
     asyncio.run(main())
 

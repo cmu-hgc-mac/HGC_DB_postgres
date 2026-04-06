@@ -71,46 +71,44 @@ def _parse_part_from_fname(fname: str):
     return prefix, first
 
 
-def _find_local_zip(fname: str) -> Path:
-    """
-    Given a zip filename (no directory), find it under XML_UPLOAD_DIR by
-    determining the likely subdirectory from the filename:
-      - '_iv' in fname         -> testing/iv
-      - '_pedestal' in fname   -> testing/pedestal
-      - starts with '320M'     -> module
-      - starts with '320P'     -> protomodule
-      - starts with '320X'     -> hexaboard
-      - starts with '320B'     -> baseplate
-      - starts with digits     -> sensor
-    Falls back to a recursive glob if not found in the expected directory.
-    """
+def _local_upload_dir(fname: str) -> Path:
+    """Return the expected subdirectory under XML_UPLOAD_DIR for a given filename."""
     first = fname.split('_')[0]
     if '_iv' in fname:
-        candidate_dir = XML_UPLOAD_DIR / 'testing' / 'iv'
+        return XML_UPLOAD_DIR / 'testing' / 'iv'
     elif '_pedestal' in fname:
-        candidate_dir = XML_UPLOAD_DIR / 'testing' / 'pedestal'
+        return XML_UPLOAD_DIR / 'testing' / 'pedestal'
     elif first.startswith('320M'):
-        candidate_dir = XML_UPLOAD_DIR / 'module'
+        return XML_UPLOAD_DIR / 'module'
     elif first.startswith('320P'):
-        candidate_dir = XML_UPLOAD_DIR / 'protomodule'
+        return XML_UPLOAD_DIR / 'protomodule'
     elif first.startswith('320X'):
-        candidate_dir = XML_UPLOAD_DIR / 'hexaboard'
+        return XML_UPLOAD_DIR / 'hexaboard'
     elif first.startswith('320B'):
-        candidate_dir = XML_UPLOAD_DIR / 'baseplate'
-    elif first.isdigit():
-        candidate_dir = XML_UPLOAD_DIR / 'sensor'
+        return XML_UPLOAD_DIR / 'baseplate'
+    elif first[:6].isdigit():
+        return XML_UPLOAD_DIR / 'sensor'
     else:
-        candidate_dir = XML_UPLOAD_DIR
+        return XML_UPLOAD_DIR
 
-    candidate = candidate_dir / fname
+
+def _find_local_file(fname: str) -> Path | None:
+    """
+    Locate fname under XML_UPLOAD_DIR using the expected subdirectory.
+    Returns None if not found.
+    """
+    candidate = _local_upload_dir(fname) / fname
     if candidate.exists():
         return candidate
+    return None
 
-    # Fallback: search recursively
-    matches = list(XML_UPLOAD_DIR.rglob(fname))
-    if matches:
-        return matches[0]
-    return candidate  # return expected path even if missing (will raise on open)
+
+def _find_local_zip(fname: str) -> Path:
+    """
+    Like _find_local_file but returns the expected path even when missing
+    so callers can raise a meaningful error on open.
+    """
+    return _find_local_file(fname) or (_local_upload_dir(fname) / fname)
 
 
 def get_reflected_tables(file_path: str):
@@ -210,21 +208,49 @@ def get_upload_status_csv(csv_path):
             if result is None:
                 continue
 
+            fname = os.path.basename(xml_path)
             # zip returns a list; xml returns a single tuple
             if isinstance(result, list):
                 for prefix, part_name, tables, timestamp in result:
-                    csv_output.append((prefix, part_name, upload_status, tables, timestamp))
+                    csv_output.append((prefix, part_name, upload_status, tables, timestamp, fname))
             else:
                 prefix, part_name, tables, timestamp = result
-                csv_output.append((prefix, part_name, upload_status, tables, timestamp))
+                csv_output.append((prefix, part_name, upload_status, tables, timestamp, fname))
 
-    return csv_output  # [(prefix, part_name, upload_status, db_tables, timestamp), ...]
+    return csv_output  # [(prefix, part_name, upload_status, db_tables, timestamp, fname), ...]
 
 # def get_api_data(search_id, db_type):
 #     if db_type == 'cmsr':
 #         url = f"https://hgcapi.web.cern.ch/mac/part/{search_id}/full"
 #     elif db_type == 'int2r':
 #         url = f"https://hgcapi-intg.web.cern.ch/mac/part/{search_id}/full"
+
+
+# def clean_all_generated_xmls():
+#     """Delete all files in the generated XMLs directory after successful SCP."""
+#     try:
+#         shutil.rmtree(GENERATED_XMLS_DIR)
+#         print(f"Deleted all files in {GENERATED_XMLS_DIR}.")
+#     except Exception as e:
+#         traceback.print_exc()
+#         print(f"Error while deleting files: {e}")
+
+
+def clean_success_xmls(csv_output):
+    """Delete local xml/zip files whose upload status is Success or Already Uploaded."""
+    SUCCESS_STATUSES = {"Already Uploaded", "Success"}
+    seen = set()
+    for _prefix, _part, status, _tables, _ts, fname in csv_output:
+        if status not in SUCCESS_STATUSES or fname in seen:
+            continue
+        seen.add(fname)
+        local_path = _find_local_file(fname)
+        if local_path and local_path.exists():
+            local_path.unlink()
+            # print(f"Deleted {local_path}")
+        else:
+            print(f"File not found locally, skipping delete: {fname}")
+
 
 async def _run_update(pool, query, args, sem):
     async with sem:
@@ -243,7 +269,7 @@ async def update_upload_status(pool, csv_output, concurrency=10):
     sem = asyncio.Semaphore(concurrency)
     tasks = []
 
-    for prefix, part_name, status, tables, timestamp in csv_output:
+    for prefix, part_name, status, tables, timestamp, fname in csv_output:
         success_flag = UPLOAD_STATUS_MAP.get(status)
         if success_flag is None:
             print(f"Unknown status '{status}' for part {part_name}, skipping.")
@@ -316,7 +342,7 @@ def get_latest_upload_log():
     print(f"Latest upload log: {latest_file}")
     return latest_file
 
-async def main(dbpassword, db_type, encryption_key=None, consolidated_csv=None):
+async def main(dbpassword, db_type, encryption_key=None, consolidated_csv=None, clean_success_xml=True):
     # Connect to PostgreSQL
     pool = await get_conn(dbpassword, encryption_key, pool=True)
     # print("Connected to database.")
@@ -336,9 +362,10 @@ async def main(dbpassword, db_type, encryption_key=None, consolidated_csv=None):
             csv_output = get_upload_status_csv(massloader_log_csv)
 
             # Update DB
-            async with pool.acquire() as conn:
-                # await update_upload_status(conn, csv_output)
-                await update_upload_status(pool, csv_output, concurrency=10)
+            await update_upload_status(pool, csv_output, concurrency=10)
+
+            if clean_success_xml:
+                clean_success_xmls(csv_output)
 
         finally:
             await pool.close()
@@ -351,20 +378,22 @@ if __name__ == "__main__":
     parser.add_argument('-upld', '--upload_dev_stat', default='False', required=False, help="Upload to dev DBLoader without generate.")
     parser.add_argument('-uplp', '--upload_prod_stat', default='False', required=False, help="Upload to prod DBLoader without generate.")
     parser.add_argument('-conscsv', '--consolidated_csv', default=None, required=True, help="Name of the consolidated log file to check logs")
+    parser.add_argument('-delx', '--del_xml', default='True', required=False, help="Delete XMLs after upload.")
     
     args = parser.parse_args()
     
     dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
     encryption_key = args.encrypt_key
-    upload_dev_stat = args.upload_dev_stat
-    upload_prod_stat = args.upload_prod_stat
+    upload_dev_stat = str2bool(args.upload_dev_stat)
+    upload_prod_stat = str2bool(args.upload_prod_stat)
+    clean_success_xml = str2bool(args.del_xml)
     consolidated_csv = args.consolidated_csv
     ###### consolidated_csv = f"{LOG_DIR}/{args.consolidated_csv}"
 
-    if str2bool(upload_dev_stat):
+    if upload_dev_stat:
         db_type = 'int2r'
         print("We do not update the upload status for INT2R")
-    if str2bool(upload_prod_stat):
+    if upload_prod_stat:
         db_type = 'cmsr'
         print("Updating Postgres with XML upload status ...")
-        asyncio.run(main(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=consolidated_csv))
+        asyncio.run(main(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=consolidated_csv, clean_success_xml=clean_success_xml))
