@@ -1,5 +1,6 @@
 log_no,serial PRIMARY KEY,primary key,,
 log_timestamp,TIMESTAMP,,,
+timestamp_utc,TIMESTAMPTZ,timestamp in UTC,,
 log_location,TEXT,,,
 device_name,TEXT,,,
 value,"NUMERIC(6,2)",,,
