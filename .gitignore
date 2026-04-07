@@ -46,4 +46,5 @@ task_scheduler/password_postgres.enc
 task_scheduler/secret.key
 export_data/xmls_for_upload/
 export_data/mass_upload_logs/
+export_data/dbloader_logs/
 shipping/
