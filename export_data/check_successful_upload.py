@@ -204,11 +204,14 @@ def get_upload_status_csv(csv_path):
             if upload_status not in UPLOAD_STATUS_MAP:
                 continue
 
+            fname = os.path.basename(xml_path)
             result = get_reflected_tables(xml_path)
-            if result is None:
+
+            # No DB table to update (e.g. proto builds), but still track for deletion
+            if not result:
+                csv_output.append((None, None, upload_status, [], None, fname))
                 continue
 
-            fname = os.path.basename(xml_path)
             # zip returns a list; xml returns a single tuple
             if isinstance(result, list):
                 for prefix, part_name, tables, timestamp in result:
