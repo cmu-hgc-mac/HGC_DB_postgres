@@ -71,7 +71,7 @@ def _parse_part_from_fname(fname: str):
     return prefix, first
 
 
-def _local_upload_dir(fname: str) -> Path:
+def _local_upload_dir(fname: str):
     """Return the expected subdirectory under XML_UPLOAD_DIR for a given filename."""
     first = fname.split('_')[0]
     if '_iv' in fname:
