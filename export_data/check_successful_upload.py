@@ -92,7 +92,7 @@ def _local_upload_dir(fname: str) -> Path:
         return XML_UPLOAD_DIR
 
 
-def _find_local_file(fname: str) -> Path | None:
+def _find_local_file(fname: str):
     """
     Locate fname under XML_UPLOAD_DIR using the expected subdirectory.
     Returns None if not found.
