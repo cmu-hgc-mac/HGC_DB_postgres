@@ -103,7 +103,7 @@ def _find_local_file(fname: str):
     return None
 
 
-def _find_local_zip(fname: str) -> Path:
+def _find_local_zip(fname: str) :
     """
     Like _find_local_file but returns the expected path even when missing
     so callers can raise a meaningful error on open.
