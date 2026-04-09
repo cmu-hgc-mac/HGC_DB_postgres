@@ -523,7 +523,11 @@ class set_automation_schedule(Toplevel):
             max_intervals = 24 - int(parts[0])
             new_options = ['Do not repeat'] + list(range(1, max_intervals))
             try:
-                panel._selected_repeat.set(new_options[-1])
+                current = panel._selected_repeat.get()
+                # Only reset selection if current value is no longer in the new options
+                current_in_new = (current == 'Do not repeat') or (current.isdigit() and int(current) in range(1, max_intervals))
+                if not current_in_new:
+                    panel._selected_repeat.set(new_options[-1])
                 menu = panel._repeat_dropdown["menu"]
                 menu.delete(0, "end")
                 for opt in new_options:
