@@ -119,6 +119,32 @@ tables:
       'editor': 'INSERT, UPDATE, DELETE, SELECT'
 
   - 
+    fname: 'mmts_batch_logging.csv' 
+    description: 'table to log initial/final conditions and parts in a mmts batch'
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
+    fname: 'mmts_sensors_logging.csv' 
+    description: 'table for timeseries data logged by the various sensors in the mmts'
+    permission:
+      'ogp_user': 'SELECT'
+      'gantry_user':  'SELECT'
+      'viewer': 'SELECT'
+      'wirebond_user':  'SELECT'
+      'encap_user':  'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
     fname: 'module_pedestal_plots.csv'
     description: 'Will store both module and hexaboard pedestal plots'
     permission:
