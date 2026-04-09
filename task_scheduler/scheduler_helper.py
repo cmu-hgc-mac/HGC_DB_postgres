@@ -194,7 +194,6 @@ class set_automation_schedule(Toplevel):
         self.title(title)
         self.encryption_key = encryption_key
         self.job_type_keys = {"Import parts from HGCAPI": 'import_from_HGCAPI', "Upload parts to CMSR": 'upload_to_CMSR'}
-        self.job_type_keys = {"Import parts from HGCAPI": 'import_from_HGCAPI'}
         self.task_scheduler_path = os.path.join(os.getcwd(), 'task_scheduler')
         self.encrypt_path = os.path.join(self.task_scheduler_path,"secret.key")
         self.config_fname = os.path.join(self.task_scheduler_path, 'schedule_config.yaml')
