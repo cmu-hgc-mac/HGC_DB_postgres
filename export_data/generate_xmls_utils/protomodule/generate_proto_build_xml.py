@@ -43,7 +43,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
     all_protos = {row['proto_name'] for row in results if 'proto_name' in row}
     # Only generate XMLs for protomodules not yet in the HGCAPI
-    proto_list = all_protos - api_protos
+    proto_list = all_protos - api_protos if skip_uploaded else all_protos
     db_label = next((v['dbname'] for v in db_source_dict.values() if v['url'] == cern_db_url), cern_db_url)
     if not proto_list:
         print(f"All protomodules already present in {db_label}. Nothing to generate.")
