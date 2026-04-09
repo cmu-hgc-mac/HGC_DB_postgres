@@ -27,3 +27,7 @@ channel,SMALLINT[],channel on the corresponding chip -- between 0 and 71 inclusi
 channeltype,SMALLINT[],0 for normal cell; 1 for calibration; 100 for common mode,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
+station_name,TEXT,Station ID,,
+batch_name,TEXT,batch of modules in MMTS,,
+iteration,TEXT,thermal cycle iteration,,
+timestamp_utc,TIMESTAMPTZ,timestamp in UTC,,
