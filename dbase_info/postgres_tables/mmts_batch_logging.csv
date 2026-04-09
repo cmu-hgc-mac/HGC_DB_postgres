@@ -1,5 +1,5 @@
 batch_no,serial PRIMARY KEY,primary key,,
-batch_name,TEXT,name of the batch - YYYYMMDD-HHMMSS,fk_identifier,
+batch_name,TEXT,name of the batch - YYYYMMDD-HHMMSS,,
 log_timestamp,TIMESTAMP,,,
 description,TEXT,can include start/stop and iteration details,,
 status_safety_alarm,TEXT,status,,
