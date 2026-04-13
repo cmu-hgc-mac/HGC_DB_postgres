@@ -16,8 +16,10 @@ with open(resource_yaml, 'r') as file:
     cell_count_for_res_geom = kind_of_part_yaml['cell_count_for_res_geom']
 
 def fetch_module_grades(mod_corner_colors = None, all_letter_grades = None):
-    worst_letter_grade = 'unknown' if not all_letter_grades else max(all_letter_grades, key=str.lower)
-    MODULE_CORNER_COLORGRADE = 'unknown'
+    MODULE_CORNER_COLORGRADE, worst_letter_grade = 'null', 'null'
+    if all_letter_grades:
+        all_letter_grades = [str(grade) for grade in all_letter_grades]
+        worst_letter_grade = 'null' if 'None' in all_letter_grades else max(all_letter_grades, key=str.lower)
     if mod_corner_colors:
         mod_corner_colors = [c.lower() for c in mod_corner_colors]
         MODULE_CORNER_COLORGRADE = 'red' if 'red' in mod_corner_colors else ('purple' if 'purple' in mod_corner_colors else 'green')
