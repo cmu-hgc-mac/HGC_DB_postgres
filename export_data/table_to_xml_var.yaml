@@ -1382,12 +1382,14 @@ module_grading:
   dbase_col: proto_grade
   dbase_table: module_qc_summary
   xml_tag: PROTO_MECH_GRADE
+  default_value: null
   nested_query: null
   nullable: 'no'
 - xml_temp_val: PROTO_MECH_GRADE_CRITERIA
   dbase_col: proto_grade_def
   dbase_table: module_qc_summary
   xml_tag: PROTO_MECH_GRADE_CRITERIA
+  default_value: null
   nullable: 'yes'
   nested_query: null
   default_value: null
@@ -1396,17 +1398,20 @@ module_grading:
   dbase_table: module_qc_summary
   xml_tag: MODULE_MECH_GRADE
   nested_query: null
+  default_value: null
   nullable: 'no'
 - xml_temp_val: MODULE_MECH_GRADE_CRITERIA
   dbase_col: module_grade_def
   dbase_table: module_qc_summary
   xml_tag: MODULE_MECH_GRADE_CRITERIA
+  default_value: null
   nullable: 'yes'
   nested_query: null
   default_value: null
 - xml_temp_val: READOUT_GRADE
   dbase_col: readout_grade
   dbase_table: module_qc_summary
+  default_value: null
   xml_tag: READOUT_GRADE
   nested_query: null
   nullable: 'no'
@@ -1420,6 +1425,7 @@ module_grading:
 - xml_temp_val: IV_GRADE
   dbase_col: iv_grade
   dbase_table: module_qc_summary
+  default_value: null
   xml_tag: IV_GRADE
   nested_query: null
   nullable: 'no'
@@ -1435,6 +1441,7 @@ module_grading:
   dbase_col: module_corner_colorgrades
   dbase_table: module_qc_summary
   xml_tag: MODULE_CORNER_COLORS
+  default_value: null
   nullable: 'yes'
   nested_query: null
   default_value: null
@@ -1456,6 +1463,7 @@ module_grading:
   dbase_col: final_grade_def
   dbase_table: module_qc_summary
   xml_tag: INSTALLATION_MODULE
+  default_value: 0
   nested_query: null
   nullable: 'no'
 - xml_temp_val: PERCENT_BAD_CELLS
