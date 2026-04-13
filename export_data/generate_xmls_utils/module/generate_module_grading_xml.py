@@ -97,13 +97,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         # if xml_var == 'RUN_NUMBER':
                         #     dt_obj =  datetimenow                 
                         #     db_values[xml_var]     = get_run_num(LOCATION, dt_obj)
-                        if xml_var == 'INSTALLATION_MODULE':
-                            grades_to_get = ['final_grade','proto_grade','module_grade','iv_grade','readout_grade']
-                            all_letter_grades = [results.get(grade_type, "") for grade_type in grades_to_get]
-                            mod_corner_colors = results.get('module_corner_colorgrades', "")
-                            installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
-                            db_values[xml_var] = installation_score
-                        elif xml_var == 'MODULE_CORNER_COLORGRADE':
+                        if xml_var == 'MODULE_CORNER_COLORGRADE':
                             mod_corner_colors = results.get('module_corner_colorgrades', "")
                             installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades=None)
                             db_values[xml_var] = mod_colorgrade
@@ -114,7 +108,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         else:
                             db_values[xml_var] = results.get(dbase_col, '')
                 
-                        
+
+            ### Determine Installation Criteria
+            grades_to_get = ['OVERALL_GRADE','PROTO_MECH_GRADE','MODULE_MECH_GRADE','IV_GRADE','READOUT_GRADE']
+            all_letter_grades = [db_values.get(grade_type, "F") for grade_type in grades_to_get]
+            mod_corner_colors = db_values.get('MODULE_CORNER_COLORS', ["purple"])
+            installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
+            db_values['INSTALLATION_MODULE'] = installation_score
+
             # Update the XML with the database values
             combined_str_mod = str(combined_str).replace("-","").replace(" ","T").replace(":","").split('.')[0]
             output_file_name = f"{module_name}_{combined_str_mod}_grading_upload.xml"
