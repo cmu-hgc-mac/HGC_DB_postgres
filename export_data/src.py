@@ -233,7 +233,9 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
         root = tree.getroot()
 
         # Convert db_values keys to lowercase for case-insensitive matching
-        db_values_lower = {k.lower(): v for k, v in db_values.items()}
+        # db_values = {key: 'null' if db_values[key] is None else db_values[key] for key in db_values.keys()}
+        # db_values_lower = {k.lower(): v for k, v in db_values.items()}
+        db_values_lower = {k.lower(): ('null' if v is None else v) for k, v in db_values.items()}
 
         # Iterate through the db_values and replace corresponding placeholders in XML
         for xml_var, value in db_values_lower.items():
