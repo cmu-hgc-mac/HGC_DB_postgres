@@ -34,26 +34,49 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
     ## list module_names that we want to generate xmls
     module_list = set()
-    if partsnamelist:
-        if skip_uploaded:
-            query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+    try:
+        if partsnamelist:
+            if skip_uploaded:
+                query = f"""SELECT module_name, mod_qc_no, grade_timestamp FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+            else:
+                query = f"""SELECT module_name, mod_qc_no, grade_timestamp FROM module_qc_summary WHERE module_name = ANY($1) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+            results = await conn.fetch(query, partsnamelist)
         else:
-            query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
-        results = await conn.fetch(query, partsnamelist)
-    else:
-        if skip_uploaded:
-            query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) GROUP BY module_name) latest
-                ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
+            if skip_uploaded:
+                query = f"""SELECT m.module_name, m.mod_qc_no, m.grade_timestamp FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
+            else:
+                query = f"""SELECT m.module_name, m.mod_qc_no, m.grade_timestamp FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
+            results = await conn.fetch(query)
+        module_list = set((row['module_name'], row['mod_qc_no'], row['grade_timestamp']) for row in results if 'module_name' in row)
+    except:   #### In the case that the MACs have not created the timestamp column
+        if partsnamelist:
+            if skip_uploaded:
+                query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+            else:
+                query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+            results = await conn.fetch(query, partsnamelist)
         else:
-            query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary GROUP BY module_name) latest
-                ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
-        results = await conn.fetch(query)
+            if skip_uploaded:
+                query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
+            else:
+                query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """ ### Get the latest for all modules ever
+            results = await conn.fetch(query)
+            for row in results:
+                time.sleep(1)  # Sleep for 1 second
+                datetimenow = datetime.datetime.now()  # Get the current timestamp
+                module_list.add((row['module_name'], row['mod_qc_no'], datetimenow))
 
-    module_list = set((row['module_name'], row['mod_qc_no']) for row in results if 'module_name' in row)
-    for module_name, mod_qc_no in module_list:
-        time.sleep(1)  ### this is to ensure unique run numbers!
-        datetimenow = datetime.datetime.now()
-        combined_str = datetimenow ### "" ### initialize
+
+    for module_name, mod_qc_no, grade_timestamp in module_list:
+        if not grade_timestamp:
+            time.sleep(1)  ### this is to ensure unique run numbers!
+            grade_timestamp = datetime.datetime.now()
+
+        combined_str = grade_timestamp ### "" ### initialize
         
         try:
             db_values, db_values = {}, {}
@@ -70,13 +93,13 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 elif xml_var == 'INITIATED_BY_USER':
                     db_values[xml_var]     = lxplus_username
                 elif xml_var == "RUN_BEGIN_TIMESTAMP_":
-                    db_values[xml_var] = datetimenow
+                    db_values[xml_var] = grade_timestamp
                 elif xml_var == "RUN_END_TIMESTAMP_":
-                    db_values[xml_var] = datetimenow
+                    db_values[xml_var] = grade_timestamp
                 elif xml_var == "RUN_TYPE":
                     db_values[xml_var] = "Si module grading" 
                 elif xml_var == 'RUN_NUMBER':
-                    dt_obj =  datetimenow                 
+                    dt_obj =  grade_timestamp                 
                     db_values[xml_var]     = get_run_num(LOCATION, dt_obj)
                 elif xml_var == "COMMENT_DESCRIPTION":
                     db_values[xml_var] = f"MAC grades for {module_name}"
@@ -97,7 +120,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     
                     if results:
                         # if xml_var == 'RUN_NUMBER':
-                        #     dt_obj =  datetimenow                 
+                        #     dt_obj =  grade_timestamp                 
                         #     db_values[xml_var]     = get_run_num(LOCATION, dt_obj)
                         if xml_var == 'MODULE_CORNER_COLORGRADE':
                             mod_corner_colors = results.get('module_corner_colorgrades', "")
