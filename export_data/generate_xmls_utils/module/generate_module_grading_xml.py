@@ -24,7 +24,7 @@ def fetch_module_grades(mod_corner_colors = None, all_letter_grades = None):
         mod_corner_colors = [c.lower() for c in mod_corner_colors]
         MODULE_CORNER_COLORGRADE = 'red' if 'red' in mod_corner_colors else ('purple' if 'purple' in mod_corner_colors else 'green')
     
-    installation_score = 0 if (MODULE_CORNER_COLORGRADE == 'red' or worst_letter_grade.upper() == 'F') else 1
+    installation_score = 0 if (MODULE_CORNER_COLORGRADE in ['red','null','None'] or worst_letter_grade.upper() in ['F','null','None']) else 1
     return installation_score, MODULE_CORNER_COLORGRADE
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, skip_uploaded=True):
