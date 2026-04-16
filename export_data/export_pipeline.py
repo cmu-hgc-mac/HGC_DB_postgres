@@ -11,7 +11,6 @@ import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
 from src import process_xml_list, str2bool
 from find_missing_var_xml import find_missing_var_xml
-# import check_successful_upload
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 
 
@@ -98,8 +97,8 @@ def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_a
                        '-date', str(search_date),
                        '-autoupload', str(cern_auto_upload),
                        '-cerndb', cerndb,
-                       '-dbp', dbpassword or '',
-                       '-k',   encryption_key or '',
+                       '-dbp', dbpassword,
+                       '-k',   encryption_key,
                        '-delx', str(del_xml)]
 
         process = subprocess.run(scp_command, check=True, capture_output=True, text=True)
@@ -118,6 +117,13 @@ def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_a
 
         return True, consolidated_csv
 
+    except subprocess.CalledProcessError as e:
+        sys.stdout.write(e.stdout or '')
+        sys.stdout.flush()
+        sys.stderr.write(e.stderr or '')
+        sys.stderr.flush()
+        print(f"Error during SCP (exit code {e.returncode}): {e}")
+        return False, consolidated_csv
     except Exception as e:
         traceback.print_exc()
         print(f"Error during SCP: {e}")

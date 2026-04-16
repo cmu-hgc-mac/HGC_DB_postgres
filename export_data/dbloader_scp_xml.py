@@ -229,6 +229,7 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
             if os.path.isfile(local_csv_path): # and os.path.isfile(local_log_path):
                 rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f ~/{self.csv_outfile} ~/mass_loader*.log"]
                 result = subprocess.run(rm_masslog_file,     text=True)
+                self.csv_outfile = local_csv_path  # update to full local path for downstream use
             print("")
             return result.returncode
                     
@@ -436,12 +437,13 @@ class mass_upload_to_dbloader_via_paramiko:
                 return 255  # indicate failure
 
             if os.path.isfile(local_csv_path) and os.path.isfile(local_terminal_path):
-                try:          
+                try:
                     sftp.remove(self.csv_outfile)  # Remove remote CSV after download
                     stdin, stdout, stderr = self.ssh_server2.exec_command(f"rm -f ~/mass_loader*.log")
                     # sftp.remove(log_outfile)  # Remove remote log after download
                 except FileNotFoundError:
                     return 255
+                self.csv_outfile = local_csv_path  # update to full local path for downstream use
             print("")
             return 0  # success
 
