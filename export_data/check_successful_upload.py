@@ -345,7 +345,7 @@ def get_latest_upload_log():
     print(f"Latest upload log: {latest_file}")
     return latest_file
 
-async def main(dbpassword, db_type, encryption_key=None, consolidated_csv=None, clean_success_xml=True):
+async def check_successful_upload_seq(dbpassword, db_type, encryption_key=None, consolidated_csv=None, clean_success_xml=True):
     # Connect to PostgreSQL
     pool = await get_conn(dbpassword, encryption_key, pool=True)
     # print("Connected to database.")
@@ -399,4 +399,4 @@ if __name__ == "__main__":
     if upload_prod_stat:
         db_type = 'cmsr'
         print("Updating Postgres with XML upload status ...")
-        asyncio.run(main(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=consolidated_csv, clean_success_xml=clean_success_xml))
+        asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=consolidated_csv, clean_success_xml=clean_success_xml))

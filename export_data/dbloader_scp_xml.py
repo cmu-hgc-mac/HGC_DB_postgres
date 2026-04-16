@@ -3,6 +3,8 @@ from pathlib import Path
 import datetime, time, yaml, paramiko, pwinput, sys, re, math, shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from export_data.src import process_xml_list, open_scp_connection, str2bool, dbloader_hostname
+from export_data.check_successful_upload import check_successful_upload_seq
+import asyncio
 import numpy as np
 from tqdm import tqdm
 import traceback, datetime
@@ -63,6 +65,17 @@ def find_files_by_date(directory, target_date):
                     matched_files.append(file_path)
     return matched_files
 
+
+def run_mass_upload_seq(files_for_upload, dbl_username, cern_dbname, dbl_password, cern_auto_upload, upload_instances, mass_upload_to_dbloader):
+    if files_for_upload:
+        if mass_upload_xmls:
+            inst = mass_upload_to_dbloader(dbl_username=dbl_username, fnames=files_for_upload, cern_dbname=cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
+            inst.run_steps()
+            upload_instances.append(inst)
+            return inst.csv_outfile
+        else:
+            for fname in tqdm(files_for_upload):
+                scp_to_dbloader(dbl_username=dbl_username, fname=fname, cern_dbname=cern_dbname, dbloader_hostname=dbloader_hostname)
 
 def get_files_by_type(files_list, file_type = 'build'):
     type_files = []
@@ -544,12 +557,17 @@ def main():
     parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-cerndb', '--cern_dbase', default='dev_db', required=False, help="Name of cern db to upload to - dev_db/prod_db.")
     parser.add_argument('-autoupload', '--cern_auto_upload', default='False', required=False, help="True if the upload is automated via a service account")
+    parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     args = parser.parse_args()
 
     dbl_username = args.dbl_username
     directory_to_search = args.directory
     search_date = args.date
     cern_auto_upload = str2bool(args.cern_auto_upload)
+    dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
+    encryption_key = args.encrypt_key
+    db_type = cerndb_types[args.cern_dbase]['dbname'].lower()  ## 'int2r' or 'cmsr'
     dbl_password = None  ## default
     mass_upload_to_dbloader = mass_upload_to_dbloader_via_ssh_controlmaster  ## default for user guided
 
@@ -575,59 +593,21 @@ def main():
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
 
         upload_instances = []
+        upload_kwargs = dict(dbl_username=dbl_username, cern_dbname=cern_dbname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload, upload_instances=upload_instances, mass_upload_to_dbloader=mass_upload_to_dbloader)
+        upload_file_types = [protomodule_build_files, module_build_files, cond_files, other_files]
+        upload_file_type_names = ['protomodule build', 'module build', 'cond', 'other']
+        wait_after = [10, 10, 5, 0]  ## seconds to wait after each batch before the next (DBLoader latency)
 
-        print(f"Uploading {len(protomodule_build_files)} protomodule 'build' files to {cern_dbname}...")
-        if protomodule_build_files:
-            if mass_upload_xmls:
-                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=protomodule_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
-                inst.run_steps()
-                upload_instances.append(inst)
-            else:
-                for fname in tqdm(protomodule_build_files):
-                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
-
-            if module_build_files or other_files:
-                print("Waiting 10 seconds after protomodule upload...")
+        for files, name, wait in zip(upload_file_types, upload_file_type_names, wait_after):
+            print(f"Uploading {len(files)} {name} files to {cern_dbname}...")
+            csv_outfile = run_mass_upload_seq(files, **upload_kwargs)
+            if csv_outfile and dbpassword:
+                asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=csv_outfile, clean_success_xml=True))
+            remaining = [f for f in upload_file_types[upload_file_types.index(files)+1:] if f]
+            if files and remaining and wait:
+                print(f"Waiting {wait} seconds after {name} upload...")
                 print("")
-                time.sleep(10) ### DBLoader has some latency
-
-        print(f"Uploading {len(module_build_files)} module 'build' files to {cern_dbname}...")
-        if module_build_files:
-            if mass_upload_xmls:
-                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=module_build_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
-                inst.run_steps()
-                upload_instances.append(inst)
-            else:
-                for fname in tqdm(module_build_files):
-                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
-
-            if other_files:
-                print("Waiting 10 seconds after module upload...")
-                print("")
-                time.sleep(10) ## DBLoader has some latency
-
-        print(f"Uploading {len(cond_files)} cond files to {cern_dbname}...")
-        if cond_files: ## upload cond files prior to other data to prevent duplication of run_number in CMSR due to mass_loader parallelization
-            if mass_upload_xmls:
-                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=cond_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
-                inst.run_steps()
-                upload_instances.append(inst)
-            else:
-                for fname in tqdm(cond_files):
-                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
-            if other_files:
-                print('Waiting 5 seconds after cond upload')
-                time.sleep(5) ## DBLoader has some latency
-
-        print(f"Uploading {len(other_files)} other files to {cern_dbname}...")
-        if other_files:
-            if mass_upload_xmls:
-                inst = mass_upload_to_dbloader(dbl_username = dbl_username, fnames=other_files, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname, dbl_password=dbl_password, cern_auto_upload=cern_auto_upload)
-                inst.run_steps()
-                upload_instances.append(inst)
-            else:
-                for fname in tqdm(other_files):
-                    scp_to_dbloader(dbl_username = dbl_username, fname = fname, cern_dbname = cern_dbname, dbloader_hostname=dbloader_hostname)
+                time.sleep(wait)
 
         if len(upload_instances) >= 1:
             consolidate_mass_upload_logs(upload_instances)
