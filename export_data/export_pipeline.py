@@ -13,7 +13,6 @@ from src import process_xml_list, str2bool
 from find_missing_var_xml import find_missing_var_xml
 # import check_successful_upload
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
-from check_successful_upload import main as check_successful_upload
 
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
