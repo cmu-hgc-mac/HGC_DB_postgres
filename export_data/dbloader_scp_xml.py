@@ -80,11 +80,13 @@ def run_mass_upload_seq(files_for_upload, dbl_username, cern_dbname, dbl_passwor
 def get_files_by_type(files_list, file_type = 'build'):
     type_files = []
     other_files = []
-    for fname in files_list:
-        if file_type in fname.lower(): 
-            type_files.append(fname)
-        else:
-            other_files.append(fname)
+    file_type = [file_type] if type(file_type) == str else file_type
+    for ft in file_type:
+        for fname in files_list:
+            if ft in fname.lower(): 
+                type_files.append(fname)
+            else:
+                other_files.append(fname)
     return type_files, other_files
 
 def get_proto_module_files(files_list):
@@ -590,7 +592,7 @@ def main():
             print(file)
         print('\n')
         build_files, other_files = get_files_by_type(files_found, file_type='build')
-        cond_files,  other_files = get_files_by_type(other_files, file_type='cond')
+        cond_files,  other_files = get_files_by_type(other_files, file_type=['cond', 'wirebond', 'assembly', 'inspection'])
         protomodule_build_files, module_build_files, other_build_files = get_proto_module_files(build_files)
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
 
