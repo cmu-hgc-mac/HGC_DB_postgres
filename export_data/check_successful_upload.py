@@ -379,7 +379,7 @@ if __name__ == "__main__":
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-upld', '--upload_dev_stat', default='False', required=False, help="Upload to dev DBLoader without generate.")
-    parser.add_argument('-uplp', '--upload_prod_stat', default='False', required=False, help="Upload to prod DBLoader without generate.")
+    parser.add_argument('-uplp', '--upload_prod_stat', default='True', required=False, help="Upload to prod DBLoader without generate.")
     parser.add_argument('-conscsv', '--consolidated_csv', default=None, required=True, help="Name of the consolidated log file to check logs")
     parser.add_argument('-delx', '--del_xml', default='True', required=False, help="Delete XMLs after upload.")
     

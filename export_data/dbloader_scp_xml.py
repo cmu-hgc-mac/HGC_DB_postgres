@@ -559,6 +559,7 @@ def main():
     parser.add_argument('-autoupload', '--cern_auto_upload', default='False', required=False, help="True if the upload is automated via a service account")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
+    parser.add_argument('-delx', '--del_xml', default='True', required=False, help="Delete XMLs after upload.")
     args = parser.parse_args()
 
     dbl_username = args.dbl_username
@@ -567,6 +568,7 @@ def main():
     cern_auto_upload = str2bool(args.cern_auto_upload)
     dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
     encryption_key = args.encrypt_key
+    clean_success_xml = str2bool(args.del_xml)
     db_type = cerndb_types[args.cern_dbase]['dbname'].lower()  ## 'int2r' or 'cmsr'
     dbl_password = None  ## default
     mass_upload_to_dbloader = mass_upload_to_dbloader_via_ssh_controlmaster  ## default for user guided
@@ -602,7 +604,7 @@ def main():
             print(f"Uploading {len(files)} {name} files to {cern_dbname}...")
             csv_outfile = run_mass_upload_seq(files, **upload_kwargs)
             if csv_outfile and dbpassword:
-                asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=csv_outfile, clean_success_xml=True))
+                asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=db_type, encryption_key=encryption_key, consolidated_csv=csv_outfile, clean_success_xml=clean_success_xml))
             remaining = [f for f in upload_file_types[upload_file_types.index(files)+1:] if f]
             if files and remaining and wait:
                 print(f"Waiting {wait} seconds after {name} upload...")
