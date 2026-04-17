@@ -596,7 +596,6 @@ def main():
         build_files, other_files = get_files_by_type(files_found, file_type='build')
         cond_files,  other_files = get_files_by_type(other_files, file_type=['cond', 'wirebond', 'assembly', 'inspect'])
         protomodule_build_files, module_build_files, other_build_files = get_proto_module_files(build_files)
-        cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
 
         upload_instances = []
         upload_kwargs = dict(lxp_username=lxp_username, cern_dbname=cern_dbname, lxp_password=lxp_password, cern_auto_upload=cern_auto_upload, upload_instances=upload_instances, mass_upload_to_dbloader=mass_upload_to_dbloader)
