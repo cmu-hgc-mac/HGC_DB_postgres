@@ -195,6 +195,7 @@ def get_upload_status_csv(csv_path):
     xml_path,upload_status,upload_state_value,upload_state_path,upload_log_path
     '''
     csv_output = []
+    skipped_status = []
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -202,6 +203,7 @@ def get_upload_status_csv(csv_path):
             upload_status = row["upload_status"].strip()  # Refer to UPLOAD_STATUS_MAP
 
             if upload_status not in UPLOAD_STATUS_MAP:
+                skipped_status.append((os.path.basename(xml_path), upload_status))
                 continue
 
             fname = os.path.basename(xml_path)
@@ -209,17 +211,25 @@ def get_upload_status_csv(csv_path):
 
             # No DB table to update (e.g. proto builds), but still track for deletion
             if not result:
+                # print(f"  [no table] {fname} (status={upload_status}) -> no matching DB table")
                 csv_output.append((None, None, upload_status, [], None, fname))
                 continue
 
             # zip returns a list; xml returns a single tuple
             if isinstance(result, list):
                 for prefix, part_name, tables, timestamp in result:
+                    # print(f"  [zip member] {fname} -> prefix={prefix}, part={part_name}, tables={tables}, ts={timestamp}")
                     csv_output.append((prefix, part_name, upload_status, tables, timestamp, fname))
             else:
                 prefix, part_name, tables, timestamp = result
+                # print(f"  [xml] {fname} -> prefix={prefix}, part={part_name}, tables={tables}, ts={timestamp}")
                 csv_output.append((prefix, part_name, upload_status, tables, timestamp, fname))
 
+    # print(f"\nCSV parsed: {len(csv_output)} entries to process.")
+    # if skipped_status:
+    #     print(f"Skipped {len(skipped_status)} rows with unrecognized status:")
+    #     for fname, st in skipped_status:
+            # print(f"  {fname}: '{st}'")
     return csv_output  # [(prefix, part_name, upload_status, db_tables, timestamp, fname), ...]
 
 # def get_api_data(search_id, db_type):
@@ -278,6 +288,10 @@ async def update_upload_status(pool, csv_output, concurrency=10):
             print(f"Unknown status '{status}' for part {part_name}, skipping.")
             continue
 
+        if not tables:
+            # print(f"  [skip] {fname}: no tables to update (prefix={prefix}, part={part_name})")
+            continue
+
         # Parse timestamp into date/time for IV/pedestal rows
         test_date = test_time = None
         if timestamp:
@@ -300,7 +314,7 @@ async def update_upload_status(pool, csv_output, concurrency=10):
                     SET xml_upload_success = $1
                     WHERE {name_col} = $2
                     AND date_test = $3
-                    AND time_test = $4
+                    AND date_trunc('second', '1970-01-01'::date + time_test)::time = $4
                     AND xml_gen_datetime IS NOT NULL
                     AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                 """
@@ -314,7 +328,8 @@ async def update_upload_status(pool, csv_output, concurrency=10):
                     AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
                 """
                 args = (success_flag, part_name)
-            # print(f'Updating {part_name} in {table}...')
+            # print(f"  [update] {part_name} in {table} -> xml_upload_success={success_flag}")
+            # print(f"    query: {' '.join(query.split())} | args: {args}")
             tasks.append(_run_update(pool, query, args, sem))
     if not tasks:
         print("No valid update tasks found.")
@@ -361,8 +376,10 @@ async def check_successful_upload_seq(dbpassword, db_type, encryption_key=None, 
                 print("No log file to process.")
                 return
 
+            # print(f"Processing log: {massloader_log_csv}")
             # Assuming get_upload_status_csv() returns csv_output as described
             csv_output = get_upload_status_csv(massloader_log_csv)
+            # print(f"Total csv_output entries: {len(csv_output)}")
 
             # Update DB
             await update_upload_status(pool, csv_output, concurrency=10)
