@@ -3,6 +3,8 @@ from pathlib import Path
 import datetime, time, yaml, paramiko, pwinput, sys, re, math, shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from export_data.src import process_xml_list, open_scp_connection, str2bool, dbloader_hostname
+from export_data.check_successful_upload import check_successful_upload_seq
+import asyncio
 import numpy as np
 from tqdm import tqdm
 import traceback, datetime
@@ -67,11 +69,13 @@ def find_files_by_date(directory, target_date):
 def get_files_by_type(files_list, file_type = 'build'):
     type_files = []
     other_files = []
-    for fname in files_list:
-        if file_type in fname.lower(): 
-            type_files.append(fname)
-        else:
-            other_files.append(fname)
+    file_type = [file_type] if type(file_type) == str else file_type
+    for ft in file_type:
+        for fname in files_list:
+            if ft in fname.lower(): 
+                type_files.append(fname)
+            else:
+                other_files.append(fname)
     return type_files, other_files
 
 def get_proto_module_files(files_list):
@@ -544,12 +548,19 @@ def main():
     parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-cerndb', '--cern_dbase', default='dev_db', required=False, help="Name of cern db to upload to - dev_db/prod_db.")
     parser.add_argument('-autoupload', '--cern_auto_upload', default='False', required=False, help="True if the upload is automated via a service account")
+    parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
+    parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
+    parser.add_argument('-delx', '--del_xml', default='True', required=False, help="Delete XMLs after upload.")
     args = parser.parse_args()
 
     dbl_username = args.dbl_username
     directory_to_search = args.directory
     search_date = args.date
     cern_auto_upload = str2bool(args.cern_auto_upload)
+    dbpassword = args.dbpassword or pwinput.pwinput(prompt='Enter database shipper password: ', mask='*')
+    encryption_key = args.encrypt_key
+    clean_success_xml = str2bool(args.del_xml)
+    cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower() ## 'int2r' or 'cmsr'
     dbl_password = None  ## default
     mass_upload_to_dbloader = mass_upload_to_dbloader_via_ssh_controlmaster  ## default for user guided
 
@@ -570,7 +581,7 @@ def main():
             print(file)
         print('\n')
         build_files, other_files = get_files_by_type(files_found, file_type='build')
-        cond_files,  other_files = get_files_by_type(other_files, file_type='cond')
+        cond_files,  other_files = get_files_by_type(other_files, file_type=['cond', 'wirebond', 'assembly', 'inspect'])
         protomodule_build_files, module_build_files, other_build_files = get_proto_module_files(build_files)
         cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower()
 
