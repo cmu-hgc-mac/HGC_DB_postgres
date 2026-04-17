@@ -512,9 +512,9 @@ def export_data():
             
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
-                if open_scp_connection(dbl_username=lxp_username, get_scp_status=True) != 0:
+                if open_scp_connection(lxp_username=lxp_username, get_scp_status=True) != 0:
                     show_message(f"Check terminal to enter LXPLUS credentials.")
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+                scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
             
             upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
             upload_prod_stat = upload_prod_stat if scp_status == 0 else False
@@ -524,7 +524,7 @@ def export_data():
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
             if (upload_dev_stat or upload_prod_stat) and scp_force_quit: ### only quit if it was opened at all
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit)
+                scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")           
 
     select_specific_button = Button(input_window, text="Select type of XMLs", command=select_specific)
@@ -723,9 +723,9 @@ def check_dbloader_logs():
         fname = os.path.basename(filename_entry.get().strip())
         if not fname or not lxp_username:
             return
-        if open_scp_connection(dbl_username=lxp_username, get_scp_status=True) != 0:
+        if open_scp_connection(lxp_username=lxp_username, get_scp_status=True) != 0:
             show_message("Check terminal to enter LXPLUS credentials.")
-        scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+        scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
         if scp_status == 0:
             server = server_var.get().lower()
             remote_path = f"/home/dbspool/logs/hgc/{server}/{fname}"
