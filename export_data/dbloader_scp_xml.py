@@ -604,15 +604,18 @@ def main():
         wait_after = [10, 10, 5, 0]  ## seconds to wait after each batch before the next (DBLoader latency)
 
         for files, name, wait in zip(upload_file_types, upload_file_type_names, wait_after):
-            print(f"Uploading {len(files)} {name} files to {cern_dbname}...")
-            csv_outfile = run_mass_upload_seq(files, **upload_kwargs)
-            if csv_outfile and dbpassword:
-                asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=cern_dbname, encryption_key=encryption_key, consolidated_csv=csv_outfile, clean_success_xml=clean_success_xml))
-            remaining = [f for f in upload_file_types[upload_file_types.index(files)+1:] if f]
-            if files and remaining and wait:
-                print(f"Waiting {wait} seconds after {name} upload...")
-                print("")
-                time.sleep(wait)
+            try:
+                print(f"Uploading {len(files)} {name} files to {cern_dbname}...")
+                csv_outfile = run_mass_upload_seq(files, **upload_kwargs)
+                if csv_outfile and dbpassword:
+                    asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=cern_dbname, encryption_key=encryption_key, consolidated_csv=csv_outfile, clean_success_xml=clean_success_xml))
+                remaining = [f for f in upload_file_types[upload_file_types.index(files)+1:] if f]
+                if files and remaining and wait:
+                    print(f"Waiting {wait} seconds after {name} upload...")
+                    print("")
+                    time.sleep(wait)
+            except Exception as e:
+                print('Error', e)
 
         if len(upload_instances) >= 1:
             consolidate_mass_upload_logs(upload_instances)
