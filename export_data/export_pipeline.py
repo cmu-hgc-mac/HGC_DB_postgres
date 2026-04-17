@@ -11,9 +11,7 @@ import shutil, pwinput, datetime, yaml, time
 from cryptography.fernet import Fernet
 from src import process_xml_list, str2bool
 from find_missing_var_xml import find_missing_var_xml
-# import check_successful_upload
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
-from check_successful_upload import main as check_successful_upload
 
 
 XML_GENERATOR_DIR = 'export_data/generate_xmls_utils'## directory for py scripts to generate xmls
@@ -88,7 +86,7 @@ def generate_xmls(dbpassword, date_start, date_end, lxplus_username, encryption_
         print(f"Progress: {completed_scripts}/{total_scripts} XML file types generated.")
         print('-'*10); print('')
 
-def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_auto_upload = False):
+def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_auto_upload = False, dbpassword = None, encryption_key = None, del_xml = 'True'):
     """Call the scp script to transfer files."""
     consolidated_csv = None
     try:
@@ -98,7 +96,10 @@ def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_a
                        '-dir', directory,
                        '-date', str(search_date),
                        '-autoupload', str(cern_auto_upload),
-                       '-cerndb', cerndb]
+                       '-cerndb', cerndb,
+                       '-dbp', dbpassword,
+                       '-k',   encryption_key,
+                       '-delx', str(del_xml)]
 
         process = subprocess.run(scp_command, check=True, capture_output=True, text=True)
         sys.stdout.write(process.stdout)
@@ -116,6 +117,13 @@ def scp_files(lxplus_username, directory, search_date, cerndb = 'dev_db', cern_a
 
         return True, consolidated_csv
 
+    except subprocess.CalledProcessError as e:
+        sys.stdout.write(e.stdout or '')
+        sys.stdout.flush()
+        sys.stderr.write(e.stderr or '')
+        sys.stderr.flush()
+        print(f"Error during SCP (exit code {e.returncode}): {e}")
+        return False, consolidated_csv
     except Exception as e:
         traceback.print_exc()
         print(f"Error during SCP: {e}")
@@ -185,13 +193,13 @@ async def main():
     
     if upload_dev_stat or upload_prod_stat:
         for cerndb in db_list:
-            scp_success, consolidated_csv = scp_files(lxplus_username = lxplus_username, directory = directory_to_search, search_date = today, cerndb = cerndb, cern_auto_upload=str2bool(args.cern_auto_upload))
+            scp_success, consolidated_csv = scp_files(lxplus_username=lxplus_username, directory=directory_to_search, search_date=today, cerndb=cerndb, cern_auto_upload=str2bool(args.cern_auto_upload), dbpassword=dbpassword, encryption_key=encryption_key, del_xml=args.del_xml)
         
-        if scp_success and upload_prod_stat and consolidated_csv:
-            command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True", "-delx", args.del_xml]
-            result = subprocess.run(command, check=True, capture_output=True, text=True)
-            sys.stdout.write(result.stdout)
-            sys.stdout.flush()
+        # if scp_success and upload_prod_stat and consolidated_csv:
+        #     command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True", "-delx", args.del_xml]
+        #     result = subprocess.run(command, check=True, capture_output=True, text=True)
+        #     sys.stdout.write(result.stdout)
+        #     sys.stdout.flush()
             # if result.stderr:
             #     print("check_successful_upload.py errors:\n", result.stderr)
 
