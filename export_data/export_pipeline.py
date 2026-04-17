@@ -195,13 +195,13 @@ async def main():
         for cerndb in db_list:
             scp_success, consolidated_csv = scp_files(lxplus_username=lxplus_username, directory=directory_to_search, search_date=today, cerndb=cerndb, cern_auto_upload=str2bool(args.cern_auto_upload), dbpassword=dbpassword, encryption_key=encryption_key, del_xml=args.del_xml)
         
-        # if scp_success and upload_prod_stat and consolidated_csv:
-        #     command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True", "-delx", args.del_xml]
-        #     result = subprocess.run(command, check=True, capture_output=True, text=True)
-        #     sys.stdout.write(result.stdout)
-        #     sys.stdout.flush()
-            # if result.stderr:
-            #     print("check_successful_upload.py errors:\n", result.stderr)
+        if scp_success and upload_prod_stat and consolidated_csv:
+            command = [sys.executable, "export_data/check_successful_upload.py", "--consolidated_csv",  consolidated_csv , "--dbpassword", dbpassword, "--encrypt_key", encryption_key or "",  "-uplp", "True", "-delx", args.del_xml]
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            sys.stdout.write(result.stdout)
+            sys.stdout.flush()
+            if result.stderr:
+                print("check_successful_upload.py errors:\n", result.stderr)
 
 if __name__ == '__main__':
     asyncio.run(main())

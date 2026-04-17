@@ -607,8 +607,8 @@ def main():
             try:
                 print(f"Uploading {len(files)} {name} files to {cern_dbname}...")
                 csv_outfile = run_mass_upload_seq(files, **upload_kwargs)
-                if csv_outfile and dbpassword:
-                    asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=cern_dbname, encryption_key=encryption_key, consolidated_csv=csv_outfile, clean_success_xml=clean_success_xml))
+                # if csv_outfile and dbpassword:
+                #     asyncio.run(check_successful_upload_seq(dbpassword=dbpassword, db_type=cern_dbname, encryption_key=encryption_key, consolidated_csv=csv_outfile, clean_success_xml=clean_success_xml))
                 remaining = [f for f in upload_file_types[upload_file_types.index(files)+1:] if f]
                 if files and remaining and wait:
                     print(f"Waiting {wait} seconds after {name} upload...")
