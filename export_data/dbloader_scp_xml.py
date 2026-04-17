@@ -226,10 +226,10 @@ class mass_upload_to_dbloader_via_ssh_controlmaster:
             scp_masslog_file = ["scp", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}:~/{self.csv_outfile}", self.mass_upload_logs_fp ] #f"{self.dbl_username}@{self.dbloader_hostname}:~/{log_outfile}", self.mass_upload_logs_fp]
             result = subprocess.run(scp_masslog_file,     text=True)
             local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
+            self.csv_outfile = local_csv_path  # update to full local path for downstream use
             if os.path.isfile(local_csv_path): # and os.path.isfile(local_log_path):
                 rm_masslog_file = ["ssh", "-o", f"ProxyJump={self.dbl_username}@lxplus.cern.ch", "-o", f"ControlPath=~/.ssh/{self.controlpathname}", f"{self.dbl_username}@{self.dbloader_hostname}", f"rm -f ~/{self.csv_outfile} ~/mass_loader*.log"]
                 result = subprocess.run(rm_masslog_file,     text=True)
-                self.csv_outfile = local_csv_path  # update to full local path for downstream use
             print("")
             return result.returncode
                     
@@ -429,21 +429,21 @@ class mass_upload_to_dbloader_via_paramiko:
                 local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
                 shutil.move(self.temp_txt_file_name, local_terminal_path)
                 local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
-                sftp = self.ssh_server2.open_sftp()                
+                self.csv_outfile = local_csv_path  # update to full local path for downstream use
+                sftp = self.ssh_server2.open_sftp()
                 sftp.get(self.csv_outfile, local_csv_path)              # Copy remote CSV to local
-                # sftp.get(log_outfile, local_log_path) 
+                # sftp.get(log_outfile, local_log_path)
             except Exception as e:
                 print(e)
                 return 255  # indicate failure
 
             if os.path.isfile(local_csv_path) and os.path.isfile(local_terminal_path):
                 try:
-                    sftp.remove(self.csv_outfile)  # Remove remote CSV after download
+                    sftp.remove(os.path.basename(local_csv_path))  # Remove remote CSV after download
                     stdin, stdout, stderr = self.ssh_server2.exec_command(f"rm -f ~/mass_loader*.log")
                     # sftp.remove(log_outfile)  # Remove remote log after download
                 except FileNotFoundError:
                     return 255
-                self.csv_outfile = local_csv_path  # update to full local path for downstream use
             print("")
             return 0  # success
 
