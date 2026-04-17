@@ -24,10 +24,15 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     proto_tables = ['proto_assembly', 'proto_inspect']
 
     # Fetch protomodules already known to the HGCAPI for this location
-    api_data = read_from_cern_db(macID=LOCATION, partType='pml', cern_db_url=cern_db_url)
+    api_data = read_from_cern_db(macID=LOCATION, partType='pml', cern_db_url=cern_db_url)  ## returns parts that haven't been assigned into modules
     api_protos = set()
     if api_data and 'parts' in api_data:
         api_protos = {p['serial_number'].replace('-', '') for p in api_data['parts'] if p.get('serial_number')}
+
+    api_data = read_from_cern_db(macID=LOCATION, partType='ml', cern_db_url=cern_db_url)  ## returns parts that haven't been assigned into modules
+    if api_data and 'parts' in api_data:
+        api_modules = {p['serial_number'].replace('-', '').replace("320M", "320P") for p in api_data['parts'] if p.get('serial_number')}
+        api_protos.update(api_modules)
 
     proto_list = set()
     if partsnamelist:
