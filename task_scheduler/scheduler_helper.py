@@ -374,14 +374,35 @@ class set_automation_schedule(Toplevel):
         if job_key == 'upload_to_CMSR':
             # Date range radio buttons
             saved_range = self.config_dict.get('upload_to_CMSR', {}).get('upload_date_range', 'since_last_upload')
-            self._upload_date_range.set(saved_range)
+            # Determine if saved_range is a custom date (not one of the named values)
+            _named_vals = {'since_last_upload', 'this_week'}
+            _default_since_date = "2026-04-01"
+            if saved_range not in _named_vals:
+                _initial_radio = 'since_date'
+                _initial_date  = saved_range
+            else:
+                _initial_radio = saved_range
+                _initial_date  = _default_since_date
+            self._upload_date_range.set(_initial_radio)
             Label(panel, text="Upload XMLs generated:").pack(pady=(2, 0))
             radio_frame = Frame(panel)
             radio_frame.pack(pady=(2, 0))
             for label, val in [("Since last upload", "since_last_upload"),
-                                ("For this week",     "this_week"),
-                                ("For all time",      "all_time")]:
+                                ("For this week",     "this_week")]:
                 Radiobutton(radio_frame, text=label, variable=self._upload_date_range, value=val).pack(side="left", padx=4)
+
+            # "Since <date>" row
+            since_row = Frame(radio_frame)
+            since_row.pack(side="left", padx=4)
+            Radiobutton(since_row, text="Since", variable=self._upload_date_range, value='since_date').pack(side="left")
+            self._since_date_var = StringVar(value=_initial_date)
+
+            def _validate_date(P):
+                return len(P) <= 10 and all(c.isdigit() or c == '-' for c in P)
+            vcmd_date = (self.register(_validate_date), '%P')
+            Entry(since_row, textvariable=self._since_date_var, width=11,
+                  validate="key", validatecommand=vcmd_date,
+                  bd=1.5, highlightbackground="black", highlightthickness=1).pack(side="left", padx=(2, 0))
 
             Button(panel, text="Select type of XMLs", command=lambda: self._toggle_side_panel('xml')).pack(pady=(10, 0))
 
@@ -536,6 +557,13 @@ class set_automation_schedule(Toplevel):
         return True
 
     def _save_schedule(self, job_key, time_entry, selected_repeat, day_vars, result_label):
+        if job_key == 'upload_to_CMSR' and self._upload_date_range.get() == 'since_date':
+            try:
+                datetime.strptime(self._since_date_var.get(), "%Y-%m-%d")
+            except ValueError:
+                result_label.config(text="Invalid date! Use YYYY-MM-DD format.")
+                return
+
         time_val = time_entry.get()
         selected_days = [day for day, var in day_vars.items() if var.get()]
         self.selected_days_indices = [str(1 + list(day_vars.keys()).index(day)) for day in selected_days]
@@ -657,7 +685,10 @@ class set_automation_schedule(Toplevel):
         self.config_dict[type_of_job]['cron_command'] = " ".join(cron_command_inputs)
 
         if type_of_job == 'upload_to_CMSR':
-            self.config_dict[type_of_job]['upload_date_range'] = self._upload_date_range.get()
+            if self._upload_date_range.get() == 'since_date':
+                self.config_dict[type_of_job]['upload_date_range'] = self._since_date_var.get()
+            else:
+                self.config_dict[type_of_job]['upload_date_range'] = self._upload_date_range.get()
 
         days_str = ", ".join(self.selected_days)
         self.config_dict[type_of_job]['description'] = f"Run {type_of_job} weekly on: {days_str} at {self.config_dict[type_of_job]['schedule_time']} repeating every {repeat_val} hour(s) in localtime."

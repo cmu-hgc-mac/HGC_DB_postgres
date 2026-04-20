@@ -67,7 +67,7 @@ def run_job(job_type):
             start_of_week = today_date - timedelta(days=today_date.weekday())
             start_date_str = start_of_week.strftime('%Y-%m-%d')
         else:
-            start_date_str = "2020-01-01"  ### representative of 'all_time'
+            start_date_str = upload_date_range_type  # a YYYY-MM-DD date string
         
         with JobIndicator("/tmp/hgc_postgres_cron_job.running"):  ### This is required for open_scp_connection to default to Service Account
             export_data_cmd = [sys.executable, 
