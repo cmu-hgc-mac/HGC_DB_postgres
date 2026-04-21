@@ -4,6 +4,7 @@ db_hostname: 'localhost'     ## update this if accessing from a different comput
 institution_abbr: ''         ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB
 php_port: 8083
 
+git_auto_pull: True          ## Set to True to `git pull` everytime the project is run
 
 ### For outgoing shipment form
 max_mod_per_box: 10          ## maximum number of modules per box; controls postgres panel 

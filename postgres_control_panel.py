@@ -2,14 +2,11 @@ import os, yaml, base64, sys, threading, atexit, signal, csv, math
 from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
-import subprocess, webbrowser, zipfile, urllib.request, traceback, asyncio
+import subprocess, webbrowser, zipfile, urllib.request, traceback, asyncio, time
 import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime 
-from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
-from task_scheduler.scheduler_helper import set_automation_schedule
-from export_data.src import open_scp_connection, check_good_conn, dbloader_hostname
 
 def run_git_pull_seq():
     restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
@@ -21,32 +18,38 @@ def run_git_pull_seq():
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
-try:
-    run_git_pull_seq()
-except:
-    print("There is a git conflict but continue.")
-
-from export_data.src import process_xml_list, update_yaml_with_checkboxes
-process_xml_list()
-
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
 adminer_process_button_face = " Search/Edit Postgres Data  "
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
-dbase_name = config_data.get('dbname')
-db_hostname = config_data.get('db_hostname')
-cern_dbase = config_data.get('cern_db', 'prod_db') ## 'dev_db'
-delete_xmls = config_data.get('delete_xmls', True)
-php_port = config_data.get('php_port', '8083')
+dbase_name      = config_data.get('dbname')
+db_hostname     = config_data.get('db_hostname')
+cern_dbase      = config_data.get('cern_db', 'prod_db') ## 'dev_db'
+git_auto_pull   = config_data.get('git_auto_pull', True) ## 'dev_db'
+delete_xmls     = config_data.get('delete_xmls', True)
+php_port        = config_data.get('php_port', '8083')
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
-scp_force_quit = config_data.get('scp_force_quit', True)
+scp_force_quit  = config_data.get('scp_force_quit', True)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_box_per_shipment', 42))
 institution_abbr = config_data.get('institution_abbr')
 adminer_php_file = 'adminer-pgsql.php'
 php_url = f"http://127.0.0.1:{php_port}/{adminer_php_file}?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
+
+try:
+    if git_auto_pull:
+        run_git_pull_seq()
+        time.sleep(2)
+except:
+    print("There is a git conflict but continue.")
+
+from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
+from task_scheduler.scheduler_helper import set_automation_schedule
+from export_data.src import open_scp_connection, check_good_conn, dbloader_hostname
+from export_data.src import process_xml_list, update_yaml_with_checkboxes
+process_xml_list()
 
 def launch_stt_form_webbrowser():
         webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
