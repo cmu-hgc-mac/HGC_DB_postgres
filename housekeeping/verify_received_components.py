@@ -47,19 +47,34 @@ async def write_to_db(partType=None, part_id_list=None, date_verified=None):
     except Exception as e:
         print(f"{RED}Error: {e}{RESET}")
 
+HEADER_KEYWORDS = {'serial', 'number', 'name', 'barcode', 'bar', 'code', 'type', 'head', 'part'}
+
+def is_header(value):
+    return any(kw in value.lower() for kw in HEADER_KEYWORDS)
+
 def read_parts_from_file(filename):
     file_name_non, file_extension = os.path.splitext(filename)
     part_names = []
     with open(filename, mode='r') as file:
         if file_extension == '.csv':
             reader = csv.reader(file)
-            for line in reader:
-                if line[0].strip():
-                    part_names.append(line[0].strip())
+            for i, line in enumerate(reader):
+                val = line[0].strip()
+                if not val:
+                    continue
+                if i == 0 and is_header(val):
+                    print(f"Skipping header row: '{val}'")
+                    continue
+                part_names.append(val)
         elif file_extension == '.txt':
-            for line in file:
-                if line.strip():
-                    part_names.append(line.strip())
+            for i, line in enumerate(file):
+                val = line.strip()
+                if not val:
+                    continue
+                if i == 0 and is_header(val):
+                    print(f"Skipping header row: '{val}'")
+                    continue
+                part_names.append(val)
     return part_names
 
 async def main():
