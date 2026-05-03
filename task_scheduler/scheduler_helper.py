@@ -7,11 +7,12 @@ from pathlib import Path
 import pexpect, paramiko
 
 def get_lxplus_username_password():
+    service_account_totpuri = None
     current_file = Path(__file__).resolve()
     PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
-    # conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
-    # conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
-    # dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal.cern.ch") #, "hgcaldbloader.cern.ch")  
+    conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
+    conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
+    use_2fa_totp = conn_info.get('use_2fa_totp', False)
     sched_config_file = os.path.join(PROJECT_ROOT, os.path.join('task_scheduler', 'schedule_config.yaml'))
     sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
     dbl_username = sched_config['CERN_service_account_username']
@@ -201,6 +202,7 @@ class set_automation_schedule(Toplevel):
         self.xml_auto_yaml   = os.path.join(self.task_scheduler_path, 'list_of_xmls_auto.yaml')
         self.postgres_pass_path = os.path.join(self.task_scheduler_path,"password_postgres.enc")
         self.lxplus_pass_path = os.path.join(self.task_scheduler_path,"password_lxplus.enc")
+        self.totp_uri_path = os.path.join(self.task_scheduler_path,"totp_uri.enc")
         self.config_dict = {}
         self.load_existing_config_file()
         self.selected_days_indices = []
@@ -232,20 +234,46 @@ class set_automation_schedule(Toplevel):
         _peek1.bind("<ButtonPress-1>",   lambda _: shipper_var_entry.config(show=''))
         _peek1.bind("<ButtonRelease-1>", lambda _: shipper_var_entry.config(show='*'))
 
-        Label(self.left_col, text="**Enter CERN Service Account username:**").pack(pady=1)
+        self._lxuser_label = Label(self.left_col, text="**Enter CERN Service Account username:**")
+        self._lxuser_label.pack(pady=1)
         self.lxuser_var = StringVar()
         lxuser_var_entry = Entry(self.left_col, textvariable=self.lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
         lxuser_var_entry.pack(pady=0)
+        self._lxuser_entry = lxuser_var_entry
 
-        Label(self.left_col, text="**Enter CERN Service Account password:**").pack(pady=1)
+        self._cern_pass_label = Label(self.left_col, text="**Enter CERN Service Account password:**")
+        self._cern_pass_label.pack(pady=1)
         self.cern_pass_var = StringVar()
         _row2 = Frame(self.left_col); _row2.pack(pady=0)
+        self._cern_pass_row = _row2
         cern_pass_var_entry = Entry(_row2, textvariable=self.cern_pass_var, show='*', width=27, bd=1.5, highlightbackground="black", highlightthickness=1)
         cern_pass_var_entry.pack(side="left")
+        self._cern_pass_entry = cern_pass_var_entry
         _peek2 = Button(_row2, text="see", padx=2, pady=0, takefocus=0)
         _peek2.pack(side="left", padx=(2, 0))
+        self._cern_peek2 = _peek2
         _peek2.bind("<ButtonPress-1>",   lambda _: cern_pass_var_entry.config(show=''))
         _peek2.bind("<ButtonRelease-1>", lambda _: cern_pass_var_entry.config(show='*'))
+
+        self._totp_label = Label(self.left_col, text="**Enter CERN 2FA TOTP URI (optional):**")
+        self._totp_label.pack(pady=1)
+        _saved_totp_uri = ""
+        if self.encryption_key and os.path.exists(self.totp_uri_path):
+            try:
+                _saved_totp_uri = Fernet(self.encryption_key).decrypt(open(self.totp_uri_path, "rb").read()).decode()
+            except Exception:
+                pass
+        self.totp_uri_var = StringVar(value=_saved_totp_uri)
+        _row3 = Frame(self.left_col); _row3.pack(pady=0)
+        self._totp_row = _row3
+        totp_uri_entry = Entry(_row3, textvariable=self.totp_uri_var, show='*', width=27, bd=1.5, highlightbackground="black", highlightthickness=1)
+        totp_uri_entry.pack(side="left")
+        self._totp_entry = totp_uri_entry
+        _peek3 = Button(_row3, text="see", padx=2, pady=0, takefocus=0)
+        _peek3.pack(side="left", padx=(2, 0))
+        self._totp_peek3 = _peek3
+        _peek3.bind("<ButtonPress-1>",   lambda _: totp_uri_entry.config(show=''))
+        _peek3.bind("<ButtonRelease-1>", lambda _: totp_uri_entry.config(show='*'))
 
         buttons_frame = Frame(self.left_col)
         buttons_frame.pack(pady=(5, 0))
@@ -300,6 +328,17 @@ class set_automation_schedule(Toplevel):
                     return time_str, repeat_val, active_indices
         return None
 
+    def _update_cern_fields_state(self, job_key):
+        """Gray out CERN credentials when import job is active; re-enable for upload job."""
+        enabled = (job_key != 'import_from_HGCAPI')
+        state = "normal" if enabled else DISABLED
+        fg = "black" if enabled else "gray"
+        for widget in (self._lxuser_entry, self._cern_pass_entry, self._cern_peek2,
+                       self._totp_entry, self._totp_peek3):
+            widget.config(state=state)
+        for label in (self._lxuser_label, self._cern_pass_label, self._totp_label):
+            label.config(fg=fg)
+
     def _toggle_job_panel(self, job_key, job_label):
         """Show the schedule sub-panel for the chosen job, collapsing any other open one."""
         # collapse existing panels
@@ -311,9 +350,11 @@ class set_automation_schedule(Toplevel):
             self.job_panel = None
             if self.selected_job.get() == job_key:
                 self.selected_job.set("")
+                self._update_cern_fields_state('upload_to_CMSR')  # re-enable when closing
                 return  # clicking same button again just closes it
 
         self.selected_job.set(job_key)
+        self._update_cern_fields_state(job_key)
         panel = Frame(self.left_col, relief="groove", bd=1)
         panel.pack(fill="x", padx=0, pady=(5, 0))
         self.job_panel = panel
@@ -640,7 +681,7 @@ class set_automation_schedule(Toplevel):
         pass
 
     def save_encrypted_password(self):
-        cipher_suite = Fernet(self.encryption_key) ## Generate or load a key. 
+        cipher_suite = Fernet(self.encryption_key) ## Generate or load a key.
         encrypted_postgres_password = cipher_suite.encrypt(self.shipper_var.get().encode())
         encrypted_lxplus_password = cipher_suite.encrypt(self.cern_pass_var.get().encode())
         with open(self.encrypt_path, "wb") as key_file:
@@ -649,6 +690,11 @@ class set_automation_schedule(Toplevel):
             f.write(encrypted_postgres_password)
         with open(self.lxplus_pass_path, "wb") as f:
             f.write(encrypted_lxplus_password)
+        totp_uri_val = self.totp_uri_var.get().strip()
+        if totp_uri_val:
+            encrypted_totp_uri = cipher_suite.encrypt(totp_uri_val.encode())
+            with open(self.totp_uri_path, "wb") as f:
+                f.write(encrypted_totp_uri)
 
     def create_cron_schedule_config(self):
         type_of_job = self.job_type_keys[self.selected_job.get()]
@@ -663,6 +709,8 @@ class set_automation_schedule(Toplevel):
         self.config_dict['postgres_shipper_pass_path'] = self.postgres_pass_path
         self.config_dict['encrypt_path'] = self.encrypt_path
         self.config_dict['postgres_username'] = 'shipper'
+        if self.totp_uri_var.get().strip():
+            self.config_dict['CERN_totp_uri_path'] = self.totp_uri_path
         
         py_job_fname = os.path.join(self.task_scheduler_path, 'run_as_scheduled.py')
         py_log_fname = os.path.join(self.task_scheduler_path, f'schedule_job_{type_of_job}.log')
