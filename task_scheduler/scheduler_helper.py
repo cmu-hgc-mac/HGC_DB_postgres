@@ -10,11 +10,11 @@ def get_lxplus_username_password():
     service_account_totpuri = None
     current_file = Path(__file__).resolve()
     PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
-    conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
-    conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
+    # conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
+    # conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
     sched_config_file = os.path.join(PROJECT_ROOT, os.path.join('task_scheduler', 'schedule_config.yaml'))
     sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
-    dbl_username = sched_config['CERN_service_account_username']
+    lxp_username = sched_config['CERN_service_account_username']
     with open(sched_config['encrypt_path'], "rb") as key_file:
         encryption_key = key_file.read()
     cipher_suite = Fernet(encryption_key)
@@ -27,33 +27,43 @@ def get_lxplus_username_password():
     if os.path.exists(totp_uri_path):
         with open(totp_uri_path, "rb") as f:
             service_account_totpuri = cipher_suite.decrypt(f.read()).decode()
-    return dbl_username, service_account_password, service_account_totpuri
+    return lxp_username, service_account_password, service_account_totpuri
 
 
 def run_ssh_master(dbloader_hostname = 'dbloader-hgcal.cern.ch', scp_persist = 'yes'):
-    dbl_username, service_account_password, totp_uri = get_lxplus_username_password()
+    lxp_username, service_account_password, totp_uri = get_lxplus_username_password()
     controlpathname = "ctrl_dbloader"
     sockpath = os.path.expanduser(f"~/.ssh/{controlpathname}")
     os.makedirs(os.path.dirname(sockpath), exist_ok=True)
 
-    ssh_cmd = [ "ssh", "-MY",                       
+    ssh_cmd = [ "ssh", "-MY",
                 "-o", "StrictHostKeyChecking=no",
                 "-o", f"ControlPath={sockpath}",
-                "-o", f"ControlPersist={scp_persist}", 
-                "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
-                f"{dbl_username}@{dbloader_hostname}" ]
+                "-o", f"ControlPersist={scp_persist}",
+                "-o", f"ProxyJump={lxp_username}@lxtunnel.cern.ch",
+                f"{lxp_username}@{dbloader_hostname}" ]
 
     cmd_str = " ".join(ssh_cmd)
 
-    if dbl_username and service_account_password:
+    if lxp_username and service_account_password:
         child = pexpect.spawn(cmd_str, encoding="utf-8", timeout=60)
-        password_prompt_index1 = child.expect(r'.*?[Pp]assword:', timeout=60)
-        if password_prompt_index1 == 0:
+        idx0 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=60)
+        if idx0 in (2, 3):
+            pass  # already authenticated via SSH key
+        elif idx0 == 0:
             child.sendline(service_account_password)
-            password_prompt_index2 = child.expect(r'.*?[Pp]assword:', timeout=60)
-            if password_prompt_index2 == 0:
+            idx = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=60)
+            if idx == 1:
+                if totp_uri and lxp_username in totp_uri:
+                    totp_code = pyotp.parse_uri(totp_uri).now()
+                    child.sendline(totp_code)
+                    idx2 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=60)
+                    if idx2 == 0:
+                        child.sendline(service_account_password)
+                        _ = child.expect([pexpect.EOF, pexpect.TIMEOUT])  ### This is important. Do not remove!
+            elif idx == 0:
                 child.sendline(service_account_password)
-                exit_status = child.expect([pexpect.EOF, pexpect.TIMEOUT])  ### This is important. Do not remove!
+                _ = child.expect([pexpect.EOF, pexpect.TIMEOUT])  ### This is important. Do not remove!
 
 
 class SSHConfigManager:
