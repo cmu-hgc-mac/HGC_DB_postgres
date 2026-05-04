@@ -575,6 +575,7 @@ def main():
     clean_success_xml = str2bool(args.del_xml)
     cern_dbname = (cerndb_types[args.cern_dbase]['dbname']).lower() ## 'int2r' or 'cmsr'
     lxp_password = None  ## default
+    totp_uri = None ## default
     mass_upload_to_dbloader = mass_upload_to_dbloader_via_ssh_controlmaster  ## default for user guided
 
     if cern_auto_upload:
