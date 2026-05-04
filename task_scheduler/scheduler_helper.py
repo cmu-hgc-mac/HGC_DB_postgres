@@ -793,7 +793,7 @@ class set_automation_schedule(Toplevel):
         _saved_uri = self.totp_uri_var.get().strip() or self.saved_totp_uri
         if _saved_uri:
             _totp_user = _saved_uri.split('CERN:')[-1].split('?')[0] if 'CERN:' in _saved_uri else None
-            _status = f"2FA TOTP URI on file for '{_totp_user}'" if _totp_user else "2FA TOTP URI on file"
+            _status = f"2FA TOTP URI exists for '{_totp_user}'" if _totp_user else "2FA TOTP URI exists"
         else:
             _status = "No 2FA TOTP URI available"
         self._totp_status_label.config(text=_status, fg="blue")
