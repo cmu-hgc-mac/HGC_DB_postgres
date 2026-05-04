@@ -543,22 +543,27 @@ async def run_async_subprocess():
     controlpathname = "ctrl_dbloader"
     current_file = Path(__file__).resolve()
     PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
-    print('Running run_async_subprocess')
-    process = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-c",
-        f"import sys; sys.path.insert(0, r'{PROJECT_ROOT}'); "
-        "from task_scheduler.scheduler_helper import run_ssh_master; "
-        "run_ssh_master()",
-        stdout=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
-        stderr=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
-        stdin=asyncio.subprocess.DEVNULL,   ### Comment these to see terminal output for debugging
-        start_new_session=True  )
 
-    print('Waiting for asynchronous control master process to start...')
-    time.sleep(15)  ### Wait a good few seconds for process to start!
-    cp_check = Path(f"~/.ssh/{controlpathname}").expanduser().exists()
-    return cp_check 
+    for attempt in range(2):
+        print(f'Running run_async_subprocess (attempt {attempt + 1}/2)')
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-c",
+            f"import sys; sys.path.insert(0, r'{PROJECT_ROOT}'); "
+            "from task_scheduler.scheduler_helper import run_ssh_master; "
+            "run_ssh_master()",
+            stdout=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
+            stderr=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
+            stdin=asyncio.subprocess.DEVNULL,   ### Comment these to see terminal output for debugging
+            start_new_session=True  )
+
+        print('Waiting for asynchronous control master process to start...')
+        time.sleep(15)  ### Wait a good few seconds for process to start!
+        cp_check = Path(f"~/.ssh/{controlpathname}").expanduser().exists()
+        if cp_check:
+            return True
+        print(f"ControlMaster socket not found after attempt {attempt + 1} -- retrying with fresh TOTP code ...")
+    return False 
 
 
 def open_scp_connection(lxp_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, cern_auto_upload = False):
