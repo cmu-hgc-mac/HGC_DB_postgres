@@ -1,9 +1,12 @@
 asyncpg==0.29.0
 cryptography==3.4.8
 matplotlib==3.5.1
+opencv-python==4.8.0.74
 paramiko==3.2.0
+pexpect==4.8.0
 Pillow==9.0.1
 pwinput==1.0.3
+pyotp==2.9.0
 python==3.9.12
 PyYAML==6.0
 scp==0.15

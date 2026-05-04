@@ -275,19 +275,13 @@ class set_automation_schedule(Toplevel):
         else:
             _totp_status_text = "No 2FA TOTP URI available"
         self.saved_totp_uri = _saved_totp_uri
-        self._totp_status_label = Label(self.left_col, text=_totp_status_text, fg="blue")
-        self._totp_status_label.pack(pady=(0, 1))
         self.totp_uri_var = StringVar(value="")
-        _row3 = Frame(self.left_col); _row3.pack(pady=0)
-        self._totp_row = _row3
-        totp_uri_entry = Entry(_row3, textvariable=self.totp_uri_var, show='*', width=27, bd=1.5, highlightbackground="black", highlightthickness=1)
-        totp_uri_entry.pack(side="left")
-        self._totp_entry = totp_uri_entry
-        _peek3 = Button(_row3, text="see", padx=2, pady=0, takefocus=0)
-        _peek3.pack(side="left", padx=(2, 0))
-        self._totp_peek3 = _peek3
-        _peek3.bind("<ButtonPress-1>",   lambda _: totp_uri_entry.config(show=''))
-        _peek3.bind("<ButtonRelease-1>", lambda _: totp_uri_entry.config(show='*'))
+        _totp_status_row = Frame(self.left_col)
+        _totp_status_row.pack(pady=(0, 1))
+        Button(_totp_status_row, text="Update 2FA URI", padx=3, pady=0,
+               command=self._open_totp_update_window).pack(side="left", padx=(0, 4))
+        self._totp_status_label = Label(_totp_status_row, text=_totp_status_text, fg="blue")
+        self._totp_status_label.pack(side="left")
 
         buttons_frame = Frame(self.left_col)
         buttons_frame.pack(pady=(5, 0))
@@ -342,14 +336,89 @@ class set_automation_schedule(Toplevel):
                     return time_str, repeat_val, active_indices
         return None
 
+    def _open_totp_update_window(self):
+        win = Toplevel(self)
+        win.title("Update 2FA TOTP URI")
+
+        # local var — does not touch self.totp_uri_var until Submit is clicked
+        _local_totp_var = StringVar(value=self.totp_uri_var.get())
+
+        Label(win, text="Read from a QR code (png, jpg, jpeg)").pack(pady=(10, 2))
+        _qr_row = Frame(win)
+        _qr_row.pack(pady=(0, 4), padx=10)
+        qr_path_var = StringVar()
+        Entry(_qr_row, textvariable=qr_path_var, width=34,
+              bd=1.5, highlightbackground="black", highlightthickness=1).pack(side="left")
+        qr_status = Label(win, text="", fg="red")
+
+        def _browse_qr():
+            path = filedialog.askopenfilename(
+                parent=win,
+                title="Select QR code image",
+                filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")])
+            if path:
+                qr_path_var.set(path)
+                _decode_qr(path)
+
+        def _decode_qr(path):
+            try:
+                import cv2
+                img = cv2.imread(path)
+                if img is None:
+                    qr_status.config(text="Could not open image file.", fg="red")
+                    return
+                detector = cv2.QRCodeDetector()
+                uri, _, _ = detector.detectAndDecode(img)
+                if not uri:
+                    qr_status.config(text="No QR code found in image.", fg="red")
+                    return
+                _local_totp_var.set(uri)
+                totp_entry.config(show='*')
+                qr_status.config(text="TOTP URI read from QR code.", fg="green")
+            except Exception as e:
+                qr_status.config(text=f"Error reading QR: {e}", fg="red")
+
+        Button(_qr_row, text="Browse", padx=3, pady=0,
+               command=_browse_qr).pack(side="left", padx=(4, 0))
+        qr_status.pack(pady=(0, 4))
+
+        Label(win, text="CERN 2FA TOTP URI:").pack(pady=(6, 2))
+        _row = Frame(win)
+        _row.pack(pady=(0, 4), padx=10)
+        totp_entry = Entry(_row, textvariable=_local_totp_var, show='*', width=40,
+                           bd=1.5, highlightbackground="black", highlightthickness=1)
+        totp_entry.pack(side="left")
+        peek_btn = Button(_row, text="see", padx=2, pady=0, takefocus=0)
+        peek_btn.pack(side="left", padx=(2, 0))
+        peek_btn.bind("<ButtonPress-1>",   lambda _: totp_entry.config(show=''))
+        peek_btn.bind("<ButtonRelease-1>", lambda _: totp_entry.config(show='*'))
+
+        def _submit():
+            self.totp_uri_var.set(_local_totp_var.get())
+            self._totp_entry = totp_entry
+            self._totp_peek3 = peek_btn
+            self._totp_status_label.config(text="Resave schedule to save new credentials", fg="red")
+            win.destroy()
+
+        _btn_row = Frame(win)
+        _btn_row.pack(pady=(4, 10))
+        Button(_btn_row, text="Submit", command=_submit).pack(side="left", padx=6)
+        Button(_btn_row, text="Cancel", command=win.destroy).pack(side="left", padx=6)
+
     def _update_cern_fields_state(self, job_key):
         """Gray out CERN credentials when import job is active; re-enable for upload job."""
         enabled = (job_key != 'import_from_HGCAPI')
         state = "normal" if enabled else DISABLED
         fg = "black" if enabled else "gray"
-        for widget in (self._lxuser_entry, self._cern_pass_entry, self._cern_peek2,
-                       self._totp_entry, self._totp_peek3):
+        for widget in (self._lxuser_entry, self._cern_pass_entry, self._cern_peek2):
             widget.config(state=state)
+        for attr in ('_totp_entry', '_totp_peek3'):
+            w = getattr(self, attr, None)
+            if w is not None:
+                try:
+                    w.config(state=state)
+                except Exception:
+                    pass
         for label in (self._lxuser_label, self._cern_pass_label, self._totp_label):
             label.config(fg=fg)
 

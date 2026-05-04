@@ -579,7 +579,7 @@ def main():
 
     if cern_auto_upload:
         from task_scheduler.scheduler_helper import get_lxplus_username_password
-        lxp_username, lxp_password = get_lxplus_username_password()
+        lxp_username, lxp_password, totp_uri = get_lxplus_username_password()
         mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
                             "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
         mass_upload_to_dbloader = mass_upload_methods[mass_upload_method]
