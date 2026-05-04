@@ -23,11 +23,16 @@ def get_lxplus_username_password():
         encrypted_password_lxplus = f.read()
     
     service_account_password = cipher_suite.decrypt(encrypted_password_lxplus).decode()
-    return dbl_username, service_account_password
+    totp_uri_path = os.path.join(PROJECT_ROOT, 'task_scheduler', 'totp_uri.enc')
+    service_account_totpuri = None
+    if os.path.exists(totp_uri_path):
+        with open(totp_uri_path, "rb") as f:
+            service_account_totpuri = cipher_suite.decrypt(f.read()).decode()
+    return dbl_username, service_account_password, service_account_totpuri
 
 
 def run_ssh_master(dbloader_hostname = 'dbloader-hgcal.cern.ch', scp_persist = 'yes'):
-    dbl_username, service_account_password = get_lxplus_username_password()
+    dbl_username, service_account_password, totp_uri = get_lxplus_username_password()
     controlpathname = "ctrl_dbloader"
     sockpath = os.path.expanduser(f"~/.ssh/{controlpathname}")
     os.makedirs(os.path.dirname(sockpath), exist_ok=True)
@@ -255,15 +260,24 @@ class set_automation_schedule(Toplevel):
         _peek2.bind("<ButtonPress-1>",   lambda _: cern_pass_var_entry.config(show=''))
         _peek2.bind("<ButtonRelease-1>", lambda _: cern_pass_var_entry.config(show='*'))
 
-        self._totp_label = Label(self.left_col, text="**Enter CERN 2FA TOTP URI (optional):**")
+        self._totp_label = Label(self.left_col, text="**Provide CERN 2FA TOTP URI (optional):**")
         self._totp_label.pack(pady=1)
         _saved_totp_uri = ""
-        if self.encryption_key and os.path.exists(self.totp_uri_path):
-            try:
-                _saved_totp_uri = Fernet(self.encryption_key).decrypt(open(self.totp_uri_path, "rb").read()).decode()
-            except Exception:
-                pass
-        self.totp_uri_var = StringVar(value=_saved_totp_uri)
+        try:
+            _, _, _saved_totp_uri = get_lxplus_username_password()
+            if _saved_totp_uri is None:
+                _saved_totp_uri = ""
+        except Exception as e:
+            pass #print(e)
+        if _saved_totp_uri:
+            _totp_user = _saved_totp_uri.split('CERN:')[-1].split('?')[0] if 'CERN:' in _saved_totp_uri else None
+            _totp_status_text = f"2FA TOTP URI exists for '{_totp_user}'" if _totp_user else "2FA TOTP URI exists"
+        else:
+            _totp_status_text = "No 2FA TOTP URI available"
+        self.saved_totp_uri = _saved_totp_uri
+        self._totp_status_label = Label(self.left_col, text=_totp_status_text, fg="blue")
+        self._totp_status_label.pack(pady=(0, 1))
+        self.totp_uri_var = StringVar(value="")
         _row3 = Frame(self.left_col); _row3.pack(pady=0)
         self._totp_row = _row3
         totp_uri_entry = Entry(_row3, textvariable=self.totp_uri_var, show='*', width=27, bd=1.5, highlightbackground="black", highlightthickness=1)
@@ -690,7 +704,7 @@ class set_automation_schedule(Toplevel):
             f.write(encrypted_postgres_password)
         with open(self.lxplus_pass_path, "wb") as f:
             f.write(encrypted_lxplus_password)
-        totp_uri_val = self.totp_uri_var.get().strip()
+        totp_uri_val = self.totp_uri_var.get().strip() or self.saved_totp_uri
         if totp_uri_val:
             encrypted_totp_uri = cipher_suite.encrypt(totp_uri_val.encode())
             with open(self.totp_uri_path, "wb") as f:
@@ -709,7 +723,7 @@ class set_automation_schedule(Toplevel):
         self.config_dict['postgres_shipper_pass_path'] = self.postgres_pass_path
         self.config_dict['encrypt_path'] = self.encrypt_path
         self.config_dict['postgres_username'] = 'shipper'
-        if self.totp_uri_var.get().strip():
+        if self.totp_uri_var.get().strip() or self.saved_totp_uri:
             self.config_dict['CERN_totp_uri_path'] = self.totp_uri_path
         
         py_job_fname = os.path.join(self.task_scheduler_path, 'run_as_scheduled.py')
