@@ -1,4 +1,4 @@
-import platform, os, argparse, base64, subprocess
+import platform, os, argparse, base64, subprocess, pyotp
 from pathlib import Path
 import datetime, time, yaml, paramiko, pwinput, sys, re, math, shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -82,12 +82,11 @@ def get_files_by_type(files_list, file_type = 'build'):
     type_files = []
     other_files = []
     file_type = [file_type] if type(file_type) == str else file_type
-    for ft in file_type:
-        for fname in files_list:
-            if ft in fname.lower(): 
-                type_files.append(fname)
-            else:
-                other_files.append(fname)
+    for fname in files_list:
+        if any(ft in fname for ft in file_type):
+            type_files.append(fname)
+        else:
+            other_files.append(fname)
     return type_files, other_files
 
 def get_proto_module_files(files_list):
@@ -301,30 +300,48 @@ class mass_upload_to_dbloader_via_paramiko:
         self.connect()
         time.sleep(5) ## wait for the connection to happen
         
-    def connect(self):
-        self.ssh_server1 = paramiko.SSHClient()
-        self.ssh_server1.load_system_host_keys()
-        self.ssh_server1.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    def _kb_interactive_handler(self, _title, _instructions, prompt_list):
+        answers = []
+        for prompt, _echo in prompt_list:
+            if "2nd factor" in prompt.lower():
+                totp_available = self.totp_uri and self.lxp_username in self.totp_uri
+                answers.append(pyotp.parse_uri(self.totp_uri).now() if totp_available else "")
+            else:
+                answers.append(self.lxp_password or "")
+        return answers
 
-        try:
-            self.ssh_server1.connect(hostname='lxplus.cern.ch', username=self.lxp_username, password=self.lxp_password)
-            transport = self.ssh_server1.get_transport()
-            dest_addr = (self.dbloader_hostname, 22)  
-            local_addr = ('127.0.0.1', 22) # localhost
-            channel = transport.open_channel("direct-tcpip", dest_addr, local_addr)
-            self.ssh_server2 = paramiko.SSHClient()
-            self.ssh_server2.load_system_host_keys()
-            self.ssh_server2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self.ssh_server2.connect(hostname=self.dbloader_hostname, username=self.lxp_username, password=self.lxp_password, sock=channel)
-            self.ssh_conn = self.ssh_server2.get_transport()
-            return 0  ## success
-        
-        except paramiko.AuthenticationException:
-            print("Authentication failed, please verify your credentials.")
-        except paramiko.SSHException as e:
-            print(f"SSH exception occurred: {e}")
-        except Exception as e:
-            print(f"An error occurred: {e}")
+    def connect(self):
+        for attempt in range(2):
+            self.ssh_server1 = paramiko.SSHClient()
+            self.ssh_server1.load_system_host_keys()
+            self.ssh_server1.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            try:
+                self.ssh_server1.connect(hostname='lxplus.cern.ch', username=self.lxp_username, password=self.lxp_password, allow_agent=False, look_for_keys=False)
+                transport = self.ssh_server1.get_transport()
+                if not transport.is_authenticated():
+                    transport.auth_interactive(self.lxp_username, self._kb_interactive_handler)
+                dest_addr = (self.dbloader_hostname, 22)
+                local_addr = ('127.0.0.1', 22) # localhost
+                channel = transport.open_channel("direct-tcpip", dest_addr, local_addr)
+                self.ssh_server2 = paramiko.SSHClient()
+                self.ssh_server2.load_system_host_keys()
+                self.ssh_server2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                self.ssh_server2.connect(hostname=self.dbloader_hostname, username=self.lxp_username, password=self.lxp_password, sock=channel)
+                self.ssh_conn = self.ssh_server2.get_transport()
+                return 0  ## success
+
+            except paramiko.AuthenticationException:
+                if attempt == 0:
+                    print("Authentication failed, retrying with a fresh TOTP code ...")
+                    self.ssh_server1.close()
+                else:
+                    print("Authentication failed, please verify your credentials.")
+            except paramiko.SSHException as e:
+                print(f"SSH exception occurred: {e}")
+                break
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                break
         return 255
 
     def close_scp(self):
@@ -585,7 +602,8 @@ def main():
         lxp_username, lxp_password, totp_uri = get_lxplus_username_password()
         mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
                             "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
-        mass_upload_to_dbloader = mass_upload_methods["via_ssh_controlmaster"] if totp_uri else mass_upload_methods[mass_upload_method]
+        mass_upload_to_dbloader = mass_upload_methods[mass_upload_method]
+        #### mass_upload_to_dbloader = mass_upload_methods["via_ssh_controlmaster"] if totp_uri else mass_upload_methods[mass_upload_method]
 
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
     files_found_all = find_files_by_date(directory_to_search, search_date)
