@@ -12,7 +12,6 @@ def get_lxplus_username_password():
     PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
     conn_yaml_file = os.path.join(PROJECT_ROOT, os.path.join('dbase_info', 'conn.yaml'))
     conn_info  = yaml.safe_load(open(conn_yaml_file, 'r'))
-    use_2fa_totp = conn_info.get('use_2fa_totp', False)
     sched_config_file = os.path.join(PROJECT_ROOT, os.path.join('task_scheduler', 'schedule_config.yaml'))
     sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
     dbl_username = sched_config['CERN_service_account_username']
@@ -757,7 +756,7 @@ class set_automation_schedule(Toplevel):
                         child.close()
                         return
                     if idx == 1:
-                        if not _totp_uri:
+                        if not _totp_uri or _username not in _totp_uri:
                             messagebox.showerror("2FA Required", "LXPLUS requires a 2nd factor but no TOTP URI is saved. Please provide one via 'Update 2FA URI'.")
                             child.close()
                             return
