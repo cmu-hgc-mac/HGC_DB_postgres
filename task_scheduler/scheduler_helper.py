@@ -399,8 +399,26 @@ class set_automation_schedule(Toplevel):
             self._totp_status_label.config(text="Resave schedule to save new credentials", fg="red")
             win.destroy()
 
+        _totp_preview_frame = Frame(win, relief="groove", bd=1)
+        _totp_preview_frame.pack(pady=(6, 0), padx=10, fill="x")
+        Button(_totp_preview_frame, text="View current 2FA TOTP",
+               command=lambda: _show_current_totp()).pack(pady=(6, 2))
+        _totp_preview_label = Label(_totp_preview_frame, text="—", fg="gray")
+        _totp_preview_label.pack(pady=(0, 6))
+
+        def _show_current_totp():
+            uri = _local_totp_var.get().strip() or self.saved_totp_uri
+            if not uri:
+                _totp_preview_label.config(text="No TOTP URI available", fg="red")
+                return
+            try:
+                code = pyotp.parse_uri(uri).now()
+                _totp_preview_label.config(text=f"{code}", fg="blue", font=("Courier", 14, "bold"))
+            except Exception as e:
+                _totp_preview_label.config(text=f"Error: {e}", fg="red")
+
         _btn_row = Frame(win)
-        _btn_row.pack(pady=(4, 10))
+        _btn_row.pack(pady=(6, 10))
         Button(_btn_row, text="Submit", command=_submit).pack(side="left", padx=6)
         Button(_btn_row, text="Cancel", command=win.destroy).pack(side="left", padx=6)
 
