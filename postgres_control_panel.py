@@ -1,4 +1,4 @@
-import os, yaml, base64, sys, threading, atexit, signal, csv, math
+import os, yaml, base64, sys, threading, atexit, signal, csv, math, glob
 from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -30,6 +30,7 @@ cern_dbase      = config_data.get('cern_db', 'prod_db') ## 'dev_db'
 git_auto_pull   = config_data.get('git_auto_pull', True) ## 'dev_db'
 delete_xmls     = config_data.get('delete_xmls', True)
 php_port        = config_data.get('php_port', '8083')
+use_saved_credentials    = config_data.get('use_saved_credentials', False)
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
 scp_force_quit  = config_data.get('scp_force_quit', True)
 max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
@@ -37,6 +38,9 @@ max_box_per_shipment = int(config_data.get('max_box_per_shipment', 42))
 institution_abbr = config_data.get('institution_abbr')
 adminer_php_file = 'adminer-pgsql.php'
 php_url = f"http://127.0.0.1:{php_port}/{adminer_php_file}?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
+_sched_config = os.path.join('task_scheduler', 'schedule_config.yaml')
+_enc_files = glob.glob(os.path.join('task_scheduler', '*.enc'))
+saved_credentials_exist = os.path.exists(_sched_config) and len(_enc_files) >= 2
 
 try:
     if git_auto_pull:
@@ -430,7 +434,12 @@ def export_data():
     skip_uploaded_var = BooleanVar(value=True)
     skip_uploaded_var_entry = Checkbutton(input_window, text="Skip already uploaded parts", variable=skip_uploaded_var)
     skip_uploaded_var_entry.pack(pady=0)
-    
+    use_saved_creds_var = BooleanVar(value=use_saved_credentials if saved_credentials_exist else False)
+    use_saved_creds_var_entry = Checkbutton(input_window, text="Use available SERVICE account credentials", variable=use_saved_creds_var)
+    use_saved_creds_var_entry.pack(pady=0)
+    if not saved_credentials_exist:
+        use_saved_creds_var_entry.config(state=DISABLED)
+
     def select_specific():
         popup = Toplevel(input_window)
         popup.transient(input_window)        
@@ -495,6 +504,7 @@ def export_data():
         upload_prod_stat = upload_prod_var.get()
         deleteXML_stat = deleteXML_var.get()
         skip_uploaded_stat = skip_uploaded_var.get()
+        use_saved_creds_stat = use_saved_creds_var.get()
         partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if not (dbshipper_pass.strip() and lxp_username.strip()) :
@@ -521,7 +531,7 @@ def export_data():
             
             upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
             upload_prod_stat = upload_prod_stat if scp_status == 0 else False
-            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-skup", str(skip_uploaded_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
+            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-skup", str(skip_uploaded_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get()), "-autoupload", str(use_saved_creds_stat)]
             if partslistpre.strip():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
