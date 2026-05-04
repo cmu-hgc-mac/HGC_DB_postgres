@@ -82,12 +82,11 @@ def get_files_by_type(files_list, file_type = 'build'):
     type_files = []
     other_files = []
     file_type = [file_type] if type(file_type) == str else file_type
-    for ft in file_type:
-        for fname in files_list:
-            if ft in fname.lower(): 
-                type_files.append(fname)
-            else:
-                other_files.append(fname)
+    for fname in files_list:
+        if any(ft in fname for ft in file_type):
+            type_files.append(fname)
+        else:
+            other_files.append(fname)
     return type_files, other_files
 
 def get_proto_module_files(files_list):
