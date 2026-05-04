@@ -4,7 +4,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu, END, DISABLED
 from pathlib import Path
-import pexpect, paramiko
+import pexpect, paramiko, pyotp, cv2
 
 def get_lxplus_username_password():
     service_account_totpuri = None
@@ -362,7 +362,6 @@ class set_automation_schedule(Toplevel):
 
         def _decode_qr(path):
             try:
-                import cv2
                 img = cv2.imread(path)
                 if img is None:
                     qr_status.config(text="Could not open image file.", fg="red")
@@ -723,10 +722,37 @@ class set_automation_schedule(Toplevel):
         upload_job_exists = job_key == 'upload_to_CMSR' or 'upload_to_CMSR' in self.config_dict
         if upload_job_exists:
             try:
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect('lxplus.cern.ch', username=self.lxuser_var.get().strip(), password=self.cern_pass_var.get().strip(), timeout=15)
-                ssh.close()
+                _username = self.lxuser_var.get().strip()
+                _password = self.cern_pass_var.get().strip()
+                _totp_uri = self.totp_uri_var.get().strip() or self.saved_totp_uri
+                child = pexpect.spawn(f"ssh -o StrictHostKeyChecking=no {_username}@lxplus.cern.ch",
+                                      encoding="utf-8", timeout=30)
+                idx0 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=30)
+                if idx0 in (2, 3):
+                    # already authenticated via SSH key — no password/TOTP needed
+                    child.close()
+                elif idx0 == 0:
+                    child.sendline(_password)
+                    idx = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=30)
+                    if idx == 0:
+                        messagebox.showerror("Password Error", "LXPLUS authentication failed. Please check your CERN username and password.")
+                        child.close()
+                        return
+                    if idx == 1:
+                        if not _totp_uri:
+                            messagebox.showerror("2FA Required", "LXPLUS requires a 2nd factor but no TOTP URI is saved. Please provide one via 'Update 2FA URI'.")
+                            child.close()
+                            return
+                        totp_code = pyotp.parse_uri(_totp_uri).now()
+                        child.sendline(totp_code)
+                        idx2 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=30)
+                        if idx2 in (0, 1):
+                            messagebox.showerror("Password Error", "LXPLUS authentication failed. Please check your CERN credentials and TOTP URI.")
+                            child.close()
+                            return
+                    child.close()
+                else:
+                    child.close()
             except Exception as e:
                 print(e)
                 messagebox.showerror("Password Error", "LXPLUS authentication failed. Please check your CERN username and password.")
@@ -737,6 +763,13 @@ class set_automation_schedule(Toplevel):
         self.job_panel.destroy()
         self.job_panel = None
         self.selected_job.set("")
+        _saved_uri = self.totp_uri_var.get().strip() or self.saved_totp_uri
+        if _saved_uri:
+            _totp_user = _saved_uri.split('CERN:')[-1].split('?')[0] if 'CERN:' in _saved_uri else None
+            _status = f"2FA TOTP URI on file for '{_totp_user}'" if _totp_user else "2FA TOTP URI on file"
+        else:
+            _status = "No 2FA TOTP URI available"
+        self._totp_status_label.config(text=_status, fg="blue")
         messagebox.showinfo("Schedule Saved", f"{reverse[job_key]} schedule saved.\nCheck ./task_scheduler/schedule_config.yaml.")
         self.lift()
         self.focus_force()
