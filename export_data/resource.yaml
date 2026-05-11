@@ -97,7 +97,8 @@ shipping_location:
   Bogazici: 4101
   Brown: 1101
   CERN Electronics: 1002
-  CERN Hexa: 1001
+  # CERN Hexa: 1001
+  CERN Meyrin: 1001
   CERN Mechanics: 1003
   CERN P5: 1010
   CERN Sensors: 1004
