@@ -4,7 +4,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 print('RUNNING SCHEDULED CRON JOB', datetime.now())
-PROJECT_ROOT = Path(__file__).resolve().parents[1]  ## Global path of HGC_DB_postgres
+current = Path(__file__).resolve()
+PROJECT_ROOT = next(p for p in [current, *current.parents] if p.name == "HGC_DB_postgres")
+# PROJECT_ROOT = Path(__file__).resolve().parents[1]  ## Global path of HGC_DB_postgres
 os.chdir(PROJECT_ROOT)                 ### Changes working directory from device main directory to HGC_DB_postgres
 sys.path.insert(0, str(PROJECT_ROOT))  ### Changes python import path to be relative to HGC_DB_postgres
 
