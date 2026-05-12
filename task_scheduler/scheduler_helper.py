@@ -441,9 +441,23 @@ class set_automation_schedule(Toplevel):
             except Exception as e:
                 _totp_preview_label.config(text=f"Error: {e}", fg="red")
 
+        def _delete_totp_uri():
+            if not os.path.exists(self.totp_uri_path):
+                messagebox.showinfo("Delete URI", "No TOTP URI file exists.", parent=win)
+                return
+            if not messagebox.askyesno("Delete URI", "Delete the saved TOTP URI file?", parent=win):
+                return
+            os.remove(self.totp_uri_path)
+            self.saved_totp_uri = ""
+            self.totp_uri_var.set("")
+            _local_totp_var.set("")
+            self._totp_status_label.config(text="No 2FA TOTP URI available", fg="blue")
+            win.destroy()
+
         _btn_row = Frame(win)
         _btn_row.pack(pady=(6, 10))
         Button(_btn_row, text="Submit", command=_submit).pack(side="left", padx=6)
+        Button(_btn_row, text="Delete URI", fg="red", command=_delete_totp_uri).pack(side="left", padx=6)
         Button(_btn_row, text="Cancel", command=win.destroy).pack(side="left", padx=6)
 
     def _update_cern_fields_state(self, job_key):
