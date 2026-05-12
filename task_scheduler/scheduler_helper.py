@@ -6,6 +6,21 @@ from tkinter import Button, Checkbutton, Label, messagebox, Frame, Toplevel, Ent
 from pathlib import Path
 import pexpect, paramiko, pyotp, cv2
 
+def get_postgres_user_password():
+    current_file = Path(__file__).resolve()
+    PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
+    sched_config_file = os.path.join(PROJECT_ROOT, os.path.join('task_scheduler', 'schedule_config.yaml'))
+    sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
+
+    with open(sched_config['encrypt_path'], "rb") as key_file:
+        encryption_key = key_file.read()
+    cipher_suite = Fernet(encryption_key)
+    with open(sched_config['postgres_shipper_pass_path'], "rb") as f:
+        encrypted_password_postgres = f.read()
+    
+    postgres_user_password = cipher_suite.decrypt(encrypted_password_postgres).decode()
+    return postgres_user_password
+
 def get_lxplus_username_password():
     service_account_totpuri = None
     current_file = Path(__file__).resolve()
