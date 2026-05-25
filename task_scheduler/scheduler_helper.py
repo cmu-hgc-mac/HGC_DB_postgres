@@ -782,14 +782,18 @@ class set_automation_schedule(Toplevel):
                 _password = self.cern_pass_var.get().strip()
                 _totp_uri = self.totp_uri_var.get().strip() or self.saved_totp_uri
                 child = pexpect.spawn(f"ssh -o StrictHostKeyChecking=no {_username}@lxplus.cern.ch",
-                                      encoding="utf-8", timeout=30)
-                idx0 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=30)
-                if idx0 in (2, 3):
+                                      encoding="utf-8", timeout=60)
+                idx0 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=60)
+                if idx0 == 4:
+                    messagebox.showerror("Connection Error", "Timed out connecting to LXPLUS. Check your network and CERN username.")
+                    child.close()
+                    return
+                elif idx0 in (2, 3):
                     # already authenticated via SSH key — no password/TOTP needed
                     child.close()
                 elif idx0 == 0:
                     child.sendline(_password)
-                    idx = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=30)
+                    idx = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=60)
                     if idx == 0:
                         messagebox.showerror("Password Error", "LXPLUS authentication failed. Please check your CERN username and password.")
                         child.close()
@@ -801,7 +805,7 @@ class set_automation_schedule(Toplevel):
                             return
                         totp_code = pyotp.parse_uri(_totp_uri).now()
                         child.sendline(totp_code)
-                        idx2 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=30)
+                        idx2 = child.expect([r'.*?[Pp]assword:', r'2nd factor', r'\$\s*$', pexpect.EOF, pexpect.TIMEOUT], timeout=60)
                         if idx2 in (0, 1):
                             messagebox.showerror("Password Error", "LXPLUS authentication failed. Please check your CERN credentials and TOTP URI.")
                             child.close()
