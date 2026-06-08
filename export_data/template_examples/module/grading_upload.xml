@@ -39,6 +39,10 @@
             <MODULE_CORNER_COLORS>{{ module_corner_colors }}</MODULE_CORNER_COLORS>
             <CORNER_COLORGRADE_CRITERIA>{{ corner_colorgrade_criteria }}</CORNER_COLORGRADE_CRITERIA>
             <PROTO_CORNER_COLORS>{{ proto_corner_colors }}</PROTO_CORNER_COLORS>
+            <LIST_NOISY_CELLS>{{ list_noisy_cells }}</LIST_NOISY_CELLS>
+            <LIST_DEAD_CELLS>{{ list_dead_cells }}</LIST_DEAD_CELLS>
+            <LIST_GROUNDED_CELLS>{{ list_grounded_cells }}</LIST_GROUNDED_CELLS>
+            <LIST_UNBONDED_CELLS>{{ list_unbonded_cells }}</LIST_UNBONDED_CELLS>
         </DATA>
     </DATA_SET>
 </ROOT>
