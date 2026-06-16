@@ -22,7 +22,7 @@ def fetch_module_grades(mod_corner_colors = None, all_letter_grades = None):
         worst_letter_grade = 'null' if 'None' in all_letter_grades else max(all_letter_grades, key=str.lower)
     if mod_corner_colors:
         mod_corner_colors = [c.lower() for c in mod_corner_colors]
-        MODULE_CORNER_COLORGRADE = 'red' if 'red' in mod_corner_colors else ('purple' if 'purple' in mod_corner_colors else 'green')
+        MODULE_CORNER_COLORGRADE = 'red' if 'red' in mod_corner_colors else ('yellow' if 'yellow' in mod_corner_colors else ('purple' if 'purple' in mod_corner_colors else 'green'))
     
     installation_score = 0 if (MODULE_CORNER_COLORGRADE in ['red','null','None'] or worst_letter_grade.upper() in ['F','null','None']) else 1
     return installation_score, MODULE_CORNER_COLORGRADE
