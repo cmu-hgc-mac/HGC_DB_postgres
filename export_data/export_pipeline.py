@@ -154,6 +154,7 @@ async def main():
     parser.add_argument('-delx', '--del_xml', default='False', required=False, help="Delete XMLs after upload.")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
     parser.add_argument('-autoupload', '--cern_auto_upload', default='False', required=False, help="True if the upload is automated via a service account")
+    parser.add_argument('-xmlauto', '--xml_auto_yaml', default='False', required=False, help="True to read XML selection from task_scheduler/list_of_xmls_auto.yaml instead of export_data/list_of_xmls.yaml")
     parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip parts already uploaded to CERN DB")
 
     args = parser.parse_args()
@@ -178,7 +179,7 @@ async def main():
         ## Step 1: Generate XML files
     cerndb = 'dev_db' if upload_dev_stat else 'prod_db'
     if str2bool(args.generate_stat):
-        generate_xmls(dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cern_auto_upload=str2bool(args.cern_auto_upload), cerndb=cerndb, skip_uploaded=skip_uploaded)
+        generate_xmls(dbpassword=dbpassword, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, cern_auto_upload=str2bool(args.xml_auto_yaml), cerndb=cerndb, skip_uploaded=skip_uploaded)
         find_missing_var_xml(time_limit=90)
         print("Waiting 3 seconds ...")
         time.sleep(3) ### XMLs take a few seconds to get saved

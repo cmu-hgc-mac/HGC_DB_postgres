@@ -75,6 +75,7 @@ def run_job(job_type):
             export_data_cmd = [sys.executable, 
                             "export_data/export_pipeline.py", 
                             "-autoupload", str(True),
+                            "-xmlauto", str(True),
                             "-dbp", dbshipper_pass, 
                             "-lxu", lxp_username, 
                             "-k", encryption_key, 

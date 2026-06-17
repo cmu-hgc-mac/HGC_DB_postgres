@@ -185,6 +185,13 @@ async def check_good_conn(dbpassword, encryption_key = None,  user_type = None):
     else:
         return False
 
+def run_check_good_conn(dbpassword, encryption_key = None, user_type = None):
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(check_good_conn(dbpassword, encryption_key=encryption_key, user_type=user_type))
+    finally:
+        loop.close()
+
 async def get_conn(dbpassword, encryption_key = None, user_type = None, pool=False):
     user_type = user_type if user_type else 'shipper'
     '''

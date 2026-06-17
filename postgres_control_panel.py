@@ -1,4 +1,4 @@
-import os, yaml, base64, sys, threading, atexit, signal, csv, math, glob, shutil
+import os, yaml, base64, sys, threading, atexit, signal, csv, math, glob
 from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -51,7 +51,7 @@ except:
 
 from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
 from task_scheduler.scheduler_helper import set_automation_schedule
-from export_data.src import open_scp_connection, check_good_conn, dbloader_hostname
+from export_data.src import open_scp_connection, run_check_good_conn, dbloader_hostname
 from export_data.src import process_xml_list, update_yaml_with_checkboxes
 process_xml_list()
 
@@ -226,7 +226,7 @@ def verify_shipin():
         temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+            if run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
                 popup1 = Toplevel(input_window); popup1.title("Enter Barcode of Parts")
                 popup1.transient(input_window)        
                 popup1.attributes("-topmost", True)
@@ -261,7 +261,7 @@ def verify_shipin():
     def upload_file_with_part_in():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+            if run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
                 popup2 = Toplevel()
                 popup2.title("Upload text/csv file with component names")
                 file_entry = None
@@ -363,7 +363,7 @@ def import_data():
             if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
                 if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
-            elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+            elif not run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
                 show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
@@ -441,19 +441,13 @@ def export_data():
         use_saved_creds_var_entry.config(state=DISABLED)
 
     def select_specific():
-        use_auto = use_saved_creds_var.get()
-        xml_auto_yaml = os.path.join('task_scheduler', 'list_of_xmls_auto.yaml')
-        xml_source_yaml = os.path.join('export_data', 'list_of_xmls.yaml')
-        if use_auto and not os.path.exists(xml_auto_yaml):
-            shutil.copy(xml_source_yaml, xml_auto_yaml)
-
         popup = Toplevel(input_window)
         popup.transient(input_window)
         popup.attributes("-topmost", True)
         popup.focus_force()
-        popup.title("Select XMLs" + (" (auto)" if use_auto else ""))
+        popup.title("Select XMLs")
 
-        xml_list = process_xml_list(get_yaml_data = True, cern_auto_upload=use_auto)
+        xml_list = process_xml_list(get_yaml_data = True)
         checkbox_vars = {}
 
         def create_checkboxes(xml_list, parent):
@@ -496,7 +490,7 @@ def export_data():
 
         def submit_selection():
             updated_data = update_yaml_with_checkboxes(xml_list = xml_list, checkbox_vars=checkbox_vars)
-            process_xml_list(updated_data, cern_auto_upload=use_auto)
+            process_xml_list(updated_data)
             popup.destroy()
 
         submit_select_button = Button(popup, text="Submit", command=submit_selection)
@@ -516,7 +510,7 @@ def export_data():
         if not (dbshipper_pass.strip() and lxp_username.strip()) :
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not run_check_good_conn(shipper_var.get().strip()):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy(); input_window.update()  
@@ -619,7 +613,7 @@ def record_shipout():
         if not dbshipper_pass.strip(): 
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not run_check_good_conn(shipper_var.get().strip()):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             # popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
@@ -638,7 +632,7 @@ def record_shipout():
         if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not run_check_good_conn(shipper_var.get().strip()):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             popup1 = enter_part_barcodes_shipment(input_window, encryption_key, dbshipper_pass, max_box_per_shipment, entries)
@@ -691,7 +685,7 @@ def refresh_data():
         if not dbshipper_pass.strip():
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+        elif not run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy()  

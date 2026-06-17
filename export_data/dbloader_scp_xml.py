@@ -606,10 +606,7 @@ def main():
     if cern_auto_upload:
         from task_scheduler.scheduler_helper import get_lxplus_username_password
         lxp_username, lxp_password, totp_uri = get_lxplus_username_password()
-        mass_upload_methods = {"via_ssh_controlmaster": mass_upload_to_dbloader_via_ssh_controlmaster,
-                            "via_paramiko": mass_upload_to_dbloader_via_paramiko,}
-        mass_upload_to_dbloader = mass_upload_methods[mass_upload_method]
-        #### mass_upload_to_dbloader = mass_upload_methods["via_ssh_controlmaster"] if totp_uri else mass_upload_methods[mass_upload_method]
+        mass_upload_to_dbloader = mass_upload_to_dbloader_via_paramiko
 
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
     files_found_all = find_files_by_date(directory_to_search, search_date)

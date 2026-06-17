@@ -769,8 +769,8 @@ class set_automation_schedule(Toplevel):
         self.selected_job.set(reverse[job_key])
 
         # Validate DB password
-        from export_data.src import check_good_conn
-        if not asyncio.run(check_good_conn(self.shipper_var.get().strip(), user_type='editor')):
+        from export_data.src import run_check_good_conn
+        if not run_check_good_conn(self.shipper_var.get().strip(), user_type='editor'):
             messagebox.showerror("Password Error", "Database password is incorrect. Please update and try again.")
             return
 
