@@ -1,4 +1,4 @@
-import os, yaml, base64, sys, threading, atexit, signal, csv, math, glob
+import os, yaml, base64, sys, threading, atexit, signal, csv, math, glob, shutil
 from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -441,15 +441,21 @@ def export_data():
         use_saved_creds_var_entry.config(state=DISABLED)
 
     def select_specific():
+        use_auto = use_saved_creds_var.get()
+        xml_auto_yaml = os.path.join('task_scheduler', 'list_of_xmls_auto.yaml')
+        xml_source_yaml = os.path.join('export_data', 'list_of_xmls.yaml')
+        if use_auto and not os.path.exists(xml_auto_yaml):
+            shutil.copy(xml_source_yaml, xml_auto_yaml)
+
         popup = Toplevel(input_window)
-        popup.transient(input_window)        
+        popup.transient(input_window)
         popup.attributes("-topmost", True)
         popup.focus_force()
-        popup.title("Select XMLs")
-        
-        xml_list = process_xml_list(get_yaml_data = True)
+        popup.title("Select XMLs" + (" (auto)" if use_auto else ""))
+
+        xml_list = process_xml_list(get_yaml_data = True, cern_auto_upload=use_auto)
         checkbox_vars = {}
-        
+
         def create_checkboxes(xml_list, parent):
             if isinstance(xml_list, dict):
                 for key, value in xml_list.items():
@@ -468,7 +474,7 @@ def export_data():
             return {}
 
         create_checkboxes(xml_list, popup)
-        toggle_state = {"all_selected": True} 
+        toggle_state = {"all_selected": True}
 
         def toggle_all():
             toggle_state["all_selected"] = not toggle_state["all_selected"]
@@ -490,9 +496,9 @@ def export_data():
 
         def submit_selection():
             updated_data = update_yaml_with_checkboxes(xml_list = xml_list, checkbox_vars=checkbox_vars)
-            process_xml_list(updated_data)
+            process_xml_list(updated_data, cern_auto_upload=use_auto)
             popup.destroy()
-        
+
         submit_select_button = Button(popup, text="Submit", command=submit_selection)
         submit_select_button.pack(pady=8)
         
@@ -526,7 +532,9 @@ def export_data():
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
                 if open_scp_connection(lxp_username=lxp_username, get_scp_status=True) != 0:
+                    print("use_saved_creds_stat")
                     if not use_saved_creds_stat:
+                        print(use_saved_creds_stat)
                         show_message(f"Check terminal to enter LXPLUS credentials.")
                 scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=use_saved_creds_stat)
             
