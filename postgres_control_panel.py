@@ -524,14 +524,12 @@ def export_data():
             # subprocess.run(export_command_list) ### generate files before requesting LXplus credentials
             
             scp_status = 0
-            if upload_dev_stat or upload_prod_stat:
+            if (upload_dev_stat or upload_prod_stat) and not use_saved_creds_stat:
                 if open_scp_connection(lxp_username=lxp_username, get_scp_status=True) != 0:
-                    if not use_saved_creds_stat:
-                        show_message(f"Check terminal to enter LXPLUS credentials.")
-                scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=use_saved_creds_stat)
-            
-            upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
-            upload_prod_stat = upload_prod_stat if scp_status == 0 else False
+                    show_message(f"Check terminal to enter LXPLUS credentials.")
+                scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+                upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
+                upload_prod_stat = upload_prod_stat if scp_status == 0 else False
             export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-skup", str(skip_uploaded_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get()), "-autoupload", str(use_saved_creds_stat)]
             if partslistpre.strip():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
