@@ -532,9 +532,7 @@ def export_data():
             scp_status = 0
             if upload_dev_stat or upload_prod_stat:
                 if open_scp_connection(lxp_username=lxp_username, get_scp_status=True) != 0:
-                    print("use_saved_creds_stat")
                     if not use_saved_creds_stat:
-                        print(use_saved_creds_stat)
                         show_message(f"Check terminal to enter LXPLUS credentials.")
                 scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, cern_auto_upload=use_saved_creds_stat)
             
