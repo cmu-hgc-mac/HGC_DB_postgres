@@ -128,10 +128,13 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None, skip_u
     for row in rows:
         row = dict(row) ## type(row) = <class 'asyncpg.Record'>, so we need to convert it to a dictionary 
         if row['roc_name'] is None:
-            hxb_data = read_from_cern_db(partID = row['hxb_name'], cern_db_url = 'hgcapi')
-            hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
-            hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
-            row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
+            try:
+                hxb_data = read_from_cern_db(partID = row['hxb_name'], cern_db_url = 'hgcapi')
+                hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
+                hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
+                row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
+            except:
+                print(f"ROC missing on CMSR for {row['hxb_name']}")
 
         date_test = row['date_test']
         time_test = str(row['time_test']).split('.')[0]
