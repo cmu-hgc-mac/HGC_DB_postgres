@@ -1,6 +1,7 @@
 mod_qc_no,serial PRIMARY KEY,primary key,,
 module_no,INT,primary key in module_info table,fk_mod_pedtest,module_info
 module_name,TEXT,Module serial number (no dashes) i.e. 320MLF2W2CM0001,fk_identifier,
+install_grade,SMALLINT,"Reject=0; OK=1; SPARE=2",,
 final_grade,TEXT,"Overall grade (A, B, C) minimum of subset grades",,
 final_grade_def,TEXT,String to describe how final grade is decided,,
 comments_all,TEXT,Collection of comments from all parts of module assembly,,
