@@ -40,6 +40,7 @@ i_ratio_ref_b_over_a,REAL,Ratio of currents at ref voltage B over ref voltage A;
 ref_volt_a,REAL,Reference voltage A,,
 ref_volt_b,REAL,Reference voltage B,,
 i_at_ref_a,REAL,Current (Ampere) at reference voltage A; used for grading,,
+i_at_half_v_dep,REAL,Current (Ampere) at half of depletion voltage; used to distinguish really broken IVs vs early breakdown,,
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
