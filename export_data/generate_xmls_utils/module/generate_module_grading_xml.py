@@ -37,9 +37,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     try:
         if partsnamelist:
             if skip_uploaded:
-                query = f"""SELECT module_name, mod_qc_no, grade_timestamp FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+                query = f"""SELECT m.module_name, m.mod_qc_no, m.grade_timestamp FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """  ### Get the latest for each requested module
             else:
-                query = f"""SELECT module_name, mod_qc_no, grade_timestamp FROM module_qc_summary WHERE module_name = ANY($1) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+                query = f"""SELECT m.module_name, m.mod_qc_no, m.grade_timestamp FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """  ### Get the latest for each requested module
             results = await conn.fetch(query, partsnamelist)
         else:
             if skip_uploaded:
@@ -53,9 +55,11 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     except:   #### In the case that the MACs have not created the timestamp column
         if partsnamelist:
             if skip_uploaded:
-                query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+                query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) AND (xml_upload_success IS NULL OR xml_upload_success = FALSE) GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """  ### Get the latest for each requested module
             else:
-                query = f"""SELECT module_name, mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) ORDER BY mod_qc_no DESC LIMIT 1"""  ### Get the latest for that module
+                query = f"""SELECT m.module_name, m.mod_qc_no FROM module_qc_summary m JOIN (SELECT module_name, MAX(mod_qc_no) AS max_mod_qc_no FROM module_qc_summary WHERE module_name = ANY($1) GROUP BY module_name) latest
+                    ON latest.module_name = m.module_name AND latest.max_mod_qc_no = m.mod_qc_no ORDER BY m.module_name DESC """  ### Get the latest for each requested module
             results = await conn.fetch(query, partsnamelist)
         else:
             if skip_uploaded:
