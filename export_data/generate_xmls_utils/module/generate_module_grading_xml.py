@@ -135,11 +135,21 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 
 
             ### Determine Installation Criteria
+            grades_to_get = [''             ,'protoGeom'      ,'modGeom'         ,'IV'      , 'ROC']
             grades_to_get = ['OVERALL_GRADE','PROTO_MECH_GRADE','MODULE_MECH_GRADE','IV_GRADE','READOUT_GRADE']
             all_letter_grades = [db_values.get(grade_type, "F") for grade_type in grades_to_get]
             mod_corner_colors = db_values.get('MODULE_CORNER_COLORS', ["purple"])
             installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
             db_values['INSTALLATION_MODULE'] = installation_score
+
+            indices = [i for i, grade in enumerate(all_letter_grades[1:]) if grade == all_letter_grades[0]]
+            
+            if indices:
+                reason = " (" + ",".join(grades_to_get[i] for i in indices) + ")"
+            else:
+                reason = ""
+
+            db_values['OVERALL_GRADE'] = all_letter_grades[0] + reason
 
             # Update the XML with the database values
             combined_str_mod = str(combined_str).replace("-","").replace(" ","T").replace(":","").split('.')[0]
