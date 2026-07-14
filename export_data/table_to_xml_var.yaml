@@ -1378,6 +1378,13 @@ module_grading:
   nullable: 'yes'
   nested_query: null
   default_value: null
+- xml_temp_val: INSTALLATION_CRITERIA
+  dbase_col: installation_def
+  dbase_table: module_qc_summary
+  xml_tag: INSTALLATION_CRITERIA
+  nullable: 'yes'
+  nested_query: null
+  default_value: null
 - xml_temp_val: PROTO_MECH_GRADE
   dbase_col: proto_grade
   dbase_table: module_qc_summary

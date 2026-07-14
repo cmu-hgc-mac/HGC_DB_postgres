@@ -24,6 +24,7 @@
         </PART>
         <DATA>
             <INSTALLATION_MODULE>{{ installation_module }}</INSTALLATION_MODULE>
+            <INSTALLATION_CRITERIA>{{ installation_criteria }}</INSTALLATION_CRITERIA>
             <OVERALL_GRADE>{{ overall_grade }}</OVERALL_GRADE>
             <GRADE_CRITERIA>{{ grade_criteria }}</GRADE_CRITERIA>
             <PROTO_MECH_GRADE>{{ proto_mech_grade }}</PROTO_MECH_GRADE>
