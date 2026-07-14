@@ -285,7 +285,7 @@ class set_automation_schedule(Toplevel):
         _peek2.bind("<ButtonRelease-1>", lambda _: cern_pass_var_entry.config(show='*'))
 
         self._totp_label = Label(self.left_col, text="**Provide CERN 2FA TOTP URI (optional):**")
-        self._totp_label.pack(pady=1)
+        # self._totp_label.pack(pady=1)  ### uncomment to show it
         _saved_totp_uri = ""
         try:
             _, _, _saved_totp_uri = get_lxplus_username_password()
@@ -302,10 +302,9 @@ class set_automation_schedule(Toplevel):
         self.totp_uri_var = StringVar(value="")
         _totp_status_row = Frame(self.left_col)
         _totp_status_row.pack(pady=(0, 1))
-        Button(_totp_status_row, text="Update 2FA URI", padx=3, pady=0,
-               command=self._open_totp_update_window).pack(side="left", padx=(0, 4))
-        self._totp_status_label = Label(_totp_status_row, text=_totp_status_text, fg="blue")
-        self._totp_status_label.pack(side="left")
+        # Button(_totp_status_row, text="Update 2FA URI", padx=3, pady=0, command=self._open_totp_update_window).pack(side="left", padx=(0, 4))
+        # self._totp_status_label = Label(_totp_status_row, text=_totp_status_text, fg="blue")
+        # self._totp_status_label.pack(side="left")  ### uncomment to show it
 
         buttons_frame = Frame(self.left_col)
         buttons_frame.pack(pady=(5, 0))
