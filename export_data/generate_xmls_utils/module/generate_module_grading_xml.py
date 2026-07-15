@@ -132,8 +132,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             all_letter_grades = [db_values.get(grade_type, "F") for grade_type in grades_to_get]
             # mod_corner_colors = db_values.get('MODULE_CORNER_COLORS', ["purple"])
             # installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
-            if db_values.get('installation_module') not in ['0','1','2']:
-                db_values['INSTALLATION_MODULE'] = 9
+            if db_values.get('INSTALLATION_MODULE') not in [0,1,2]:
+                db_values['INSTALLATION_MODULE'] = 9 ### definition undefined
 
             final_grade_reason = qc_summary_row.get('final_grade_reason')
 
