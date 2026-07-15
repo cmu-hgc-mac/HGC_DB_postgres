@@ -24,6 +24,7 @@
         </PART>
         <DATA>
             <INSTALLATION_MODULE>{{ installation_module }}</INSTALLATION_MODULE>
+            <INSTALLATION_CRITERIA>{{ installation_criteria }}</INSTALLATION_CRITERIA>
             <OVERALL_GRADE>{{ overall_grade }}</OVERALL_GRADE>
             <GRADE_CRITERIA>{{ grade_criteria }}</GRADE_CRITERIA>
             <PROTO_MECH_GRADE>{{ proto_mech_grade }}</PROTO_MECH_GRADE>
@@ -43,6 +44,7 @@
             <LIST_DEAD_CELLS>{{ list_dead_cells }}</LIST_DEAD_CELLS>
             <LIST_GROUNDED_CELLS>{{ list_grounded_cells }}</LIST_GROUNDED_CELLS>
             <LIST_UNBONDED_CELLS>{{ list_unbonded_cells }}</LIST_UNBONDED_CELLS>
+            <LIST_HIGHILEAK_CELLS>{{ list_highileak_cells }}</LIST_HIGHILEAK_CELLS>
         </DATA>
     </DATA_SET>
 </ROOT>
