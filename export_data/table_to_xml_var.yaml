@@ -1497,6 +1497,12 @@ module_grading:
   xml_tag: LIST_DEAD_CELLS
   nested_query: null
   nullable: 'yes'
+- xml_temp_val: LIST_HIGHILEAK_CELLS
+  dbase_col: list_highileak_cells
+  dbase_table: module_qc_summary
+  xml_tag: LIST_HIGHILEAK_CELLS
+  nested_query: null
+  nullable: 'yes'
 - xml_temp_val: LIST_GROUNDED_CELLS
   dbase_col: list_cells_grounded
   dbase_table: module_qc_summary
