@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, skip_uploaded=True):
 
     # Load the YAML file
     with open(yaml_file, 'r') as file:
@@ -28,29 +28,30 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                      'module_iv_test', 'module_pedestal_test', 'module_pedestal_plots', 'module_qc_summary']
     
     module_list = set()
+    skip_filter = "AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)" if skip_uploaded else ""
     # Get the unique module names for the specified date
     for dbase_table in dbase_tables:
         if partsnamelist:
-            query = f"""SELECT REPLACE(module_name,'-','') AS module_name FROM {dbase_table} WHERE module_name = ANY($1)"""
+            query = f"""SELECT REPLACE(module_name,'-','') AS module_name FROM {dbase_table} WHERE module_name = ANY($1) {skip_filter}"""
             results = await conn.fetch(query, partsnamelist)
         else:
             if dbase_table.endswith('_inspect'):
                 module_query = f"""
                 SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
                 FROM {dbase_table}
-                WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' 
+                WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' {skip_filter}
                 """
             elif dbase_table.endswith('_test'):
                 module_query = f"""
                 SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
                 FROM {dbase_table}
-                WHERE date_test BETWEEN '{date_start}' AND '{date_end}' 
+                WHERE date_test BETWEEN '{date_start}' AND '{date_end}' {skip_filter}
                 """
             elif dbase_table.endswith('_assembly'):
                 module_query = f"""
                 SELECT DISTINCT REPLACE(module_name,'-','') AS module_name
                 FROM {dbase_table}
-                WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
+                WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' {skip_filter}
                 """
 
             results = await conn.fetch(module_query)
@@ -88,21 +89,19 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = f"""SELECT hxb_inspect.avg_thickness FROM module_assembly  JOIN hxb_inspect  ON REPLACE(module_assembly.hxb_name, '-', '') = REPLACE(hxb_inspect.hxb_name, '-', '')  WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}' AND module_assembly.xml_upload_success IS NULL ORDER BY hxb_inspect.date_inspect DESC LIMIT 1;"""
+                        query = f"""SELECT hxb_inspect.avg_thickness FROM module_assembly  JOIN hxb_inspect  ON REPLACE(module_assembly.hxb_name, '-', '') = REPLACE(hxb_inspect.hxb_name, '-', '')  WHERE REPLACE(module_assembly.module_name, '-', '') = '{module}' ORDER BY hxb_inspect.date_inspect DESC LIMIT 1;"""
                     else:
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}' 
-                            -- AND xml_upload_success IS NULL 
                             """
                             # ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(module_name,'-','') = '{module}' 
-                            -- AND xml_upload_success IS NULL 
                             """
                             # ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
 
@@ -142,7 +141,8 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             db_values[xml_var] = results.get(dbase_col, '') if not entry['nested_query'] else list(results.values())[0]
             
             # Update the XML with the database values
-            output_file_name = f'{module}_{os.path.basename(xml_file_path)}'
+            combined_str_mod = str(dt_obj).replace("-","").replace(" ","T").replace(":","").split('.')[0]
+            output_file_name = f"{module}_{combined_str_mod}_{os.path.basename(xml_file_path)}"
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
             await update_timestamp_col(conn,
@@ -156,7 +156,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
 
 
-async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
+async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None, skip_uploaded=True):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/module/assembly_upload.xml'# XML template file path
@@ -166,9 +166,11 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded)
     finally:
         await conn.close()
+
+    zip_xmls_by_timestamp(xml_output_dir, os.path.basename(xml_file_path))
 
 # Run the asyncio program
 if __name__ == "__main__":
@@ -176,20 +178,22 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
-    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
+    parser.add_argument('-lxu', '--lxpusername', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
-    args = parser.parse_args()   
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    args = parser.parse_args()
 
-    lxplus_username = args.dbl_username
+    lxplus_username = args.lxpusername
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, skip_uploaded=skip_uploaded))

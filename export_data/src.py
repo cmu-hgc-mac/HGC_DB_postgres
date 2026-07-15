@@ -1,8 +1,10 @@
-import asyncio, asyncpg, pwinput
+import asyncio, asyncpg, pexpect
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from lxml import etree
-import yaml, sys, base64, os, platform, subprocess, glob
+import yaml, sys, base64, os, platform, subprocess, glob, zipfile
+from collections import defaultdict
+from pathlib import Path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 from datetime import datetime
 from cryptography.fernet import Fernet
@@ -14,6 +16,7 @@ import re
 import requests
 import json
 import webbrowser
+import time
 # from zoneinfo import ZoneInfo
 
 resource_yaml = 'export_data/resource.yaml'
@@ -26,7 +29,9 @@ loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
-max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
+max_cern_db_request = int(conn_info.get('max_cern_db_request', 6000))
+dbloader_hostname = "dbloader-hgcal.cern.ch"   #, "hgcaldbloader.cern.ch")  
+# dbloader_hostname = conn_info.get('dbloader_hostname', "dbloader-hgcal") #, "hgcaldbloader.cern.ch")  
 
 db_params = {
     'database': conn_info.get('dbname'),
@@ -41,14 +46,71 @@ partTrans = {'bp' :{'apikey':'baseplates', 'dbtabname': 'bp_inspect', 'db_col': 
              'ml' :{'apikey':'modules', 'dbtabname': 'module_inspect', 'db_col': 'module_name', 'qc_cols':  {'mod_grade': 'grade', 'mod_ave_thkns_mm': 'avg_thickness', "mod_max_thkns_mm": 'max_thickness', 'mod_fltns_mm': 'flatness', "pcb_plcment_x_offset": 'x_offset_mu', "pcb_plcment_y_offset": 'y_offset_mu',"pcb_plcment_ang_offset": 'ang_offset_deg'}},
             }
 
+def find_hgc_db_root(start_path=None):
+    if start_path is None:
+        start_path = Path.cwd()  # current working directory
+    path = Path(start_path).resolve()
+    for parent in [path] + list(path.parents):
+        if parent.name == "HGC_DB_postgres":
+            return parent
+    raise FileNotFoundError("HGC_DB_postgres directory not found in current path or parents")
+
+def str2bool(boolstr):
+    dictstr = {'True': True, 'False': False}
+    return dictstr[boolstr]
+
 def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
     if partID is not None:
         return f"https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full"
-    elif partType is not None:
+    elif partType.lower() in partTrans.keys():
         if macID is not None:
             return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}&location={macID}"
         return f"https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]['apikey']}?page=0&limit={max_cern_db_request}"
+    elif partType is not None: ### for other MMTS parts
+        if macID is not None:
+            nospace_partType = partType.replace(" ", "%20")
+            return f"https://{cern_db_url}.web.cern.ch/mac/parts/kinds/?kind_of_part={nospace_partType}&limit={max_cern_db_request}&location={macID}"
+        return f"https://{cern_db_url}.web.cern.ch/mac/parts/kinds/?kind_of_part={nospace_partType}&limit={max_cern_db_request}"
     return
+
+
+def zip_xmls_by_timestamp(output_dir, xml_basename):
+    groups = defaultdict(list)
+    suffix = f"_{xml_basename}"
+    try:
+        for fname in os.listdir(output_dir):
+            if not fname.endswith(suffix):
+                continue
+            # strip the trailing _{xml_basename} then split on _ to get last token as timestamp
+            stem = fname[: -len(suffix)]          # e.g. "320MLF2WDCM0005_20241015T123456"
+            parts = stem.rsplit('_', 1)
+            if len(parts) != 2:
+                continue
+            module_name, ts = parts
+            groups[ts].append((module_name, fname))
+
+        for ts, entries in groups.items():
+            if len(entries) <= 1:
+                continue
+
+            entries.sort(key=lambda x: x[0])  # Sort by module name so range is computed correctly
+            module_names = [e[0] for e in entries]
+            first = module_names[0] # Build label: {first_module}xN, e.g. 320MLF2WDCM0005x4
+            n = len(module_names)
+            range_label = first if n == 1 else f"{first}x{n}"
+            xml_stem = os.path.splitext(xml_basename)[0]
+            zip_name = f"{range_label}_{ts}_{xml_stem}.zip"
+            zip_path = os.path.join(output_dir, zip_name)
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for _, fname in entries:
+                    zf.write(os.path.join(output_dir, fname), arcname=fname)
+            for _, fname in entries:
+                os.remove(os.path.join(output_dir, fname))
+            # print(f'Zipped {len(entries)} file(s) -> {zip_name}')
+    except Exception as e:
+        None
+        # print("Error in zip_xmls_by_timestamp", e)
+
 
 def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):
     headers = {'Accept': 'application/json'}
@@ -60,7 +122,8 @@ def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url
     elif response.status_code == 500:
         print(f"Internal Server ERROR for {cern_db_url.upper()}. Try again later.")
     elif response.status_code == 404:
-        print(f"Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
+        if partID[0:4] != '320M':
+            print(f"Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.")
     else:
         if partType:
             print(f"ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}")
@@ -75,8 +138,10 @@ def update_yaml_with_checkboxes(xml_list, checkbox_vars):
         return {key: update_yaml_with_checkboxes(value, checkbox_vars[key]) for key, value in xml_list.items()}
     return xml_list  
 
-def process_xml_list(xml_list = None, get_yaml_data = False):
+def process_xml_list(xml_list = None, get_yaml_data = False, cern_auto_upload = False): ### variable `xml_list` is used for recursion
     list_of_xmls_yaml = 'export_data/list_of_xmls.yaml'
+    if cern_auto_upload:
+        list_of_xmls_yaml = 'task_scheduler/list_of_xmls_auto.yaml'
         
     if get_yaml_data:
         with open(list_of_xmls_yaml, "r") as file:
@@ -120,7 +185,14 @@ async def check_good_conn(dbpassword, encryption_key = None,  user_type = None):
     else:
         return False
 
-async def get_conn(dbpassword, encryption_key = None, user_type = None):
+def run_check_good_conn(dbpassword, encryption_key = None, user_type = None):
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(check_good_conn(dbpassword, encryption_key=encryption_key, user_type=user_type))
+    finally:
+        loop.close()
+
+async def get_conn(dbpassword, encryption_key = None, user_type = None, pool=False):
     user_type = user_type if user_type else 'shipper'
     '''
     Does: get connection to database
@@ -139,13 +211,16 @@ async def get_conn(dbpassword, encryption_key = None, user_type = None):
     else:
         cipher_suite = Fernet((encryption_key).encode())
         db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
-
-    try:
-        conn = await asyncpg.connect(**db_params)
-        return conn
-    except Exception as e:
-        print(e)
-        return None
+    if pool:
+        pool = await asyncpg.create_pool(**db_params)
+        return pool
+    else:
+        try:
+            conn = await asyncpg.connect(**db_params)
+            return conn
+        except Exception as e:
+            print(e)
+            return None
 
 
 async def fetch_from_db(query, conn):
@@ -165,7 +240,9 @@ async def update_xml_with_db_values(xml_file_path, output_file_path, db_values):
         root = tree.getroot()
 
         # Convert db_values keys to lowercase for case-insensitive matching
-        db_values_lower = {k.lower(): v for k, v in db_values.items()}
+        # db_values = {key: 'null' if db_values[key] is None else db_values[key] for key in db_values.keys()}
+        # db_values_lower = {k.lower(): v for k, v in db_values.items()}
+        db_values_lower = {k.lower(): ('null' if v is None else v) for k, v in db_values.items()}
 
         # Iterate through the db_values and replace corresponding placeholders in XML
         for xml_var, value in db_values_lower.items():
@@ -220,25 +297,25 @@ async def get_parts_name(name, table, conn):
     name_list = [record[name] for record in fetched_query]
     return name_list
 
-async def update_timestamp_col(conn, update_flag: bool, table_list: list, column_name: str,  part: str, part_name: str):
+async def update_timestamp_col(conn, update_flag: bool, table_list: list, column_name: str,  part: str, part_name: str, extra_where: str = "", timestamp: datetime.datetime = None):
     if not update_flag:
         print("Update flag is False. No update performed.")
         return
     try:
-        _part_name_col = {'module':'module_name', 
-                          'hexaboard':'hxb_name', 
-                          'protomodule':'proto_name', 
+        _part_name_col = {'module':'module_name',
+                          'hexaboard':'hxb_name',
+                          'protomodule':'proto_name',
                           'sensor': 'sen_name',
                           'baseplate':'bp_name'}
         part_name_col = _part_name_col[part]
 
         # Generate the current timestamp
-        current_timestamp = datetime.datetime.now()
+        current_timestamp = timestamp if timestamp is not None else datetime.datetime.now()
         for table in table_list:
             query = f"""
             UPDATE {table}
             SET {column_name} = $1
-            WHERE {part_name_col} = $2;
+            WHERE {part_name_col} = $2 {extra_where};
             """
             await conn.execute(query, current_timestamp, part_name)
     except Exception as e:
@@ -252,7 +329,7 @@ def format_part_name(part_name):
 def get_run_num(location, timestamp):
     ##  format: SSSSYYMMDDTTTTTT
     shipping_code = shipping_loc_yaml[location]
-    formatted_timestamp = timestamp.strftime('%y%m%d%S%f')[:12]
+    formatted_timestamp = timestamp.strftime('%y%m%d%H%M%S%f')[:12]
     run_num = f"{shipping_code}{formatted_timestamp}"
     return run_num
 
@@ -309,6 +386,12 @@ async def get_kind_of_part(part_name, part=None, conn=None):
 
 def format_datetime(input_date, input_time):
     local_timezone = pytz.timezone(str(tzlocal.get_localzone()))
+    # Normalize input_date
+    if isinstance(input_date, datetime.date):
+        input_date = input_date.strftime("%Y-%m-%d")
+    if isinstance(input_time, datetime.time):
+        input_time = input_time.strftime("%H:%M:%S")
+        
     if input_time is None:
         # If time_begin is missing, use the current time with timezone
         current_dt = datetime.datetime.now(local_timezone).time()
@@ -392,36 +475,56 @@ def get_roc_version(module_name):
     else:
         raise ValueError(f"Cannot determine the roc version of {module_name}")
     
+async def get_nearest_temp_humidity(conn, table_name, date_inspect, time_inspect):
+    print(table_name, date_inspect, time_inspect)
+    print(type(table_name), type(date_inspect), type(time_inspect))
+    if isinstance(date_inspect, str):
+        date_inspect = datetime.datetime.strptime(date_inspect.strip(), "%Y-%m-%d").date()
+
+    if isinstance(time_inspect, str):
+        # handle both HH:MM and HH:MM:SS
+        time_format = "%H:%M:%S" if time_inspect.count(":") == 2 else "%H:%M"
+        time_inspect = datetime.datetime.strptime(time_inspect.strip(), time_format).time()
+
+    target_dt = datetime.datetime.combine(date_inspect, time_inspect)
+    
+    # Step 1: Check which columns exist
+    query_columns = """
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1
+    """
+    columns_result = await conn.fetch(query_columns, table_name)
+    columns = {row['column_name'] for row in columns_result}
+
+    temp_c, rel_hum = None, None
+
+    # Step 2: Try fetching from the target table (if columns exist)
+    if 'temp_c' in columns and 'rel_hum' in columns:
+        try:
+            row = await conn.fetchrow(f"SELECT temp_c, rel_hum FROM {table_name} LIMIT 1;")
+            if row:
+                temp_c, rel_hum = row['temp_c'], row['rel_hum']
+        except Exception:
+            pass  # In case the table is empty or fetch fails
+
+    # Step 3: If missing or None, get nearest from temp_humidity
+    if temp_c is None or rel_hum is None:
+        query_nearest = """
+            SELECT temp_c, rel_hum
+            FROM temp_humidity
+            ORDER BY ABS(EXTRACT(EPOCH FROM (log_timestamp - $1))) ASC
+            LIMIT 1;
+        """
+        row = await conn.fetchrow(query_nearest, target_dt)
+        if row:
+            temp_c, rel_hum = row['temp_c'], row['rel_hum']
+
+    return {'temp_c': temp_c, 'rel_hum': rel_hum}
 
 ################################################################################
 ### Below is for checking part exisistence and combination with location ###
 ################################################################################
-def get_url(partID = None, macID = None, partType = None, cern_db_url = 'hgcapi'):
-    if partID is not None:
-        return f'https://{cern_db_url}.web.cern.ch/mac/part/{partID}/full'
-    elif partType is not None:
-        if macID is not None:
-            return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}&location={macID}'
-        return f'https://{cern_db_url}.web.cern.ch/mac/parts/types/{partTrans[partType.lower()]["apikey"]}?page=0&limit={max_cern_db_request}'
-    return
-
-def read_from_cern_db(partID = None, macID = None, partType = None , cern_db_url = 'hgcapi'):
-    headers = {'Accept': 'application/json'}
-    response = requests.get(get_url(partID = partID, macID = macID, partType = partType, cern_db_url = cern_db_url), headers=headers)
-    if response.status_code == 200:
-        data = response.json() ; 
-#         print(json.dumps(data, indent=2))
-        return data
-    elif response.status_code == 500:
-        print(f'Internal Server ERROR for {cern_db_url.upper()}. Try again later.')
-    elif response.status_code == 404:
-        print(f'Part {partID} not found in {cern_db_url.upper()}. Contact the CERN database team on GitLab: https://gitlab.cern.ch/groups/hgcal-database/-/issues.')
-    else:
-        if partType:
-            print(f'ERROR in reading from {cern_db_url.upper()} for partType : {partType} :: {response.status_code}')
-        if partID:
-            print(f'ERROR in reading from {cern_db_url.upper()} for partID : {partID} :: {response.status_code}')
-        return None
 
 def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hgcapi") -> list:
     try:
@@ -443,31 +546,57 @@ def get_location_and_partid(part_id: str, part_type: str, cern_db_url: str = "hg
         print(f"Exception occurred while querying part_id = {part_id}: {e}")
         return []
 
+async def run_async_subprocess():
+    controlpathname = "ctrl_dbloader"
+    current_file = Path(__file__).resolve()
+    PROJECT_ROOT = next(p for p in current_file.parents if p.name == "HGC_DB_postgres") ## Global path of HGC_DB_postgres
 
-def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, mass_upload_xmls = False):
+    for attempt in range(2):
+        print(f'Running run_async_subprocess (attempt {attempt + 1}/2)')
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-c",
+            f"import sys; sys.path.insert(0, r'{PROJECT_ROOT}'); "
+            "from task_scheduler.scheduler_helper import run_ssh_master; "
+            "run_ssh_master()",
+            stdout=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
+            stderr=asyncio.subprocess.DEVNULL,  ### Comment these to see terminal output for debugging
+            stdin=asyncio.subprocess.DEVNULL,   ### Comment these to see terminal output for debugging
+            start_new_session=True  )
+
+        print('Waiting for asynchronous control master process to start...')
+        time.sleep(15)  ### Wait a good few seconds for process to start!
+        cp_check = Path(f"~/.ssh/{controlpathname}").expanduser().exists()
+        if cp_check:
+            return True
+        print(f"ControlMaster socket not found after attempt {attempt + 1} -- retrying with fresh TOTP code ...")
+    return False 
+
+
+def open_scp_connection(lxp_username = None, scp_persist_minutes = 240, scp_force_quit = False, get_scp_status = False, cern_auto_upload = False):
     controlpathname = "ctrl_dbloader"
     test_cmd = ["ssh", 
                 "-o", f"ControlPath=~/.ssh/{controlpathname}",
                 "-O", "check",     # <-- ask the master process if it’s alive
-                f"{dbl_username}@{controlpathname}"]
+                f"{lxp_username}@{controlpathname}"]
     if get_scp_status:
         result = subprocess.run(test_cmd, capture_output=True, text=True)
         return result.returncode
 
     if scp_force_quit:
         quit_cmd = ["ssh", "-O", "exit",
-                    "-o", f"ControlPath=~/.ssh/{controlpathname}", f"{dbl_username}@{controlpathname}"]
+                    "-o", f"ControlPath=~/.ssh/{controlpathname}", f"{lxp_username}@{controlpathname}"]
         subprocess.run(quit_cmd, check=True)
         result = subprocess.run(test_cmd, capture_output=True, text=True)
         if result.returncode != 255: ## or result.returncode == 0:
             print("Failed to close ControlMaster Process. Do it manually.")
-            print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
+            print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {lxp_username}@{controlpathname}`")
         else:
             print("ControlMaster process closed.")
         return result.returncode
 
     result = subprocess.run(test_cmd, capture_output=True, text=True)    
-    if result.returncode != 0 and dbl_username:
+    if result.returncode != 0 and lxp_username:
         ### Process is not alive but residual files exist that need to be deletes
         pattern = os.path.expanduser(f"~/.ssh/{controlpathname}") 
         controlfiles =  glob.glob(pattern)
@@ -498,28 +627,36 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
                 print("")
 
                 scp_timeout_cond = scp_persist_minutes if scp_persist_minutes == 'yes' else f"{scp_persist_minutes}m"    
-                ### opens to only dbloader-hgcal via lxplus
+                ### opens to only dbloader_hostname via lxplus
                 ssh_cmd = ["ssh", "-MNf",
                     "-o", "ControlMaster=yes",
                     "-o", f"ControlPath=~/.ssh/{controlpathname}",    
                     "-o", f"ControlPersist={scp_timeout_cond}",
-                    "-o", f"ProxyJump={dbl_username}@lxtunnel.cern.ch",
-                    f"{dbl_username}@dbloader-hgcal"]    
+                    "-o", f"ProxyJump={lxp_username}@lxplus.cern.ch",
+                    f"{lxp_username}@{dbloader_hostname}"]    
                 
-                subprocess.run(ssh_cmd, check=True)
-
-                print("** SSH ControlMaster session started. **")
-                print("****************************************")
-                print("")
-                print("************* PLEASE NOTE **************")
-                print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
-                print(f"To change this, define 'scp_persist_minutes: 240' in dbase_info/conn.yaml.")
-                print(f"To allow password-free SCP to your LXPLUS for {scp_persist_minutes} minutes...")
-                print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
-                print(f"To force quit this open connection manually, run below command in your terminal:")
-                print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {dbl_username}@{controlpathname}`")
-                print("****************************************")
-                print("")
+                if cern_auto_upload: # and Path("/tmp/hgc_postgres_cron_job.running").exists():
+                    asyncio.run(run_async_subprocess())
+                    print("** SSH ControlMaster session started. **")
+                    print("****************************************")
+                    print(f"To force quit this open connection manually, run below command in your terminal:")
+                    print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {lxp_username}@{controlpathname}`")
+                    print("****************************************")
+                    print("")
+                else:    
+                    subprocess.run(ssh_cmd, check=True)
+                    print("** SSH ControlMaster session started. **")
+                    print("****************************************")
+                    print("")
+                    print("************* PLEASE NOTE **************")
+                    print(f"ControlMaster process will be alive for {scp_persist_minutes} minutes.")
+                    print(f"To change this, define 'scp_persist_minutes: 240' in dbase_info/conn.yaml.")
+                    print(f"To allow password-free SCP to your LXPLUS for {scp_persist_minutes} minutes...")
+                    print(f"define 'scp_force_quit: False' in dbase_info/conn.yaml.")
+                    print(f"To force quit this open connection manually, run below command in your terminal:")
+                    print(f"`ssh -O exit -o ControlPath=~/.ssh/{controlpathname} {lxp_username}@{controlpathname}`")
+                    print("****************************************")
+                    print("")
 
 
         except Exception as e:
@@ -531,8 +668,6 @@ def open_scp_connection(dbl_username = None, scp_persist_minutes = 240, scp_forc
         print("ControlMaster process alive.")
     else:
         print("ControlMaster process failed.")
-    ## ssh -O exit -o ControlPath=~/.ssh/scp-{dbl_username}@{controlpathname} {dbl_username}@{controlpathname} ## To kill process
-    # ssh -O exit -o ControlPath=~/.ssh/ctrl_lxplus_dbloader simurthy@ctrl_lxplus_dbloader
     return result.returncode
     
     # print(result.stdout)

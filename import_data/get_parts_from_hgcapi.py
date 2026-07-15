@@ -5,6 +5,7 @@ from natsort import natsorted, natsort_keygen
 from tqdm import tqdm
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from export_data.src import read_from_cern_db
+RED = '\033[91m'; RESET = '\033[0m'
 
 """
 Logic of writing to parts tables:
@@ -23,10 +24,11 @@ loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 kop_yaml = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r')).get('kind_of_part')
+mmts_kops = yaml.safe_load(open(os.path.join('export_data', 'resource.yaml'), 'r')).get('MMTS_kinds_of_parts')
 inst_code  = conn_info.get('institution_abbr')
 # source_db_cern = conn_info.get('cern_db')
 db_source_dict = {'dev_db': {'dbname':'INT2R', 'url': 'hgcapi-intg'} , 'prod_db': {'dbname':'CMSR', 'url': 'hgcapi'}}
-max_cern_db_request = int(conn_info.get('max_cern_db_request', 1000))
+max_cern_db_request = int(conn_info.get('max_cern_db_request', 6000))
 
 db_params = {
     'database': conn_info.get('dbname'),
@@ -70,10 +72,19 @@ async def get_missing_roc_hxb(pool):
     return [row['hxb_name'] for row in rows]
 
 async def get_missing_qc_bp(pool):
-    get_missing_qc_bp_query = """SELECT REPLACE(bp_name,'-','') AS bp_name FROM baseplate WHERE tolerance_grade IS NULL OR flatness_grade IS NULL;"""
+    get_missing_qc_bp_query = """SELECT REPLACE(bp_name,'-','') AS bp_name FROM baseplate WHERE tolerance_grade IS NULL OR flatness_grade IS NULL OR flatness_init IS NULL OR avg_thickness_init IS NULL;"""
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_missing_qc_bp_query)
     return [row['bp_name'] for row in rows]
+
+async def get_mmts_inv_in_local(pool):
+    get_mmts_inv_in_local_query = """SELECT part_name FROM mmts_inventory WHERE kind IS NULL OR qc_details IS NULL;"""
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(get_mmts_inv_in_local_query)
+        return [row['part_name'] for row in rows]
+    except Exception as e:
+        print(f"{RED}Error: {e}{RESET}")
 
 async def get_missing_batch_sen(pool):
     get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE sen_batch_id IS NULL OR sen_batch_id = '';"""
@@ -91,7 +102,12 @@ def get_query_write(table_name, column_names, check_conflict_col = None, db_uplo
 
 def get_query_update(table_name, column_names, check_conflict_col = None, db_upload_data = None):
     update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
-    query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
+    if check_conflict_col in ['hxb_name', 'bp_name']:
+        query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL);"""
+    # elif check_conflict_col in ['bp_name']:
+    #     query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL OR bp_version IS NULL);"""
+    else:
+        query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
     return query
 
 def get_query_update_secondary(table_name, column_names, check_conflict_col = None, db_upload_data = None):
@@ -146,15 +162,22 @@ def get_part_type(partName, partType):
             None
             # print(f"{partType} {partName} could be a legacy part since it does not follow current naming convention.")
     elif partType == 'sen':
-        return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+        if partName[:2] == 25:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[:2]][1]})  
+        else:
+            return_dict.update({'resolution': kop_yaml['sensor'][partName[0]][1]})  
+
         return_dict.update({'geometry': kop_yaml['sensor_geometry'][partName[-1]]})  
         return_dict.update({'thickness': int(kop_yaml['sensor'][partName[0]][0])})  
     return return_dict
 
 def get_dict_for_db_upload(data_full, partType):
     try:
-        db_dict = {children_for_import[partType]["db_cols"][k]: data_full[k] for k in (children_for_import[partType]["db_cols"]).keys()}
+        available_keys = [k for k in children_for_import[partType]["db_cols"].keys() if k in data_full.keys()]
+        db_dict = {children_for_import[partType]["db_cols"][k]: data_full[k] for k in available_keys}
         db_dict.update(get_part_type(data_full['serial_number'], partType))
+        if partType in ['hxb', 'bp']:
+            db_dict['obsolete'] = True if db_dict['obsolete'].lower() == 'obsolete' else False
         return db_dict
     except Exception as e:
         traceback.print_exc()
@@ -185,7 +208,7 @@ def get_roc_dict_for_db_upload(hxb_name, cern_db_url = 'hgcapi'):
                 return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring ROC data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring ROC data from API output for {hxb_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -201,14 +224,21 @@ def get_bp_qc_for_db_upload(bp_name, cern_db_url = 'hgcapi', part_qc_cols = None
         db_dict = None
         if data_full:
             if "baseplate_raw" in data_full["qc"]:
+                part_qc_cols = part_qc_cols['qc_cols_ka']
                 db_dict = {"bp_name": bp_name}
                 child_dict, bp_name = data_full["qc"]["baseplate_raw"], data_full["serial_number"]
                 for qck in part_qc_cols.keys():
                     db_dict.update({part_qc_cols[qck]: child_dict[qck]})
+            elif "baseplate" in data_full["qc"]:
+                part_qc_cols = part_qc_cols['qc_cols_ih']
+                db_dict = {"bp_name": bp_name}
+                child_dict, bp_name = data_full["qc"]["baseplate"], data_full["serial_number"]
+                for qck in part_qc_cols.keys():
+                    db_dict.update({part_qc_cols[qck]: form(child_dict[qck]) })
         return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring baseplate QC data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring baseplate QC data from API output for {bp_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -222,7 +252,20 @@ def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi'):
         return db_dict
     except Exception as e:
         traceback.print_exc()
-        print(f"ERROR in acquiring sensor batch data from API output for {data_full['serial_number']}: ", e)
+        print(f"ERROR in acquiring sensor batch data from API output for {sen_name}: ", e)
+        # print(json.dumps(data_full, indent=2))
+        # print('*'*100)
+        return None
+
+def get_mmts_inv_for_db_upload(part_name, cern_db_url = 'hgcapi'):
+    try:
+        data_full = read_from_cern_db(partID = part_name, cern_db_url=cern_db_url)
+        db_dict = get_dict_for_db_upload(data_full, 'mmtsinv')
+        db_dict['qc_details'] = f"{db_dict['qc_details']}"
+        return db_dict
+    except Exception as e:
+        # traceback.print_exc()
+        print(f"ERROR in acquiring data from API output for {part_name}: ", e)
         # print(json.dumps(data_full, indent=2))
         # print('*'*100)
         return None
@@ -237,6 +280,7 @@ async def main():
     parser.add_argument('-getbp', '--get_baseplate', default='True', required=False, help="Get baseplates.")
     parser.add_argument('-gethxb', '--get_hexaboard', default='True', required=False, help="Get hexaboards.")
     parser.add_argument('-getsen', '--get_sensor', default='True', required=False, help="Get sensors.")
+    parser.add_argument('-getmmtsinv', '--mmts_inventory', default='True', required=False, help="Get trophyboards, mezzanines, etc for the MMTS.")
     args = parser.parse_args()
 
     if args.password is None:
@@ -266,26 +310,45 @@ async def main():
         part_types_to_get.append('hxb')
     if str2bool(args.get_sensor):
         part_types_to_get.append('sen')
+    if str2bool(args.mmts_inventory):
+        part_types_to_get.append('mmtsinv')
 
     for source_db_cern in db_list:
         cern_db_url = db_source_dict[source_db_cern]['url']
         pool = await asyncpg.create_pool(**db_params)
-        for pt in part_types_to_get:  #, 'pml', 'ml']:
-            print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
-            parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
-            if parts:
-                for p in tqdm(parts['parts']):
-                    try:
-                        db_dict = get_dict_for_db_upload(p, partType = pt)
-                        if db_dict is not None:
+        for pt in part_types_to_get:
+            if pt != 'mmtsinv':   
+                print(f"Reading {children_for_import[pt]['apikey']} from {cern_db_url.upper()} ..." )
+                parts = (read_from_cern_db(macID = inst_code.upper(), partType = pt, cern_db_url = cern_db_url))
+                if parts:
+                    for p in tqdm(parts['parts']): ### p is the data_full from the HGCAPI
+                        try:
+                            db_dict = get_dict_for_db_upload(p, partType = pt)
+                            if db_dict is not None:
+                                try:
+                                    await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
+                                except Exception as e:
+                                    print(f"ERROR for single part upload for {p}", e)
+                                    traceback.print_exc()
+                                    print('Dictionary:', (db_dict))
+                        except:
+                            traceback.print_exc()
+            elif pt == 'mmtsinv':
+                for kop in mmts_kops:
+                    parts = (read_from_cern_db(macID = inst_code.upper(), partType = kop, cern_db_url = cern_db_url))
+                    if parts:
+                        for p in tqdm(parts['parts']): ### p is parts from the HGCAPI
                             try:
-                                await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
-                            except Exception as e:
-                                print(f"ERROR for single part upload for {p['serial_number']}", e)
-                                traceback.print_exc()
-                                print('Dictionary:', (db_dict))
-                    except:
-                        traceback.print_exc()
+                                db_dict = get_dict_for_db_upload(p, partType = pt)
+                                if db_dict is not None:
+                                    try:
+                                        await write_to_db(pool, db_dict, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
+                                    except Exception as e:
+                                        print(f"ERROR for single part upload for {p}", e)
+                                        traceback.print_exc()
+                                        print('Dictionary:', (db_dict))
+                            except:
+                                traceback.print_exc()                
 
             secondary_upload, db_dict_secondary = None, None
             if pt == 'hxb':
@@ -295,6 +358,9 @@ async def main():
                 part_qc_cols = children_for_import[pt]['qc_cols']
             elif pt == 'sen':
                 secondary_upload = await get_missing_batch_sen(pool)
+            elif pt == 'mmtsinv':
+                secondary_upload = await get_mmts_inv_in_local(pool)
+                # secondary_upload = ['320TSYMM1020192', '320TSYLFP010104']
             if secondary_upload:
                 print(f"Fetching other necessary {children_for_import[pt]['apikey']} data ...")
                 for p in tqdm(secondary_upload):
@@ -305,11 +371,13 @@ async def main():
                             db_dict_secondary = get_bp_qc_for_db_upload(p, cern_db_url = cern_db_url, part_qc_cols = part_qc_cols)
                         elif pt == 'sen':
                             db_dict_secondary = get_sen_batch_for_db_upload(p, cern_db_url = cern_db_url)
+                        elif pt == 'mmtsinv':
+                            db_dict_secondary = get_mmts_inv_for_db_upload(p, cern_db_url = cern_db_url)
                         if db_dict_secondary is not None:
                             try:
                                 await write_to_db_secondary(pool, db_dict_secondary, partType = pt, check_conflict_col = children_for_import[pt]['db_cols']['serial_number'])
                             except Exception as e:
-                                print(f"ERROR for single part upload for {p['serial_number']}", e)
+                                print(f"ERROR for single part upload for {p}", e)
                                 traceback.print_exc()
                                 print('Dictionary:', (db_dict_secondary))
                     except:
@@ -317,7 +385,6 @@ async def main():
                 
                 print(f"Writing {children_for_import[pt]['apikey']} to postgres from {cern_db_url.upper()} complete.")
                 print('-'*40); print('\n')
-
                             
     async with pool.acquire() as conn:
         try:
@@ -325,9 +392,48 @@ async def main():
             await conn.execute(query_v3c)
         except:
             print('v3c query failed')
+
+    await verify_modules_in_cmsr(pool)
+
     await pool.close()
     print('Refresh postgres tables')
 
-asyncio.run(main())
+async def verify_modules_in_cmsr(pool):
+    """
+    For every module_name in module_info where xml_upload_success is not True,
+    check if the part exists in CMSR. If it does, mark xml_upload_success = True
+    and set xml_gen_datetime to today if it is null.
+    """
+    get_unverified_query = """SELECT module_name FROM module_info WHERE (xml_upload_success IS NULL OR xml_upload_success = FALSE) AND module_name IS NOT NULL AND assembled IS NOT NULL;
+    """
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(get_unverified_query)
+    module_names = [row['module_name'] for row in rows]
 
+    if not module_names:
+        # print("No unverified modules to check against CMSR.")
+        return
+
+    print(f"Checking {len(module_names)} module(s) against CMSR ...")
+    today = datetime.date.today()
+    updated = 0
+    missing_list = []
+    for module_name in tqdm(module_names):
+        try:
+            data = read_from_cern_db(partID=module_name.replace('-', ''), cern_db_url='hgcapi')
+            if data:
+                async with pool.acquire() as conn:
+                    await conn.execute("""UPDATE module_info SET xml_upload_success = TRUE, xml_gen_datetime = COALESCE(xml_gen_datetime, $1) WHERE module_name = $2;""", today, module_name)
+                updated += 1
+            else:
+                missing_list.append(module_name.replace('-', ''))
+        except Exception as e:
+            print(f"ERROR checking {module_name} against CMSR: {e}")
+            traceback.print_exc()
+
+    print(f"verify_modules_in_cmsr: updated {updated}/{len(module_names)} module(s).")
+    print(f"Missing modules: ", ", ".join(missing_list))
+
+
+asyncio.run(main())
 

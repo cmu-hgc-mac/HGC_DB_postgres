@@ -1,0 +1,101 @@
+import subprocess, os, sys, yaml, base64, pexpect, argparse, shutil
+from cryptography.fernet import Fernet
+from datetime import datetime, timedelta
+from pathlib import Path
+
+print('RUNNING SCHEDULED CRON JOB', datetime.now())
+current = Path(__file__).resolve()
+PROJECT_ROOT = next(p for p in [current, *current.parents] if p.name == "HGC_DB_postgres")
+# PROJECT_ROOT = Path(__file__).resolve().parents[1]  ## Global path of HGC_DB_postgres
+os.chdir(PROJECT_ROOT)                 ### Changes working directory from device main directory to HGC_DB_postgres
+sys.path.insert(0, str(PROJECT_ROOT))  ### Changes python import path to be relative to HGC_DB_postgres
+
+from export_data.src import open_scp_connection
+from task_scheduler.scheduler_helper import JobIndicator
+
+sched_config_file = os.path.join('task_scheduler', 'schedule_config.yaml')
+sched_config  = yaml.safe_load(open(sched_config_file, 'r'))
+lxp_username = sched_config['CERN_service_account_username']
+
+with open(sched_config['encrypt_path'], "rb") as key_file:
+    encryption_key = key_file.read()
+
+cipher_suite = Fernet(encryption_key)
+
+with open(sched_config['postgres_shipper_pass_path'], "rb") as f:
+    encrypted_password_postgres = f.read()
+
+dbshipper_pass = base64.urlsafe_b64encode( encrypted_password_postgres ).decode() 
+
+def run_job(job_type):
+    if job_type == 'import_from_HGCAPI':
+        print('LOGGING IMPORT FROM HGCAPI', datetime.now())
+        print('See above for full terminal output ↑↑↑')
+        import_cfg = sched_config.get('import_from_HGCAPI', {})
+        basplate_get_stat       = import_cfg.get('getbp',       True)
+        hexaboard_get_stat      = import_cfg.get('gethxb',      True)
+        sensor_get_stat         = import_cfg.get('getsen',       True)
+        mmts_inventory_get_stat = import_cfg.get('getmmtsinv',  True)
+        import_data_cmd = [sys.executable,
+                            "import_data/get_parts_from_hgcapi.py",
+                            "-p", dbshipper_pass,
+                            "-k", encryption_key,
+                            "-getbp", str(basplate_get_stat),
+                            "-gethxb", str(hexaboard_get_stat),
+                            "-getmmtsinv", str(mmts_inventory_get_stat),
+                            "-getsen", str(sensor_get_stat)]
+        subprocess.run(import_data_cmd)
+        print('FINISHING IMPORT FROM HGCAPI', datetime.now())
+        print("###################################################")
+        print("")
+
+
+    if job_type == 'upload_to_CMSR':
+        print('LOGGING UPLOAD TO CMSR', datetime.now())
+        print('See above for full terminal output ↑↑↑')
+        schedule_days_list = sched_config[job_type]['schedule_days'].split(',')
+        upload_date_range_type = sched_config[job_type]['upload_date_range']
+
+        today_date = datetime.today().date()
+        today_str = today_date.strftime('%Y-%m-%d')
+        if upload_date_range_type == 'since_last_upload':
+            day_index_cron = str(datetime.today().weekday() + 1)  ## cron index 0 starts on Sunday; datetime index 0 starts on Monday
+            today_index = schedule_days_list.index(day_index_cron)
+            previous_index_val_cron = schedule_days_list[today_index - 1]
+            days_since_upload = (int(day_index_cron)-int(previous_index_val_cron))%7
+            start_date = today_date - timedelta(days=days_since_upload)
+            start_date_str = start_date.strftime('%Y-%m-%d')
+        elif upload_date_range_type == 'this_week':
+            start_of_week = today_date - timedelta(days=today_date.weekday())
+            start_date_str = start_of_week.strftime('%Y-%m-%d')
+        else:
+            start_date_str = upload_date_range_type  # a YYYY-MM-DD date string
+        
+        with JobIndicator("/tmp/hgc_postgres_cron_job.running"):  ### This is required for open_scp_connection to default to Service Account
+            export_data_cmd = [sys.executable, 
+                            "export_data/export_pipeline.py", 
+                            "-autoupload", str(True),
+                            "-xmlauto", str(True),
+                            "-dbp", dbshipper_pass, 
+                            "-lxu", lxp_username, 
+                            "-k", encryption_key, 
+                            "-gen", str(True), 
+                            "-uplp", str(True), 
+                            "-upld", str(False), 
+                            "-delx", str(True), 
+                            "-skup", str(True),
+                            "-datestart", start_date_str, 
+                            "-dateend", today_str]
+            subprocess.run(export_data_cmd)
+            print('FINISHING UPLOAD TO CMSR', datetime.now())
+            print("###################################################")
+            print("")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="A script that that runs as scheduled by the cron job.")
+    parser.add_argument('-jt', '--job_type', default='import_from_HGCAPI', required=False, help="Password to access database.")
+    args = parser.parse_args()
+    run_job(job_type = args.job_type)
+
+main()

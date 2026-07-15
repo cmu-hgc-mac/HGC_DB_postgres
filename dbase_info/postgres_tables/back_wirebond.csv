@@ -15,5 +15,5 @@ comment,TEXT,,,
 module_no,INT,,fk_mod_backwire,module_info
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
-xml_upload_success,BOOLEAN,,,
+xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
 batch_no,INT,,,

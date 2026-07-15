@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist = None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist = None, skip_uploaded=True):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -23,15 +23,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
     hxb_tables = ['hexaboard', 'hxb_inspect', 'hxb_pedestal_test']
     hxb_list = set()
+    skip_filter = "AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)" if skip_uploaded else ""
 
     if partsnamelist:
-        query = f"""SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM hxb_inspect WHERE hxb_name = ANY($1)"""
+        query = f"""SELECT REPLACE(hxb_name,'-','') AS hxb_name FROM hxb_inspect WHERE hxb_name = ANY($1) {skip_filter}"""
         results = await conn.fetch(query, partsnamelist)
-    else:    
+    else:
         module_query = f"""
         SELECT DISTINCT REPLACE(hxb_name,'-','') AS hxb_name
         FROM hxb_inspect
-        WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}'
+        WHERE date_inspect BETWEEN '{date_start}' AND '{date_end}' {skip_filter}
         """
         results = await conn.fetch(module_query)
     
@@ -68,7 +69,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE REPLACE({dbase_table}.hxb_name,'-','') = '{hxb_name}' /* AND xml_upload_success IS NULL */;"
+                        query = entry['nested_query'] + f" WHERE REPLACE({dbase_table}.hxb_name,'-','') = '{hxb_name}' ;"
                         
                         # print(f'Executing query: {query}')
 
@@ -78,7 +79,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table}
                             WHERE REPLACE(hxb_name,'-','') = '{hxb_name}'
-                            -- AND xml_upload_success IS NULL
                             LIMIT 1;
                             """
                         elif dbase_table in ['hxb_pedestal_test']:
@@ -91,7 +91,6 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(hxb_name,'-','') = '{hxb_name}'
-                            -- AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1;
                             """
                     try:
@@ -133,7 +132,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
             if db_values['COMMENTS_UPLOAD'] == None:
                 db_values['COMMENTS_UPLOAD'] = ''
-            output_file_name = f'{hxb_name}_{os.path.basename(xml_file_path)}'
+            output_file_name = f"{hxb_name}_{LOCATION}_{os.path.basename(xml_file_path)}"
             output_file_path = os.path.join(output_dir, output_file_name)
 
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
@@ -149,7 +148,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             
 
 
-async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
+async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None, skip_uploaded=True):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/hexaboard/cond_upload.xml'# XML template file path
@@ -160,7 +159,7 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded)
     finally:
         await conn.close()
 
@@ -170,20 +169,22 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
-    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
+    parser.add_argument('-lxu', '--lxpusername', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
-    args = parser.parse_args()   
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    args = parser.parse_args()
 
-    lxplus_username = args.dbl_username
+    lxplus_username = args.lxpusername
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, skip_uploaded=skip_uploaded))

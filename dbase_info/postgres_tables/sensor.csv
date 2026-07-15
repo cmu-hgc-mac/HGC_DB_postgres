@@ -13,7 +13,7 @@ grade,TEXT,graded during assembly; default grade `A`,,
 comment,TEXT,imported from CMSR HGCAPI,,
 proto_no,INT,primary key in proto_assembly table,fk_pm_si,proto_assembly
 xml_gen_datetime,TIMESTAMP,,,
-xml_upload_success,BOOLEAN,,,
+xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
 date_inspect,DATE,,,
 time_inspect,TIME,,,
 date_verify_received,DATE,filled during MAC intake and if is being inspected/assembled without verification,,

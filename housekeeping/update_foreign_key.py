@@ -54,10 +54,14 @@ async def update_foreign_key():
     def get_foreign_key_query(table_name, fk_identifier, fk, fk_table):
         query = f"""
         UPDATE {table_name}
-        SET {fk} = {fk_table}.{fk}
-        FROM {fk_table} 
-        WHERE {table_name}.{fk} IS NULL
-        AND REPLACE({table_name}.{fk_identifier},'-','') = REPLACE({fk_table}.{fk_identifier},'-','');
+        SET {fk} = m.min_fk
+        FROM (
+            SELECT MIN({fk_table}.{fk}) AS min_fk, REPLACE({fk_table}.{fk_identifier},'-','') AS identifier
+            FROM {fk_table}
+            GROUP BY REPLACE({fk_table}.{fk_identifier},'-','')
+        ) AS m
+        WHERE REPLACE({table_name}.{fk_identifier},'-','') = m.identifier
+            AND ({table_name}.{fk} IS NULL OR {table_name}.{fk} > m.min_fk);
         """
         return query
 

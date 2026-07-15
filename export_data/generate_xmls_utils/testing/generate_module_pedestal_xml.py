@@ -7,7 +7,7 @@ import xml.dom.minidom as minidom
 from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
-import sys, os, yaml, argparse, json, traceback
+import sys, os, yaml, argparse, json, traceback, zipfile
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
@@ -86,19 +86,20 @@ def check_duplicate_combo(chip, channel):
         print(f'the followings are duplicated pairs of [chip, channel]\n{duplicates}')
         return False
     
-async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
+async def fetch_test_data(conn, date_start, date_end, partsnamelist=None, skip_uploaded=True):
+    skip_filter = "AND (m.xml_upload_success IS NULL OR m.xml_upload_success = FALSE)" if skip_uploaded else ""
     # Retrieve the first row of chip and channel arrays
     if partsnamelist:
         query = f"""
         SELECT m.module_name,
-               m.module_no, 
-               m.chip, 
-               m.channel, 
+               m.module_no,
+               m.chip,
+               m.channel,
                m.cell,
-               m.adc_mean, 
-               m.adc_stdd, 
-               m.channeltype, 
-               m.date_test, 
+               m.adc_mean,
+               m.adc_stdd,
+               m.channeltype,
+               m.date_test,
                m.time_test,
                m.inspector,
                m.temp_c,
@@ -110,12 +111,16 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                m.list_noisy_cells,
                m.inverse_sqrt_n,
                m.bias_vol,
-               h.roc_name, 
+               m.meas_leakage_current,
+               h.hxb_name,
+               h.kind AS hxb_kop,
+               h.roc_name,
                h.roc_index
         FROM module_pedestal_test m
         LEFT JOIN hexaboard h ON m.module_no = h.module_no
         WHERE m.module_name = ANY($1)
         AND m.bias_vol > 0
+        {skip_filter}
         """  # OR m.date_test BETWEEN '{date_start}' AND '{date_end}'
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -123,14 +128,14 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
     else:
         query = f"""
             SELECT m.module_name,
-                m.module_no, 
-                m.chip, 
-                m.channel, 
+                m.module_no,
+                m.chip,
+                m.channel,
                 m.cell,
-                m.adc_mean, 
-                m.adc_stdd, 
-                m.channeltype, 
-                m.date_test, 
+                m.adc_mean,
+                m.adc_stdd,
+                m.channeltype,
+                m.date_test,
                 m.time_test,
                 m.inspector,
                 m.temp_c,
@@ -142,12 +147,16 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
                 m.list_noisy_cells,
                 m.inverse_sqrt_n,
                 m.bias_vol,
-                h.roc_name, 
+                m.meas_leakage_current,
+                h.hxb_name,
+                h.kind AS hxb_kop,
+                h.roc_name,
                 h.roc_index
             FROM module_pedestal_test m
             LEFT JOIN hexaboard h ON m.module_no = h.module_no
             WHERE m.date_test BETWEEN '{date_start}' AND '{date_end}'
             AND m.bias_vol > 0
+            {skip_filter}
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -157,53 +166,68 @@ async def fetch_test_data(conn, date_start, date_end, partsnamelist=None):
         raise ValueError("No data found in pedestal_table.")
 
     test_data = {}
-    for row in rows:
-        if row['roc_name'] is None:
-            module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi')
-            hxb_child_320X = [child["serial_number"] for child in module_data["children"] if child["serial_number"].startswith("320X")][0]
-            hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi')
-            hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
-            hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
-            row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
+    for _row in rows:
+        try:
+            row = dict(_row)
+            if row['roc_name'] is None:
+                try:
+                    print(f"Fetching ROC info from API for {row['module_name']} with {row['hxb_name']} ...")
+                    module_data = read_from_cern_db(partID = row['module_name'], cern_db_url = 'hgcapi')
+                    hxb_child_320X = [child["serial_number"] for child in module_data["children"] if child["serial_number"].startswith("320X")][0]
+                    hxb_data = read_from_cern_db(partID = hxb_child_320X, cern_db_url = 'hgcapi')
+                    hgcroc_children = [{"serial_number": child["serial_number"], "attribute": child["attribute"]} for child in hxb_data["children"] if "HGCROC" in child["kind"]]
+                    hgcroc_children_sorted = sorted(hgcroc_children, key=lambda x: x["attribute"])
+                    row['roc_name'], row['roc_index'] = [roc['serial_number'] for roc in hgcroc_children_sorted], [roc['attribute'] for roc in hgcroc_children_sorted]
+                except:
+                    print(f"ROC missing on CMSR for {row['hxb_name']}")
 
-        date_test = row['date_test']
-        time_test = str(row['time_test']).split('.')[0]
-        run_begin_timestamp = f"{date_test}T{time_test}"
-    
-        if run_begin_timestamp not in test_data:
-            _channel = list(row['channel'])
-            _channeltype = list(row['channeltype'])
-            _chip = list(row['chip'])
-            channel, channeltype = remap_channels(_channel, _channeltype)
-            check_duplicate_combo(_chip, channel)
+            date_test = row['date_test']
+            time_test = str(row['time_test']).split('.')[0]
+            run_begin_timestamp = f"{date_test}T{time_test}"
 
-            test_data[run_begin_timestamp] = {
-                'test_timestamp': f"{row['date_test']} {row['time_test']}",
-                'module_name': row['module_name'],
-                'module_no': row['module_no'],
-                'inspector': row['inspector'],
-                'cell': row['cell'],
-                'chip': _chip,
-                'channel': channel,
-                'channeltype': channeltype,
-                'adc_mean': row['adc_mean'],
-                'adc_stdd': row['adc_stdd'],
-                'roc_name': row['roc_name'],
-                'roc_index': row['roc_index'],
-                'comment' : row['comment'],
-                'inverse_sqrt_n': row['inverse_sqrt_n'],
-                'status_desc': row["status_desc"],
-                'inspector': row['inspector'],  ###### for env
-                'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
-                'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
-                'list_dead_cells': row['list_dead_cells'],
-                'list_noisy_cells': row['list_noisy_cells'],
-                'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
-            }
+            module_kop = await get_kind_of_part(part_name = row['module_name'], conn=conn)
+
+            if run_begin_timestamp not in test_data:  ### add to list if already doesn't exist
+                _channel = list(row['channel'])
+                _channeltype = list(row['channeltype'])
+                _chip = list(row['chip'])
+                channel, channeltype = remap_channels(_channel, _channeltype)
+                check_duplicate_combo(_chip, channel)
+
+                test_data[run_begin_timestamp] = {
+                    'test_timestamp': f"{row['date_test']} {row['time_test']}",
+                    'module_name': row['module_name'],
+                    'module_kop' : module_kop,
+                    'hxb_name': row['hxb_name'],
+                    'hxb_kop': row['hxb_kop'],
+                    'module_no': row['module_no'],
+                    'inspector': row['inspector'],
+                    'cell': row['cell'],
+                    'chip': _chip,
+                    'channel': channel,
+                    'channeltype': channeltype,
+                    'adc_mean': row['adc_mean'],
+                    'adc_stdd': row['adc_stdd'],
+                    'roc_name': row['roc_name'],
+                    'roc_index': row['roc_index'],
+                    'comment' : row['comment'],
+                    'meas_leakage_current': row['meas_leakage_current'],
+                    'bias_vol': row['bias_vol'],
+                    'inverse_sqrt_n': row['inverse_sqrt_n'],
+                    'status_desc': row["status_desc"],
+                    'inspector': row['inspector'],  ###### for env
+                    'rel_hum': row['rel_hum'], # if row['rel_hum'] is not None else 999,
+                    'temp_c': row['temp_c'], # if row['temp_c'] is not None else 999,
+                    'list_dead_cells': row['list_dead_cells'],
+                    'list_noisy_cells': row['list_noisy_cells'],
+                    'pedestal_config_json': row['pedestal_config_json'], ## if row['pedestal_config_json'] is not None else "N/A", #### for config
+                }
+        except:
+            print(f"Error for {row['module_name']} {row['date_test']} {row['time_test']}...")
     return test_data
 
 
-async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_path, template_path_test, template_path_env = None, template_path_config = None, lxplus_username = None):
+async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_path, template_path_test, template_path_env = None, template_path_config = None, template_path_bias = None, lxplus_username = None):
     chips = test_data["chip"]   # Prepare chip-to-ROC mapping
     channels = test_data["channel"]
     adc_means = test_data["adc_mean"]
@@ -240,12 +264,13 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
         chip_config[roc] = pedestal_config_json_full[key]["sc"] if test_data['pedestal_config_json'] else None   
         
     os.makedirs(output_path, exist_ok=True)
-    timestamp_formatted = str(run_begin_timestamp).replace(":","").split('.')[0]
-    file_path_test = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal.xml")
-    file_path_env = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_cond.xml")
+    timestamp_formatted = str(run_begin_timestamp).replace("-","").replace(":","").split('.')[0]
+    file_path_test   = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal.xml")
+    file_path_env    = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_cond.xml")
     file_path_config = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_config.xml")
-    outfile_names = {'test': file_path_test, 'env': file_path_env, 'config': file_path_config}
-    xml_types = {'test': template_path_test, 'env': template_path_env, 'config': template_path_config}
+    file_path_bias   = os.path.join(output_path, f"{test_data['module_name']}_{timestamp_formatted}_pedestal_bias.xml")
+    outfile_names = {'test': file_path_test,     'env': file_path_env,     'config': file_path_config,     'bias': file_path_bias}
+    xml_types =     {'test': template_path_test, 'env': template_path_env, 'config': template_path_config, 'bias': template_path_bias}
 
     test_timestamp = test_data['test_timestamp']
     test_timestamp = datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S.%f") if "." in test_timestamp else datetime.datetime.strptime(test_timestamp, "%Y-%m-%d %H:%M:%S")
@@ -258,7 +283,7 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
         root = tree.getroot()
         run_info = root.find("HEADER/RUN")
         if run_info is not None:
-            run_info.find("RUN_TYPE").text = "Si module pedestal and noise" if not test_data['status_desc'] else f"Si module pedestal and noise - {test_data['status_desc']}"
+            run_info.find("RUN_TYPE").text = ("Si module pedestal and noise" if not test_data['status_desc'] else f"Si module pedestal and noise - {test_data['status_desc']}")            
             run_info.find("RUN_NUMBER").text = get_run_num(LOCATION, test_timestamp)
             run_info.find("INITIATED_BY_USER").text = lxplus_username if lxplus_username is not None else "None"
             run_info.find("RUN_BEGIN_TIMESTAMP").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
@@ -269,49 +294,82 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
         data_set = root.find("DATA_SET")  # Get and remove the original <DATA_SET> template block in all three XML types
         root.remove(data_set)
 
-        # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
-        for roc, entries in roc_grouped_data.items():
+        if xml_type in ['test', 'config']:
+            # Create one <DATA_SET> per ROC and add all <DATA> blocks under it
+            for roc, entries in roc_grouped_data.items():
+                data_set = copy.deepcopy(data_set)       # Deep copy the template DATA_SET element for the test
+                data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data["comment"] else test_data["comment"].replace("\n","; ")  # Insert the comments from testing
+
+                serial_elem = data_set.find("PART/SERIAL_NUMBER") # Set the correct SERIAL_NUMBER inside PART
+                if serial_elem is not None:
+                    serial_elem.text = roc
+                kindofpart = data_set.find("PART/KIND_OF_PART")
+                if kindofpart is not None:
+                    kindofpart.text = f"{test_data['module_name'][4]}D HGCROC"
+
+                for data_elem in data_set.findall("DATA"): # Remove placeholder DATA blocks (direct children of DATA_SET)
+                    data_set.remove(data_elem)
+
+                if xml_type == 'test':
+                    for entry in entries:  # Add actual DATA blocks under DATA_SET (NOT under PART)
+                        data = ET.Element("DATA")
+                        ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
+                        ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
+                        ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
+                        flag = "0"      if entry["adc_mean"] == 0  else ""
+                        flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
+                        flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
+                        if flag:
+                            ET.SubElement(data, "FLAGS").text = flag
+                        if test_data["inverse_sqrt_n"]:
+                            ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
+                        data_set.append(data)  # <== append directly under DATA_SET
+                elif xml_type == 'config':
+                    data = ET.Element("DATA")
+                    toa_vref = find_toa_vref(chip_config[roc])
+                    ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
+                    ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
+                    data_set.append(data)  # <== append directly under DATA_SET 
+                
+                root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
+        
+
+        elif xml_type in ['env', 'bias']:  ## do for module for cond and hexaboard for bias
             data_set = copy.deepcopy(data_set)       # Deep copy the template DATA_SET element for the test
             data_set.find("COMMENT_DESCRIPTION").text = "NULL" if not test_data["comment"] else test_data["comment"].replace("\n","; ")  # Insert the comments from testing
 
-            serial_elem = data_set.find("PART/SERIAL_NUMBER") # Set the correct SERIAL_NUMBER inside PART
-            if serial_elem is not None:
-                serial_elem.text = roc
-            kindofpart = data_set.find("PART/KIND_OF_PART")
-            if kindofpart is not None:
-                kindofpart.text = f"{test_data['module_name'][4]}D HGCROC"
+            if xml_type == 'env':
+                serial_elem = data_set.find("PART/SERIAL_NUMBER") # Set the correct SERIAL_NUMBER inside PART
+                if serial_elem is not None:
+                    serial_elem.text = test_data['module_name']
+                kindofpart = data_set.find("PART/KIND_OF_PART")
+                if kindofpart is not None:
+                    kindofpart.text = test_data['module_kop']
 
-            for data_elem in data_set.findall("DATA"): # Remove placeholder DATA blocks (direct children of DATA_SET)
-                data_set.remove(data_elem)
-
-            if xml_type == 'test':
-                for entry in entries:  # Add actual DATA blocks under DATA_SET (NOT under PART)
-                    data = ET.Element("DATA")
-                    ET.SubElement(data, "CHANNEL").text = str(entry["channel"])
-                    ET.SubElement(data, "MEAN").text = str(entry["adc_mean"])
-                    ET.SubElement(data, "STDEV").text = str(entry["adc_stdd"])
-                    flag = "0"      if entry["adc_mean"] == 0  else ""
-                    flag = flag+"D" if entry["channel"] in chip_dead_channels[roc]  else flag
-                    flag = flag+"N" if entry["channel"] in chip_noisy_channels[roc] else flag
-                    if flag:
-                        ET.SubElement(data, "FLAGS").text = flag
-                    if test_data["inverse_sqrt_n"]:
-                        ET.SubElement(data, "FRAC_UNC").text = str(round(test_data["inverse_sqrt_n"],14)) ### 1/sqrt(N) where N=10032
-                    data_set.append(data)  # <== append directly under DATA_SET
-            elif xml_type == 'env':
+                for data_elem in data_set.findall("DATA"): # Remove placeholder DATA blocks (direct children of DATA_SET)
+                    data_set.remove(data_elem)
                 data = ET.Element("DATA")  # Add actual DATA blocks under DATA_SET (NOT under PART)
                 ET.SubElement(data, "TEMP_C").text = test_data['temp_c']
                 ET.SubElement(data, "HUMIDITY_REL").text = test_data['rel_hum']
                 ET.SubElement(data, "MEASUREMENT_TIME").text = format_datetime(run_begin_timestamp.split('T')[0], run_begin_timestamp.split('T')[1])
                 data_set.append(data)  # <== append directly under DATA_SET
-            elif xml_type == 'config':
+                root.append(data_set)  # Append the completed DATA_SET to ROOT for the part
+
+            elif xml_type == 'bias':
+                serial_elem = data_set.find("PART/SERIAL_NUMBER") # Set the correct SERIAL_NUMBER inside PART
+                if serial_elem is not None:
+                    serial_elem.text = test_data['hxb_name']
+                kindofpart = data_set.find("PART/KIND_OF_PART")
+                if kindofpart is not None:
+                    kindofpart.text = test_data['hxb_kop']
+
+                for data_elem in data_set.findall("DATA"): # Remove placeholder DATA blocks (direct children of DATA_SET)
+                    data_set.remove(data_elem)
                 data = ET.Element("DATA")
-                toa_vref = find_toa_vref(chip_config[roc])
-                ET.SubElement(data, "PURPOSE").text = f"Tuned for TOA_vref={toa_vref[0]}" if toa_vref else "TOA_vref N/A"
-                ET.SubElement(data, "CONFIG_JSON").text = f'''{chip_config[roc]}'''
+                ET.SubElement(data, "BIAS_VOLTAGE").text = f"{test_data['bias_vol']}"
+                ET.SubElement(data, "BIAS_CURRENT_TOTAL_AMPS").text = f"{test_data['meas_leakage_current']}"
                 data_set.append(data)  # <== append directly under DATA_SET 
-            
-            root.append(data_set)  # Append the completed DATA_SET to ROOT for each ROC
+                root.append(data_set)  # Append the completed DATA_SET to ROOT for the part
         
         # Pretty-print the XML
         rough_string = ET.tostring(root, encoding="utf-8")
@@ -332,28 +390,59 @@ async def generate_module_pedestal_xml(test_data, run_begin_timestamp, output_pa
         with open(outfile_names[xml_type], "w", encoding="utf-8") as f:  ### Write to output file
             f.write(pretty_xml)
 
-    return outfile_names
+    zip_path = file_path_test.replace("_pedestal.xml", "_pedestal.zip")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for xml_file in outfile_names.values():
+            if os.path.exists(xml_file):
+                zf.write(xml_file, os.path.basename(xml_file))
+                os.remove(xml_file)
+    return zip_path
 
 
-async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None):
+async def main(dbpassword, output_dir, date_start, date_end, encryption_key=None, partsnamelist=None, lxplus_username = None, skip_uploaded=True):
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     temp_dir = 'export_data/template_examples/testing/module_pedestal_test.xml'
     temp_dir_config = 'export_data/template_examples/testing/module_pedestal_config.xml'
+    temp_dir_bias = 'export_data/template_examples/testing/module_pedestal_bias.xml'
     temp_dir_env = 'export_data/template_examples/testing/qc_env_cond.xml'
     output_dir = 'export_data/xmls_for_upload/testing/pedestal'
 
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist)
+        test_data = await fetch_test_data(conn, date_start, date_end, partsnamelist, skip_uploaded)
         for timestamp_key in tqdm(list(test_data.keys())):
             try:
                 float(test_data[timestamp_key]['rel_hum'])
-                float(test_data[timestamp_key]['temp_c'])                
+                float(test_data[timestamp_key]['temp_c'])
             except:
-                print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}") 
+                print(f"{RED}{test_data[timestamp_key]['module_name']}: {timestamp_key} You cannot upload any test data when humidity or temperature is null.{RESET}")
                 continue
-            output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, lxplus_username=lxplus_username)
+            try:
+                output_file = await generate_module_pedestal_xml(test_data[timestamp_key], timestamp_key, output_dir, template_path_test=temp_dir,  template_path_env=temp_dir_env, template_path_config=temp_dir_config, template_path_bias=temp_dir_bias, lxplus_username=lxplus_username)
+                module_name = test_data[timestamp_key]['module_name']
+                date_part, time_part = timestamp_key.split('T')
+                await update_timestamp_col(conn,
+                                        update_flag=True,
+                                        table_list=['module_pedestal_test'],
+                                        column_name='xml_gen_datetime',
+                                        part='module',
+                                        part_name=module_name,
+                                        extra_where=f"AND date_test = '{date_part}' AND time_test::text LIKE '{time_part}%'")
+                # Stamp rows that don't satisfy statusdict_select with sentinel (now - 100 years)
+                if statusdict_select:
+                    now = datetime.datetime.now()
+                    sentinel_ts = now.replace(year=now.year - 100)
+                    await update_timestamp_col(conn,
+                                            update_flag=True,
+                                            table_list=['module_pedestal_test'],
+                                            column_name='xml_gen_datetime',
+                                            part='module',
+                                            part_name=module_name,
+                                            extra_where=f"AND status_desc NOT IN {statusdict_select}",
+                                            timestamp=sentinel_ts)
+            except Exception as e:
+                print(f"Error for {test_data[timestamp_key]['module_name']}", e)
     except Exception as e:
         print(f"{RED}An error occurred: {traceback.print_exc()}.{RESET}")
     finally:
@@ -366,20 +455,22 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
-    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
+    parser.add_argument('-lxu', '--lxpusername', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
-    args = parser.parse_args()   
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    args = parser.parse_args()
 
-    lxplus_username = args.dbl_username
+    lxplus_username = args.lxpusername
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist, lxplus_username = lxplus_username))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, partsnamelist=partsnamelist, lxplus_username = lxplus_username, skip_uploaded=skip_uploaded))

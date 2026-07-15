@@ -48,7 +48,7 @@ def analyze_log_status(log_path: str, upload_path: str, status_tracker = status_
         missing_failed_lastLine_pattern = re.compile(r"\.\.\.\s*\d+\s+more\b")
 
         # ---- Decision logic ----
-        if "commit transaction" in last_line.lower():
+        if "commit transaction" in log_text.lower():
             message=(f"{GREEN}Success: {xmlfilename}:{RESET} {last_line}")
             status_tracker['dbloader_success'].append(message)
             remove_file(Path(remote_xml_dir, xmlfilename))

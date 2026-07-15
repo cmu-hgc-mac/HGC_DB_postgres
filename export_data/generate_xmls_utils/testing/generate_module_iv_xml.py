@@ -3,7 +3,7 @@ import asyncpg
 import argparse
 import json
 import numpy as np
-import sys, os, yaml, argparse, datetime
+import sys, os, yaml, argparse, datetime, zipfile
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from export_data.src import *
 from export_data.define_global_var import LOCATION, INSTITUTION
@@ -27,7 +27,7 @@ def fetch_module_iv_data(prog_v, meas_v, meas_i, meas_r):
         'meas_r': meas_r
     }
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, xml_file_path_env = None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, xml_file_path_env = None, skip_uploaded=True):
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
     xml_data_iv  = yaml_data['module_iv']
@@ -40,11 +40,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
     ## list module_names that we want to generate xmls
     module_list = set()
+    skip_filter = "AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)" if skip_uploaded else ""
     if partsnamelist:
         query = f"""
             SELECT module_name, status, status_desc, mod_ivtest_no, temp_c, rel_hum
             FROM module_iv_test
-            WHERE module_name = ANY($1)
+            WHERE module_name = ANY($1) {skip_filter}
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -53,7 +54,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         query = f"""
             SELECT module_name, status, status_desc, mod_ivtest_no, temp_c, rel_hum
             FROM module_iv_test
-            WHERE module_iv_test.date_test BETWEEN '{date_start}' AND '{date_end}'
+            WHERE module_iv_test.date_test BETWEEN '{date_start}' AND '{date_end}' {skip_filter}
         """
         if statusdict_select:
             query += f" AND status_desc IN {statusdict_select}"
@@ -100,8 +101,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     if not dbase_col and not dbase_table:
                         continue
                 
+                    _inner_skip = "AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)" if skip_uploaded else ""
                     query = f"""
-                    SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module_name}' AND mod_ivtest_no = {mod_ivtest_no}
+                    SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module_name}' AND mod_ivtest_no = {mod_ivtest_no} {_inner_skip}
                     """
                     try:
                         results = await fetch_from_db(query, conn)
@@ -176,28 +178,46 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values_iv[xml_var] = db_values[xml_var]
                 elif xml_type == 'env':
                     db_values_env[xml_var] = db_values[xml_var]
-
                        
             # Update the XML with the database values
             # db_values_env['tempsensor_id'] = 'null' ## change this to Null in the future   
-            combined_str_mod = str(combined_str).replace(" ","T").replace(":","").split('.')[0]
+            combined_str_mod = str(dt_obj).replace("-","").replace(" ","T").replace(":","").split('.')[0]
             output_file_name_iv = f"{module_name}_{combined_str_mod}_iv.xml"
             output_file_path_iv = os.path.join(output_dir, output_file_name_iv)
             output_file_name_env = f"{module_name}_{combined_str_mod}_iv_cond.xml"
             output_file_path_env = os.path.join(output_dir, output_file_name_env)
             await update_xml_with_db_values(xml_file_path,     output_file_path_iv,  db_values_iv)
             await update_xml_with_db_values(xml_file_path_env, output_file_path_env, db_values_env)
+            zip_path = output_file_path_iv.replace("_iv.xml", "_iv.zip")
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for xml_file in [output_file_path_iv, output_file_path_env]:
+                    if os.path.exists(xml_file):
+                        zf.write(xml_file, os.path.basename(xml_file))
+                        os.remove(xml_file)
             await update_timestamp_col(conn,
                                     update_flag=True,
                                     table_list=['module_iv_test'],
                                     column_name='xml_gen_datetime',
                                     part='module',
-                                    part_name=module_name)
+                                    part_name=module_name,
+                                    extra_where=f"AND mod_ivtest_no = {mod_ivtest_no}")
+            # Stamp rows that don't satisfy statusdict_select with sentinel (now - 100 years)
+            if statusdict_select:
+                now = datetime.datetime.now()
+                sentinel_ts = now.replace(year=now.year - 100)
+                await update_timestamp_col(conn,
+                                        update_flag=True,
+                                        table_list=['module_iv_test'],
+                                        column_name='xml_gen_datetime',
+                                        part='module',
+                                        part_name=module_name,
+                                        extra_where=f"AND status_desc NOT IN {statusdict_select}",
+                                        timestamp=sentinel_ts)
         
         except Exception as e:
             print('#'*15, f'ERROR for {module_name}','#'*15 ); traceback.print_exc(); print('')
 
-async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None):
+async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None, skip_uploaded=True):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path     = 'export_data/template_examples/testing/module_iv_test.xml'# XML template file path
@@ -206,7 +226,7 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
 
     conn = await get_conn(dbpassword, encryption_key)
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, xml_file_path_env=xml_file_path_env)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, xml_file_path_env=xml_file_path_env, skip_uploaded=skip_uploaded)
     finally:
         await conn.close()
 
@@ -215,20 +235,22 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
-    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
+    parser.add_argument('-lxu', '--lxpusername', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
-    args = parser.parse_args()   
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    args = parser.parse_args()
 
-    lxplus_username = args.dbl_username
+    lxplus_username = args.lxpusername
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist))
+    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, skip_uploaded=skip_uploaded))

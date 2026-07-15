@@ -85,7 +85,7 @@ def compare_schemas(existing_schema: dict, desired_schema: dict):
 # 4. Apply the changes - datatype
 async def change_column_datatype(conn, table_name: str, column_name: str, old_datatype: str, new_datatype: str, default_value: str):
     # Step 1: Change the data type (without DEFAULT)
-    if (old_datatype != new_datatype) and (len(new_datatype.split()) == 1):
+    if (old_datatype["data_type"] != new_datatype.lower()) and (len(new_datatype.split()) == 1):
         alter_query = f"ALTER TABLE {table_name} ALTER COLUMN {column_name} TYPE {new_datatype};"
         print(f"Executing: {alter_query}")
         try:
@@ -95,7 +95,7 @@ async def change_column_datatype(conn, table_name: str, column_name: str, old_da
             return  # Stop further processing for this column if type change fails
     
     # Step 2: Set the DEFAULT value separately
-    if len(new_datatype.split()) > 1:
+    if default_value: #len(new_datatype.split()) > 1:
         set_default_query = f"ALTER TABLE {table_name} ALTER COLUMN {column_name} SET DEFAULT {default_value};"
         print(f"Executing: {set_default_query}")
         try:
@@ -144,7 +144,11 @@ async def apply_changes(conn, table_name: str, changes, existing_schema):
         #     await change_column_datatype(conn, table_name, column, old_type, new_type)
         if change[0] == 'datatype':
             _, column, old_type, new_type = change
-            default_value = existing_schema[column].get('default')
+            if 'DEFAULT ' in new_type:  ### note the space after DEFAULT
+                new_type_with_default = new_type
+                new_type, default_value = new_type_with_default.split(' DEFAULT ')
+            else:
+                default_value = existing_schema[column].get('default')
             await change_column_datatype(conn, table_name, column, old_type, new_type, default_value)
         elif change[0] == 'new_column':
             _, column, _, new_type = change

@@ -6,6 +6,8 @@ Last Update: 2025-10-07
 
 This tool uploads XML files to CMSR or INT2R databases in parallel batches,
 monitoring the upload state and providing detailed progress reporting.
+This was modified such that it deletes the XMLs that were successfully uploaded.
+The output CSV file gets modified if it already exists to account for progress made in subsequent attempts.
 
 main repository: https://gitlab.cern.ch/dboncukc/mass-loader
 new file source: https://gitlab.cern.ch/dboncukc/mass-loader/-/blob/master/mass_loader.py?ref_type=heads
@@ -189,7 +191,8 @@ class FileHandler:
         return True
 
     def gather_xml_files(self, paths: List[str]) -> List[Path]:
-        """Collect all XML files from provided paths/patterns."""
+        """Collect all XML and ZIP files from provided paths/patterns."""
+        VALID_SUFFIXES = {'.xml', '.zip'}
         xml_files: List[Path] = []
 
         for pattern in paths:
@@ -197,10 +200,10 @@ class FileHandler:
 
             # Handle directories
             if path.is_dir():
-                logger.info(f"Directory provided: {path}, gathering all XML files")
+                logger.info(f"Directory provided: {path}, gathering all XML/ZIP files")
                 xml_files.extend(
-                    p for p in path.glob("*.xml")
-                    if p.is_file() and p.suffix.lower() == '.xml'
+                    p for p in path.iterdir()
+                    if p.is_file() and p.suffix.lower() in VALID_SUFFIXES
                 )
                 continue
 
@@ -211,23 +214,23 @@ class FileHandler:
                     expanded = list(parent.glob(path.name))
                     xml_files.extend(
                         p for p in expanded
-                        if p.is_file() and p.suffix.lower() == '.xml'
+                        if p.is_file() and p.suffix.lower() in VALID_SUFFIXES
                     )
                 except Exception as e:
                     logger.error(f"Error processing glob pattern {pattern}: {e}")
                 continue
 
             # Handle individual files
-            if path.is_file() and path.suffix.lower() == '.xml':
+            if path.is_file() and path.suffix.lower() in VALID_SUFFIXES:
                 xml_files.append(path)
             else:
-                logger.error(f"No files matched or invalid XML file: {pattern}")
+                logger.error(f"No files matched or invalid XML/ZIP file: {pattern}")
 
         # Remove duplicates while preserving order
         xml_files = list(dict.fromkeys(xml_files))
 
         if not xml_files:
-            logger.warning("No XML files found in the specified paths")
+            logger.warning("No XML/ZIP files found in the specified paths")
         else:
             logger.info(f"Found {len(xml_files)} XML files")
             if logger.isEnabledFor(logging.INFO):
@@ -326,16 +329,41 @@ class UploadProcessor:
 
         # Read final state
         state = self.file_handler.read_state_file(state_path)
+        log_path = self.file_handler.get_log_path(file_path.name, db)
+
+        # Default interpretation from state file
         if state is None:
             status = UploadStatus.ERROR.value
             state = 'State Read Error'
+        elif state == 0:
+            status = UploadStatus.SUCCESS.value
         else:
-            status = UploadStatus.SUCCESS.value if state == 0 else UploadStatus.ERROR.value
+            status = UploadStatus.ERROR.value
 
-        log_path = self.file_handler.get_log_path(file_path.name, db)
-        logger.info(f"Log path for {file_path.name}: {log_path}")
+        # --- NEW SECTION: check log content for special cases ---
+        def _read_log_status(log_path, current_status):
+            try:
+                if os.path.exists(log_path):
+                    with open(log_path, 'r', encoding='utf-8', errors='ignore') as logf:
+                        log_text = logf.read().lower()
+                        if "dataset already exists" in log_text or "already uploaded" in log_text:
+                            return UploadStatus.ALREADY_UPLOADED.value
+                        elif "timeout" in log_text and current_status != UploadStatus.SUCCESS.value:
+                            return UploadStatus.TIMEOUT.value
+            except Exception as log_err:
+                logger.warning(f"Could not read log file {log_path}: {log_err}")
+            return current_status
 
+        status = _read_log_status(log_path, status)
+        if status not in (UploadStatus.SUCCESS.value, UploadStatus.ALREADY_UPLOADED.value, UploadStatus.TIMEOUT.value):
+            logger.info(f"Status not conclusive for {file_path.name}, waiting 5s before re-checking log ...")
+            time.sleep(5)
+            status = _read_log_status(log_path, status)
+        # --------------------------------------------------------
+
+        logger.info(f"Final status for {file_path.name}: {status}")
         return UploadResult(src, status, state, state_path, log_path)
+
 
 
 # =============================================================================
@@ -488,7 +516,8 @@ class MassLoader:
         timeout: int = None,
         csv_path: str = None,
         verbose: bool = False,
-        force: bool = False
+        force: bool = False,
+        delete_on_success: bool = False
     ) -> UploadStatistics:
         """
         Run the batch upload process.
@@ -522,13 +551,23 @@ class MassLoader:
         # Gather XML files
         xml_files = self.file_handler.gather_xml_files(file_paths)
         if not xml_files:
-            logger.error("No valid XML files to process")
+            logger.error("No valid XML/ZIP files to process")
             sys.exit(1)
 
         # Setup CSV output
         if csv_path is None:
             csv_path = f"mass_loader_{timestamp}.csv"
         csv_writer = CSVResultWriter(csv_path)
+
+        # Load existing rows so retries update rather than overwrite
+        existing_rows = {}  # xml_path -> row list
+        if Path(csv_path).exists():
+            with open(csv_path, newline='', encoding='utf-8') as existing_f:
+                reader = csv.reader(existing_f)
+                next(reader, None)  # skip header
+                for row in reader:
+                    if row:
+                        existing_rows[row[0]] = row
 
         total_files = len(xml_files)
         tracker = ProgressTracker(total_files, verbose)
@@ -539,47 +578,41 @@ class MassLoader:
             if force:
                 logger.info("Force mode: will upload files even if already uploaded")
 
-        # Process uploads
+        # Process uploads — collect new results then merge with existing
+        new_results = {}  # xml_path -> csv row
         try:
-            with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(CSVResultWriter.HEADERS)
-                csvfile.flush()
+            with ThreadPoolExecutor(max_workers=chunk_size) as executor:
+                future_to_file = {
+                    executor.submit(
+                        self.processor.process_file,
+                        file_path,
+                        db,
+                        force,
+                        timeout
+                    ): file_path
+                    for file_path in xml_files
+                }
 
-                with ThreadPoolExecutor(max_workers=chunk_size) as executor:
-                    # Submit all tasks
-                    future_to_file = {
-                        executor.submit(
-                            self.processor.process_file,
-                            file_path,
-                            db,
-                            force,
-                            timeout
-                        ): file_path
-                        for file_path in xml_files
-                    }
-
-                    # Process results as they complete
-                    if verbose:
-                        self._process_results_verbose(
-                            future_to_file,
-                            writer,
-                            csvfile,
-                            csv_writer,
-                            tracker
-                        )
-                    else:
-                        self._process_results_with_progress_bar(
-                            future_to_file,
-                            writer,
-                            csvfile,
-                            csv_writer,
-                            tracker
-                        )
+                if verbose:
+                    self._process_results_verbose(
+                        future_to_file, new_results, tracker, delete_on_success
+                    )
+                else:
+                    self._process_results_with_progress_bar(
+                        future_to_file, new_results, tracker, delete_on_success
+                    )
 
         except Exception as e:
             logger.error(f"Error during processing: {e}")
             sys.exit(1)
+
+        # Merge new results into existing rows and rewrite CSV
+        existing_rows.update(new_results)
+        with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(CSVResultWriter.HEADERS)
+            for row in existing_rows.values():
+                writer.writerow(row)
 
         # Log final statistics
         tracker.stats.log_summary()
@@ -587,21 +620,31 @@ class MassLoader:
 
         return tracker.stats
 
+    def _delete_if_success(self, result: UploadResult) -> None:
+        """Delete source XML if upload was successful or already uploaded."""
+        if result.status in (UploadStatus.SUCCESS.value, UploadStatus.ALREADY_UPLOADED.value):
+            try:
+                os.remove(result.source_path)
+                logger.info(f"Deleted {result.source_path} after {result.status}")
+            except Exception as e:
+                logger.warning(f"Could not delete {result.source_path}: {e}")
+
     def _process_results_verbose(
         self,
         future_to_file,
-        writer,
-        csvfile,
-        csv_writer: CSVResultWriter,
-        tracker: ProgressTracker
+        new_results: dict,
+        tracker: ProgressTracker,
+        delete_on_success: bool = False
     ) -> None:
         """Process results with verbose logging."""
         for future in as_completed(future_to_file):
             file_path = future_to_file[future]
             try:
                 result = future.result()
-                csv_writer.write_result(writer, csvfile, result)
+                new_results[result.source_path] = result.to_csv_row()
                 tracker.stats.update_from_result(result)
+                if delete_on_success:
+                    self._delete_if_success(result)
                 tracker.log_progress()
             except Exception as exc:
                 logger.error(f"Error processing {file_path}: {exc}")
@@ -612,17 +655,16 @@ class MassLoader:
                     '',
                     ''
                 )
-                csv_writer.write_result(writer, csvfile, error_result)
+                new_results[error_result.source_path] = error_result.to_csv_row()
                 tracker.stats.update_from_result(error_result)
                 tracker.log_progress()
 
     def _process_results_with_progress_bar(
         self,
         future_to_file,
-        writer,
-        csvfile,
-        csv_writer: CSVResultWriter,
-        tracker: ProgressTracker
+        new_results: dict,
+        tracker: ProgressTracker,
+        delete_on_success: bool = False
     ) -> None:
         """Process results with tqdm progress bar."""
         with tqdm(
@@ -634,8 +676,10 @@ class MassLoader:
                 file_path = future_to_file[future]
                 try:
                     result = future.result()
-                    csv_writer.write_result(writer, csvfile, result)
+                    new_results[result.source_path] = result.to_csv_row()
                     tracker.stats.update_from_result(result)
+                    if delete_on_success:
+                        self._delete_if_success(result)
                 except Exception as exc:
                     logger.error(f"Error processing {file_path}: {exc}")
                     error_result = UploadResult(
@@ -645,7 +689,7 @@ class MassLoader:
                         '',
                         ''
                     )
-                    csv_writer.write_result(writer, csvfile, error_result)
+                    new_results[error_result.source_path] = error_result.to_csv_row()
                     tracker.stats.update_from_result(error_result)
 
                 pbar.update(1)
@@ -703,6 +747,11 @@ def parse_arguments() -> argparse.Namespace:
         action='store_true',
         help='Force upload even if file was already uploaded successfully'
     )
+    parser.add_argument(
+        '-d', '--delete_on_success',
+        action='store_true',
+        help='Delete local XML file after successful or already-uploaded result'
+    )
 
     return parser.parse_args()
 
@@ -732,7 +781,8 @@ def main() -> None:
         timeout=args.timeout,
         csv_path=args.csv_path,
         verbose=args.verbose,
-        force=args.force
+        force=args.force,
+        delete_on_success=args.delete_on_success
     )
 
 

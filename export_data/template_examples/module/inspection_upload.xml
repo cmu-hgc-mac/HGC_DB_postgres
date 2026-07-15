@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ROOT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<HEADER>
+	<TYPE>
+		<EXTENSION_TABLE_NAME>HGC_MOD_INSP</EXTENSION_TABLE_NAME>
+		<NAME>Silicon Module Inspection</NAME>
+	</TYPE>
+	<RUN>
+		<RUN_TYPE>Silicon Module Inspection</RUN_TYPE>
+        <RUN_NUMBER>{{ run_number }}</RUN_NUMBER>
+		<RUN_BEGIN_TIMESTAMP>{{ run_begin_timestamp_ }}</RUN_BEGIN_TIMESTAMP>
+		<RUN_END_TIMESTAMP>{{ run_end_timestamp_ }}</RUN_END_TIMESTAMP>
+		<INITIATED_BY_USER>{{ initiated_by_user }}</INITIATED_BY_USER>
+		<LOCATION>{{ location }}</LOCATION>
+		<COMMENT_DESCRIPTION>Module assembly</COMMENT_DESCRIPTION>
+	</RUN>
+</HEADER>
+	<DATA_SET>
+		<COMMENT_DESCRIPTION>Module Assembly</COMMENT_DESCRIPTION>
+		<VERSION>1</VERSION>
+		<PART>
+			<KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
+			<SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
+		</PART>
+		<DATA>
+			<INPS_USER>{{ inspection_user }}</INPS_USER>
+			<MOD_GRADE>{{ mod_grade }}</MOD_GRADE>
+			<MOD_FLTNS_MM>{{ flatness }}</MOD_FLTNS_MM>
+			<MOD_AVE_THKNS_MM>{{ ave_thickness }}</MOD_AVE_THKNS_MM>
+			<MOD_MAX_THKNS_MM>{{ max_thickness }}</MOD_MAX_THKNS_MM>
+			<PCB_PLCMENT_X_OFFSET>{{ pcb_plcment_x_offset }}</PCB_PLCMENT_X_OFFSET>
+			<PCB_PLCMENT_Y_OFFSET>{{ pcb_plcment_y_offset }}</PCB_PLCMENT_Y_OFFSET>
+			<PCB_PLCMENT_ANG_OFFSET>{{ pcb_plcment_ang_offset }}</PCB_PLCMENT_ANG_OFFSET>
+		</DATA>
+	</DATA_SET>
+</ROOT>

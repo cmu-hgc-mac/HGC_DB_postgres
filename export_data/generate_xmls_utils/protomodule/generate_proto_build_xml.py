@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from export_data.define_global_var import LOCATION, INSTITUTION
 from export_data.src import *
 
-async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None):
+async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, skip_uploaded=True, cern_db_url='hgcapi'):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_data = yaml.safe_load(file)
@@ -22,7 +22,18 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         return
     db_tables = ['proto_assembly']
     proto_tables = ['proto_assembly', 'proto_inspect']
-    
+
+    # Fetch protomodules already known to the HGCAPI for this location
+    api_data = read_from_cern_db(macID=LOCATION, partType='pml', cern_db_url=cern_db_url)  ## returns parts that haven't been assigned into modules
+    api_protos = set()
+    if api_data and 'parts' in api_data:
+        api_protos = {p['serial_number'].replace('-', '') for p in api_data['parts'] if p.get('serial_number')}
+
+    api_data = read_from_cern_db(macID=LOCATION, partType='ml', cern_db_url=cern_db_url)  ## returns parts that haven't been assigned into modules
+    if api_data and 'parts' in api_data:
+        api_modules = {p['serial_number'].replace('-', '').replace("320M", "320P") for p in api_data['parts'] if p.get('serial_number')}
+        api_protos.update(api_modules)
+
     proto_list = set()
     if partsnamelist:
         query = f"""SELECT REPLACE(proto_name,'-','') AS proto_name FROM proto_assembly WHERE proto_name = ANY($1)"""
@@ -31,11 +42,18 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         module_query = f"""
         SELECT DISTINCT REPLACE(proto_name,'-','') AS proto_name
         FROM proto_assembly
-        WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}' 
+        WHERE ass_run_date BETWEEN '{date_start}' AND '{date_end}'
         """
         results = await conn.fetch(module_query)
-        
-    proto_list.update(row['proto_name'] for row in results if 'proto_name' in row)
+
+    all_protos = {row['proto_name'] for row in results if 'proto_name' in row}
+    # Only generate XMLs for protomodules not yet in the HGCAPI
+    proto_list = all_protos - api_protos if skip_uploaded else all_protos
+    db_label = next((v['dbname'] for v in db_source_dict.values() if v['url'] == cern_db_url), cern_db_url)
+    if not proto_list:
+        print(f"All protomodules already present in {db_label}. Nothing to generate.")
+        return
+    print(f"Protomodules in postgres not in {db_label} ({len(proto_list)}): {sorted(proto_list)}")
 
     # Fetch database values for the XML template variables
     for proto_name in proto_list:
@@ -53,10 +71,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     db_values[xml_var] = proto_name
                 elif xml_var == 'KIND_OF_PART':
                     db_values[xml_var] = await get_kind_of_part(proto_name)
-                elif xml_var == 'RECORD_INSERTION_USER':
-                    db_values[xml_var] = lxplus_username
+                # elif xml_var == 'RECORD_INSERTION_USER':
+                #     db_values[xml_var] = lxplus_username
                 elif xml_var == 'KIND_OF_PART_BASEPLATE':
-                    _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
+                    _query = f"SELECT REPLACE(bp_name,'-','') AS bp_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' ;"
                     _bp_name = await conn.fetch(_query)
                     # if _bp_name:
                     #     bp_name = _bp_name[0]['bp_name']
@@ -71,7 +89,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                     _bp_name = _bp_name[0]['bp_name']
                     db_values[xml_var] = await get_kind_of_part(part_name=_bp_name, part='baseplate', conn=conn)
                 elif xml_var == 'KIND_OF_PART_SENSOR':
-                    _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' /* AND xml_upload_success IS NULL */;"
+                    _query = f"SELECT REPLACE(sen_name,'-','') AS sen_name FROM proto_assembly WHERE REPLACE(proto_name,'-','') = '{proto_name}' ;"
                     _sen_name = await conn.fetch(_query)
                     # if _sen_name:
                     #     sen_name = _sen_name[0]['sen_name']
@@ -97,7 +115,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
                     # Ignore nested queries for now
                     if entry['nested_query']:
-                        query = entry['nested_query'] + f" WHERE proto_assembly.proto_name = '{proto_name}' /* AND xml_upload_success IS NULL */;"
+                        query = entry['nested_query'] + f" WHERE proto_assembly.proto_name = '{proto_name}' ;"
                         
                     else:
                         # Modify the query to get the latest entry
@@ -105,14 +123,12 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
-                            -- AND xml_upload_success IS NULL
                             ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
                         else:
                             query = f"""
                             SELECT {dbase_col} FROM {dbase_table} 
                             WHERE REPLACE(proto_name,'-','') = '{proto_name}' 
-                            -- AND xml_upload_success IS NULL
                             ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
                     
@@ -142,17 +158,17 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_name = f'{proto_name}_{os.path.basename(xml_file_path)}'
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            await update_timestamp_col(conn,
-                                    update_flag=True,
-                                    table_list=db_tables,
-                                    column_name='xml_gen_datetime',
-                                    part='protomodule',
-                                    part_name=proto_name)
+            # await update_timestamp_col(conn,
+            #                         update_flag=True,
+            #                         table_list=db_tables,
+            #                         column_name='xml_gen_datetime',
+            #                         part='protomodule',
+            #                         part_name=proto_name)
             
         except Exception as e:
             print('#'*15, f'ERROR for {proto_name}','#'*15 ); traceback.print_exc(); print('')
         
-async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key = None, partsnamelist=None):
+async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, encryption_key=None, partsnamelist=None, skip_uploaded=True, cern_db_url='hgcapi'):
     # Configuration
     yaml_file = 'export_data/table_to_xml_var.yaml'  # Path to YAML file
     xml_file_path = 'export_data/template_examples/protomodule/build_upload.xml'# XML template file path
@@ -163,7 +179,7 @@ async def main(dbpassword, output_dir, date_start, date_end, lxplus_username, en
     conn = await get_conn(dbpassword, encryption_key)
 
     try:
-        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist)
+        await process_module(conn, yaml_file, xml_file_path, xml_output_dir, date_start, date_end, lxplus_username, partsnamelist, skip_uploaded, cern_db_url)
     finally:
         await conn.close()
 
@@ -172,21 +188,25 @@ if __name__ == "__main__":
     today = datetime.datetime.today().strftime('%Y-%m-%d')
 
     parser = argparse.ArgumentParser(description="A script that modifies a table and requires the -t argument.")
-    parser.add_argument('-lxu', '--dbl_username', default=None, required=False, help="Username to access lxplus.")
+    parser.add_argument('-lxu', '--lxpusername', default=None, required=False, help="Username to access lxplus.")
     parser.add_argument('-dbp', '--dbpassword', default=None, required=False, help="Password to access database.")
     parser.add_argument('-k', '--encrypt_key', default=None, required=False, help="The encryption key")
     parser.add_argument('-dir','--directory', default=None, help="The directory to process. Default is ../../xmls_for_dbloader_upload.")
     parser.add_argument('-datestart', '--date_start', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument('-dateend', '--date_end', type=lambda s: str(datetime.datetime.strptime(s, '%Y-%m-%d').date()), default=str(today), help=f"Date for XML generated (format: YYYY-MM-DD). Default is today's date: {today}")
     parser.add_argument("-pn", '--partnameslist', nargs="+", help="Space-separated list", required=False)
-    args = parser.parse_args()   
+    parser.add_argument('-skup', '--skip_uploaded', default='True', required=False, help="Skip rows that have already been uploaded")
+    parser.add_argument('-cerndb', '--cerndb', default='prod_db', required=False, help="CERN DB target: 'prod_db' (hgcapi) or 'dev_db' (hgcapi-intg)")
+    args = parser.parse_args()
 
-    lxplus_username = args.dbl_username
+    lxplus_username = args.lxpusername
     dbpassword = args.dbpassword
     output_dir = args.directory
     encryption_key = args.encrypt_key
     date_start = args.date_start
     date_end = args.date_end
     partsnamelist = args.partnameslist
+    skip_uploaded = str2bool(args.skip_uploaded)
+    cern_db_url = db_source_dict[args.cerndb]['url']
 
-    asyncio.run(main(dbpassword = dbpassword, output_dir = output_dir, encryption_key = encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist))
+    asyncio.run(main(dbpassword=dbpassword, output_dir=output_dir, encryption_key=encryption_key, date_start=date_start, date_end=date_end, lxplus_username=lxplus_username, partsnamelist=partsnamelist, skip_uploaded=skip_uploaded, cern_db_url=cern_db_url))

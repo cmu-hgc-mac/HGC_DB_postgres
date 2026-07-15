@@ -1,14 +1,12 @@
-import os, yaml, base64, sys, threading, atexit, signal, csv, math
+import os, yaml, base64, sys, threading, atexit, signal, csv, math, glob
 from natsort import natsorted
 from pathlib import Path
 from cryptography.fernet import Fernet
-import subprocess, webbrowser, zipfile, urllib.request, traceback, asyncio
+import subprocess, webbrowser, zipfile, urllib.request, traceback, asyncio, time
 import tkinter
 from tkinter import Tk, Button, Checkbutton, Label, messagebox, Frame, Toplevel, Entry, IntVar, StringVar, BooleanVar, Text, LabelFrame, Radiobutton, filedialog, OptionMenu
 from tkinter import END, DISABLED, Label as Label
 from datetime import datetime 
-from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
-from export_data.src import open_scp_connection, check_good_conn
 
 def run_git_pull_seq():
     restore_seq = subprocess.run(["git", "restore", "export_data/list_of_xmls.yaml" ], capture_output=True, text=True)
@@ -20,39 +18,49 @@ def run_git_pull_seq():
     else:
         print("Git pull failed ..."); print(result.stderr); exit()
 
-try:
-    run_git_pull_seq()
-except:
-    print("There is a git conflict but continue.")
-
-from export_data.src import process_xml_list, update_yaml_with_checkboxes
-process_xml_list()
-
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key) ## Generate or load a key. 
 adminer_process_button_face = " Search/Edit Postgres Data  "
 loc = 'dbase_info'
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 config_data  = yaml.safe_load(open(conn_yaml_file, 'r'))
-dbase_name = config_data.get('dbname')
-db_hostname = config_data.get('db_hostname')
-cern_dbase = config_data.get('cern_db', 'prod_db') ## 'dev_db'
-delete_xmls = config_data.get('delete_xmls', True)
-php_port = config_data.get('php_port', '8083')
+dbase_name      = config_data.get('dbname')
+db_hostname     = config_data.get('db_hostname')
+cern_dbase      = config_data.get('cern_db', 'prod_db') ## 'dev_db'
+git_auto_pull   = config_data.get('git_auto_pull', True) ## 'dev_db'
+delete_xmls     = config_data.get('delete_xmls', True)
+php_port        = config_data.get('php_port', '8083')
+use_saved_credentials    = config_data.get('use_saved_credentials', False)
 scp_persist_minutes = config_data.get('scp_persist_minutes', 240)
-scp_force_quit = config_data.get('scp_force_quit', True)
-mass_upload_xmls = config_data.get('mass_upload_xmls', True)
-max_mod_per_box = int(config_data.get('max_mod_per_box', 6))
+scp_force_quit  = config_data.get('scp_force_quit', True)
+max_mod_per_box = int(config_data.get('max_mod_per_box', 10))
 max_box_per_shipment = int(config_data.get('max_box_per_shipment', 42))
 institution_abbr = config_data.get('institution_abbr')
 adminer_php_file = 'adminer-pgsql.php'
 php_url = f"http://127.0.0.1:{php_port}/{adminer_php_file}?pgsql={db_hostname}&username=viewer&db={dbase_name}&ns=public&select=module_info&columns%5B0%5D%5Bfun%5D=&columns%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bcol%5D=&where%5B0%5D%5Bop%5D=%3D&where%5B0%5D%5Bval%5D=&order%5B0%5D=module_no&desc%5B0%5D=1&order%5B01%5D=&limit=50&text_length=100"
+_sched_config = os.path.join('task_scheduler', 'schedule_config.yaml')
+_enc_files = glob.glob(os.path.join('task_scheduler', '*.enc'))
+saved_credentials_exist = os.path.exists(_sched_config) and len(_enc_files) >= 2
+
+try:
+    if git_auto_pull:
+        run_git_pull_seq()
+        time.sleep(2)
+except:
+    print("There is a git conflict but continue.")
+
+from housekeeping.shipping_helper import enter_part_barcodes_box, enter_part_barcodes_shipment, show_error_on_top, askyesno_on_top
+from task_scheduler.scheduler_helper import set_automation_schedule
+from export_data.src import open_scp_connection, run_check_good_conn, dbloader_hostname
+from export_data.src import process_xml_list, update_yaml_with_checkboxes
+process_xml_list()
 
 def launch_stt_form_webbrowser():
         webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
     
 def see_my_shipments_cmsr():
-    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
+    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/trackings")
+    # webbrowser.open(f"https://cmsr-shipment.web.cern.ch/list_of_shippings?search={institution_abbr}&sort=date_start&order=-&loc=all_loc&opt=all&st=")
 
 def get_pid_result():
     try:
@@ -129,6 +137,7 @@ def create_database():
             subprocess.run([sys.executable, "create_and_modify/create_database.py", "-p", db_pass, "-up", user_pass, "-vp", viewer_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "create_and_modify/create_tables.py", "-p", db_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "create_and_modify/modify_table.py", "-p", db_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "create_and_modify/create_triggers.py", "-p", db_pass, "-k", encryption_key])
             show_message(f"Check terminal for PostgreSQL database tables. Refresh pgAdmin4.")
         else:
             if askyesno_on_top("Input Error", "Do you want to cancel? \nDatabase password cannot be empty."):
@@ -196,6 +205,8 @@ def verify_shipin():
     radio_bp.pack(anchor="w", pady=2, padx=80)
     radio_hxb = Radiobutton(input_window, text="hexaboard", variable=selected_component, value="hexaboard", command=activate_geom)
     radio_hxb.pack(anchor="w", pady=2, padx=80)
+    radio_mmtsinv = Radiobutton(input_window, text="mmts_inventory", variable=selected_component, value="mmts_inventory", command=activate_geom)
+    radio_mmtsinv.pack(anchor="w", pady=2, padx=80)
     radio_sen = Radiobutton(input_window, text="sensor -- select geometry", variable=selected_component, value="sensor", command=activate_geom)
     radio_sen.pack(anchor="w", pady=2, padx=80)
     densgeomframe = Frame(input_window)
@@ -215,7 +226,7 @@ def verify_shipin():
         temptextfile = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+            if run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
                 popup1 = Toplevel(input_window); popup1.title("Enter Barcode of Parts")
                 popup1.transient(input_window)        
                 popup1.attributes("-topmost", True)
@@ -250,7 +261,7 @@ def verify_shipin():
     def upload_file_with_part_in():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         if dbshipper_pass.strip() and shipindate_var.get().strip() and selected_component.get():
-            if asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+            if run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
                 popup2 = Toplevel()
                 popup2.title("Upload text/csv file with component names")
                 file_entry = None
@@ -317,6 +328,7 @@ def import_data():
     # download_dev_var_entry.pack(pady=5)
     download_prod_var = BooleanVar(value=True)
     download_prod_var_entry = Checkbutton(input_window, text="download from CMSR (PROD-DB)", variable=download_prod_var)
+    download_prod_var_entry.config(state="disabled")
     download_prod_var_entry.pack(pady=2)
 
     baseplate_get_var = BooleanVar(value=True)
@@ -331,12 +343,17 @@ def import_data():
     sensor_get_var_entry = Checkbutton(input_window, text="Get: sensors", variable=sensor_get_var)
     sensor_get_var_entry.pack(pady=2)
 
+    mmts_inventory_get_var = BooleanVar(value=True)
+    mmts_inventory_get_var_entry = Checkbutton(input_window, text="Get: other inventory", variable=mmts_inventory_get_var)
+    mmts_inventory_get_var_entry.pack(pady=2)
+
     def submit_import():
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
         download_dev_stat = download_dev_var.get()
         download_prod_stat = download_prod_var.get()
         basplate_get_stat = baseplate_get_var.get()
         hexaboard_get_stat = hexaboard_get_var.get()
+        mmts_inventory_get_stat = mmts_inventory_get_var.get()
         sensor_get_stat = sensor_get_var.get()
 
         if not download_prod_stat and not download_dev_stat:
@@ -346,11 +363,11 @@ def import_data():
             if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
                 if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                     input_window.destroy()  
-            elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+            elif not run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
                 show_error_on_top("Input Error", "Database password is incorrect.")
             else:
                 input_window.destroy(); 
-                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getsen", str(sensor_get_stat)])
+                subprocess.run([sys.executable, "import_data/get_parts_from_hgcapi.py", "-p", dbshipper_pass, "-k", encryption_key, "-downld", str(download_dev_stat), "-downlp", str(download_prod_stat), "-getbp", str(basplate_get_stat), "-gethxb", str(hexaboard_get_stat), "-getmmtsinv", str(mmts_inventory_get_stat), "-getsen", str(sensor_get_stat)])
                 # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
                 # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
                 show_message(f"Data imported from HGCAPI. Refresh pgAdmin4.")
@@ -414,17 +431,25 @@ def export_data():
     deleteXML_var = BooleanVar(value=delete_xmls)
     deleteXML_var_entry = Checkbutton(input_window, text="Delete XMLs after upload", variable=deleteXML_var)
     deleteXML_var_entry.pack(pady=0)
-    
+    skip_uploaded_var = BooleanVar(value=True)
+    skip_uploaded_var_entry = Checkbutton(input_window, text="Skip already uploaded parts", variable=skip_uploaded_var)
+    skip_uploaded_var_entry.pack(pady=0)
+    use_saved_creds_var = BooleanVar(value=use_saved_credentials if saved_credentials_exist else False)
+    use_saved_creds_var_entry = Checkbutton(input_window, text="Use available SERVICE account credentials", variable=use_saved_creds_var)
+    use_saved_creds_var_entry.pack(pady=0)
+    if not saved_credentials_exist:
+        use_saved_creds_var_entry.config(state=DISABLED)
+
     def select_specific():
         popup = Toplevel(input_window)
-        popup.transient(input_window)        
+        popup.transient(input_window)
         popup.attributes("-topmost", True)
         popup.focus_force()
         popup.title("Select XMLs")
-        
+
         xml_list = process_xml_list(get_yaml_data = True)
         checkbox_vars = {}
-        
+
         def create_checkboxes(xml_list, parent):
             if isinstance(xml_list, dict):
                 for key, value in xml_list.items():
@@ -443,7 +468,7 @@ def export_data():
             return {}
 
         create_checkboxes(xml_list, popup)
-        toggle_state = {"all_selected": True} 
+        toggle_state = {"all_selected": True}
 
         def toggle_all():
             toggle_state["all_selected"] = not toggle_state["all_selected"]
@@ -467,7 +492,7 @@ def export_data():
             updated_data = update_yaml_with_checkboxes(xml_list = xml_list, checkbox_vars=checkbox_vars)
             process_xml_list(updated_data)
             popup.destroy()
-        
+
         submit_select_button = Button(popup, text="Submit", command=submit_selection)
         submit_select_button.pack(pady=8)
         
@@ -478,17 +503,19 @@ def export_data():
         upload_dev_stat = upload_dev_var.get()
         upload_prod_stat = upload_prod_var.get()
         deleteXML_stat = deleteXML_var.get()
+        skip_uploaded_stat = skip_uploaded_var.get()
+        use_saved_creds_stat = use_saved_creds_var.get()
         partslistpre = partsname_var_entry.get("1.0", "end-1c").replace(' ','')
 
         if not (dbshipper_pass.strip() and lxp_username.strip()) :
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password and CERN ID cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not run_check_good_conn(shipper_var.get().strip()):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy(); input_window.update()  
-            subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
             
             # export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(False), "-uplp", str(False), "-delx", str(False), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
             # if partslistpre.strip():
@@ -497,20 +524,19 @@ def export_data():
             # subprocess.run(export_command_list) ### generate files before requesting LXplus credentials
             
             scp_status = 0
-            if upload_dev_stat or upload_prod_stat:
-                if open_scp_connection(dbl_username=lxp_username, get_scp_status=True, mass_upload_xmls=mass_upload_xmls) != 0:
+            if (upload_dev_stat or upload_prod_stat) and not use_saved_creds_stat:
+                if open_scp_connection(lxp_username=lxp_username, get_scp_status=True) != 0:
                     show_message(f"Check terminal to enter LXPLUS credentials.")
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False, mass_upload_xmls=mass_upload_xmls)
-            
-            upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
-            upload_prod_stat = upload_prod_stat if scp_status == 0 else False
-            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get())]
+                scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+                upload_dev_stat  = upload_dev_stat  if scp_status == 0 else False
+                upload_prod_stat = upload_prod_stat if scp_status == 0 else False
+            export_command_list = [sys.executable, "export_data/export_pipeline.py", "-dbp", dbshipper_pass, "-lxu", lxp_username, "-k", encryption_key, "-gen", str(generate_stat), "-upld", str(upload_dev_stat), "-uplp", str(upload_prod_stat), "-delx", str(deleteXML_stat), "-skup", str(skip_uploaded_stat), "-datestart", str(startdate_var.get()), "-dateend", str(enddate_var.get()), "-autoupload", str(use_saved_creds_stat)]
             if partslistpre.strip():
                 partslist = [partname.strip() for partname in partslistpre.split(",") if partname.strip()]
                 export_command_list += ['-pn', ] + partslist
             subprocess.run(export_command_list)
-            if (upload_dev_stat or upload_prod_stat) and scp_force_quit: ### only quit if it was opened at all
-                scp_status = open_scp_connection(dbl_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit, mass_upload_xmls=mass_upload_xmls)
+            if (upload_dev_stat or upload_prod_stat) and scp_force_quit and not use_saved_creds_stat:
+                scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=scp_force_quit)
             show_message(f"Check terminal for upload status. Refresh pgAdmin4.")           
 
     select_specific_button = Button(input_window, text="Select type of XMLs", command=select_specific)
@@ -584,7 +610,7 @@ def record_shipout():
         if not dbshipper_pass.strip(): 
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not run_check_good_conn(shipper_var.get().strip()):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             # popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
@@ -665,7 +691,7 @@ def record_shipout():
         if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
+        elif not run_check_good_conn(shipper_var.get().strip()):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             popup1 = enter_part_barcodes_shipment(input_window, encryption_key, dbshipper_pass, upload_file_with_part_out, max_box_per_shipment, entries)
@@ -745,12 +771,13 @@ def refresh_data():
         if not dbshipper_pass.strip():
             if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
                 input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip(), user_type='editor')):
+        elif not run_check_good_conn(shipper_var.get().strip(), user_type='editor'):
             show_error_on_top("Input Error", "Database password is incorrect.")
         else:
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+            # subprocess.run([sys.executable, "housekeeping/update_unique_components.py", "-p", dbshipper_pass, "-k", encryption_key])
             print("******** Database refreshed ********")
             show_message(f"Check terminal and refresh pgAdmin4.")
 
@@ -759,7 +786,82 @@ def refresh_data():
     submit_refresh_button.pack(pady=10)
     bind_button_keys(submit_refresh_button)
 
-def open_adminerevo():   ### lsof -i :8083; kill <pid>
+
+def check_dbloader_logs():
+    input_window = Toplevel(root)
+    input_window.transient(root)
+    input_window.attributes("-topmost", True)
+    input_window.title("Check DBLoader logs of uploads")
+
+    lxuser_frame = Frame(input_window)
+    lxuser_frame.pack(pady=(15, 2))
+    Label(lxuser_frame, text="Enter LXPLUS username:").pack(side="left")
+    lxuser_var = StringVar()
+    lxuser_var_entry = Entry(lxuser_frame, textvariable=lxuser_var, width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    lxuser_var_entry.pack(side="left", padx=5)
+
+    Label(input_window, text="Provide filename with .xml/.zip extension. (Path not required)").pack(pady=(10, 2))
+    Label(input_window, text="Example: 320MLF3TDCM0732_20260403T163742_iv.zip", fg="blue").pack(pady=(1))
+    Label(input_window, text="Logs will be saved under export_data/dbloader_logs", fg="blue").pack(pady=(1))
+
+    filename_var = StringVar()
+    filename_entry = Entry(input_window, textvariable=filename_var, width=60)
+    filename_entry.pack(padx=20, pady=(2, 10))
+
+    server_var = StringVar(master=input_window)
+    radio_frame = Frame(input_window)
+    radio_frame.pack(pady=5)
+    radio_int2r = Radiobutton(radio_frame, text="INT2R (Dev)", variable=server_var, value="INT2R", takefocus=False)
+    radio_int2r.pack(side="left", padx=15)
+    radio_cmsr = Radiobutton(radio_frame, text="CMSR (Prod)", variable=server_var, value="CMSR", takefocus=False)
+    radio_cmsr.pack(side="left", padx=15)
+    radio_cmsr.select()
+    input_window.after(10, lambda: server_var.set("CMSR"))
+
+    def submit_logfname():
+        lxp_username = lxuser_var.get().strip()
+        fname = os.path.basename(filename_entry.get().strip())
+        if not fname or not lxp_username:
+            return
+        if open_scp_connection(lxp_username=lxp_username, get_scp_status=True) != 0:
+            show_message("Check terminal to enter LXPLUS credentials.")
+        scp_status = open_scp_connection(lxp_username=lxp_username, scp_persist_minutes=scp_persist_minutes, scp_force_quit=False)
+        if scp_status == 0:
+            server = server_var.get().lower()
+            remote_path = f"/home/dbspool/logs/hgc/{server}/{fname}"
+            abspath = os.path.dirname(os.path.abspath(__file__))
+            log_dir = os.path.join(abspath, "export_data", "dbloader_logs")
+            os.makedirs(log_dir, exist_ok=True)
+            local_path = os.path.join(log_dir, fname + ".log")
+            scp_cmd = ["scp", "-o", "ControlPath=~/.ssh/ctrl_dbloader", f"{lxp_username}@{dbloader_hostname}:{remote_path}", local_path]
+            result = subprocess.run(scp_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("DBLoader log:", local_path)
+                webbrowser.open(f"file://{local_path}")
+            else:
+                show_message(f"Failed to retrieve log file:\n{result.stderr}")
+
+    submit_button = Button(input_window, text="Get log details", command=submit_logfname)
+    submit_button.pack(pady=(0, 15))
+    bind_button_keys(submit_button)
+    input_window.focus_force()
+    
+
+def set_scheduler_task():
+    set_automation_schedule(root, encryption_key = encryption_key, title = "Set automation schedule") #, job_type = 'import_from_HGCAPI')
+    # input_window = Toplevel(root)
+    # input_window.transient(root)        
+    # input_window.attributes("-topmost", True)
+    # input_window.focus_force()
+    # input_window.title("Set schduled jobs")
+    # Label(input_window, text="Enter local db USER password:").pack(pady=5)
+    # shipper_var = StringVar()
+    # shipper_var_entry = Entry(input_window, textvariable=shipper_var, show='*', width=30, bd=1.5, highlightbackground="black", highlightthickness=1)
+    # shipper_var_entry.pack(pady=5)
+
+
+
+def open_adminer():   ### lsof -i :8083; kill <pid>
     def close_adminer_process():
         try:
             pids = get_pid_result().stdout.strip().split("\n")
@@ -778,8 +880,8 @@ def open_adminerevo():   ### lsof -i :8083; kill <pid>
                 adminer_process = subprocess.Popen(["php", "-S", f"127.0.0.1:{php_port}", "-t", "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
             
             webbrowser.open(php_url)
-            button_search_data.config(text="Stop AdminerEvo", fg="red")
-            print('AdminerEvo opened in browser...')
+            button_search_data.config(text="Stop Adminer", fg="red")
+            print('Adminer opened in browser...')
             print(php_url)
         except Exception as e:
             traceback.print_exc()
@@ -846,32 +948,38 @@ button_shipin.grid(row=3, column=1, pady=(5,1), sticky='ew')
 button_download = Button(frame, text="    Import Parts Data      ", command=import_data, width=button_width, height=button_height)
 button_download.grid(row=4, column=1, pady=(1,15), sticky='ew')
 
+button_automate = Button(frame, text="Automate import and upload of parts", command=set_scheduler_task, width=button_width, height=int(button_height/2))
+button_automate.grid(row=5, column=1, pady=1, sticky='ew')
+
+button_check_dbl_logs = Button(frame, text="Check DBLoader logs of uploads", command=check_dbloader_logs, width=button_width, height=int(button_height/2))
+button_check_dbl_logs.grid(row=6, column=1, pady=1, sticky='ew')
+
 button_upload_xml = Button(frame, text=" Upload XMLs to DBLoader ", command=export_data, width=button_width, height=button_height)
-button_upload_xml.grid(row=5, column=1, pady=(15,1), sticky='ew')
+button_upload_xml.grid(row=7, column=1, pady=(15,1), sticky='ew')
 # button_upload_xml.config(state='disabled')
 
 button_shipout = Button(frame, text="   Record outgoing shipment     ", command=record_shipout, width=button_width, height=button_height)
-button_shipout.grid(row=6, column=1, pady=(1,15), sticky='ew')
+button_shipout.grid(row=8, column=1, pady=(1,15), sticky='ew')
 
-button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminerevo, width=button_width, height=button_height) 
-button_search_data.grid(row=7, column=1, pady=(15,1), sticky='ew')
+button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminer, width=button_width, height=button_height)
+button_search_data.grid(row=9, column=1, pady=(15,1), sticky='ew')
 
-button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))  
-button_refresh_db.grid(row=8, column=1, pady=1, sticky='ew')
+button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))
+button_refresh_db.grid(row=10, column=1, pady=1, sticky='ew')
 
-button_stock_stt = Button(frame, text=" Check stock on CMSR STT ", command=open_stt_stock, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=9, column=1, pady=1, sticky='ew')
+button_stock_stt = Button(frame, text=" Check stock on CMSR STT ", command=open_stt_stock, width=button_width, height=int(button_height/2))
+button_stock_stt.grid(row=11, column=1, pady=1, sticky='ew')
 
-button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=10, column=1, pady=1, sticky='ew')
+button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2))
+button_stock_stt.grid(row=12, column=1, pady=1, sticky='ew')
 
-button_stock_stt = Button(frame, text=" Check QC data on CMSR-HGCAPI", command=get_electrical_test_hgcapi, width=button_width, height=int(button_height/2)) 
-button_stock_stt.grid(row=11, column=1, pady=(1,5), sticky='ew')
+button_stock_stt = Button(frame, text=" Check QC data on CMSR-HGCAPI", command=get_electrical_test_hgcapi, width=button_width, height=int(button_height/2))
+button_stock_stt.grid(row=13, column=1, pady=(1,5), sticky='ew')
 
 
 for pid in get_pid_result().stdout.strip().split("\n"):
     if pid.isdigit():
-        button_search_data.config(text="Stop AdminerEvo", fg="red")
+        button_search_data.config(text="Stop Adminer", fg="red")
     else:
         button_search_data.config(text=adminer_process_button_face, fg="black")
         
