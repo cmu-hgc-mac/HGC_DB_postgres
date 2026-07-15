@@ -1467,7 +1467,7 @@ module_grading:
   nested_query: null
   default_value: null
 - xml_temp_val: INSTALLATION_MODULE
-  dbase_col: final_grade_def
+  dbase_col: installation_module
   dbase_table: module_qc_summary
   xml_tag: INSTALLATION_MODULE
   default_value: 0
