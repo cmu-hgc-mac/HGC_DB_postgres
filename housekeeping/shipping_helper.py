@@ -1038,11 +1038,11 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                received_button.pack(side = "left", padx = 10, pady = 10)
                received_button["state"] = "normal"
 
-               #fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [module_update_pack[0]], timestamp = datetime_now_obj)
-               #print("List of modules saved under ", fileout_name)
+               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [module_update_pack[0]], timestamp = datetime_now_obj)
+               print("List of modules saved under ", fileout_name)
                
-               #if fileout_name:
-               #    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+               if fileout_name:
+                   webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
 
           def received_shipment():
                modules = []
@@ -1389,12 +1389,12 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                ship_button.grid_remove()
                received_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
                received_button["state"] = "normal"
+
+               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [module_update_pack[0]], timestamp = datetime_now_obj)
+               print("List of modules saved under ", fileout_name)
                
-               #fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [module_update_pack[0]], timestamp = datetime_now_obj)
-               #print("List of modules saved under ", fileout_name)
-               
-               #if fileout_name:
-               #    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
+               if fileout_name:
+                   webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
 
           def received_shipment():
                boxes = []
