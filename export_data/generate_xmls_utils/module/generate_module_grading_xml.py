@@ -83,60 +83,48 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         combined_str = grade_timestamp ### "" ### initialize
         
         try:
-            db_values, db_values = {}, {}
+            db_values = {
+                'LOCATION': LOCATION,
+                'INSTITUTION': INSTITUTION,
+                'ID': module_name,
+                'KIND_OF_PART': await get_kind_of_part(module_name, 'module', conn),
+                'INITIATED_BY_USER': lxplus_username,
+                'RUN_BEGIN_TIMESTAMP_': grade_timestamp,
+                'RUN_END_TIMESTAMP_': grade_timestamp,
+                'RUN_TYPE': "Si module grading",
+                'RUN_NUMBER': get_run_num(LOCATION, grade_timestamp),
+                'COMMENT_DESCRIPTION': f"MAC grades for {module_name}",
+            }
+            
+            ### module_qc_summary backs most entries and always uses the same WHERE clause,
+            ### so fetch that row once instead of once per column.
+            qc_summary_query = f"""SELECT * FROM module_qc_summary WHERE module_name = '{module_name}' AND mod_qc_no = {mod_qc_no} """
+            qc_summary_row = await fetch_from_db(qc_summary_query, conn) or {}
+
+            mod_corner_colors = qc_summary_row.get('module_corner_colorgrades', "")
+            _, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades=None)
+            db_values['MODULE_CORNER_COLORGRADE'] = mod_colorgrade
+
+            count_bad_cells = qc_summary_row.get('count_bad_cells') or 0
+            total_cell_count = int(cell_count_for_res_geom[module_name[4:6]])
+            db_values['PERCENT_BAD_CELLS'] = str(round(int(count_bad_cells)*100/total_cell_count, 3))
+
             for entry in xml_data:  ### loaded from table_to_xml_var.yaml
                 xml_var = entry['xml_temp_val']
-                if xml_var == 'LOCATION':
-                    db_values[xml_var] = LOCATION 
-                elif xml_var == 'INSTITUTION':
-                    db_values[xml_var] = INSTITUTION
-                elif xml_var == 'ID':
-                    db_values[xml_var]     = module_name
-                elif xml_var == 'KIND_OF_PART':
-                    db_values[xml_var]     = await get_kind_of_part(module_name, 'module', conn)
-                elif xml_var == 'INITIATED_BY_USER':
-                    db_values[xml_var]     = lxplus_username
-                elif xml_var == "RUN_BEGIN_TIMESTAMP_":
-                    db_values[xml_var] = grade_timestamp
-                elif xml_var == "RUN_END_TIMESTAMP_":
-                    db_values[xml_var] = grade_timestamp
-                elif xml_var == "RUN_TYPE":
-                    db_values[xml_var] = "Si module grading" 
-                elif xml_var == 'RUN_NUMBER':
-                    dt_obj =  grade_timestamp                 
-                    db_values[xml_var]     = get_run_num(LOCATION, dt_obj)
-                elif xml_var == "COMMENT_DESCRIPTION":
-                    db_values[xml_var] = f"MAC grades for {module_name}"
-                else:
-                    dbase_col = entry['dbase_col']
-                    dbase_table = entry['dbase_table']
+                if xml_var in db_values:
+                    continue
 
-                    # Skip entries without a database column or table
-                    if not dbase_col and not dbase_table:
-                        continue
-                
-                    query = f"""SELECT {dbase_col} FROM {dbase_table} WHERE module_name = '{module_name}' AND mod_qc_no = {mod_qc_no} """
-                    try:
-                        results = await fetch_from_db(query, conn)
-                    except Exception as e:
-                            print('QUERY:', query)
-                            print('ERROR:', e)
-                    
-                    if results:
-                        # if xml_var == 'RUN_NUMBER':
-                        #     dt_obj =  grade_timestamp                 
-                        #     db_values[xml_var]     = get_run_num(LOCATION, dt_obj)
-                        if xml_var == 'MODULE_CORNER_COLORGRADE':
-                            mod_corner_colors = results.get('module_corner_colorgrades', "")
-                            installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades=None)
-                            db_values[xml_var] = mod_colorgrade
-                        elif xml_var == 'PERCENT_BAD_CELLS':
-                            count_bad_cells = results.get('count_bad_cells') or 0
-                            total_cell_count = int(cell_count_for_res_geom[module_name[4:6]])
-                            db_values[xml_var] = str(round(int(count_bad_cells)*100/total_cell_count,3))
-                        else:
-                            db_values[xml_var] = results.get(dbase_col, '')
-                
+                dbase_col = entry['dbase_col']
+
+                # Skip entries without a database column or table
+                if not dbase_col and not entry['dbase_table']:
+                    continue
+
+                if not qc_summary_row:
+                    continue
+
+                db_values[xml_var] = qc_summary_row.get(dbase_col, '')
+
 
             ### Determine Installation Criteria
             grades_reason = [''             ,'protoGeom'      ,'modGeom'         ,'IV'      , 'ROC']
@@ -146,11 +134,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
             db_values['INSTALLATION_MODULE'] = installation_score
 
-            indices, reason = [], ""
-            if all_letter_grades[0] != 'A':
-                indices = [i for i, grade in enumerate(all_letter_grades[1:]) if grade == all_letter_grades[0]]
-                if indices:
-                    reason = " (" + ",".join(grades_reason[i] for i in indices) + ")"
+            final_grade_reason = qc_summary_row.get('final_grade_reason')
+
+            if final_grade_reason:
+                reason = f" ({final_grade_reason})"
+            else:
+                indices, reason = [], ""
+                if all_letter_grades[0] != 'A':
+                    indices = [i for i, grade in enumerate(all_letter_grades[1:]) if grade == all_letter_grades[0]]
+                    if indices:
+                        reason = " (" + ",".join(grades_reason[i] for i in indices) + ")"
 
             db_values['OVERALL_GRADE'] = all_letter_grades[0] + reason
 
