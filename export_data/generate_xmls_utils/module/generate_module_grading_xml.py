@@ -130,8 +130,9 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             grades_reason = [''             ,'protoGeom'      ,'modGeom'         ,'IV'      , 'ROC']
             grades_to_get = ['OVERALL_GRADE','PROTO_MECH_GRADE','MODULE_MECH_GRADE','IV_GRADE','READOUT_GRADE']
             all_letter_grades = [db_values.get(grade_type, "F") for grade_type in grades_to_get]
-            # mod_corner_colors = db_values.get('MODULE_CORNER_COLORS', ["purple"])
-            # installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
+            mod_corner_colors = db_values.get('MODULE_CORNER_COLORS', ["purple"])
+            installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
+            db_values['INSTALLATION_MODULE'] = installation_score
             if db_values.get('INSTALLATION_MODULE') not in [0,1,2]:
                 db_values['INSTALLATION_MODULE'] = 9 ### definition undefined
 
