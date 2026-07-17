@@ -1,7 +1,7 @@
 batch_no,serial PRIMARY KEY,primary key,,
 batch_name,TEXT,name of the batch - YYYYMMDD-HHMMSS,,
 log_timestamp,TIMESTAMP,,,
-cycle_count,INT,no of thermal cycles,,
+cycle_count,INT,total count of thermal cycles,,
 description,TEXT,can include start/stop and iteration details,,
 status_safety_alarm,TEXT,status,,
 status_dry_air_pressure,TEXT,status,,
