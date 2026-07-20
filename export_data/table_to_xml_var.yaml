@@ -678,9 +678,9 @@ hxb_inspection:
   xml_tag: SERIAL_NUMBER
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
-- xml_temp_val: RECORD_INSERTION_USER
+- xml_temp_val: tested_by
   dbase_col: inspector
-  dbase_table: hxb_pedestal_test
+  dbase_table: hxb_inspect
   xml_tag: TESTED_BY
   nested_query: null
   default_value: null
