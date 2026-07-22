@@ -143,7 +143,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 if all_letter_grades[0] != 'A':
                     indices = [i for i, grade in enumerate(all_letter_grades[1:]) if grade == all_letter_grades[0]]
                     if indices:
-                        reason = " (" + ",".join(grades_reason[i] for i in indices) + ")"
+                        reason = " (" + ",".join(grades_reason[1:][i] for i in indices) + ")"
 
             db_values['OVERALL_GRADE'] = all_letter_grades[0] + reason
 
