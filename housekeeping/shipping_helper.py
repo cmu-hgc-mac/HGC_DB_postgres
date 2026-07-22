@@ -472,7 +472,7 @@ async def _get_modules_in_crate(encrypt_key, password, crate_number, db_params =
      except Exception as e:
           print(f"Error obtaining modules in box: {e}")
 
-          # ===========================================================================================================
+# ===========================================================================================================
 # ===========================================================================================================
 
 # Fetches the names of the modules inside a container with a given number
@@ -536,22 +536,22 @@ async def _update_box_position(encrypt_key, password, module_name, box_position,
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Updates column "crate_complete_dt" in "module_info"
-def update_crate_complete_sync(encrypt_key, password, module_names, timestamp, savetofile = False):
-     asyncio.run(_update_crate_complete(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp, db_params = db_params))
+# Updates column "completed_dt" in "module_info"
+def update_complete_sync(encrypt_key, password, module_names, timestamp, savetofile = False):
+     asyncio.run(_update_complete(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp, db_params = db_params))
 
-async def _update_crate_complete(encrypt_key, password, module_names, timestamp, db_params = db_params):
+async def _update_complete(encrypt_key, password, module_names, timestamp, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = """UPDATE module_info SET crate_complete_dt = $1 WHERE module_name = ANY($2);"""
+     query = """UPDATE module_info SET completed_dt = $1 WHERE module_name = ANY($2);"""
      try:
           conn = await asyncpg.connect(**db_params)
           await conn.execute(query, timestamp, module_names)
-          print(f"Updated crate_complete_dt for {len(module_names)} modules.")
+          print(f"Updated completed_dt for {len(module_names)} modules.")
           await conn.close()
      except Exception as e:
-          print(f"Error updating crate_complete_dt: {e}")
+          print(f"Error updating completed_dt: {e}")
           
 # ===========================================================================================================
 # ===========================================================================================================
@@ -615,26 +615,6 @@ async def _update_container_number(encrypt_key, password, module_names, containe
           await conn.close()
      except Exception as e:
           print(f"Error updating container_number: {e}")
-
-# ===========================================================================================================
-# ===========================================================================================================
-
-# Updates column "container_complete_dt" in "module_info"
-def update_container_complete_sync(encrypt_key, password, module_names, timestamp, savetofile = False):
-     asyncio.run(_update_container_complete(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp, db_params = db_params))
-
-async def _update_container_complete(encrypt_key, password, module_names, timestamp, db_params = db_params):
-     cipher_suite = Fernet(encrypt_key)
-     dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
-     db_params.update({"password": dbpassword})
-     query = """UPDATE module_info SET container_complete_dt = $1 WHERE module_name = ANY($2);"""
-     try:
-          conn = await asyncpg.connect(**db_params)
-          await conn.execute(query, timestamp, module_names)
-          print(f"Updated container_complete_dt for {len(module_names)} modules.")
-          await conn.close()
-     except Exception as e:
-          print(f"Error updating container_complete_dt: {e}")
 
 # ===========================================================================================================
 # ===========================================================================================================
@@ -1026,8 +1006,10 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                     self.destroy()
 
           def ready_to_ship():
+               modules = []
                for i in range(int(max_mod_per_box)):
                     entries[i]["state"] = "disabled"
+                    modules.append(entries[i].get())
                upload_from_file_button["state"] = "disabled"
                crate_checkbox["state"] = "disabled"
                container_checkbox["state"] = "disabled"
@@ -1038,7 +1020,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                received_button.pack(side = "left", padx = 10, pady = 10)
                received_button["state"] = "normal"
 
-               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [module_update_pack[0]], timestamp = datetime_now_obj)
+               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [modules[0]], timestamp = datetime_now_obj)
                print("List of modules saved under ", fileout_name)
                
                if fileout_name:
@@ -1314,10 +1296,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                     box_id = boxes[i]
                     modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
-                    if (letter.get() == "C"):
-                         update_crate_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = datetime_now_obj, savetofile = False)
-                    elif (letter.get() == "X"):
-                         update_container_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = datetime_now_obj, savetofile = False)
+                    update_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = datetime_now_obj, savetofile = False)
                ship_button["state"] = "normal"
 
           close_var = IntVar()
@@ -1371,17 +1350,19 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                                         show_error_on_top("Upload Error", f"Module {modules[j]} already packaged in crate {crate_id_db[0]}.")
                                         return
                          update_packed_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, timestamp = datetime_now_obj)
-                         if (letter.get() == "C"):
-                              update_crate_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, crate_number = shipment_id_entry.get())                          
-                              if (entries[0]["state"] == "readonly"): update_crate_complete_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, timestamp = datetime_now_obj)
-                         else:
-                              update_container_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, container_number = shipment_id_entry.get())
-                              if (entries[0]["state"] == "readonly"): update_container_complete_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, timestamp = datetime_now_obj)
                     self.destroy()
 
           def ready_to_ship():
+               modules_for_shipping = []
+               boxes = []
                for i in range(int(max_box_per_shipment)):
                     entries[i]["state"] = "disabled"
+                    boxes.append(entries[i].get())
+               for i in range(len(boxes)):
+                    box_id = boxes[i]
+                    modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
+                    for module in modules:
+                         modules_for_shipping.append(module)
                upload_from_file_button["state"] = "disabled"
                close_checkbox["state"] = "disabled"
                close_shipment_button["state"] = "disabled"
@@ -1390,7 +1371,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                received_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
                received_button["state"] = "normal"
 
-               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [module_update_pack[0]], timestamp = datetime_now_obj)
+               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [modules_for_shipping[0]], timestamp = datetime_now_obj)
                print("List of modules saved under ", fileout_name)
                
                if fileout_name:
@@ -1413,10 +1394,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                     if (not modules): continue
                     update_packed_timestamp_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
                     update_shipped_timestamp_sync(encryption_key, dbshipper_pass, [modules[0]], timestamp = None)
-                    if (letter.get() == "C"):
-                         update_crate_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
-                    elif (letter.get() == "X"):
-                         update_container_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
+                    update_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
                
           submit_button = Button(bottom_frame, text = "Record to DB", command = update_db_packed, state = "disabled")
           submit_button.grid(row = (num_entries // 2), column = 3, columnspan = 2, padx = 10, pady = 10)
