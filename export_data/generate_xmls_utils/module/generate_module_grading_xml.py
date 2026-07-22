@@ -24,7 +24,7 @@ def fetch_module_grades(mod_corner_colors = None, all_letter_grades = None):
         mod_corner_colors = [c.lower() for c in mod_corner_colors]
         MODULE_CORNER_COLORGRADE = 'red' if 'red' in mod_corner_colors else ('yellow' if 'yellow' in mod_corner_colors else ('purple' if 'purple' in mod_corner_colors else 'green'))
     
-    installation_score = 0 if (MODULE_CORNER_COLORGRADE in ['red','null','None'] or worst_letter_grade.upper() in ['F','null','None']) else 1
+    installation_score = 0 if (MODULE_CORNER_COLORGRADE in ['red','null','None'] or worst_letter_grade.upper() in ['F','null','None']) else (2 if all_letter_grades[0] == 'C' else 1)
     return installation_score, MODULE_CORNER_COLORGRADE
 
 async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start, date_end, lxplus_username, partsnamelist=None, skip_uploaded=True):
@@ -100,11 +100,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             ### so fetch that row once instead of once per column.
             qc_summary_query = f"""SELECT * FROM module_qc_summary WHERE module_name = '{module_name}' AND mod_qc_no = {mod_qc_no} """
             qc_summary_row = await fetch_from_db(qc_summary_query, conn) or {}
-
-            mod_corner_colors = qc_summary_row.get('module_corner_colorgrades', "")
-            _, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades=None)
-            db_values['MODULE_CORNER_COLORGRADE'] = mod_colorgrade
-
+            
             count_bad_cells = qc_summary_row.get('count_bad_cells') or 0
             total_cell_count = int(cell_count_for_res_geom[module_name[4:6]])
             db_values['PERCENT_BAD_CELLS'] = str(round(int(count_bad_cells)*100/total_cell_count, 3))
@@ -127,11 +123,14 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
 
             ### Determine Installation Criteria
+            mod_corner_colors = qc_summary_row.get('module_corner_colorgrades', "")
             grades_reason = [''             ,'protoGeom'      ,'modGeom'         ,'IV'      , 'ROC']
             grades_to_get = ['OVERALL_GRADE','PROTO_MECH_GRADE','MODULE_MECH_GRADE','IV_GRADE','READOUT_GRADE']
             all_letter_grades = [db_values.get(grade_type, "F") for grade_type in grades_to_get]
-            # mod_corner_colors = db_values.get('MODULE_CORNER_COLORS', ["purple"])
-            # installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
+            mod_corner_colors = db_values.get('MODULE_CORNER_COLORS', ["purple"])
+            installation_score, mod_colorgrade = fetch_module_grades(mod_corner_colors, all_letter_grades)
+            db_values['MODULE_CORNER_COLORGRADE'] = mod_colorgrade
+            db_values['INSTALLATION_MODULE'] = installation_score
             if db_values.get('INSTALLATION_MODULE') not in [0,1,2]:
                 db_values['INSTALLATION_MODULE'] = 9 ### definition undefined
 
@@ -144,7 +143,7 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                 if all_letter_grades[0] != 'A':
                     indices = [i for i, grade in enumerate(all_letter_grades[1:]) if grade == all_letter_grades[0]]
                     if indices:
-                        reason = " (" + ",".join(grades_reason[i] for i in indices) + ")"
+                        reason = " (" + ",".join(grades_reason[1:][i] for i in indices) + ")"
 
             db_values['OVERALL_GRADE'] = all_letter_grades[0] + reason
 

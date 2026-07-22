@@ -28,7 +28,7 @@
         </PART>
 
         <DATA>
-			<TESTED_BY>{{ record_insertion_user }}</TESTED_BY>
+			<TESTED_BY>{{ tested_by }}</TESTED_BY>
 			<TEST_DATE>{{ run_begin_date_ }}</TEST_DATE>
 			<STATUS>n/a</STATUS>
 			<TEST_FILE_NAME>{{ test_files }}</TEST_FILE_NAME>
