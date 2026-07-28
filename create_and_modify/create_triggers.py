@@ -189,6 +189,42 @@ def update_table_datas_trigger(target_table, target_col, source_table, source_co
 
     return trigger_sql
 
+
+# SQL query for populating module_info.thermal_cycle from mmts_batch_logging.log_timestamp
+def update_thermal_cycle_trigger():
+    trigger_sql = """
+    CREATE OR REPLACE FUNCTION module_info_update_thermal_cycle_from_mmts_batch_logging()
+    RETURNS TRIGGER AS $$
+    DECLARE
+        v_prev_batch_name text;
+    BEGIN
+        SELECT batch_name INTO v_prev_batch_name
+        FROM mmts_batch_logging
+        WHERE batch_no < NEW.batch_no
+        ORDER BY batch_no DESC
+        LIMIT 1;
+
+        IF v_prev_batch_name IS NULL OR v_prev_batch_name IS DISTINCT FROM NEW.batch_name THEN
+            UPDATE module_info
+            SET thermal_cycle_date = NEW.log_timestamp::date,
+                thermal_cycle_count = COALESCE(thermal_cycle_count, 0) + NEW.cycle_count
+            WHERE REPLACE(module_name,'-','') IN (
+                SELECT REPLACE(m,'-','') FROM unnest(NEW.module_names) AS m
+            );
+        END IF;
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS module_info_update_thermal_cycle_trigger ON mmts_batch_logging;
+
+    CREATE TRIGGER module_info_update_thermal_cycle_trigger
+    AFTER INSERT OR UPDATE OF module_names, log_timestamp ON mmts_batch_logging
+    FOR EACH ROW
+    EXECUTE FUNCTION module_info_update_thermal_cycle_from_mmts_batch_logging();
+    """
+    return trigger_sql
+
 def get_table_info_data(loc, fname):
     results = []
     with open(os.path.join(loc, fname) , mode='r') as file:
@@ -305,11 +341,19 @@ async def main():
                 duplicate_datas = get_table_info_data('create_and_modify', 'duplicate_data.csv')
                 for j in range(len(duplicate_datas)):
                     if duplicate_datas[j][0] == table_name:
-                        try: 
+                        try:
                             await conn.execute(update_table_datas_trigger(*duplicate_datas[j],j))
                             print(f' >> Data update trigger for {duplicate_datas[j][0]} created for column {duplicate_datas[j][1]}.')
                         except:
                             raise
+
+                # Create the trigger for populating module_info.thermal_cycle from mmts_batch_logging:
+                if table_name == 'mmts_batch_logging':
+                    try:
+                        await conn.execute(update_thermal_cycle_trigger())
+                        print(' >> Thermal cycle trigger for module_info created.')
+                    except:
+                        raise
     except: 
         raise
         print(' >> Error in creating triggers and trigger functions...')
