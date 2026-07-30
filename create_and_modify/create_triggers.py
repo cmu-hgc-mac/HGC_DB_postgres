@@ -195,16 +195,12 @@ def update_thermal_cycle_trigger():
     trigger_sql = """
     CREATE OR REPLACE FUNCTION module_info_update_thermal_cycle_from_mmts_batch_logging()
     RETURNS TRIGGER AS $$
-    DECLARE
-        v_prev_batch_name text;
     BEGIN
-        SELECT batch_name INTO v_prev_batch_name
-        FROM mmts_batch_logging
-        WHERE batch_no < NEW.batch_no
-        ORDER BY batch_no DESC
-        LIMIT 1;
-
-        IF v_prev_batch_name IS NULL OR v_prev_batch_name IS DISTINCT FROM NEW.batch_name THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM mmts_batch_logging
+            WHERE batch_name = NEW.batch_name
+                AND batch_no IS DISTINCT FROM NEW.batch_no
+        ) THEN
             UPDATE module_info
             SET thermal_cycle_date = NEW.log_timestamp::date,
                 thermal_cycle_count = COALESCE(thermal_cycle_count, 0) + NEW.cycle_count
