@@ -45,7 +45,6 @@ i_at_half_v_dep,REAL,Current (Ampere) at half of depletion voltage; used to dist
 iteration,INT,,,
 xml_gen_datetime,TIMESTAMP,,,
 xml_upload_success,BOOLEAN,True if CMSR upload was successful,,
-batch_no,INT,,,
 module_corner_colorgrades,TEXT[],Color grades for module corners to classify ease of assembly on cassettes,,
 proto_corner_colorgrades,TEXT[],Color grades for protomodule corners to classify ease of assembly on cassettes,,
 corner_colorgrade_def,TEXT,Definition of colorgrade criteria. These are defined in the clock-wise direction from the lowest numbered cell on the module,,
