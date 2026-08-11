@@ -75,11 +75,19 @@ async def update_module_info():
                     FROM unnest(mbl.module_names) AS elem
                     WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
                 )
+            ),
+            thermal_cycle_date = (
+                SELECT MAX(mbl.log_timestamp::date) FROM mmts_batch_logging mbl
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM unnest(mbl.module_names) AS elem
+                    WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
+                )
             );
         """
 
         result = await conn.execute(update_query_mod)
-        print(f"thermal_cycle_count updated.")
+        print(f"thermal_cycle_count and thermal_cycle_date updated.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
