@@ -36,13 +36,14 @@ db_params.update({'password': dbpassword})
 
 async def update_module_qc_summary():
     conn = await asyncpg.connect(**db_params)
-    print('Connection successful.')
+    # print('Connection successful.')
         
     try:    
         update_query_mod = """
             UPDATE module_qc_summary mqs                                                                                                             
             SET thermal_cycle_count = (                                                                                                              
-                SELECT COALESCE(SUM(mbl.cycle_count), 0)                                                                                                                              FROM mmts_batch_logging mbl                                                                                                          
+                SELECT COALESCE(SUM(mbl.cycle_count), 0)                                                                                                                              
+                FROM mmts_batch_logging mbl                                                                                                          
                 WHERE EXISTS (                                                                                                                       
                     SELECT 1                                                                                                                         
                     FROM unnest(mbl.module_names) AS elem                                                                                            

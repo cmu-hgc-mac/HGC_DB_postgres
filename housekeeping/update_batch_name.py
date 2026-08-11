@@ -36,7 +36,7 @@ db_params.update({'password': dbpassword})
 
 async def update_module_iv_test():
     conn = await asyncpg.connect(**db_params)
-    print('Connection successful.')
+    # print('Connection successful.')
         
     try:    
         update_query_mod = """
@@ -56,7 +56,7 @@ async def update_module_iv_test():
         """
 
         result = await conn.execute(update_query_mod)
-        print(f"batch_no updated.")    
+        print(f"Batch names updated.")    
 
     except Exception as e:
         print(f"An error occurred: {e}")
