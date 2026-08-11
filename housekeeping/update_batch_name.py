@@ -18,7 +18,7 @@ conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
   
 db_params = {
     'database': conn_info.get('dbname'),
-    'user': 'postgres',
+    'user': 'editor',
     'host': conn_info.get('db_hostname'),
     'port': conn_info.get('port'),
 }
