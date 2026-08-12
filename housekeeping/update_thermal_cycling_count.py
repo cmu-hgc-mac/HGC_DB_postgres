@@ -52,7 +52,8 @@ async def update_module_qc_summary():
                         WHERE elem ILIKE REPLACE(mqs.module_name, '-', '')
                     )
                     AND mbl.log_timestamp < mqs.grade_timestamp
-                    ORDER BY mbl.batch_name, (mbl.cycle_count IS NULL), mbl.batch_no ASC
+                    AND mbl.cycle_count IS NOT NULL
+                    ORDER BY mbl.batch_name, mbl.batch_no ASC
                 ) first_instances
             );
         """
@@ -83,7 +84,8 @@ async def update_module_info():
                         FROM unnest(mbl.module_names) AS elem
                         WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
                     )
-                    ORDER BY mbl.batch_name, (mbl.cycle_count IS NULL), mbl.batch_no ASC
+                    AND mbl.cycle_count IS NOT NULL
+                    ORDER BY mbl.batch_name, mbl.batch_no ASC
                 ) first_instances
             ),
             thermal_cycle_date = (
@@ -96,7 +98,8 @@ async def update_module_info():
                         FROM unnest(mbl.module_names) AS elem
                         WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
                     )
-                    ORDER BY mbl.batch_name, (mbl.cycle_count IS NULL), mbl.batch_no ASC
+                    AND mbl.cycle_count IS NOT NULL
+                    ORDER BY mbl.batch_name, mbl.batch_no ASC
                 ) first_instances
             );
         """
