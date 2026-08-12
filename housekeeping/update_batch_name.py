@@ -42,15 +42,17 @@ async def update_module_iv_test():
         update_query_mod = """
             UPDATE module_iv_test miv
             SET batch_name = (
-                SELECT mbl.batch_name
+                SELECT DISTINCT ON (mbl.batch_name) mbl.batch_name
                 FROM mmts_batch_logging mbl
                 WHERE EXISTS (
                     SELECT 1
                     FROM unnest(mbl.module_names) AS elem
                     WHERE elem ILIKE REPLACE(miv.module_name, '-', '')
                 )
+                AND mbl.module_names IS NOT NULL
+                AND mbl.station_names IS NOT NULL
                 AND mbl.log_timestamp < (miv.date_test + miv.time_test)
-                ORDER BY mbl.log_timestamp DESC
+                ORDER BY mbl.batch_name, mbl.log_timestamp DESC
                 LIMIT 1
             );
         """
@@ -61,7 +63,7 @@ async def update_module_iv_test():
         update_query_station = """
             UPDATE module_iv_test miv
             SET station_name = (
-                SELECT mbl.station_names[elem.idx]
+                SELECT DISTINCT ON (mbl.batch_name) mbl.station_names[elem.idx]
                 FROM mmts_batch_logging mbl,
                      LATERAL (
                          SELECT ord AS idx
@@ -70,6 +72,8 @@ async def update_module_iv_test():
                          LIMIT 1
                      ) elem
                 WHERE mbl.batch_name = miv.batch_name
+                AND mbl.module_names IS NOT NULL
+                AND mbl.station_names IS NOT NULL
                 LIMIT 1
             )
             WHERE miv.batch_name IS NOT NULL;
@@ -92,15 +96,17 @@ async def update_module_pedestal_test():
         update_query_mod = """
             UPDATE module_pedestal_test mpt
             SET batch_name = (
-                SELECT mbl.batch_name
+                SELECT DISTINCT ON (mbl.batch_name) mbl.batch_name
                 FROM mmts_batch_logging mbl
                 WHERE EXISTS (
                     SELECT 1
                     FROM unnest(mbl.module_names) AS elem
                     WHERE elem ILIKE REPLACE(mpt.module_name, '-', '')
                 )
+                AND mbl.module_names IS NOT NULL
+                AND mbl.station_names IS NOT NULL
                 AND mbl.log_timestamp < (mpt.date_test + mpt.time_test)
-                ORDER BY mbl.log_timestamp DESC
+                ORDER BY mbl.batch_name, mbl.log_timestamp DESC
                 LIMIT 1
             );
         """
@@ -111,7 +117,7 @@ async def update_module_pedestal_test():
         update_query_station = """
             UPDATE module_pedestal_test mpt
             SET station_name = (
-                SELECT mbl.station_names[elem.idx]
+                SELECT DISTINCT ON (mbl.batch_name) mbl.station_names[elem.idx]
                 FROM mmts_batch_logging mbl,
                      LATERAL (
                          SELECT ord AS idx
@@ -120,6 +126,8 @@ async def update_module_pedestal_test():
                          LIMIT 1
                      ) elem
                 WHERE mbl.batch_name = mpt.batch_name
+                AND mbl.module_names IS NOT NULL
+                AND mbl.station_names IS NOT NULL
                 LIMIT 1
             )
             WHERE mpt.batch_name IS NOT NULL;
