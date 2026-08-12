@@ -40,16 +40,20 @@ async def update_module_qc_summary():
         
     try:    
         update_query_mod = """
-            UPDATE module_qc_summary mqs                                                                                                             
-            SET thermal_cycle_count = (                                                                                                              
-                SELECT COALESCE(SUM(mbl.cycle_count), 0)                                                                                                                              
-                FROM mmts_batch_logging mbl                                                                                                          
-                WHERE EXISTS (                                                                                                                       
-                    SELECT 1                                                                                                                         
-                    FROM unnest(mbl.module_names) AS elem                                                                                            
-                    WHERE elem ILIKE REPLACE(mqs.module_name, '-', '')                                                                               
-                )                                                                                                                                    
-                AND mbl.log_timestamp < mqs.grade_timestamp                                                                                          
+            UPDATE module_qc_summary mqs
+            SET thermal_cycle_count = (
+                SELECT COALESCE(SUM(first_instances.cycle_count), 0)
+                FROM (
+                    SELECT DISTINCT ON (mbl.batch_name) mbl.cycle_count
+                    FROM mmts_batch_logging mbl
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM unnest(mbl.module_names) AS elem
+                        WHERE elem ILIKE REPLACE(mqs.module_name, '-', '')
+                    )
+                    AND mbl.log_timestamp < mqs.grade_timestamp
+                    ORDER BY mbl.batch_name, (mbl.cycle_count IS NULL), mbl.batch_no ASC
+                ) first_instances
             );
         """
 
@@ -70,20 +74,30 @@ async def update_module_info():
         update_query_mod = """
             UPDATE module_info mi
             SET thermal_cycle_count = (
-                SELECT COALESCE(SUM(mbl.cycle_count), 0) FROM mmts_batch_logging mbl
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM unnest(mbl.module_names) AS elem
-                    WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
-                )
+                SELECT COALESCE(SUM(first_instances.cycle_count), 0)
+                FROM (
+                    SELECT DISTINCT ON (mbl.batch_name) mbl.cycle_count, mbl.log_timestamp
+                    FROM mmts_batch_logging mbl
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM unnest(mbl.module_names) AS elem
+                        WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
+                    )
+                    ORDER BY mbl.batch_name, (mbl.cycle_count IS NULL), mbl.batch_no ASC
+                ) first_instances
             ),
             thermal_cycle_date = (
-                SELECT MAX(mbl.log_timestamp::date) FROM mmts_batch_logging mbl
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM unnest(mbl.module_names) AS elem
-                    WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
-                )
+                SELECT MAX(first_instances.log_timestamp::date)
+                FROM (
+                    SELECT DISTINCT ON (mbl.batch_name) mbl.cycle_count, mbl.log_timestamp
+                    FROM mmts_batch_logging mbl
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM unnest(mbl.module_names) AS elem
+                        WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
+                    )
+                    ORDER BY mbl.batch_name, (mbl.cycle_count IS NULL), mbl.batch_no ASC
+                ) first_instances
             );
         """
 

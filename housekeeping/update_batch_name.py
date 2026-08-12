@@ -40,14 +40,14 @@ async def update_module_iv_test():
         
     try:    
         update_query_mod = """
-            UPDATE module_iv_test miv                                                                                                             
-            SET batch_name = (                                                                                                              
+            UPDATE module_iv_test miv
+            SET batch_name = (
                 SELECT mbl.batch_name
-                FROM mmts_batch_logging mbl                                                                                                          
-                WHERE EXISTS (                                                                                                                       
-                    SELECT 1                                                                                                                         
-                    FROM unnest(mbl.module_names) AS elem                                                                                            
-                    WHERE elem ILIKE REPLACE(miv.module_name, '-', '')                                                                               
+                FROM mmts_batch_logging mbl
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM unnest(mbl.module_names) AS elem
+                    WHERE elem ILIKE REPLACE(miv.module_name, '-', '')
                 )
                 AND mbl.log_timestamp < (miv.date_test + miv.time_test)
                 ORDER BY mbl.log_timestamp DESC
@@ -56,7 +56,27 @@ async def update_module_iv_test():
         """
 
         result = await conn.execute(update_query_mod)
-        print(f"Batch names updated.")    
+        print(f"Batch names updated in IV test.")
+
+        update_query_station = """
+            UPDATE module_iv_test miv
+            SET station_name = (
+                SELECT mbl.station_names[elem.idx]
+                FROM mmts_batch_logging mbl,
+                     LATERAL (
+                         SELECT ord AS idx
+                         FROM unnest(mbl.module_names) WITH ORDINALITY AS u(name, ord)
+                         WHERE u.name ILIKE REPLACE(miv.module_name, '-', '')
+                         LIMIT 1
+                     ) elem
+                WHERE mbl.batch_name = miv.batch_name
+                LIMIT 1
+            )
+            WHERE miv.batch_name IS NOT NULL;
+        """
+
+        result = await conn.execute(update_query_station)
+        print(f"Station names updated in IV test.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -64,4 +84,55 @@ async def update_module_iv_test():
     
     await conn.close()
 
+async def update_module_pedestal_test():
+    conn = await asyncpg.connect(**db_params)
+    # print('Connection successful.')
+
+    try:
+        update_query_mod = """
+            UPDATE module_pedestal_test mpt
+            SET batch_name = (
+                SELECT mbl.batch_name
+                FROM mmts_batch_logging mbl
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM unnest(mbl.module_names) AS elem
+                    WHERE elem ILIKE REPLACE(mpt.module_name, '-', '')
+                )
+                AND mbl.log_timestamp < (mpt.date_test + mpt.time_test)
+                ORDER BY mbl.log_timestamp DESC
+                LIMIT 1
+            );
+        """
+
+        result = await conn.execute(update_query_mod)
+        print(f"Batch names updated in pedestal test.")
+
+        update_query_station = """
+            UPDATE module_pedestal_test mpt
+            SET station_name = (
+                SELECT mbl.station_names[elem.idx]
+                FROM mmts_batch_logging mbl,
+                     LATERAL (
+                         SELECT ord AS idx
+                         FROM unnest(mbl.module_names) WITH ORDINALITY AS u(name, ord)
+                         WHERE u.name ILIKE REPLACE(mpt.module_name, '-', '')
+                         LIMIT 1
+                     ) elem
+                WHERE mbl.batch_name = mpt.batch_name
+                LIMIT 1
+            )
+            WHERE mpt.batch_name IS NOT NULL;
+        """
+
+        result = await conn.execute(update_query_station)
+        print(f"Station names updated in pedestal test.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        traceback.print_exc()
+
+    await conn.close()
+
 asyncio.run(update_module_iv_test())
+asyncio.run(update_module_pedestal_test())
