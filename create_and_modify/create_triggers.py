@@ -218,6 +218,7 @@ def update_thermal_cycle_trigger():
                     WHERE REPLACE(v_module,'-','') IN (
                         SELECT REPLACE(m,'-','') FROM unnest(mbl.module_names) AS m
                     )
+                    AND mbl.cycle_count IS NOT NULL
                     ORDER BY mbl.batch_name, mbl.batch_no ASC
                 )
                 UPDATE module_info
