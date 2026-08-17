@@ -51,6 +51,7 @@ async def update_module_iv_test():
                 )
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
+                AND mbl.status_desc = 'bolted'
                 AND mbl.log_timestamp < (miv.date_test + miv.time_test)
                 ORDER BY mbl.batch_name, mbl.log_timestamp DESC
                 LIMIT 1
@@ -74,6 +75,7 @@ async def update_module_iv_test():
                 WHERE mbl.batch_name = miv.batch_name
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
+                AND mbl.status_desc = 'bolted'
                 LIMIT 1
             )
             WHERE miv.batch_name IS NOT NULL;
@@ -105,6 +107,7 @@ async def update_module_pedestal_test():
                 )
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
+                AND mbl.status_desc = 'bolted'
                 AND mbl.log_timestamp < (mpt.date_test + mpt.time_test)
                 ORDER BY mbl.batch_name, mbl.log_timestamp DESC
                 LIMIT 1
@@ -128,6 +131,7 @@ async def update_module_pedestal_test():
                 WHERE mbl.batch_name = mpt.batch_name
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
+                AND mbl.status_desc = 'bolted'
                 LIMIT 1
             )
             WHERE mpt.batch_name IS NOT NULL;
