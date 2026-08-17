@@ -38,7 +38,18 @@ async def update_module_iv_test():
     conn = await asyncpg.connect(**db_params)
     # print('Connection successful.')
         
-    try:    
+    try:
+        clear_query = """
+            UPDATE module_iv_test
+            SET batch_name = NULL,
+                station_name = NULL
+            WHERE status_desc IS NULL
+            OR status_desc NOT ILIKE 'bolted';
+        """
+
+        result = await conn.execute(clear_query)
+        print(f"Batch/station names cleared for non-bolted modules in IV test.")
+
         update_query_mod = """
             UPDATE module_iv_test miv
             SET batch_name = (
@@ -95,6 +106,17 @@ async def update_module_pedestal_test():
     # print('Connection successful.')
 
     try:
+        clear_query = """
+            UPDATE module_pedestal_test
+            SET batch_name = NULL,
+                station_name = NULL
+            WHERE status_desc IS NULL
+            OR status_desc NOT ILIKE 'bolted';
+        """
+
+        result = await conn.execute(clear_query)
+        print(f"Batch/station names cleared for non-bolted modules in pedestal test.")
+
         update_query_mod = """
             UPDATE module_pedestal_test mpt
             SET batch_name = (
