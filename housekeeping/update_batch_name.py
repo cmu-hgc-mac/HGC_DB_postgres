@@ -51,11 +51,11 @@ async def update_module_iv_test():
                 )
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
-                AND mbl.status_desc ILIKE 'bolted'
                 AND mbl.log_timestamp < (miv.date_test + miv.time_test)
                 ORDER BY mbl.batch_name, mbl.log_timestamp DESC
                 LIMIT 1
-            );
+            )
+            WHERE miv.status_desc ILIKE 'bolted';
         """
 
         result = await conn.execute(update_query_mod)
@@ -75,10 +75,10 @@ async def update_module_iv_test():
                 WHERE mbl.batch_name = miv.batch_name
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
-                AND mbl.status_desc ILIKE 'bolted'
                 LIMIT 1
             )
-            WHERE miv.batch_name IS NOT NULL;
+            WHERE miv.batch_name IS NOT NULL
+            AND miv.status_desc ILIKE 'bolted';
         """
 
         result = await conn.execute(update_query_station)
@@ -107,11 +107,11 @@ async def update_module_pedestal_test():
                 )
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
-                AND mbl.status_desc ILIKE 'bolted'
                 AND mbl.log_timestamp < (mpt.date_test + mpt.time_test)
                 ORDER BY mbl.batch_name, mbl.log_timestamp DESC
                 LIMIT 1
-            );
+            )
+            WHERE mpt.status_desc ILIKE 'bolted';
         """
 
         result = await conn.execute(update_query_mod)
@@ -131,10 +131,10 @@ async def update_module_pedestal_test():
                 WHERE mbl.batch_name = mpt.batch_name
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
-                AND mbl.status_desc ILIKE 'bolted'
                 LIMIT 1
             )
-            WHERE mpt.batch_name IS NOT NULL;
+            WHERE mpt.batch_name IS NOT NULL
+            AND mpt.status_desc ILIKE 'bolted';
         """
 
         result = await conn.execute(update_query_station)
