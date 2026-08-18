@@ -21,7 +21,7 @@ db_params = {
      "host": yaml.safe_load(open(conn_yaml_file, "r")).get("db_hostname"),
      "port": yaml.safe_load(open(conn_yaml_file, "r")).get("port"),
 }
-institutions_list = ["CMU", "TTU", "KIT", "USCB", "NTU", "IHEP"]
+institutions_list = ["CMU", "UCSB", "TIFR", "IHEP", "NTU", "TTU"]
 
 # ===========================================================================================================
 # ===========================================================================================================
@@ -32,29 +32,29 @@ def id_setter(id_no, letter):
           placeholder = "Enter box ID..."
           error_msg1 = "Must enter box ID."
           error_msg2 = "Box ID must have form [INSTITUTION]-B[NUMBER]."
-     elif (letter == "C"):
-          placeholder = "Enter crate ID..."
-          error_msg1 = "Must enter crate ID."
-          error_msg2 = "Crate ID must have form [INSTITUTION]-C[NUMBER]."
-     elif (letter == "X"):
-          placeholder = "Enter container ID..."
-          error_msg1 = "Must enter container ID."
-          error_msg2 = "Container ID must have form [INSTITUTION]-X[NUMBER]."
+     elif (letter == "C/X"):
+          placeholder = "Enter shipment ID..."
+          error_msg1 = "Must enter shipment ID."
+          error_msg2 = "Shipment ID must have form [INSTITUTION]-C[NUMBER] for shipments of boxes packed in crates or [INSTITUTION]-X[NUMBER] for shipments of boxes not packed in crates."
      else:
           return
      
      if (id_no == placeholder or id_no == ""):
-          show_error_on_top("Upload Error", error_msg1)
+          show_error_on_top("Upload Error", "See terminal.")
+          print(f"Upload Error: {error_msg1}")
           return 1
      else:
           try:
                split_text = id_no.split("-")
                split_text_no = re.split(r"(\d+)", split_text[1])
-               if ((split_text[0].upper() not in institutions_list) or (split_text_no[0].upper() != letter) or not split_text_no[1].isdigit()):
-                    show_error_on_top("Upload Error", error_msg2)
+               valid_letters = {"C", "X"} if (letter == "C/X") else {letter}
+               if ((split_text[0].upper() not in institutions_list) or (split_text_no[0].upper() not in valid_letters) or not split_text_no[1].isdigit()):
+                    show_error_on_top("Upload Error", "See terminal.")
+                    print(f"Upload Error: {error_msg2}")
                     return 1
                elif (len(split_text) > 2):
-                    show_error_on_top("Upload Error", error_msg2)
+                    show_error_on_top("Upload Error", "See terminal.")
+                    print(f"Upload Error: {error_msg2}")
                     return 1
                else:
                     institution = split_text[0].upper()
@@ -63,13 +63,14 @@ def id_setter(id_no, letter):
                     id_no = "-".join(id_components)
                     return id_no
           except Exception as e:
-               show_error_on_top("Upload Error", error_msg2)
+               show_error_on_top("Upload Error", "See terminal.")
+               print(f"Upload Error: {error_msg2}")
                return 1
 
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Class for creating temporary default text in the entry widgets where box, crate, and container IDs are entered
+# Class for creating temporary default text in the entry widgets where box and shipment IDs are entered
 class PlaceholderEntry(tkinter.Entry):
      def __init__(self, parent, placeholder, color = "grey", **kwargs):
           super().__init__(parent, **kwargs)
@@ -167,27 +168,6 @@ async def _get_shipped_timestamp_bool(encrypt_key, password, module_names, db_pa
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Boolean for whether "crate_complete_dt" or "container_complete_dt" is not NULL
-def get_complete_dt_bool_sync(encrypt_key, password, module_names, column):
-      return asyncio.run(_get_complete_dt_bool(encrypt_key = encrypt_key, password = password, module_names = module_names, column = column))
-
-async def _get_complete_dt_bool(encrypt_key, password, module_names, column, db_params = db_params):
-      cipher_suite = Fernet(encrypt_key)                                        
-      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
-      db_params.update({"password": dbpassword})
-      query = f"""SELECT {column} FROM module_info WHERE module_name = ANY($1) """
-      try:
-          conn = await asyncpg.connect(**db_params)
-          rows = await conn.fetch(query, module_names)
-          await conn.close()
-          return [row[column] for row in rows] if rows else []
-      except Exception as e:
-          print(f"Error obtaining {column}: {e}")
-          return []
-
-# ===========================================================================================================
-# ===========================================================================================================
-
 # Updates column "shipped_datetime" in "module_info"; used in titles of output files
 def update_shipped_timestamp_sync(encrypt_key, password, module_names, timestamp):
      fileout_name = asyncio.run(_update_shipped_timestamp(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp))
@@ -203,6 +183,7 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
               query = """UPDATE module_info SET shipped_datetime = NULL WHERE module_name = ANY($1); """                   
               await conn.execute(query, module_names)
               await conn.close()
+              print(f"Updated shipped_timestamp for {len(module_names)} modules.")
               return None
      except Exception as e:
           print(f"Error updating shipped_timestamp: {e}")
@@ -272,43 +253,43 @@ async def _update_box_number(encrypt_key, password, module_names, box_number, db
 # ===========================================================================================================
 # ===========================================================================================================   
         
-# Fetches column "crate_number" in "module_info" given modules
-def get_crate_number_sync(encrypt_key, password, module_names):
-     return asyncio.run(_get_crate_number(encrypt_key = encrypt_key, password = password, module_names = module_names))
+# Fetches column "shipment_number" in "module_info" given modules
+def get_shipment_number_sync(encrypt_key, password, module_names):
+     return asyncio.run(_get_shipment_number(encrypt_key = encrypt_key, password = password, module_names = module_names))
 
-async def _get_crate_number(encrypt_key, password, module_names, db_params = db_params):
+async def _get_shipment_number(encrypt_key, password, module_names, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = f"""SELECT crate_number FROM module_info WHERE module_name = ANY($1);"""
+     query = f"""SELECT shipment_number FROM module_info WHERE module_name = ANY($1);"""
      try:
           conn = await asyncpg.connect(**db_params)
           rows = await conn.fetch(query, module_names)
           await conn.close()
-          crates = [row["crate_number"] for row in rows] if rows else []
-          return crates
+          shipments = [row["shipment_number"] for row in rows] if rows else []
+          return shipments
      except Exception as e:
-          print(f"Error obtaining crate_number: {e}")
+          print(f"Error obtaining shipment_number: {e}")
           
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Updates column "crate_number in "module info"
-def update_crate_number_sync(encrypt_key, password, module_names, crate_number):
-     asyncio.run(_update_crate_number(encrypt_key = encrypt_key, password = password, module_names = module_names, crate_number = crate_number))
+# Updates column "shipment_number in "module info"
+def update_shipment_number_sync(encrypt_key, password, module_names, shipment_number):
+     asyncio.run(_update_shipment_number(encrypt_key = encrypt_key, password = password, module_names = module_names, shipment_number = shipment_number))
 
-async def _update_crate_number(encrypt_key, password, module_names, crate_number, db_params = db_params):
+async def _update_shipment_number(encrypt_key, password, module_names, shipment_number, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = """UPDATE module_info SET crate_number = $1 WHERE module_name = ANY($2)"""
+     query = """UPDATE module_info SET shipment_number = $1 WHERE module_name = ANY($2)"""
      try:
           conn = await asyncpg.connect(**db_params)
-          await conn.execute(query, crate_number, module_names)
-          print(f"Updated crate_number for {len(module_names)} modules.")
+          await conn.execute(query, shipment_number, module_names)
+          print(f"Updated shipment_number for {len(module_names)} modules.")
           await conn.close()
      except Exception as e:
-          print(f"Error updating crate_number: {e}")
+          print(f"Error updating shipment_number: {e}")
 
 # ===========================================================================================================
 # ===========================================================================================================   
@@ -338,29 +319,29 @@ async def _get_boxes(encrypt_key, password, db_params = db_params):
 # ===========================================================================================================
 # ===========================================================================================================   
 
-# Fetches list of crates in database
-def get_crates_sync(encrypt_key, password):
-     return asyncio.run(_get_crates(encrypt_key = encrypt_key, password = password))
+# Fetches list of shipments in database
+def get_shipments_sync(encrypt_key, password):
+     return asyncio.run(_get_shipments(encrypt_key = encrypt_key, password = password))
 
-async def _get_crates(encrypt_key, password, db_params = db_params):
+async def _get_shipments(encrypt_key, password, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = f"""SELECT crate_number FROM module_info WHERE crate_number IS NOT NULL;"""
+     query = f"""SELECT shipment_number FROM module_info WHERE shipment_number IS NOT NULL;"""
      try:
           conn = await asyncpg.connect(**db_params)
           rows = await conn.fetch(query)
           await conn.close()
-          crates = [row["crate_number"] for row in rows] if rows else []
-          sorted_crates = [list(y) for x, y in groupby(sorted(crates))]
-          available_crates = []
-          for i in range(len(sorted_crates)):
-               if (all(x == sorted_crates[i][0] for x in sorted_crates[i])): available_crates.append(sorted_crates[i][0])
-          return available_crates
+          shipments = [row["shipment_number"] for row in rows] if rows else []
+          sorted_shipments = [list(y) for x, y in groupby(sorted(shipments))]
+          available_shipments = []
+          for i in range(len(sorted_shipments)):
+               if (all(x == sorted_shipments[i][0] for x in sorted_shipments[i])): available_shipments.append(sorted_shipments[i][0])
+          return available_shipments
      except Exception as e:
-          print(f"Error obtaining crate_number: {e}")
+          print(f"Error obtaining shipment_number: {e}")
 
-
+'''
 # ===========================================================================================================
 # ===========================================================================================================   
 
@@ -385,51 +366,30 @@ async def _get_containers(encrypt_key, password, db_params = db_params):
           return available_containers
      except Exception as e:
           print(f"Error obtaining container_number: {e}")
+'''
 
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Fetches the names of the boxes inside a crate with a given number
-def get_boxes_in_crate_sync(encrypt_key, password, crate_number):
-     return asyncio.run(_get_boxes_in_crate(encrypt_key = encrypt_key, password = password, crate_number = crate_number))
+# Fetches the names of the boxes inside a shipment with a given number
+def get_boxes_in_shipment_sync(encrypt_key, password, shipment_number):
+     return asyncio.run(_get_boxes_in_shipment(encrypt_key = encrypt_key, password = password, shipment_number = shipment_number))
         
-async def _get_boxes_in_crate(encrypt_key, password, crate_number, db_params = db_params):
+async def _get_boxes_in_shipment(encrypt_key, password, shipment_number, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode() 
      db_params.update({"password": dbpassword})
-     query = f"""SELECT box_number FROM module_info WHERE crate_number = $1;"""
+     query = f"""SELECT box_number FROM module_info WHERE shipment_number = $1;"""
      try:
           conn = await asyncpg.connect(**db_params)
-          rows = await conn.fetch(query, crate_number)
+          rows = await conn.fetch(query, shipment_number)
           await conn.close()
           boxes = [row["box_number"] for row in rows] if rows else []
           sorted_boxes = [list(y) for x, y in groupby(sorted(boxes))]
           return sorted_boxes
      except Exception as e:
-          print(f"Error obtaining boxes in crate: {e}")
-
-# ===========================================================================================================
-# ===========================================================================================================
-
-# Fetches the names of the boxes inside a container with a given number
-def get_boxes_in_container_sync(encrypt_key, password, container_number):
-     return asyncio.run(_get_boxes_in_container(encrypt_key = encrypt_key, password = password, container_number = container_number))
-        
-async def _get_boxes_in_container(encrypt_key, password, container_number, db_params = db_params):
-     cipher_suite = Fernet(encrypt_key)
-     dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode() 
-     db_params.update({"password": dbpassword})
-     query = f"""SELECT box_number FROM module_info WHERE container_number = $1;"""
-     try:
-          conn = await asyncpg.connect(**db_params)
-          rows = await conn.fetch(query, container_number)
-          await conn.close()
-          boxes = [row["box_number"] for row in rows] if rows else []
-          sorted_boxes = [list(y) for x, y in groupby(sorted(boxes))]
-          return sorted_boxes
-     except Exception as e:
-          print(f"Error obtaining boxes in crate: {e}")
-
+          print(f"Error obtaining boxes in shipment: {e}")
+          
 # ===========================================================================================================
 # ===========================================================================================================
 
@@ -454,24 +414,25 @@ async def _get_modules_in_box(encrypt_key, password, box_number, db_params = db_
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Fetches the names of the modules inside a crate with a given number
-def get_modules_in_crate_sync(encrypt_key, password, crate_number):
-     return asyncio.run(_get_modules_in_crate(encrypt_key = encrypt_key, password = password, crate_number = crate_number))
+# Fetches the names of the modules inside a shipment with a given number
+def get_modules_in_shipment_sync(encrypt_key, password, shipment_number):
+     return asyncio.run(_get_modules_in_shipment(encrypt_key = encrypt_key, password = password, shipment_number = shipment_number))
 
-async def _get_modules_in_crate(encrypt_key, password, crate_number, db_params = db_params):
+async def _get_modules_in_shipment(encrypt_key, password, shipment_number, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = f"""SELECT module_name FROM module_info WHERE crate_number = $1;"""
+     query = f"""SELECT module_name FROM module_info WHERE shipment_number = $1;"""
      try:
           conn = await asyncpg.connect(**db_params)
-          rows = await conn.fetch(query, crate_number)
+          rows = await conn.fetch(query, shipment_number)
           await conn.close()
           modules = [row["module_name"] for row in rows] if rows else []
           return modules
      except Exception as e:
           print(f"Error obtaining modules in box: {e}")
 
+'''
 # ===========================================================================================================
 # ===========================================================================================================
 
@@ -492,82 +453,63 @@ async def _get_modules_in_container(encrypt_key, password, container_number, db_
           return modules
      except Exception as e:
           print(f"Error obtaining modules in box: {e}")
+'''
 
 # ===========================================================================================================
 # ===========================================================================================================
 
 # Get position of module in box
-def get_box_position_sync(encrypt_key, password, module_name):
-     return asyncio.run(_get_box_position(encrypt_key = encrypt_key, password = password, module_name = module_name))
+def get_position_in_box_sync(encrypt_key, password, module_name):
+     return asyncio.run(_get_position_in_box(encrypt_key = encrypt_key, password = password, module_name = module_name))
 
-async def _get_box_position(encrypt_key, password, module_name, db_params = db_params):
+async def _get_position_in_box(encrypt_key, password, module_name, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = f"""SELECT box_position FROM module_info WHERE module_name = $1;"""
+     query = f"""SELECT position_in_box FROM module_info WHERE module_name = $1;"""
      try:
           conn = await asyncpg.connect(**db_params)
           rows = await conn.fetch(query, module_name)
           await conn.close()
-          return [row["box_position"] for row in rows] if rows else []
+          return [row["position_in_box"] for row in rows] if rows else []
      except Exception as e:
-          print(f"Error obtaining box_position: {e}")
+          print(f"Error obtaining position_in_box: {e}")
 
 # ===========================================================================================================
 # ===========================================================================================================
 
 # Update position of module in box
-def update_box_position_sync(encrypt_key, password, module_name, box_position):
-     asyncio.run(_update_box_position(encrypt_key = encrypt_key, password = password, module_name = module_name, box_position = box_position))
+def update_position_in_box_sync(encrypt_key, password, module_name, position_in_box):
+     asyncio.run(_update_position_in_box(encrypt_key = encrypt_key, password = password, module_name = module_name, position_in_box = position_in_box))
      
-async def _update_box_position(encrypt_key, password, module_name, box_position, db_params = db_params):
+async def _update_position_in_box(encrypt_key, password, module_name, position_in_box, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = """UPDATE module_info SET box_position = $1 WHERE module_name = $2;"""
+     query = """UPDATE module_info SET position_in_box = $1 WHERE module_name = $2;"""
      try:
           conn = await asyncpg.connect(**db_params)
-          await conn.execute(query, box_position, module_name)
-          print(f"Updated box_position for {module_name}.")
+          await conn.execute(query, position_in_box, module_name)
+          print(f"Updated position_in_box for {module_name}.")
           await conn.close()
      except Exception as e:
-          print(f"Error updating box_position: {e}")
-
-# ===========================================================================================================
-# ===========================================================================================================
-
-# Updates column "completed_dt" in "module_info"
-def update_complete_sync(encrypt_key, password, module_names, timestamp, savetofile = False):
-     asyncio.run(_update_complete(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp, db_params = db_params))
-
-async def _update_complete(encrypt_key, password, module_names, timestamp, db_params = db_params):
-     cipher_suite = Fernet(encrypt_key)
-     dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
-     db_params.update({"password": dbpassword})
-     query = """UPDATE module_info SET completed_dt = $1 WHERE module_name = ANY($2);"""
-     try:
-          conn = await asyncpg.connect(**db_params)
-          await conn.execute(query, timestamp, module_names)
-          print(f"Updated completed_dt for {len(module_names)} modules.")
-          await conn.close()
-     except Exception as e:
-          print(f"Error updating completed_dt: {e}")
+          print(f"Error updating position_in_box: {e}")
           
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Calculates the number of boxes inside a crate with a given number
-def get_number_of_boxes_sync(encrypt_key, password, crate_number):
-     return asyncio.run(_get_number_of_boxes(encrypt_key = encrypt_key, password = password, crate_number = crate_number))
+# Calculates the number of boxes inside a shipment with a given number
+def get_number_of_boxes_sync(encrypt_key, password, shipment_number):
+     return asyncio.run(_get_number_of_boxes(encrypt_key = encrypt_key, password = password, shipment_number = shipment_number))
 
-async def _get_number_of_boxes(encrypt_key, password, crate_number, db_params = db_params):
+async def _get_number_of_boxes(encrypt_key, password, shipment_number, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = f"""SELECT box_number FROM module_info WHERE crate_number = $1;"""
+     query = """SELECT box_number FROM module_info WHERE shipment_number = $1;"""
      try:
           conn = await asyncpg.connect(**db_params)
-          rows = await conn.fetch(query, crate_number)
+          rows = await conn.fetch(query, shipment_number)
           await conn.close()
           boxes = [row["box_number"] for row in rows] if rows else []
           sorted_boxes = [list(y) for x, y in groupby(sorted(boxes))]
@@ -576,50 +518,30 @@ async def _get_number_of_boxes(encrypt_key, password, crate_number, db_params = 
           print(f"Error obtaining number of boxes: {e}")
 
 # ===========================================================================================================
-# ===========================================================================================================   
-        
-# Fetches column "container_number" in "module_info" given modules
-def get_container_number_sync(encrypt_key, password, module_names):
-     return asyncio.run(_get_container_number(encrypt_key = encrypt_key, password = password, module_names = module_names))
+# ===========================================================================================================
 
-async def _get_container_number(encrypt_key, password, module_names, db_params = db_params):
+# Gets information about whether a module has been thermal cycled (tested at negative temperatures): "test_iv" is False
+def module_thermal_cycled_sync(encrypt_key, password, module_names):
+     return asyncio.run(_module_thermal_cycled(encrypt_key = encrypt_key, password = password, module_names = module_names))
+
+async def _module_thermal_cycled(encrypt_key, password, module_names, db_params = db_params):
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = f"""SELECT container_number FROM module_info WHERE module_name = ANY($1);"""
+     query = """SELECT thermal_cycle FROM module_info WHERE module_name = ANY($1);"""
      try:
           conn = await asyncpg.connect(**db_params)
           rows = await conn.fetch(query, module_names)
           await conn.close()
-          crates = [row["container_number"] for row in rows] if rows else []
-          return crates
+          tested = [row["thermal_cycle"] for row in rows] if rows else []
+          return tested
      except Exception as e:
-          print(f"Error obtaining container_number: {e}")
-          
-# ===========================================================================================================
-# ===========================================================================================================
-
-# Updates column "crate_number in "module info"
-def update_container_number_sync(encrypt_key, password, module_names, container_number):
-     asyncio.run(_update_container_number(encrypt_key = encrypt_key, password = password, module_names = module_names, container_number = container_number))
-
-async def _update_container_number(encrypt_key, password, module_names, container_number, db_params = db_params):
-     cipher_suite = Fernet(encrypt_key)
-     dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
-     db_params.update({"password": dbpassword})
-     query = """UPDATE module_info SET container_number = $1 WHERE module_name = ANY($2)"""
-     try:
-          conn = await asyncpg.connect(**db_params)
-          await conn.execute(query, container_number, module_names)
-          print(f"Updated container_number for {len(module_names)} modules.")
-          await conn.close()
-     except Exception as e:
-          print(f"Error updating container_number: {e}")
+          print(f"Error obtaining thermal_cycle: {e}")
 
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Class for handling the recording of modules into boxes; contains module-loading popup as well as popups for giving boxes IDs and for putting them inside crates (if needed)
+# Class for handling the recording of modules into boxes; contains module-loading popup as well as popups for giving boxes IDs and for putting them inside shipments (if needed)
 class enter_part_barcodes_box(tkinter.Toplevel):
      def __init__(self, parent, encryption_key, dbshipper_pass, upload_file_with_part_out, max_mod_per_box, entries = None):
           super().__init__(parent)
@@ -634,7 +556,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
           bottom_frame = tkinter.Frame(self)
 
           box_frame = Frame(top_frame, bd = 1, relief = "sunken", highlightbackground = "black", highlightthickness = 1)
-          crate_frame = Frame(bottom_frame, bd = 1, relief = "sunken", highlightbackground = "black", highlightthickness = 1)
+          shipment_frame = Frame(bottom_frame, bd = 1, relief = "sunken", highlightbackground = "black", highlightthickness = 1)
           
           top_frame.pack(pady = 10)
           middle_frame.pack(pady = 10)
@@ -644,8 +566,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
           datetime_now_var = StringVar(master = self, value = datetime_now)
           
           available_boxes = get_boxes_sync(encrypt_key = encryption_key, password = dbshipper_pass)
-          available_crates = get_crates_sync(encrypt_key = encryption_key, password = dbshipper_pass)
-          available_containers = get_containers_sync(encrypt_key = encryption_key, password = dbshipper_pass)
+          available_shipments = get_shipments_sync(encrypt_key = encryption_key, password = dbshipper_pass)
      
           upload_from_file_button = Button(top_frame, text = "Upload parts from file (optional)", command = upload_file_with_part_out, state = "disabled")
           datetime_now_label = Label(top_frame, text = f"Now:", justify = "right", anchor = "e")
@@ -689,8 +610,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                for item in middle_frame.grid_slaves():
                     item["state"] = "normal"
                export_checkbox["state"] = "normal"
-               crate_checkbox["state"] = "normal"
-               container_checkbox["state"] = "normal"
+               shipment_checkbox["state"] = "normal"
                submit_button["state"] = "normal"
                cancel_button.grid_remove()
                back_button.grid(row = 1, column = 2, columnspan = 1, sticky = "ne")
@@ -705,69 +625,54 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                          if (all(x == sorted_modules[i][0] for x in sorted_modules[i])):
                               module_id = sorted_modules[i][0]
                               available_modules.append(module_id)
-                         position = get_box_position_sync(encryption_key, dbshipper_pass, module_id)
-                         entries[int(position[0]) - 1].insert(0, module_id)
-                         current_modules.append(entries[int(position[0]) - 1].get())
-                    crates = get_crate_number_sync(encryption_key, dbshipper_pass, modules)
-                    containers = get_container_number_sync(encryption_key, dbshipper_pass, modules)
+                              position = get_position_in_box_sync(encryption_key, dbshipper_pass, module_id)
+                              entries[int(position[0]) - 1].insert(0, module_id)
+                              current_modules.append(entries[int(position[0]) - 1].get())
+                    shipments = get_shipment_number_sync(encryption_key, dbshipper_pass, modules)
                     datetimes = get_shipped_timestamp_bool_sync(encryption_key, dbshipper_pass, available_modules)
                     dt_bool = not any(datetimes)
-                    crate_id = crates[0] if (all(x == crates[0] for x in crates)) else None
-                    container_id = containers[0] if (all(x == containers[0] for x in containers)) else None
+                    shipment_id = shipments[0] if (all(x == shipments[0] for x in shipments)) else None
                     if (dt_bool == False):
                          for i in range(int(max_mod_per_box)):
                               entries[i]["state"] = "disabled"
                          export_checkbox["state"] = "disabled"
-                         crate_checkbox["state"] = "disabled"
-                         container_checkbox["state"] = "disabled"
+                         shipment_checkbox["state"] = "disabled"
                          submit_button["state"] = "disabled"
                          ship_button.pack_forget()
                          received_button.pack(side = "left", padx = 10, pady = 10)
                          received_button["state"] = "normal"
-                         if ((crate_id is None) and (container_id is None)):
-                              crate_id_entry["state"] = "disabled"
-                              dropdown_button_crate["state"] = "disabled"
-                              crate_see_inside["state"] = "disabled"
-                              return
-                         elif (crate_id is not None):
-                              crate_checkbox.select()
-                              crate_id_entry["state"] = "normal"
-                              dropdown_button_crate["state"] = "normal"
-                              crate_see_inside["state"] = "normal"
-                              crate_id_entry.delete(0, "end")
-                              crate_id_entry.insert(0, crate_id)
-                              crate_id_entry["fg"] = crate_id_entry._default_fg_color
-                              crate_id_entry["state"] = "disabled"
-                              dropdown_button_crate["state"] = "disabled"
-                              crate_see_inside["state"] = "disabled"
-                         elif (container_id is not None):
-                              container_checkbox.select()
-                              crate_id_entry["state"] = "normal"
-                              dropdown_button_crate["state"] = "normal"
-                              crate_see_inside["state"] = "normal"
-                              crate_id_entry.delete(0, "end")
-                              crate_id_entry.insert(0, container_id)
-                              crate_id_entry["fg"] = crate_id_entry._default_fg_color
-                              crate_id_entry["state"] = "disabled"
-                              dropdown_button_crate["state"] = "disabled"
-                              crate_see_inside["state"] = "disabled"
+                         if (shipment_id is None):
+                              shipment_checkbox.deselect()
+                              shipment_id_entry["state"] = "disabled"
+                              dropdown_button_shipment["state"] = "disabled"
+                              shipment_see_inside["state"] = "disabled"
+                         else:
+                              shipment_checkbox.select()
+                              shipment_id_entry["state"] = "normal"
+                              dropdown_button_shipment["state"] = "normal"
+                              shipment_see_inside["state"] = "normal"
+                              shipment_id_entry.delete(0, "end")
+                              shipment_id_entry.insert(0, shipment_id)
+                              shipment_id_entry["fg"] = shipment_id_entry._default_fg_color
+                              shipment_id_entry["state"] = "disabled"
+                              dropdown_button_shipment["state"] = "disabled"
+                              shipment_see_inside["state"] = "disabled"
                     else:
-                         if (crate_id is not None):
-                              crate_checkbox.select()
-                              crate_id_entry["state"] = "normal"
-                              dropdown_button_crate["state"] = "normal"
-                              crate_see_inside["state"] = "normal"
-                              crate_id_entry.delete(0, "end")
-                              crate_id_entry.insert(0, crate_id)
-                              crate_id_entry["fg"] = crate_id_entry._default_fg_color
-                         elif (container_id is not None):
-                              container_checkbox.select()
-                              crate_id_entry["state"] = "normal"
-                              dropdown_button_crate["state"] = "normal"
-                              crate_see_inside["state"] = "normal"
-                              crate_id_entry.delete(0, "end")
-                              crate_id_entry.insert(0, container_id)
-                              crate_id_entry["fg"] = crate_id_entry._default_fg_color
+                         if (shipment_id is not None):
+                              shipment_checkbox.select()
+                              shipment_id_entry["state"] = "normal"
+                              dropdown_button_shipment["state"] = "normal"
+                              shipment_see_inside["state"] = "normal"
+                              shipment_id_entry.delete(0, "end")
+                              shipment_id_entry.insert(0, shipment_id)
+                              shipment_id_entry["fg"] = shipment_id_entry._default_fg_color
+                         else:
+                              shipment_checkbox.deselect()
+                              shipment_id_entry["state"] = "normal"
+                              shipment_id_entry.delete(0, "end")
+                              shipment_id_entry._put_placeholder()
+                              shipment_id_entry["state"] = "disabled"
+                              dropdown_button_shipment["state"] = "disabled"
 
           def back():
                box_id_entry.delete(0, "end")
@@ -783,16 +688,14 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                for item in middle_frame.grid_slaves():
                     item["state"] = "disabled"
                export_checkbox["state"] = "disabled"
-               crate_checkbox.deselect()
-               container_checkbox.deselect()
-               crate_checkbox["state"] = "disabled"
-               container_checkbox["state"] = "disabled"
-               crate_id_entry["state"] = "normal"
-               crate_id_entry.delete(0, "end")
-               crate_id_entry._put_placeholder()
-               crate_id_entry["state"] = "disabled"
-               dropdown_button_crate["state"] = "disabled"
-               crate_see_inside["state"] = "disabled"
+               shipment_checkbox.deselect()
+               shipment_checkbox["state"] = "disabled"
+               shipment_id_entry["state"] = "normal"
+               shipment_id_entry.delete(0, "end")
+               shipment_id_entry._put_placeholder()
+               shipment_id_entry["state"] = "disabled"
+               dropdown_button_shipment["state"] = "disabled"
+               shipment_see_inside["state"] = "disabled"
                submit_button["state"] = "disabled"
                received_button.pack_forget()
                ship_button.pack(side = "left", padx = 10, pady = 10)
@@ -801,6 +704,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                cancel_button.grid(row = 1, column = 2, columnspan = 1, sticky="ne")
                back_button.grid_remove()
                enter_button["state"] = "normal"
+               self.focus_set()
                
           def cancel():
                self.destroy()
@@ -825,58 +729,36 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                entry.grid(row = row, column = ((col * 2) + 1), padx = (0, 10), pady = 2)
                entries.append(entry)
 
-          def toggle_on_crate():
-               if (crate_var.get() == 1):
-                    crate_id_entry["state"] = "normal"
-                    dropdown_button_crate["state"] = "normal"
-                    crate_see_inside["state"] = "normal"
-                    container_checkbox["state"] = "disabled"
-                    crate_checkbox.focus_set()
+          def toggle_on_shipment():
+               if (shipment_var.get() == 1):
+                    shipment_id_entry["state"] = "normal"
+                    dropdown_button_shipment["state"] = "normal"
+                    shipment_see_inside["state"] = "normal"
+                    shipment_checkbox.focus_set()
                else:
-                    crate_id_entry.delete(0, "end")
-                    crate_id_entry._put_placeholder()
-                    crate_id_entry["state"] = "disabled"
-                    dropdown_button_crate["state"] = "disabled"
-                    container_checkbox["state"] = "normal"
-                    crate_see_inside["state"] = "disabled"
-
-          def toggle_on_container():
-               if (container_var.get() == 1):
-                    crate_id_entry["state"] = "normal"
-                    dropdown_button_crate["state"] = "normal"
-                    crate_see_inside["state"] = "normal"
-                    crate_checkbox["state"] = "disabled"
-                    container_checkbox.focus_set()
-               else:
-                    crate_id_entry.delete(0, "end")
-                    crate_id_entry._put_placeholder()
-                    crate_id_entry["state"] = "disabled"
-                    dropdown_button_crate["state"] = "disabled"
-                    crate_checkbox["state"] = "normal"
-                    crate_see_inside["state"] = "disabled"
+                    shipment_id_entry.delete(0, "end")
+                    shipment_id_entry._put_placeholder()
+                    shipment_id_entry["state"] = "disabled"
+                    dropdown_button_shipment["state"] = "disabled"
+                    shipment_see_inside["state"] = "disabled"
                     
-          def inside_crate_textbox(crate_id, message):
+          def inside_shipment_textbox(shipment_id, message):
                window = Toplevel()
-               window.title("Contents of Shipment " + crate_id)
+               window.title("Contents of Shipment " + shipment_id)
                from tkinter import scrolledtext
                text_area = scrolledtext.ScrolledText(window, wrap = tkinter.WORD, width = 80, height = 20)
                text_area.pack(padx = 10, pady = 10, fill = tkinter.BOTH, expand = True)
                text_area.insert(END, message)
                text_area.config(state = DISABLED)
                     
-          def see_inside_crate():
+          def see_inside_shipment():
                message = ""
-               crate_dict = {}
-               if (crate_var.get() == 1):
-                    crate_id = id_setter(crate_id_entry.get(), "C")
-               elif (container_var.get() == 1):
-                    crate_id = id_setter(crate_id_entry.get(), "X")
-               if (crate_id == 1): return
-               if (crate_var.get() == 1):
-                    boxes = get_boxes_in_crate_sync(encryption_key, dbshipper_pass, crate_id)
-               elif (container_var.get() == 1):
-                    boxes = get_boxes_in_container_sync(encryption_key, dbshipper_pass, crate_id)
-               number_of_boxes = get_number_of_boxes_sync(encryption_key, dbshipper_pass, crate_id)
+               shipment_dict = {}
+               if (shipment_var.get() == 1):
+                    shipment_id = id_setter(shipment_id_entry.get(), "C/X")
+               if (shipment_id == 1): return
+               if (shipment_var.get() == 1): boxes = get_boxes_in_shipment_sync(encryption_key, dbshipper_pass, shipment_id)
+               number_of_boxes = get_number_of_boxes_sync(encryption_key, dbshipper_pass, shipment_id)
                message += "".join(f"Number of boxes in shipment: {number_of_boxes}\n\n")
                for i in range(len(boxes)):
                     box_list = []
@@ -885,61 +767,55 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                     sorted_modules = [list(y) for x, y in groupby(sorted(modules))]
                     for i in range(len(sorted_modules)):
                          if (all(x == sorted_modules[i][0] for x in sorted_modules[i])): module_id = sorted_modules[i][0]
-                         position = get_box_position_sync(encryption_key, dbshipper_pass, module_id)
+                         position = get_position_in_box_sync(encryption_key, dbshipper_pass, module_id)
                          box_list.append("".join(f"{position[0]}: {module_id}"))
-                    crate_dict["".join(f"{box_id}")] = sorted(box_list)
-               for key in crate_dict.keys():
+                    shipment_dict["".join(f"{box_id}")] = sorted(box_list)
+               for key in shipment_dict.keys():
                     message += "".join(f"{key}\n")
-                    for item in crate_dict[key]:
+                    for item in shipment_dict[key]:
                          message += "".join(f"{item}\n")
                     message += "\n"
-               inside_crate_textbox(crate_id, message)
+               inside_shipment_textbox(shipment_id, message)
                
           export_var = IntVar()
-          crate_var = IntVar()
-          container_var = IntVar()
+          shipment_var = IntVar()
           
           export_var.set(1)
-                              
+
           export_checkbox = Checkbutton(bottom_frame, text = "Export to file (shipping/packed...csv)", variable = export_var, state = "disabled")
-          crate_checkbox = Checkbutton(bottom_frame, text = "Pack into crate?", variable = crate_var, command = toggle_on_crate, state = "disabled")
-          container_checkbox = Checkbutton(bottom_frame, text = "Pack into container?", variable = container_var, command = toggle_on_container, state = "disabled")
-          crate_see_inside = Button(bottom_frame, text = "See inside", command = see_inside_crate, state = "disabled")
+          shipment_checkbox = Checkbutton(bottom_frame, text = "Pack into shipment?", variable = shipment_var, command = toggle_on_shipment, state = "disabled")
+          shipment_see_inside = Button(bottom_frame, text = "See inside", command = see_inside_shipment, state = "disabled")
 
           export_checkbox.grid(row = (num_entries // 2), column = 0, columnspan = 1, padx = 10)
-          crate_checkbox.grid(row = (num_entries // 2), column = 1, columnspan = 1, padx = (10, 0))
-          container_checkbox.grid(row = (num_entries // 2), column = 2, columnspan = 1, padx = (0, 2))
-          crate_see_inside.grid(row = (num_entries // 2), column = 4, columnspan = 1, padx = (2, 10))
+          shipment_checkbox.grid(row = (num_entries // 2), column = 1, columnspan = 1, padx = (10, 2))
+          shipment_see_inside.grid(row = (num_entries // 2), column = 4, columnspan = 1, padx = (2, 10))
 
-          def select_crate(crate):
-               crate_id_entry.delete(0, "end")
-               crate_id_entry.insert(0, crate)
-               crate_id_entry["fg"] = crate_id_entry._default_fg_color
+          def select_shipment(shipment):
+               shipment_id_entry.delete(0, "end")
+               shipment_id_entry.insert(0, shipment)
+               shipment_id_entry["fg"] = shipment_id_entry._default_fg_color
                
-          crate_menu = Menu(top_frame, tearoff = 0)
+          shipment_menu = Menu(top_frame, tearoff = 0)
 
-          def show_crate_menu():
-               crate_menu.delete(0, "end")
-               if (crate_var.get() == 1):
-                    for crate in available_crates:
-                         crate_menu.add_command(label = crate, command = lambda c = crate: select_crate(c))
-               elif (container_var.get() == 1):
-                    for container in available_containers:
-                         crate_menu.add_command(label = container, command = lambda c = container: select_crate(c))
-               x = crate_frame.winfo_rootx()
-               y = crate_frame.winfo_rooty() + crate_frame.winfo_height()
-               crate_menu.post(x, y)
+          def show_shipment_menu():
+               shipment__menu.delete(0, "end")
+               if (shipment_var.get() == 1):
+                    for shipment in available_shipments:
+                         shipment_menu.add_command(label = shipment, command = lambda s = shipment: select_shipment(s))
+               x = shipment_frame.winfo_rootx()
+               y = shipment_frame.winfo_rooty() + shipment_frame.winfo_height()
+               shipment_menu.post(x, y)
 
-          dropdown_button_crate = Button(crate_frame, text = "\u25BC", bd = 0, highlightthickness = 0, relief = "flat", command = show_crate_menu)
-          crate_id_entry = PlaceholderEntry(crate_frame, "Enter ID...", width = 15, bd = 0, highlightthickness = 0)
+          dropdown_button_shipment = Button(shipment_frame, text = "\u25BC", bd = 0, highlightthickness = 0, relief = "flat", command = show_shipment_menu)
+          shipment_id_entry = PlaceholderEntry(shipment_frame, "Enter ID...", width = 15, bd = 0, highlightthickness = 0)
 
-          dropdown_button_crate["state"] = "disabled"
-          crate_id_entry["state"] = "disabled"
+          dropdown_button_shipment["state"] = "disabled"
+          shipment_id_entry["state"] = "disabled"
 
-          dropdown_button_crate.pack(side = "right", padx = (0, 2), pady = (0, 4))
-          crate_id_entry.pack(side = "left", padx = (2, 0))
+          dropdown_button_shipment.pack(side = "right", padx = (0, 2), pady = (0, 4))
+          shipment_id_entry.pack(side = "left", padx = (2, 0))
                                                                                 
-          crate_frame.grid(row = (num_entries // 2), column = 3, columnspan = 1, padx = (0, 10))
+          shipment_frame.grid(row = (num_entries // 2), column = 3, columnspan = 1, padx = (0, 10))
 
           def update_db_packed():
                module_update_pack = [entry.get() for entry in entries if entry.get().strip() != ""]
@@ -948,22 +824,21 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                     added_modules = [m for m in module_update_pack if m not in current_modules]
                     removed_positions = set()
                     occupied_positions = set()
-                    if (crate_var.get() == 1):
-                         crate_id = id_setter(crate_id_entry.get(), "C")
-                         if (crate_id == 1): return
+                    if (shipment_var.get() == 1):
+                         shipment_id = id_setter(shipment_id_entry.get(), "C/X")
+                         if (shipment_id == 1): return
                     else:
-                         crate_id = None
+                         shipment_id = None
                     if (removed_modules):
                          update_packed_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = removed_modules, timestamp = None, savetofile = False)
                          update_box_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = removed_modules, box_number = None)
                          for module in removed_modules:
-                              position = get_box_position_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module)
+                              position = get_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module)
                               if (position):
                                    removed_positions.add(int(position[0]))
-                         update_crate_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = removed_modules, crate_number = None)
-                         update_container_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = removed_modules, container_number = None)
+                         update_shipment_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = removed_modules, shipment_number = None)
                          for module in current_modules:
-                              position = get_box_position_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module)
+                              position = get_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module)
                               if (position):
                                    occupied_positions.add(int(position[0]))
                          already_empty = set(range(1, int(max_mod_per_box) + 1)) - occupied_positions
@@ -973,36 +848,34 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                          should_shift = bool(removed_positions) and any(any(p > row_start + 1 for p in occupied_after) for row_start in empty_row_starts)
                     for module in added_modules:
                          box_id_db = get_box_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [module])
-                         if ((box_id_entry.get() != box_id_db[0]) and (box_id_db != [None])):
-                              show_error_on_top("Upload Error", f"Module {module} already packaged in box {box_id_db[0]}.")
+                         if ((box_id_entry.get() != box_id_db[0]) and (box_id_db[0] is not None)):
+                              show_error_on_top("Upload Error", "See terminal.")
+                              print(f"Upload Error: Module {module} already packaged in box {box_id_db[0]}.")
                               return
-                         crate_id_db = get_crate_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [module])
-                         if ((crate_id_entry.get() != crate_id_db[0]) and (crate_id_db != [None])):
-                              show_error_on_top("Upload Error", f"Module {module} already packaged in crate {crate_id_db[0]}.")
-                              return
-                         container_id_db = get_container_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [module])
-                         if (container_id_db != [None]):
-                              show_error_on_top("Upload Error", f"Module {module} already packaged in container {container_id_db[0]}.")
-                              return
+                         shipment_id_db = get_shipment_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [module])
+                         if ((shipment_id_entry.get() != shipment_id_db[0]) and (shipment_id_db[0] is not None)):
+                              show_error_on_top("Upload Error", "See terminal.")
+                              print(f"Upload Error: Module {module} already packaged in shipment {shipment_id_db[0]}.")
+                         #tested_mod = module_thermal_cycled_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [module])
+                         #if (tested_mod == [None]):
+                         #     show_error_on_top("Upload Error", "See terminal.") 
+                         #     print(f"Upload Error: Module {module} not thermal cycled.")
+                         #     return
                     if (len(datetime_now_var.get().strip()) == 0): datetime_now_var.set(datetime_now)
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                     for module in removed_modules:
-                         update_box_position_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, box_position = None)
+                         update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = None)
                     if ((removed_modules) and (should_shift)):
                          for i, module in enumerate(module_update_pack, start = 1):
-                              update_box_position_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, box_position = str(i))
+                              update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = str(i))
                     else:
                          for i, module in enumerate(module_update_pack, start = 1):
                               if module in set(added_modules):
-                                   update_box_position_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, box_position = str(i))
+                                   update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = str(i))
                     if (added_modules):
                          update_box_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = added_modules, box_number = box_id_entry.get())
                     update_packed_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = module_update_pack, timestamp = datetime_now_obj, savetofile = bool(export_var.get()))
-                    if (crate_id_entry.get() is not None):
-                         if (crate_var.get() == 1):
-                              update_crate_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = module_update_pack, crate_number = crate_id_entry.get())
-                         elif (container_var.get() == 1):
-                              update_container_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = module_update_pack, container_number = crate_id_entry.get())
+                    update_shipment_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = module_update_pack, shipment_number = shipment_id)
                     self.destroy()
 
           def ready_to_ship():
@@ -1011,14 +884,16 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                     entries[i]["state"] = "disabled"
                     modules.append(entries[i].get())
                upload_from_file_button["state"] = "disabled"
-               crate_checkbox["state"] = "disabled"
-               container_checkbox["state"] = "disabled"
-               crate_id_entry["state"] = "disabled"
+               shipment_checkbox["state"] = "disabled"
+               shipment_id_entry["state"] = "disabled"
                submit_button["state"] = "disabled"
-               crate_see_inside["state"] = "disabled"
+               shipment_see_inside["state"] = "disabled"
                ship_button.pack_forget()
                received_button.pack(side = "left", padx = 10, pady = 10)
                received_button["state"] = "normal"
+
+               if (len(datetime_now_var.get().strip()) == 0): datetime_now_var.set(datetime_now)
+               datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S") 
 
                fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [modules[0]], timestamp = datetime_now_obj)
                print("List of modules saved under ", fileout_name)
@@ -1031,16 +906,15 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                for i in range(int(max_mod_per_box)):
                     entries[i]["state"] = "normal"
                     modules.append(entries[i].get())
-               crate_checkbox["state"] = "normal"
-               container_checkbox["state"] = "normal"
-               crate_id_entry["state"] = "normal"
+               shipment_checkbox["state"] = "normal"
+               shipment_id_entry["state"] = "normal"
                submit_button["state"] = "normal"
-               crate_see_inside["state"] = "normal"
+               shipment_see_inside["state"] = "normal"
                received_button.pack_forget()
                ship_button.pack(side = "left", padx = 10, pady = 10)
                ship_button["state"] = "normal"
                update_packed_timestamp_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
-               update_shipped_timestamp_sync(encryption_key, dbshipper_pass, [modules[0]], timestamp = None)
+               update_shipped_timestamp_sync(encryption_key, dbshipper_pass, [m for m in modules if m.strip() != ""], timestamp = None)
 
           button_row_frame = Frame(bottom_frame)
           button_row_frame.grid(row = (num_entries // 2) + 1, column = 0, columnspan = 5)
@@ -1058,12 +932,12 @@ class enter_part_barcodes_box(tkinter.Toplevel):
 # ===========================================================================================================
 # ===========================================================================================================
 
-# If we have a bunch of standalone boxes that we want to put into a crate, we can do so with this class
+# If we have a bunch of standalone boxes that we want to put into a shipment, we can do so with this class
 class enter_part_barcodes_shipment(tkinter.Toplevel):
      def __init__(self, parent, encryption_key, dbshipper_pass, upload_file_with_part_out, max_box_per_shipment, entries = None):
           super().__init__(parent)
           
-          self.title("Record Crate/Container")
+          self.title("Record Shipment")
 
           if (entries is None):
                entries = []
@@ -1081,19 +955,8 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
           datetime_now = datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
           datetime_now_var = StringVar(master = self, value = datetime_now)
 
-          available_crates = get_crates_sync(encrypt_key = encryption_key, password = dbshipper_pass)
-          available_containers = get_containers_sync(encrypt_key = encryption_key, password = dbshipper_pass)
-          
-          letter = StringVar()
-          letter.set(None)
-          values = {"Crate": "C", "Container": "X"}
-
-          count = 0
-          for (text, value) in values.items():
-               shipment_button = Radiobutton(top_frame, text = text, variable = letter, value = value)
-               shipment_button.grid(row = 0, column = 1 + count, columnspan = 1)
-               count += 1
-
+          available_shipments = get_shipments_sync(encrypt_key = encryption_key, password = dbshipper_pass)
+     
           upload_from_file_button = Button(top_frame, text = "Upload parts from file (optional)", command = upload_file_with_part_out, state = "disabled")
           datetime_now_label = Label(top_frame, text = f"Now:", justify = "right", anchor = "e")
           datetime_now_entry = Entry(top_frame, textvariable = datetime_now_var, width = 20, bd = 1.5, highlightbackground = "black", highlightthickness = 1, state = "readonly")
@@ -1109,18 +972,14 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
 
           def show_shipment_menu():                                                     
                shipment_menu.delete(0, "end")
-               if (letter.get() == "C"):
-                    for crate in available_crates:
-                         shipment_menu.add_command(label = crate, command = lambda c = crate: select_shipment(c))
-               elif (letter.get() == "X"):
-                    for container in available_containers:
-                         shipment_menu.add_command(label = container, command = lambda x = container: select_shipment(x))
+               for shipment in available_shipments:
+                    shipment_menu.add_command(label = shipment, command = lambda s = shipment: select_shipment(s))
                x = shipment_frame.winfo_rootx()
                y = shipment_frame.winfo_rooty() + shipment_frame.winfo_height()
                shipment_menu.post(x, y)
           
           dropdown_button = Button(shipment_frame, text = "\u25BC", bd = 0, highlightthickness = 0, relief = "flat", command = show_shipment_menu)
-          shipment_id_entry = PlaceholderEntry(shipment_frame, "Enter crate/container ID...", width = 20, bd = 0, highlightthickness = 0)
+          shipment_id_entry = PlaceholderEntry(shipment_frame, "Enter shipment ID...", width = 20, bd = 0, highlightthickness = 0)
 
           dropdown_button.pack(side = "right", padx = (0, 2), pady = (0, 4))
           shipment_id_entry.pack(side = "left", padx = (2, 0))
@@ -1130,10 +989,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
 
           current_boxes = []
           def enter():
-               if (letter.get() not in ("C", "X")):
-                    show_error_on_top("Upload Error", 'Must choose either "Crate" or "Container."')
-                    return
-               shipment_id = id_setter(shipment_id_entry.get(), letter.get())     
+               shipment_id = id_setter(shipment_id_entry.get(), "C/X")     
                if (shipment_id == 1): return
                shipment_id_entry.delete(0, "end")
                shipment_id_entry.insert(0, shipment_id)
@@ -1142,16 +998,12 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                upload_from_file_button["state"] = "normal"
                for item in middle_frame.grid_slaves():
                     item["state"] = "normal"
-               close_checkbox["state"] = "normal"
                submit_button["state"] = "normal"
                ship_button["state"] = "disabled"
                for item in top_frame.grid_slaves():
                     if isinstance(item, Radiobutton): item["state"] = "disabled"
-               if ((shipment_id in get_crates_sync(encrypt_key = encryption_key, password = dbshipper_pass)) or (shipment_id in get_containers_sync(encrypt_key = encryption_key, password = dbshipper_pass))):
-                    if (letter.get() == "C"):
-                         boxes = get_boxes_in_crate_sync(encryption_key, dbshipper_pass, shipment_id)
-                    else:
-                         boxes = get_boxes_in_container_sync(encryption_key, dbshipper_pass, shipment_id)
+               if (shipment_id in get_shipments_sync(encrypt_key = encryption_key, password = dbshipper_pass)):
+                    boxes = get_boxes_in_shipment_sync(encryption_key, dbshipper_pass, shipment_id)
                     datetimes = []
                     all_available_modules = []
                     for i in range(len(boxes)):
@@ -1169,22 +1021,16 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                          all_available_modules.extend(available_modules)
                          datetimes.extend(get_shipped_timestamp_bool_sync(encryption_key, dbshipper_pass, available_modules))
                     dt_bool = not any(datetimes)
-                    complete_col = "crate_complete_dt" if (letter.get() == "C") else "container_complete_dt"
-                    complete_bool = any(get_complete_dt_bool_sync(encryption_key, dbshipper_pass, all_available_modules, complete_col))
                     if (dt_bool == False):
                          upload_from_file_button["state"] = "disabled"
                          for i in range(int(max_box_per_shipment)):
                               entries[i]["state"] = "disabled"
-                         close_checkbox["state"] = "disabled"
                          submit_button["state"] = "disabled"
-                         ship_button.grid_remove()
-                         received_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
+                         ship_button.pack_forget()
+                         received_button.pack(side = "left", padx = 10, pady = 10)
                          received_button["state"] = "normal"
                     else:
-                         if (complete_bool):
-                              ship_button["state"] = "normal"
-                              close_checkbox.select()
-                              close_shipment_button["state"] = "normal"
+                         ship_button["state"] = "normal"
                cancel_button.grid_remove()
                back_button.grid(row = 2, column = 2, columnspan = 1, sticky = "ne")
             
@@ -1203,18 +1049,14 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                     entries[i].delete(0, "end")
                for item in middle_frame.grid_slaves():
                     item["state"] = "disabled"
-               close_checkbox.deselect()
-               close_checkbox["state"] = "disabled"
-               close_shipment_button["state"] = "disabled"
                submit_button["state"] = "disabled"
                current_boxes.clear()
-               for item in top_frame.grid_slaves():
-                    if isinstance(item, Radiobutton): item["state"] = "normal"
-               received_button.grid_remove()
-               ship_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
+               received_button.pack_forget()
+               ship_button.pack(side = "left", padx = 10, pady = 10)
                ship_button["state"] = "disabled"
                cancel_button.grid(row = 2, column = 2, columnspan = 1, sticky = "ne")
                back_button.grid_remove()
+               self.focus_set()
 
           def cancel():
                self.destroy()
@@ -1232,7 +1074,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
           no_of_rows = math.ceil(num_entries/cols)
 
           shipment_content_label = Label(middle_frame, wraplength = 1000 ,fg = "red", text = f'Shipment contents will be saved under "shipping/shipmentout_YYYYMMDD_HHMMSS_modules_NNN.csv" for upload to CMSR Shipment Tracking Tool.', state = "disabled")
-          instruction_label = Label(middle_frame, fg = "blue", justify = "center", anchor = "center", text = f"Enter the IDs of boxes to be packed in this crate/container.", state = "disabled")
+          instruction_label = Label(middle_frame, fg = "blue", justify = "center", anchor = "center", text = f"Enter the IDs of boxes to be packed in this shipment.", state = "disabled")
           shipment_content_label.grid(row = 0, column = 0, columnspan = int(cols * 3), pady = (0, 10), sticky = "s")
           instruction_label.grid(row = 1, column = 0, columnspan = int(cols * 3), pady = (0, 10), sticky = "ew")
 
@@ -1256,7 +1098,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                          module_id = modules[i][0]
                     else:
                          module_id = modules[i]
-                    position = get_box_position_sync(encryption_key, dbshipper_pass, module_id)
+                    position = get_position_in_box_sync(encryption_key, dbshipper_pass, module_id)
                     box_dict["".join(f"{position[0]}")] = module_id
                box_dict = OrderedDict(sorted(box_dict.items()))
                for key in box_dict.keys():
@@ -1274,38 +1116,8 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                entries.append(entry)
                
           def toggle_on():
-               if (close_var.get() == 1):
-                    close_shipment_button["state"] = "normal"
-                    close_checkbox.focus_set()
-               else:
-                    close_shipment_button["state"] = "disabled"
-                    for i in range(len(entries)):
-                         entries[i]["state"] = "normal"
-
-          def close_shipment():
-               boxes = []
-               if (letter.get() == "C"):
-                    filled_boxes = [entry for entry in entries if entry.get().strip() != ""]
-                    if (len(filled_boxes) < int(max_box_per_shipment)):
-                         show_error_on_top("Close Error", f"Must fill crate with {int(max_box_per_shipment)} boxes.")
-                         return   
                for i in range(len(entries)):
-                    #entries[i]["state"] = "readonly"
-                    if (entries[i].get().strip() != ""): boxes.append(entries[i].get())
-               for i in range(len(boxes)):
-                    box_id = boxes[i]
-                    modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
-                    datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
-                    update_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = datetime_now_obj, savetofile = False)
-               ship_button["state"] = "normal"
-
-          close_var = IntVar()
-
-          close_checkbox = Checkbutton(bottom_frame, text = "Close crate/container?", variable = close_var, command = toggle_on, state = "disabled")
-          close_shipment_button = Button(bottom_frame, text = "Close crate/container", command = close_shipment, state = "disabled")
-
-          close_checkbox.grid(row = (num_entries // 2), column = 0, columnspan = 1, padx = (10, 0), pady = 10)
-          close_shipment_button.grid(row = (num_entries // 2), column = 1, columnspan = 1, padx = (0, 10), pady = 10)
+                    entries[i]["state"] = "normal"
 
           def update_db_packed():
                module_update_pack = []
@@ -1320,35 +1132,18 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                               box_id = removed_boxes[i]
                               modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
                               update_packed_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, timestamp = None, savetofile = False)
-                              if (letter.get() == "C"):
-                                   update_crate_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, crate_number = None)
-                                   if (entries[0]["state"] == "readonly"): update_crate_complete_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, timestamp = None)
-                              else:
-                                   update_container_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, container_number = None)
-                                   if (entries[0]["state"] == "readonly"): update_container_complete_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, timestamp = None)
-                    for box in added_boxes:
+                              update_shipment_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, shipment_number = None)
+                    for i in range(len(added_boxes)):
                          box_id = box_update_pack[i]
                          modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
                          for j in range(len(modules)):
                               module_update_pack.append(modules[j])
-                              if (letter.get() == "C"):
-                                   crate_id_db = get_crate_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [modules[j]])
-                                   if ((shipment_id_entry.get() != crate_id_db[0]) and (crate_id_db != None)):
-                                        show_error_on_top("Upload Error", f"Module {modules[j]} already packaged in crate {crate_id_db[0]}.")
-                                        return
-                                   container_id_db = get_container_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [modules[j]])
-                                   if (container_id_db != [None]):
-                                        show_error_on_top("Upload Error", f"Module {modules[j]} already packaged in container {container_id_db[0]}.")
-                                        return
-                              else:
-                                   container_id_db = get_container_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [modules[j]])
-                                   if ((shipment_id_entry.get() != container_id_db[0]) and (container_id_db != [None])):
-                                        show_error_on_top("Upload Error", f"Module {modules[j]} already packaged in container {container_id_db[0]}.")
-                                        return
-                                   crate_id_db = get_crate_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [modules[j]])
-                                   if (crate_id_db != [None]):
-                                        show_error_on_top("Upload Error", f"Module {modules[j]} already packaged in crate {crate_id_db[0]}.")
-                                        return
+                              shipment_id_db = get_shipment_number_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [modules[j]])
+                              if ((shipment_id_entry.get() != shipment_id_db[0]) and (shipment_id_db[0] is not None)):
+                                   show_error_on_top("Upload Error", "See terminal.")
+                                   print(f"Upload Error: Module {modules[j]} already packaged in shipment {shipment_id_db[0]}.")
+                                   return
+                         update_shipment_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, shipment_number = shipment_id_entry.get())
                          update_packed_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules, timestamp = datetime_now_obj)
                     self.destroy()
 
@@ -1364,12 +1159,13 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                     for module in modules:
                          modules_for_shipping.append(module)
                upload_from_file_button["state"] = "disabled"
-               close_checkbox["state"] = "disabled"
-               close_shipment_button["state"] = "disabled"
                submit_button["state"] = "disabled"
-               ship_button.grid_remove()
-               received_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
+               ship_button.pack_forget()
+               received_button.pack(side = "left", padx = 10, pady = 10)
                received_button["state"] = "normal"
+
+               if (len(datetime_now_var.get().strip()) == 0): datetime_now_var.set(datetime_now)
+               datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
 
                fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [modules_for_shipping[0]], timestamp = datetime_now_obj)
                print("List of modules saved under ", fileout_name)
@@ -1382,26 +1178,26 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                for i in range(int(max_box_per_shipment)):
                     entries[i]["state"] = "normal"
                     if (entries[i].get().strip() != ""): boxes.append(entries[i].get())
-               close_checkbox["state"] = "normal"
-               close_shipment_button["state"] = "normal"
                submit_button["state"] = "normal"
-               received_button.grid_remove()
-               ship_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
+               received_button.pack_forget()
+               ship_button.pack(side = "left", padx = 10, pady = 10)
                ship_button["state"] = "normal"
                for i in range(len(boxes)):
                     box_id = boxes[i]
                     modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
                     if (not modules): continue
                     update_packed_timestamp_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
-                    update_shipped_timestamp_sync(encryption_key, dbshipper_pass, [modules[0]], timestamp = None)
-                    update_complete_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
-               
-          submit_button = Button(bottom_frame, text = "Record to DB", command = update_db_packed, state = "disabled")
-          submit_button.grid(row = (num_entries // 2), column = 3, columnspan = 2, padx = 10, pady = 10)
+                    update_shipped_timestamp_sync(encryption_key, dbshipper_pass, [m for m in modules if m.strip() != ""], timestamp = None)
 
-          ship_button = Button(bottom_frame, text = "Ready to Ship", command = ready_to_ship, state = "disabled", width = 9)
-          ship_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
+          button_row_frame = Frame(bottom_frame)
+          button_row_frame.grid(row = (num_entries // 2) + 1, column = 0, columnspan = 5)
 
-          received_button = Button(bottom_frame, text = "Received", command = received_shipment, state = "disabled", width = 9)
-          received_button.grid(row = (num_entries // 2), column = 4, columnspan = 2, padx = 10, pady = 10)
-          received_button.grid_remove()
+          submit_button = Button(button_row_frame, text = "Record to DB", command = update_db_packed, state = "disabled")
+          submit_button.pack(side = "left", padx = 10, pady = 10)
+
+          ship_button = Button(button_row_frame, text = "Ready to Ship", command = ready_to_ship, state = "disabled", width = 9)
+          ship_button.pack(side = "left", padx = 10, pady = 10)
+
+          received_button = Button(button_row_frame, text = "Received", command = received_shipment, state = "disabled", width = 9)
+          received_button.pack(side = "left", padx = 10, pady = 10)
+          received_button.pack_forget()
