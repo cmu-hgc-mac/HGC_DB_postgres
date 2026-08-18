@@ -189,6 +189,57 @@ def update_table_datas_trigger(target_table, target_col, source_table, source_co
 
     return trigger_sql
 
+
+# SQL query for populating module_info.thermal_cycle_date/thermal_cycle_count from mmts_batch_logging.
+# For each module in NEW.module_names, recompute from scratch over the earliest row (lowest batch_no)
+# of every distinct batch_name whose module_names contains that module:
+#   thermal_cycle_count = SUM(cycle_count) over those earliest-instance rows
+#   thermal_cycle_date  = MAX(log_timestamp::date) over those earliest-instance rows
+# Fires on INSERT or UPDATE, but only acts when the row is the earliest (lowest batch_no) instance
+# of its batch_name, so editing a later/duplicate instance of an existing batch_name is a no-op.
+def update_thermal_cycle_trigger():
+    trigger_sql = """
+    CREATE OR REPLACE FUNCTION module_info_update_thermal_cycle_from_mmts_batch_logging()
+    RETURNS TRIGGER AS $$
+    DECLARE
+        v_module text;
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM mmts_batch_logging
+            WHERE batch_name = NEW.batch_name
+                AND batch_no != NEW.batch_no
+        ) THEN
+            FOREACH v_module IN ARRAY NEW.module_names
+            LOOP
+                WITH first_instances AS (
+                    SELECT DISTINCT ON (mbl.batch_name)
+                        mbl.cycle_count, mbl.log_timestamp
+                    FROM mmts_batch_logging mbl
+                    WHERE REPLACE(v_module,'-','') IN (
+                        SELECT REPLACE(m,'-','') FROM unnest(mbl.module_names) AS m
+                    )
+                    AND mbl.cycle_count IS NOT NULL
+                    ORDER BY mbl.batch_name, mbl.batch_no ASC
+                )
+                UPDATE module_info
+                SET thermal_cycle_count = (SELECT SUM(cycle_count) FROM first_instances),
+                    thermal_cycle_date = (SELECT MAX(log_timestamp::date) FROM first_instances)
+                WHERE REPLACE(module_name,'-','') = REPLACE(v_module,'-','');
+            END LOOP;
+        END IF;
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS module_info_update_thermal_cycle_trigger ON mmts_batch_logging;
+
+    CREATE TRIGGER module_info_update_thermal_cycle_trigger
+    AFTER INSERT OR UPDATE OF module_names, log_timestamp, cycle_count ON mmts_batch_logging
+    FOR EACH ROW
+    EXECUTE FUNCTION module_info_update_thermal_cycle_from_mmts_batch_logging();
+    """
+    return trigger_sql
+
 def get_table_info_data(loc, fname):
     results = []
     with open(os.path.join(loc, fname) , mode='r') as file:
@@ -305,11 +356,19 @@ async def main():
                 duplicate_datas = get_table_info_data('create_and_modify', 'duplicate_data.csv')
                 for j in range(len(duplicate_datas)):
                     if duplicate_datas[j][0] == table_name:
-                        try: 
+                        try:
                             await conn.execute(update_table_datas_trigger(*duplicate_datas[j],j))
                             print(f' >> Data update trigger for {duplicate_datas[j][0]} created for column {duplicate_datas[j][1]}.')
                         except:
                             raise
+
+                # Create the trigger for populating module_info.thermal_cycle_date/count from mmts_batch_logging:
+                if table_name == 'mmts_batch_logging':
+                    try:
+                        await conn.execute(update_thermal_cycle_trigger())
+                        print(' >> Thermal cycle trigger for module_info created.')
+                    except:
+                        raise
     except: 
         raise
         print(' >> Error in creating triggers and trigger functions...')

@@ -777,6 +777,8 @@ def refresh_data():
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "housekeeping/update_thermal_cycling_count.py", "-p", dbshipper_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "housekeeping/update_batch_name.py", "-p", dbshipper_pass, "-k", encryption_key])
             # subprocess.run([sys.executable, "housekeeping/update_unique_components.py", "-p", dbshipper_pass, "-k", encryption_key])
             print("******** Database refreshed ********")
             show_message(f"Check terminal and refresh pgAdmin4.")
@@ -936,8 +938,11 @@ else:
 button_create = Button(frame, text="Create/Modify DBase Tables", command=create_database, width=small_button_width, height=small_button_height)
 button_create.grid(row=0, column=1, pady=(5,1), sticky='ew')
 
+button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))
+button_refresh_db.grid(row=1, column=1, pady=(1,5), sticky='ew')
+
 button_check_config = Button(frame, text="Check Postgres Config", command=check_config_action, width=small_button_width, height=small_button_height)
-button_check_config.grid(row=1, column=1, pady=(1,5), sticky='ew')
+button_check_config.grid(row=2, column=1, pady=(1,5), sticky='ew')
 
 # spacer = Frame(frame, height=10)  # Spacer with height (for vertical spacing)
 # spacer.grid(row=2, column=1, pady=10)
@@ -964,17 +969,14 @@ button_shipout.grid(row=8, column=1, pady=(1,15), sticky='ew')
 button_search_data = Button(frame, text=adminer_process_button_face, command=open_adminer, width=button_width, height=button_height)
 button_search_data.grid(row=9, column=1, pady=(15,1), sticky='ew')
 
-button_refresh_db = Button(frame, text=" Refresh local database     ", command=refresh_data, width=button_width, height=int(button_height/2))
-button_refresh_db.grid(row=10, column=1, pady=1, sticky='ew')
-
 button_stock_stt = Button(frame, text=" Check stock on CMSR STT ", command=open_stt_stock, width=button_width, height=int(button_height/2))
-button_stock_stt.grid(row=11, column=1, pady=1, sticky='ew')
+button_stock_stt.grid(row=10, column=1, pady=1, sticky='ew')
 
 button_stock_stt = Button(frame, text=" Check parts data on CMSR-HGCAPI", command=open_cmsr_hgcapi, width=button_width, height=int(button_height/2))
-button_stock_stt.grid(row=12, column=1, pady=1, sticky='ew')
+button_stock_stt.grid(row=11, column=1, pady=1, sticky='ew')
 
 button_stock_stt = Button(frame, text=" Check QC data on CMSR-HGCAPI", command=get_electrical_test_hgcapi, width=button_width, height=int(button_height/2))
-button_stock_stt.grid(row=13, column=1, pady=(1,5), sticky='ew')
+button_stock_stt.grid(row=12, column=1, pady=(1,5), sticky='ew')
 
 
 for pid in get_pid_result().stdout.strip().split("\n"):

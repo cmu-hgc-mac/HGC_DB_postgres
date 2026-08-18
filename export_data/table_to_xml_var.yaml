@@ -4,14 +4,14 @@ module_assembly:
   dbase_table: module_assembly
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: module_assembly
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
@@ -22,7 +22,7 @@ module_assembly:
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: module_assembly
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -32,84 +32,84 @@ module_assembly:
   dbase_col: operator
   dbase_table: module_assembly
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASMBL_TRAY_NAME
   dbase_col: ass_tray_id
   dbase_table: module_assembly
   xml_tag: ASMBL_TRAY_NAME
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: PROTOMODULE
   dbase_col: proto_name
   dbase_table: module_assembly
   xml_tag: PRTO_SER_NUM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_ROW
   dbase_col: pos_row
   dbase_table: module_assembly
   xml_tag: PRTO_ASM_ROW
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_COL
   dbase_col: pos_row ## check this
   dbase_table: module_assembly ## check this
   xml_tag: PRTO_ASM_COL ## check this
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_ROW
   dbase_col: pos_row
   dbase_table: module_assembly
   xml_tag: PCB_CMP_ROW
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_COL
   dbase_col: pos_col
   dbase_table: module_assembly
   xml_tag: PCB_CMP_COL
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: PCB_TOOL_NAME
   dbase_col: hxb_put_id
   dbase_table: module_assembly
   xml_tag: PCB_TOOL_NAME
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: GLUE_TYPE
   dbase_col: adhesive
   dbase_table: module_assembly
   xml_tag: GLUE_TYPE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: GLUE_BATCH_NUM
   dbase_col: glue_batch
   dbase_table: module_assembly
   xml_tag: GLUE_BATCH_NUM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: COMP_TRAY_NAME
   dbase_col: hxb_tray_id
   dbase_table: module_assembly
   xml_tag: COMP_TRAY_NAME
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: TRANSFER_TAPE_BATCH_NUM
   dbase_col: tape_batch
   dbase_table: module_assembly
   xml_tag: TRANSFER_TAPE_BATCH_NUM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 
 module_inspection:
@@ -118,14 +118,14 @@ module_inspection:
   dbase_table: module_assembly
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: module_assembly
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
@@ -136,7 +136,7 @@ module_inspection:
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: module_assembly
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -147,56 +147,56 @@ module_inspection:
   dbase_table: module_inspect
   xml_tag: INPS_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: MOD_GRADE
   dbase_col: grade
   dbase_table: module_inspect
   xml_tag: MOD_GRADE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FLATNESS
   dbase_col: flatness
   dbase_table: module_inspect
   xml_tag: MOD_FLTNS_MM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: AVE_THICKNESS
   dbase_col: avg_thickness
   dbase_table: module_inspect
   xml_tag: MOD_THKNS_MM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: MAX_THICKNESS
   dbase_col: max_thickness
   dbase_table: module_inspect
   xml_tag: MOD_MAX_THKNS_MM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: PCB_PLCMENT_X_OFFSET
   dbase_col: x_offset_mu
   dbase_table: module_inspect
   xml_tag: PCB_PLCMENT_X_OFFSET
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: PCB_PLCMENT_Y_OFFSET
   dbase_col: y_offset_mu
   dbase_table: module_inspect
   xml_tag: PCB_PLCMENT_Y_OFFSET
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: PCB_PLCMENT_ANG_OFFSET
   dbase_col: ang_offset_deg
   dbase_table: module_inspect
   xml_tag: PCB_PLCMENT_ANG_OFFSET
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 
 wirebond:
@@ -205,14 +205,14 @@ wirebond:
   dbase_table: back_wirebond
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_BONDS_DATE
   dbase_col: date_bond
   dbase_table: front_wirebond
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
@@ -223,7 +223,7 @@ wirebond:
   dbase_col: date_bond, time_bond
   dbase_table: back_wirebond
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -234,7 +234,7 @@ wirebond:
   dbase_table: front_wirebond
   xml_tag: BOND_WIRE_BATCH_NUM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: PRE_INSPECTION
   dbase_col: grade
@@ -248,133 +248,133 @@ wirebond:
   dbase_table: back_encap
   xml_tag: SYLGARD_BATCH
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: WEDGE_BATCH
   dbase_col: wedge_id
   dbase_table: back_wirebond
   xml_tag: WEDGE_BATCH
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_BONDS
   dbase_col: wb_bk_marked_done
   dbase_table: back_wirebond
   xml_tag: BACK_BONDS
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_BONDS_DATE
   dbase_col: date_bond
   dbase_table: back_wirebond
   xml_tag: BACK_BONDS_DATE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_BONDS_USER
   dbase_col: technician
   dbase_table: back_wirebond
   xml_tag: BACK_BONDS_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_UNBONDED
   dbase_col: bond_count_for_mbite
   dbase_table: back_wirebond
   xml_tag: BACK_UNBONDED
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_BOND_INSPXN
   dbase_col: wb_bk_marked_done
   dbase_table: back_wirebond
   xml_tag: BACK_BOND_INSPXN
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_REPAIR_USER
   dbase_col: technician
   dbase_table: back_wirebond
   xml_tag: BACK_REPAIR_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_BONDS
   dbase_col: wb_fr_marked_done
   dbase_table: front_wirebond
   xml_tag: FRONT_BONDS
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_BONDS_DATE
   dbase_col: date_bond
   dbase_table: front_wirebond
   xml_tag: FRONT_BONDS_DATE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_BONDS_USER
   dbase_col: technician
   dbase_table: front_wirebond
   xml_tag: FRONT_BONDS_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_SKIP
   dbase_col: list_unbonded_cells
   dbase_table: front_wirebond
   xml_tag: SI_CELLS_GROUNDED
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_UNBONDED
   dbase_col: list_unbonded_cells
   dbase_table: front_wirebond
   xml_tag: SI_CELLS_UNBONDED
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_BOND_INSPXN
   dbase_col: wb_fr_marked_done
   dbase_table: front_wirebond
   xml_tag: FRONT_BOND_INSPXN
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_REPAIR_USER
   dbase_col: technician
   dbase_table: front_wirebond
   xml_tag: FRONT_REPAIR_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_ENCAP
   dbase_col: back_encap.date_encap
   dbase_table: back_encap
   xml_tag: BACK_ENCAP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_ENCAP_USER
   dbase_col: technician
   dbase_table: back_encap
   xml_tag: BACK_ENCAP_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_ENCAP_CURE_START
   dbase_col: cure_start
   dbase_table: back_encap
   xml_tag: BACK_ENCAP_CURE_START
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_ENCAP_CURE_STOP
   dbase_col: cure_end
   dbase_table: back_encap
   xml_tag: BACK_ENCAP_CURE_STOP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BACK_ENCAP_INSPXN
   dbase_col: null
@@ -388,28 +388,28 @@ wirebond:
   dbase_table: front_encap
   xml_tag: FRONT_ENCAP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_ENCAP_USER
   dbase_col: technician
   dbase_table: front_encap
   xml_tag: FRONT_ENCAP_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_ENCAP_CURE_START
   dbase_col: cure_start
   dbase_table: front_encap
   xml_tag: FRONT_ENCAP_CURE_START
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_ENCAP_CURE_STOP
   dbase_col: cure_end
   dbase_table: front_encap
   xml_tag: FRONT_ENCAP_CURE_STOP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FRONT_ENCAP_INSPXN
   dbase_col: null
@@ -423,35 +423,35 @@ wirebond:
   dbase_table: bond_pull_test
   xml_tag: IS_TEST_BOND_MODULE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: BOND_PULL_USER
   dbase_col: technician
   dbase_table: bond_pull_test
   xml_tag: BOND_IULL_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'yes'
 - xml_temp_val: BOND_PULL_AVG
   dbase_col: avg_pull_strg_g
   dbase_table: bond_pull_test
   xml_tag: BOND_PULL_AVG
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'yes'
 - xml_temp_val: BOND_PULL_STDDEV
   dbase_col: std_pull_strg_g
   dbase_table: bond_pull_test
   xml_tag: BOND_PULL_STDDEV
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'yes'
 - xml_temp_val: FINAL_INSPXN_USER
   dbase_col: technician
   dbase_table: front_encap
   xml_tag: FINAL_INSPXN_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FINAL_INSPXN_OK
   dbase_col: null
@@ -469,7 +469,7 @@ wirebond:
     BY date_bond DESC, time_encap DESC LIMIT 1) UNION ALL (SELECT comment AS front_wirebond_comment
     FROM front_wirebond WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime
     IS NULL ORDER BY date_encap DESC, time_bond DESC LIMIT 1);"
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ENCAPSULATION_COMMENTS_CONCAT
   dbase_col: comment
@@ -480,7 +480,7 @@ wirebond:
     DESC LIMIT 1) UNION ALL (SELECT comment AS front_encap_comment FROM front_encap
     WHERE REPLACE(module_name,'-','') = '{module_name}' AND xml_gen_datetime IS NULL
     ORDER BY date_encap DESC, time_encap DESC LIMIT 1);"
-  default_value: null
+  default_value: ''
   nullable: 'yes'
 
 module_build:
@@ -542,7 +542,7 @@ module_cure_cond:
   dbase_col: date_inspect, time_inspect
   dbase_table: module_inspect
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -654,14 +654,14 @@ hxb_inspection:
   dbase_table: hxb_inspect
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: date_inspect, time_inspect
   dbase_table: hxb_inspect
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
@@ -672,7 +672,7 @@ hxb_inspection:
   dbase_col: date_inspect, time_inspect
   dbase_table: hxb_inspect
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ID
   xml_tag: SERIAL_NUMBER
@@ -683,14 +683,14 @@ hxb_inspection:
   dbase_table: hxb_inspect
   xml_tag: TESTED_BY
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_BEGIN_DATE_
   dbase_col: date_inspect
   dbase_table: hxb_inspect
   xml_tag: TEST_DATE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: TEST_FILES
   dbase_col: null
@@ -704,28 +704,28 @@ hxb_inspection:
   dbase_table: hxb_inspect
   xml_tag: FLATNESS
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: THICKNESS
   dbase_col: avg_thickness
   dbase_table: hxb_inspect
   xml_tag: THICKNESS
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: GRADE
   dbase_col: grade
   dbase_table: hxb_inspect
   xml_tag: GRADE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: COMMENTS_UPLOAD
   dbase_col: comment
   dbase_table: hxb_inspect
   xml_tag: COMMENTS
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'yes'
 
 proto_assembly:
@@ -734,14 +734,14 @@ proto_assembly:
   dbase_table: proto_assembly
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: proto_assembly
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
@@ -752,7 +752,7 @@ proto_assembly:
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: proto_assembly
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -762,84 +762,84 @@ proto_assembly:
   dbase_col: operator
   dbase_table: proto_assembly
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASMBL_TRAY_NAME
   dbase_col: ass_tray_id
   dbase_table: proto_assembly
   xml_tag: ASMBL_TRAY_NAME
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: COMP_TRAY_NAME
   dbase_col: sen_tray_id
   dbase_table: proto_assembly
   xml_tag: COMP_TRAY_NAME
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: SENSOR
   dbase_col: sen_name
   dbase_table: proto_assembly
   xml_tag: SNSR_SER_NUM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_ROW
   dbase_col: pos_row
   dbase_table: proto_assembly
   xml_tag: PLT_ASM_ROW
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_COL
   dbase_col: pos_col
   dbase_table: proto_assembly
   xml_tag: PLT_ASM_COL
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_ROW
   dbase_col: pos_row
   dbase_table: proto_assembly
   xml_tag: SNSR_CMP_ROW
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: ASM_COL
   dbase_col: pos_col
   dbase_table: proto_assembly
   xml_tag: SNSR_CMP_COL
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: SNSR_TOOL_NAME
   dbase_col: sen_put_id
   dbase_table: proto_assembly
   xml_tag: SNSR_TOOL_NAME
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: GLUE_TYPE
   dbase_col: adhesive
   dbase_table: proto_assembly
   xml_tag: GLUE_TYPE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: GLUE_BATCH_NUM
   dbase_col: glue_batch
   dbase_table: proto_assembly
   xml_tag: GLUE_BATCH_NUM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: TRANSFER_TAPE_BATCH_NUM
   dbase_col: tape_batch
   dbase_table: proto_assembly
   xml_tag: TRANSFER_TAPE_BATCH_NUM
   nested_query: null
-  default_value: 'null'
+  default_value: ''
   nullable: 'yes'
 
 proto_inspection:
@@ -848,14 +848,14 @@ proto_inspection:
   dbase_table: proto_assembly
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: proto_assembly
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
@@ -866,7 +866,7 @@ proto_inspection:
   dbase_col: ass_run_date, ass_time_begin
   dbase_table: proto_assembly
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -877,56 +877,56 @@ proto_inspection:
   dbase_table: proto_inspect
   xml_tag: INPS_USER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: PRTO_GRADE
   dbase_col: grade
   dbase_table: proto_inspect
   xml_tag: PLT_GRADE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: FLATNESS
   dbase_col: flatness
   dbase_table: proto_inspect
   xml_tag: PLT_FLTNES_MM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: AVE_THICKNESS
   dbase_col: avg_thickness
   dbase_table: proto_inspect
   xml_tag: PLT_AVE_THKNS_MM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: MAX_THICKNESS
   dbase_col: max_thickness
   dbase_table: proto_inspect
   xml_tag: PLT_MAX_THKNS_MM
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: SNSR_X_OFFST
   dbase_col: x_offset_mu
   dbase_table: proto_inspect
   xml_tag: SNSR_X_OFFST
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: SNSR_Y_OFFST
   dbase_col: y_offset_mu
   dbase_table: proto_inspect
   xml_tag: SNSR_Y_OFFST
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: SNSR_ANG_OFFST
   dbase_col: ang_offset_deg
   dbase_table: proto_inspect
   xml_tag: SNSR_ANG_OFFSET
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 
 proto_build:
@@ -1038,14 +1038,14 @@ sensor_inspection:
   dbase_table: proto_assembly
   xml_tag: RUN_BEGIN_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_END_TIMESTAMP_
   dbase_col: ass_run_date, ass_time_end
   dbase_table: proto_assembly
   xml_tag: RUN_END_TIMESTAMP
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: INITIATED_BY_USER
   xml_tag: INITIATED_BY_USER
@@ -1060,28 +1060,28 @@ sensor_inspection:
   dbase_col: date_inspect, time_inspect
   dbase_table: sensor
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: RUN_BEGIN_DATE_
   dbase_col: ass_run_date
   dbase_table: proto_assembly
   xml_tag: TEST_DATE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: MAC_GRADE
   dbase_col: grade
   dbase_table: sensor
   xml_tag: MAC_GRADE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: COMMENT_DESCRIPTION
   xml_tag: COMMENT_DESCRIPTION
   dbase_col: comment
   dbase_table: sensor
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 pedestal_test:
 - xml_temp_val: RUN_BEGIN_TIMESTAMP_
@@ -1175,7 +1175,7 @@ module_iv:
   dbase_table: module_iv_test
   xml_tag: RUN_NUMBER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -1289,7 +1289,7 @@ module_iv_cond:
   dbase_table: module_iv_test
   xml_tag: RUN_NUMBER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -1357,7 +1357,7 @@ module_grading:
   dbase_table: null
   xml_tag: RUN_NUMBER
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: KIND_OF_PART
   xml_tag: KIND_OF_PART
@@ -1377,48 +1377,48 @@ module_grading:
   xml_tag: GRADE_CRITERIA
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
 - xml_temp_val: INSTALLATION_CRITERIA
   dbase_col: installation_def
   dbase_table: module_qc_summary
   xml_tag: INSTALLATION_CRITERIA
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
 - xml_temp_val: PROTO_MECH_GRADE
   dbase_col: proto_grade
   dbase_table: module_qc_summary
   xml_tag: PROTO_MECH_GRADE
-  default_value: null
+  default_value: ''
   nested_query: null
   nullable: 'no'
 - xml_temp_val: PROTO_MECH_GRADE_CRITERIA
   dbase_col: proto_grade_def
   dbase_table: module_qc_summary
   xml_tag: PROTO_MECH_GRADE_CRITERIA
-  default_value: null
+  default_value: ''
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
 - xml_temp_val: MODULE_MECH_GRADE
   dbase_col: module_grade
   dbase_table: module_qc_summary
   xml_tag: MODULE_MECH_GRADE
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'no'
 - xml_temp_val: MODULE_MECH_GRADE_CRITERIA
   dbase_col: module_grade_def
   dbase_table: module_qc_summary
   xml_tag: MODULE_MECH_GRADE_CRITERIA
-  default_value: null
+  default_value: ''
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
 - xml_temp_val: READOUT_GRADE
   dbase_col: readout_grade
   dbase_table: module_qc_summary
-  default_value: null
+  default_value: ''
   xml_tag: READOUT_GRADE
   nested_query: null
   nullable: 'no'
@@ -1428,11 +1428,11 @@ module_grading:
   xml_tag: READOUT_GRADE_CRITERIA
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
 - xml_temp_val: IV_GRADE
   dbase_col: iv_grade
   dbase_table: module_qc_summary
-  default_value: null
+  default_value: ''
   xml_tag: IV_GRADE
   nested_query: null
   nullable: 'no'
@@ -1442,30 +1442,30 @@ module_grading:
   xml_tag: IV_GRADE_CRITERIA
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
   nullable: 'yes'
 - xml_temp_val: MODULE_CORNER_COLORS
   dbase_col: module_corner_colorgrades
   dbase_table: module_qc_summary
   xml_tag: MODULE_CORNER_COLORS
-  default_value: null
+  default_value: ''
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
 - xml_temp_val: CORNER_COLORGRADE_CRITERIA
   dbase_col: corner_colorgrade_def
   dbase_table: module_qc_summary
   xml_tag: CORNER_COLORGRADE_CRITERIA
   nested_query: null
   nullable: 'yes'
-  default_value: null
+  default_value: ''
 - xml_temp_val: PROTO_CORNER_COLORS
   dbase_col: proto_corner_colorgrades
   dbase_table: module_qc_summary
   xml_tag: PROTO_CORNER_COLORS
   nullable: 'yes'
   nested_query: null
-  default_value: null
+  default_value: ''
 - xml_temp_val: INSTALLATION_MODULE
   dbase_col: installation_module
   dbase_table: module_qc_summary
@@ -1513,5 +1513,12 @@ module_grading:
   dbase_col: list_cells_unbonded
   dbase_table: module_qc_summary
   xml_tag: LIST_UNBONDED_CELLS
+  nested_query: null
+  nullable: 'yes'
+- xml_temp_val: THERMAL_CYCLE_COUNT
+  dbase_col: thermal_cycle_count
+  dbase_table: module_qc_summary
+  xml_tag: THERMAL_CYCLE_COUNT
+  default_value: 0
   nested_query: null
   nullable: 'yes'
