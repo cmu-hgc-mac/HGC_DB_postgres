@@ -53,7 +53,7 @@ async def update_module_iv_test():
         update_query_mod = """
             UPDATE module_iv_test miv
             SET batch_name = (
-                SELECT DISTINCT ON (mbl.batch_name) mbl.batch_name
+                SELECT mbl.batch_name
                 FROM mmts_batch_logging mbl
                 WHERE EXISTS (
                     SELECT 1
@@ -62,8 +62,8 @@ async def update_module_iv_test():
                 )
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
-                AND mbl.log_timestamp < (miv.date_test + miv.time_test)
-                ORDER BY mbl.batch_name, mbl.log_timestamp DESC
+                AND mbl.log_timestamp <= (miv.date_test + miv.time_test)
+                ORDER BY mbl.log_timestamp DESC
                 LIMIT 1
             )
             WHERE miv.status_desc ILIKE 'bolted';
@@ -75,7 +75,7 @@ async def update_module_iv_test():
         update_query_station = """
             UPDATE module_iv_test miv
             SET station_name = (
-                SELECT DISTINCT ON (mbl.batch_name) mbl.station_names[elem.idx]
+                SELECT mbl.station_names[elem.idx]
                 FROM mmts_batch_logging mbl,
                      LATERAL (
                          SELECT ord AS idx
@@ -120,7 +120,7 @@ async def update_module_pedestal_test():
         update_query_mod = """
             UPDATE module_pedestal_test mpt
             SET batch_name = (
-                SELECT DISTINCT ON (mbl.batch_name) mbl.batch_name
+                SELECT mbl.batch_name
                 FROM mmts_batch_logging mbl
                 WHERE EXISTS (
                     SELECT 1
@@ -129,8 +129,8 @@ async def update_module_pedestal_test():
                 )
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
-                AND mbl.log_timestamp < (mpt.date_test + mpt.time_test)
-                ORDER BY mbl.batch_name, mbl.log_timestamp DESC
+                AND mbl.log_timestamp <= (mpt.date_test + mpt.time_test)
+                ORDER BY mbl.log_timestamp DESC
                 LIMIT 1
             )
             WHERE mpt.status_desc ILIKE 'bolted';
@@ -142,7 +142,7 @@ async def update_module_pedestal_test():
         update_query_station = """
             UPDATE module_pedestal_test mpt
             SET station_name = (
-                SELECT DISTINCT ON (mbl.batch_name) mbl.station_names[elem.idx]
+                SELECT mbl.station_names[elem.idx]
                 FROM mmts_batch_logging mbl,
                      LATERAL (
                          SELECT ord AS idx
