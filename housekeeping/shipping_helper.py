@@ -798,7 +798,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
           shipment_menu = Menu(top_frame, tearoff = 0)
 
           def show_shipment_menu():
-               shipment__menu.delete(0, "end")
+               shipment_menu.delete(0, "end")
                if (shipment_var.get() == 1):
                     for shipment in available_shipments:
                          shipment_menu.add_command(label = shipment, command = lambda s = shipment: select_shipment(s))
