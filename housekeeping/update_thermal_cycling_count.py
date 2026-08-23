@@ -55,7 +55,7 @@ async def update_module_qc_summary():
                     AND mbl.cycle_count IS NOT NULL
                     ORDER BY mbl.batch_name, mbl.batch_no ASC
                 ) first_instances
-            );
+            ) WHERE mqs.grade_timestamp IS NOT NULL;
         """
 
         result = await conn.execute(update_query_mod)
