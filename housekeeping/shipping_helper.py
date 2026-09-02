@@ -205,7 +205,7 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
           with open(fileout_name, "w", newline = "") as file:
                writer = csv.writer(file)
                for module in module_names:
-		    writer.writerow([module])
+                    writer.writerow([module])
 	       #for module in natsorted(shipped_modules):
                #     writer.writerow([module])
           return fileout_name
