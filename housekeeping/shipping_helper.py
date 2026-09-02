@@ -126,8 +126,10 @@ def update_packed_timestamp_sync(encrypt_key, password, module_names, timestamp,
           os.makedirs("shipping", exist_ok = True)
           with open(fileout_name, "w", newline = "") as file:
                writer = csv.writer(file)
-               for module in natsorted(module_names):
+               for module in module_names:
                     writer.writerow([module])
+               #for module in natsorted(module_names):
+               #     writer.writerow([module])
                print("Module names saved to", fileout_name)
      asyncio.run(_update_packed_timestamp(encrypt_key = encrypt_key, password = password, module_names = module_names, timestamp = timestamp))
 
@@ -202,8 +204,10 @@ async def _update_shipped_timestamp(encrypt_key, password, module_names, timesta
           os.makedirs("shipping", exist_ok = True)
           with open(fileout_name, "w", newline = "") as file:
                writer = csv.writer(file)
-               for module in natsorted(shipped_modules):
-                    writer.writerow([module])
+               for module in module_names:
+		    writer.writerow([module])
+	       #for module in natsorted(shipped_modules):
+               #     writer.writerow([module])
           return fileout_name
      except Exception as e:
           print(f"Error updating shipped_timestamp: {e}")
@@ -856,11 +860,11 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                          if ((shipment_id_entry.get() != shipment_id_db[0]) and (shipment_id_db[0] is not None)):
                               show_error_on_top("Upload Error", "See terminal.")
                               print(f"Upload Error: Module {module} already packaged in shipment {shipment_id_db[0]}.")
-                         #tested_mod = module_thermal_cycled_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [module])
-                         #if (tested_mod == [None]):
-                         #     show_error_on_top("Upload Error", "See terminal.") 
-                         #     print(f"Upload Error: Module {module} not thermal cycled.")
-                         #     return
+                         tested_mod = module_thermal_cycled_sync(encrypt_key = encryption_key, password = dbshipper_pass, module_names = [module])
+                         if (tested_mod == [None]):
+                              show_error_on_top("Upload Error", "See terminal.") 
+                              print(f"Upload Error: Module {module} not thermal cycled.")
+                              return
                     if (len(datetime_now_var.get().strip()) == 0): datetime_now_var.set(datetime_now)
                     datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
                     for module in removed_modules:
