@@ -524,7 +524,7 @@ async def _get_number_of_boxes(encrypt_key, password, shipment_number, db_params
 # ===========================================================================================================
 # ===========================================================================================================
 
-# Gets information about whether a module has been thermal cycled (tested at negative temperatures): "test_iv" is False
+# Gets information about whether a module has been thermal cycled (tested at negative temperatures): "thermal_cycle_date" is not NULL
 def module_thermal_cycled_sync(encrypt_key, password, module_names):
      return asyncio.run(_module_thermal_cycled(encrypt_key = encrypt_key, password = password, module_names = module_names))
 
@@ -532,15 +532,15 @@ async def _module_thermal_cycled(encrypt_key, password, module_names, db_params 
      cipher_suite = Fernet(encrypt_key)
      dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
      db_params.update({"password": dbpassword})
-     query = """SELECT thermal_cycle FROM module_info WHERE module_name = ANY($1);"""
+     query = """SELECT thermal_cycle_date FROM module_info WHERE module_name = ANY($1);"""
      try:
           conn = await asyncpg.connect(**db_params)
           rows = await conn.fetch(query, module_names)
           await conn.close()
-          tested = [row["thermal_cycle"] for row in rows] if rows else []
+          tested = [row["thermal_cycle_date"] for row in rows] if rows else []
           return tested
      except Exception as e:
-          print(f"Error obtaining thermal_cycle: {e}")
+          print(f"Error obtaining thermal_cycle_date: {e}")
 
 # ===========================================================================================================
 # ===========================================================================================================
