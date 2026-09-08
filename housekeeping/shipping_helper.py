@@ -345,33 +345,6 @@ async def _get_shipments(encrypt_key, password, db_params = db_params):
      except Exception as e:
           print(f"Error obtaining shipment_number: {e}")
 
-'''
-# ===========================================================================================================
-# ===========================================================================================================   
-
-# Fetches list of containers in database
-def get_containers_sync(encrypt_key, password):
-     return asyncio.run(_get_containers(encrypt_key = encrypt_key, password = password))
-
-async def _get_containers(encrypt_key, password, db_params = db_params):
-     cipher_suite = Fernet(encrypt_key)
-     dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
-     db_params.update({"password": dbpassword})
-     query = f"""SELECT container_number FROM module_info WHERE container_number IS NOT NULL;"""
-     try:
-          conn = await asyncpg.connect(**db_params)
-          rows = await conn.fetch(query)
-          await conn.close()
-          containers = [row["container_number"] for row in rows] if rows else []
-          sorted_containers = [list(y) for x, y in groupby(sorted(containers))]
-          available_containers = []
-          for i in range(len(sorted_containers)):
-               if (all(x == sorted_containers[i][0] for x in sorted_containers[i])): available_containers.append(sorted_containers[i][0])
-          return available_containers
-     except Exception as e:
-          print(f"Error obtaining container_number: {e}")
-'''
-
 # ===========================================================================================================
 # ===========================================================================================================
 
@@ -435,29 +408,6 @@ async def _get_modules_in_shipment(encrypt_key, password, shipment_number, db_pa
           return modules
      except Exception as e:
           print(f"Error obtaining modules in box: {e}")
-
-'''
-# ===========================================================================================================
-# ===========================================================================================================
-
-# Fetches the names of the modules inside a container with a given number
-def get_modules_in_container_sync(encrypt_key, password, container_number):
-     return asyncio.run(_get_modules_in_container(encrypt_key = encrypt_key, password = password, container_number = container_number))
-
-async def _get_modules_in_container(encrypt_key, password, container_number, db_params = db_params):
-     cipher_suite = Fernet(encrypt_key)
-     dbpassword = cipher_suite.decrypt(base64.urlsafe_b64decode(password)).decode()
-     db_params.update({"password": dbpassword})
-     query = f"""SELECT module_name FROM module_info WHERE container_number = $1;"""
-     try:
-          conn = await asyncpg.connect(**db_params)
-          rows = await conn.fetch(query, container_number)
-          await conn.close()
-          modules = [row["module_name"] for row in rows] if rows else []
-          return modules
-     except Exception as e:
-          print(f"Error obtaining modules in box: {e}")
-'''
 
 # ===========================================================================================================
 # ===========================================================================================================
@@ -642,9 +592,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                          export_checkbox["state"] = "disabled"
                          shipment_checkbox["state"] = "disabled"
                          submit_button["state"] = "disabled"
-                         ship_button.pack_forget()
-                         received_button.pack(side = "left", padx = 10, pady = 10)
-                         received_button["state"] = "normal"
+                         ship_button["state"] = "disabled"
                          if (shipment_id is None):
                               shipment_checkbox.deselect()
                               shipment_id_entry["state"] = "disabled"
@@ -701,7 +649,6 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                dropdown_button_shipment["state"] = "disabled"
                shipment_see_inside["state"] = "disabled"
                submit_button["state"] = "disabled"
-               received_button.pack_forget()
                ship_button.pack(side = "left", padx = 10, pady = 10)
                ship_button["state"] = "disabled"
                current_modules.clear()
@@ -892,9 +839,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                shipment_id_entry["state"] = "disabled"
                submit_button["state"] = "disabled"
                shipment_see_inside["state"] = "disabled"
-               ship_button.pack_forget()
-               received_button.pack(side = "left", padx = 10, pady = 10)
-               received_button["state"] = "normal"
+               ship_button["state"] = "disabled"
 
                if (len(datetime_now_var.get().strip()) == 0): datetime_now_var.set(datetime_now)
                datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S") 
@@ -905,21 +850,6 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                if fileout_name:
                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
 
-          def received_shipment():
-               modules = []
-               for i in range(int(max_mod_per_box)):
-                    entries[i]["state"] = "normal"
-                    modules.append(entries[i].get())
-               shipment_checkbox["state"] = "normal"
-               shipment_id_entry["state"] = "normal"
-               submit_button["state"] = "normal"
-               shipment_see_inside["state"] = "normal"
-               received_button.pack_forget()
-               ship_button.pack(side = "left", padx = 10, pady = 10)
-               ship_button["state"] = "normal"
-               update_packed_timestamp_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
-               update_shipped_timestamp_sync(encryption_key, dbshipper_pass, [m for m in modules if m.strip() != ""], timestamp = None)
-
           button_row_frame = Frame(bottom_frame)
           button_row_frame.grid(row = (num_entries // 2) + 1, column = 0, columnspan = 5)
 
@@ -928,10 +858,6 @@ class enter_part_barcodes_box(tkinter.Toplevel):
 
           ship_button = Button(button_row_frame, text = "Ready to Ship", command = ready_to_ship, state = "disabled", width = 9)
           ship_button.pack(side = "left", padx = 10, pady = 10)
-
-          received_button = Button(button_row_frame, text = "Received", command = received_shipment, state = "disabled", width = 9)
-          received_button.pack(side = "left", padx = 10, pady = 10)
-          received_button.pack_forget()
 
 # ===========================================================================================================
 # ===========================================================================================================
@@ -1030,11 +956,11 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                          for i in range(int(max_box_per_shipment)):
                               entries[i]["state"] = "disabled"
                          submit_button["state"] = "disabled"
-                         ship_button.pack_forget()
-                         received_button.pack(side = "left", padx = 10, pady = 10)
-                         received_button["state"] = "normal"
+                         ship_button["state"] = "disabled"
                     else:
                          ship_button["state"] = "normal"
+               else:
+                    ship_button["state"] = "normal"
                cancel_button.grid_remove()
                back_button.grid(row = 2, column = 2, columnspan = 1, sticky = "ne")
             
@@ -1055,7 +981,6 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                     item["state"] = "disabled"
                submit_button["state"] = "disabled"
                current_boxes.clear()
-               received_button.pack_forget()
                ship_button.pack(side = "left", padx = 10, pady = 10)
                ship_button["state"] = "disabled"
                cancel_button.grid(row = 2, column = 2, columnspan = 1, sticky = "ne")
@@ -1164,34 +1089,16 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                          modules_for_shipping.append(module)
                upload_from_file_button["state"] = "disabled"
                submit_button["state"] = "disabled"
-               ship_button.pack_forget()
-               received_button.pack(side = "left", padx = 10, pady = 10)
-               received_button["state"] = "normal"
+               ship_button["state"] = "disabled"
 
                if (len(datetime_now_var.get().strip()) == 0): datetime_now_var.set(datetime_now)
                datetime_now_obj = datetime.strptime(datetime_now_var.get().strip(), "%Y-%m-%d %H:%M:%S")
 
-               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = [modules_for_shipping[0]], timestamp = datetime_now_obj)
+               fileout_name = update_shipped_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = modules_for_shipping, timestamp = datetime_now_obj)
                print("List of modules saved under ", fileout_name)
                
                if fileout_name:
                    webbrowser.open(f"https://cmsr-shipment.web.cern.ch/tracking/add/")
-
-          def received_shipment():
-               boxes = []
-               for i in range(int(max_box_per_shipment)):
-                    entries[i]["state"] = "normal"
-                    if (entries[i].get().strip() != ""): boxes.append(entries[i].get())
-               submit_button["state"] = "normal"
-               received_button.pack_forget()
-               ship_button.pack(side = "left", padx = 10, pady = 10)
-               ship_button["state"] = "normal"
-               for i in range(len(boxes)):
-                    box_id = boxes[i]
-                    modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
-                    if (not modules): continue
-                    update_packed_timestamp_sync(encryption_key, dbshipper_pass, modules, timestamp = None, savetofile = False)
-                    update_shipped_timestamp_sync(encryption_key, dbshipper_pass, [m for m in modules if m.strip() != ""], timestamp = None)
 
           button_row_frame = Frame(bottom_frame)
           button_row_frame.grid(row = (num_entries // 2) + 1, column = 0, columnspan = 5)
@@ -1201,7 +1108,3 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
 
           ship_button = Button(button_row_frame, text = "Ready to Ship", command = ready_to_ship, state = "disabled", width = 9)
           ship_button.pack(side = "left", padx = 10, pady = 10)
-
-          received_button = Button(button_row_frame, text = "Received", command = received_shipment, state = "disabled", width = 9)
-          received_button.pack(side = "left", padx = 10, pady = 10)
-          received_button.pack_forget()
