@@ -49,9 +49,23 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
     
         module_list.update(row['module_name'] for row in results if 'module_name' in row)
 
+    required_tables = ['back_wirebond', 'front_wirebond', 'back_encap', 'front_encap']
     for module in module_list:
         print(f'--> {module}...')
         try:
+            # Skip modules that don't yet have data in all required tables
+            missing_data = False
+            for required_table in required_tables:
+                exists = await conn.fetchval(
+                    f"SELECT EXISTS(SELECT 1 FROM {required_table} WHERE REPLACE(module_name,'-','') = $1)",
+                    module)
+                if not exists:
+                    missing_data = True
+                    break
+            if missing_data:
+                print("wirebond and/or encap ongoing -- skipping upload")
+                continue
+
             # Fetch database values for the XML template variables
             db_values = {}
 
