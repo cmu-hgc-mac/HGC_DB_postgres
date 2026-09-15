@@ -94,16 +94,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':
                             query = f"""
-                            SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE REPLACE(module_name,'-','') = '{module}' 
+                            SELECT {dbase_col} FROM {dbase_table}
+                            WHERE REPLACE(module_name,'-','') = '{module}'
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
-                            # ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                         else:
                             query = f"""
-                            SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE REPLACE(module_name,'-','') = '{module}' 
+                            SELECT {dbase_col} FROM {dbase_table}
+                            WHERE REPLACE(module_name,'-','') = '{module}'
+                            ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
-                            # ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
 
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
