@@ -129,7 +129,7 @@ async def update_module_pedestal_test():
                 )
                 AND mbl.module_names IS NOT NULL
                 AND mbl.station_names IS NOT NULL
-                AND mbl.log_timestamp < (mpt.date_test + mpt.time_test)
+                AND mbl.log_timestamp <= (mpt.date_test + mpt.time_test)
                 ORDER BY mbl.log_timestamp DESC
                 LIMIT 1
             )

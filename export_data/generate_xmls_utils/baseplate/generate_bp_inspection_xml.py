@@ -139,12 +139,42 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_name = f"{bp_name}_{LOCATION}_{combined_str_mod}_{os.path.basename(xml_file_path)}"
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
+
+            now = datetime.datetime.now()
+            sentinel_ts = now.replace(year=now.year - 100)
+            # 'baseplate' has one row per part; stamp it directly with the real generation time
             await update_timestamp_col(conn,
                                     update_flag=True,
-                                    table_list=db_tables,
+                                    table_list=['baseplate'],
                                     column_name='xml_gen_datetime',
                                     part='baseplate',
-                                    part_name=bp_name)
+                                    part_name=bp_name,
+                                    timestamp=now)
+            # 'bp_inspect' can have multiple rows per part; only stamp the latest with the real time
+            latest_row = await fetch_from_db(f"""
+                SELECT date_inspect, time_inspect FROM bp_inspect
+                WHERE REPLACE(bp_name,'-','') = '{bp_name}'
+                ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
+                """, conn)
+            if latest_row:
+                latest_date, latest_time = latest_row['date_inspect'], latest_row['time_inspect']
+                # Stamp every entry for this baseplate with the -100yr sentinel...
+                await update_timestamp_col(conn,
+                                        update_flag=True,
+                                        table_list=['bp_inspect'],
+                                        column_name='xml_gen_datetime',
+                                        part='baseplate',
+                                        part_name=bp_name,
+                                        timestamp=sentinel_ts)
+                # ...then overwrite just the latest entry with the real generation time
+                await update_timestamp_col(conn,
+                                        update_flag=True,
+                                        table_list=['bp_inspect'],
+                                        column_name='xml_gen_datetime',
+                                        part='baseplate',
+                                        part_name=bp_name,
+                                        extra_where=f"AND date_inspect = '{latest_date}' AND time_inspect = '{latest_time}'",
+                                        timestamp=now)
         except Exception as e:
             print('#'*15, f'ERROR for {bp_name}','#'*15 ); traceback.print_exc(); print('')
             

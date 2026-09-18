@@ -419,26 +419,29 @@ class set_automation_schedule(Toplevel):
             self.totp_uri_var.set(_local_totp_var.get())
             self._totp_entry = totp_entry
             self._totp_peek3 = peek_btn
-            self._totp_status_label.config(text="Resave schedule to save new credentials", fg="red")
+            # self._totp_status_label.config(text="Resave schedule to save new credentials", fg="red")
             win.destroy()
 
-        _totp_preview_frame = Frame(win, relief="groove", bd=1)
-        _totp_preview_frame.pack(pady=(6, 0), padx=10, fill="x")
-        Button(_totp_preview_frame, text="View current 2FA TOTP",
-               command=lambda: _show_current_totp()).pack(pady=(6, 2))
-        _totp_preview_label = Label(_totp_preview_frame, text="—", fg="gray")
-        _totp_preview_label.pack(pady=(0, 6))
-
-        def _show_current_totp():
-            uri = _local_totp_var.get().strip() or self.saved_totp_uri
-            if not uri:
-                _totp_preview_label.config(text="No TOTP URI available", fg="red")
-                return
-            try:
-                code = pyotp.parse_uri(uri).now()
-                _totp_preview_label.config(text=f"{code}", fg="blue", font=("Courier", 14, "bold"))
-            except Exception as e:
-                _totp_preview_label.config(text=f"Error: {e}", fg="red")
+        ### Displaying the live TOTP code in the GUI is a security risk (visible to anyone
+        ### looking at the screen / a screen-share). Commented out - do not re-enable without
+        ### adding a peek-to-reveal control like the password fields use.
+        # _totp_preview_frame = Frame(win, relief="groove", bd=1)
+        # _totp_preview_frame.pack(pady=(6, 0), padx=10, fill="x")
+        # Button(_totp_preview_frame, text="View current 2FA TOTP",
+        #        command=lambda: _show_current_totp()).pack(pady=(6, 2))
+        # _totp_preview_label = Label(_totp_preview_frame, text="—", fg="gray")
+        # _totp_preview_label.pack(pady=(0, 6))
+        #
+        # def _show_current_totp():
+        #     uri = _local_totp_var.get().strip() or self.saved_totp_uri
+        #     if not uri:
+        #         _totp_preview_label.config(text="No TOTP URI available", fg="red")
+        #         return
+        #     try:
+        #         code = pyotp.parse_uri(uri).now()
+        #         _totp_preview_label.config(text=f"{code}", fg="blue", font=("Courier", 14, "bold"))
+        #     except Exception as e:
+        #         _totp_preview_label.config(text=f"Error: {e}", fg="red")
 
         def _delete_totp_uri():
             if not os.path.exists(self.totp_uri_path):
@@ -450,7 +453,7 @@ class set_automation_schedule(Toplevel):
             self.saved_totp_uri = ""
             self.totp_uri_var.set("")
             _local_totp_var.set("")
-            self._totp_status_label.config(text="No 2FA TOTP URI available", fg="blue")
+            # self._totp_status_label.config(text="No 2FA TOTP URI available", fg="blue")
             win.destroy()
 
         _btn_row = Frame(win)
@@ -823,12 +826,12 @@ class set_automation_schedule(Toplevel):
         self.job_panel = None
         self.selected_job.set("")
         _saved_uri = self.totp_uri_var.get().strip() or self.saved_totp_uri
-        if _saved_uri:
-            _totp_user = _saved_uri.split('CERN:')[-1].split('?')[0] if 'CERN:' in _saved_uri else None
-            _status = f"2FA TOTP URI exists for '{_totp_user}'" if _totp_user else "2FA TOTP URI exists"
-        else:
-            _status = "No 2FA TOTP URI available"
-        self._totp_status_label.config(text=_status, fg="blue")
+        # if _saved_uri:
+        #     _totp_user = _saved_uri.split('CERN:')[-1].split('?')[0] if 'CERN:' in _saved_uri else None
+        #     _status = f"2FA TOTP URI exists for '{_totp_user}'" if _totp_user else "2FA TOTP URI exists"
+        # else:
+        #     _status = "No 2FA TOTP URI available"
+        # self._totp_status_label.config(text=_status, fg="blue")
         messagebox.showinfo("Schedule Saved", f"{reverse[job_key]} schedule saved.\nCheck ./task_scheduler/schedule_config.yaml.")
         self.lift()
         self.focus_force()

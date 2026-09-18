@@ -94,16 +94,16 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
                         # Modify the query to get the latest entry
                         if dbase_table == 'module_inspect':
                             query = f"""
-                            SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE REPLACE(module_name,'-','') = '{module}' 
+                            SELECT {dbase_col} FROM {dbase_table}
+                            WHERE REPLACE(module_name,'-','') = '{module}'
+                            ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                             """
-                            # ORDER BY date_inspect DESC, time_inspect DESC LIMIT 1
                         else:
                             query = f"""
-                            SELECT {dbase_col} FROM {dbase_table} 
-                            WHERE REPLACE(module_name,'-','') = '{module}' 
+                            SELECT {dbase_col} FROM {dbase_table}
+                            WHERE REPLACE(module_name,'-','') = '{module}'
+                            ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
                             """
-                            # ORDER BY ass_run_date DESC, ass_time_begin DESC LIMIT 1
 
                     try:
                         results = await fetch_from_db(query, conn)  # Use conn directly
@@ -141,12 +141,38 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
             output_file_name = f"{module}_{combined_str_mod}_{os.path.basename(xml_file_path)}"
             output_file_path = os.path.join(output_dir, output_file_name)
             await update_xml_with_db_values(xml_file_path, output_file_path, db_values)
-            await update_timestamp_col(conn,
-                                    update_flag=True,
-                                    table_list=dbase_tables,
-                                    column_name='xml_gen_datetime',
-                                    part='module',
-                                    part_name=module)
+
+            now = datetime.datetime.now()
+            sentinel_ts = now.replace(year=now.year - 100)
+            _latest_date_time_cols = {'module_inspect': ('date_inspect', 'time_inspect'),
+                                       'module_assembly': ('ass_run_date', 'ass_time_begin')}
+            for dbase_table in dbase_tables:
+                date_col, time_col = _latest_date_time_cols[dbase_table]
+                latest_row = await fetch_from_db(f"""
+                    SELECT {date_col}, {time_col} FROM {dbase_table}
+                    WHERE REPLACE(module_name,'-','') = '{module}'
+                    ORDER BY {date_col} DESC, {time_col} DESC LIMIT 1
+                    """, conn)
+                if not latest_row:
+                    continue
+                latest_date, latest_time = latest_row[date_col], latest_row[time_col]
+                # Stamp every entry for this module with the -100yr sentinel...
+                await update_timestamp_col(conn,
+                                        update_flag=True,
+                                        table_list=[dbase_table],
+                                        column_name='xml_gen_datetime',
+                                        part='module',
+                                        part_name=module,
+                                        timestamp=sentinel_ts)
+                # ...then overwrite just the latest entry with the real generation time
+                await update_timestamp_col(conn,
+                                        update_flag=True,
+                                        table_list=[dbase_table],
+                                        column_name='xml_gen_datetime',
+                                        part='module',
+                                        part_name=module,
+                                        extra_where=f"AND {date_col} = '{latest_date}' AND {time_col} = '{latest_time}'",
+                                        timestamp=now)
         except Exception as e:
             print('#'*15, f'ERROR for {module}','#'*15 ); traceback.print_exc(); print('')
 
