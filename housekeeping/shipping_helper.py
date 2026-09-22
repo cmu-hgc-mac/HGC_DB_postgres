@@ -597,7 +597,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                               shipment_checkbox.deselect()
                               shipment_id_entry["state"] = "disabled"
                               dropdown_button_shipment["state"] = "disabled"
-                              shipment_see_inside["state"] = "disabled"
+                              shipment_see_inside["state"] = "normal"
                          else:
                               shipment_checkbox.select()
                               shipment_id_entry["state"] = "normal"
@@ -608,7 +608,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                               shipment_id_entry["fg"] = shipment_id_entry._default_fg_color
                               shipment_id_entry["state"] = "disabled"
                               dropdown_button_shipment["state"] = "disabled"
-                              shipment_see_inside["state"] = "disabled"
+                              shipment_see_inside["state"] = "normal"
                     else:
                          if (shipment_id is not None):
                               shipment_checkbox.select()
@@ -708,7 +708,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                if (shipment_var.get() == 1):
                     shipment_id = id_setter(shipment_id_entry.get(), "C/X")
                if (shipment_id == 1): return
-               if (shipment_var.get() == 1): boxes = get_boxes_in_shipment_sync(encryption_key, dbshipper_pass, shipment_id)
+               if (shipment_var.get() == 1): boxes = natsorted(get_boxes_in_shipment_sync(encryption_key, dbshipper_pass, shipment_id))
                number_of_boxes = get_number_of_boxes_sync(encryption_key, dbshipper_pass, shipment_id)
                message += "".join(f"Number of boxes in shipment: {number_of_boxes}\n\n")
                for i in range(len(boxes)):
@@ -933,7 +933,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
                for item in top_frame.grid_slaves():
                     if isinstance(item, Radiobutton): item["state"] = "disabled"
                if (shipment_id in get_shipments_sync(encrypt_key = encryption_key, password = dbshipper_pass)):
-                    boxes = get_boxes_in_shipment_sync(encryption_key, dbshipper_pass, shipment_id)
+                    boxes = natsorted(get_boxes_in_shipment_sync(encryption_key, dbshipper_pass, shipment_id))
                     datetimes = []
                     all_available_modules = []
                     for i in range(len(boxes)):
