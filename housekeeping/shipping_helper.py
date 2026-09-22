@@ -547,7 +547,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
           box_id_entry.pack(side = "left", padx = (2, 0))
 
           box_menu = Menu(top_frame, tearoff = 0)
-          for box in available_boxes:
+          for box in natsorted(available_boxes):
                box_menu.add_command(label = box, command = lambda b = box: select_box(b))
                                                                                 
           box_frame.grid(row = 0, column = 1, columnspan = 2)
@@ -751,7 +751,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
           def show_shipment_menu():
                shipment_menu.delete(0, "end")
                if (shipment_var.get() == 1):
-                    for shipment in available_shipments:
+                    for shipment in natsorted(available_shipments):
                          shipment_menu.add_command(label = shipment, command = lambda s = shipment: select_shipment(s))
                x = shipment_frame.winfo_rootx()
                y = shipment_frame.winfo_rooty() + shipment_frame.winfo_height()
@@ -902,7 +902,7 @@ class enter_part_barcodes_shipment(tkinter.Toplevel):
 
           def show_shipment_menu():                                                     
                shipment_menu.delete(0, "end")
-               for shipment in available_shipments:
+               for shipment in natsorted(available_shipments):
                     shipment_menu.add_command(label = shipment, command = lambda s = shipment: select_shipment(s))
                x = shipment_frame.winfo_rootx()
                y = shipment_frame.winfo_rooty() + shipment_frame.winfo_height()
