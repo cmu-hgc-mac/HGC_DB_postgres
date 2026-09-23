@@ -30,6 +30,7 @@ children_for_import:
       kind: kind
       comment_description: comment
       batch_number: sen_batch_id
+      status: cmsr_status
 
   hxb:
     apikey: pcbs
