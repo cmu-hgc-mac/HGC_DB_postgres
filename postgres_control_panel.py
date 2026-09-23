@@ -777,8 +777,9 @@ def refresh_data():
             input_window.destroy()  
             subprocess.run([sys.executable, "housekeeping/update_tables_data.py", "-p", dbshipper_pass, "-k", encryption_key])
             subprocess.run([sys.executable, "housekeeping/update_foreign_key.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "housekeeping/update_thermal_cycling_count.py", "-p", dbshipper_pass, "-k", encryption_key])
-            subprocess.run([sys.executable, "housekeeping/update_batch_name.py", "-p", dbshipper_pass, "-k", encryption_key])
+            subprocess.run([sys.executable, "housekeeping/rectify_mmts_batch_names.py", "-p", dbshipper_pass, "-k", encryption_key]) ## rectifies multiple instances of batch_name for different iterations
+            subprocess.run([sys.executable, "housekeeping/update_thermal_cycling_count.py", "-p", dbshipper_pass, "-k", encryption_key]) ## updates thermal cycle count in qc_summary
+            subprocess.run([sys.executable, "housekeeping/update_batch_name.py", "-p", dbshipper_pass, "-k", encryption_key]) ## updates batch_name in iv and pedestal tables
             # subprocess.run([sys.executable, "housekeeping/update_unique_components.py", "-p", dbshipper_pass, "-k", encryption_key])
             print("******** Database refreshed ********")
             show_message(f"Check terminal and refresh pgAdmin4.")
