@@ -87,7 +87,7 @@ async def get_mmts_inv_in_local(pool):
         print(f"{RED}Error: {e}{RESET}")
 
 async def get_missing_batch_sen(pool):
-    get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE sen_batch_id IS NULL OR sen_batch_id = '';"""
+    get_missing_batch_sen_query = """SELECT REPLACE(sen_name,'-','') AS sen_name FROM sensor WHERE cmsr_status IS NULL OR sen_batch_id IS NULL OR sen_batch_id = '';"""
     async with pool.acquire() as conn:
         rows = await conn.fetch(get_missing_batch_sen_query)
     return [row['sen_name'] for row in rows]
@@ -106,6 +106,8 @@ def get_query_update(table_name, column_names, check_conflict_col = None, db_upl
         query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL);"""
     # elif check_conflict_col in ['bp_name']:
     #     query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL OR bp_version IS NULL);"""
+    elif check_conflict_col in ['sen_name']:
+        query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR cmsr_status IS NULL);"""
     else:
         query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND kind IS NULL;"""
     return query
@@ -177,7 +179,9 @@ def get_dict_for_db_upload(data_full, partType):
         db_dict = {children_for_import[partType]["db_cols"][k]: data_full[k] for k in available_keys}
         db_dict.update(get_part_type(data_full['serial_number'], partType))
         if partType in ['hxb', 'bp']:
-            db_dict['obsolete'] = True if db_dict['obsolete'].lower() == 'obsolete' else False
+            # db_dict['obsolete'] = True if db_dict['obsolete'].lower() == 'obsolete' else False
+            db_dict['obsolete'] = db_dict['obsolete'].lower() != 'ok'
+
         return db_dict
     except Exception as e:
         traceback.print_exc()
@@ -248,7 +252,9 @@ def get_sen_batch_for_db_upload(sen_name, cern_db_url = 'hgcapi'):
         data_full = read_from_cern_db(partID = sen_name, cern_db_url=cern_db_url)
         db_dict = None
         if data_full:
-            db_dict = {"sen_name": sen_name,'sen_batch_id': data_full["batch_number"]}
+            sen_db_cols = children_for_import['sen']['db_cols']
+            db_dict = {sen_db_cols[k]: data_full[k] for k in sen_db_cols.keys() if k in data_full.keys()}
+            db_dict['sen_name'] = sen_name  ### keep the local name so the UPDATE matches
         return db_dict
     except Exception as e:
         traceback.print_exc()
