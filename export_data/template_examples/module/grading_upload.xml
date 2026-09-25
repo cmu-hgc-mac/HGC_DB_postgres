@@ -16,8 +16,8 @@
     </RUN>
 </HEADER>
     <DATA_SET>
-        <COMMENT_DESCRIPTION>{{ all_comments }}</COMMENT_DESCRIPTION>
-        <VERSION>3.4</VERSION>
+        <!-- <COMMENT_DESCRIPTION>{{ all_comments }}</COMMENT_DESCRIPTION> -->
+        <VERSION>3.5</VERSION>
         <PART mode="auto">
             <SERIAL_NUMBER>{{ ID }}</SERIAL_NUMBER>
             <KIND_OF_PART>{{ kind_of_part }}</KIND_OF_PART>
@@ -46,6 +46,7 @@
             <LIST_UNBONDED_CELLS>{{ list_unbonded_cells }}</LIST_UNBONDED_CELLS>
             <LIST_HIGHILEAK_CELLS>{{ list_highileak_cells }}</LIST_HIGHILEAK_CELLS>
             <THERMAL_CYCLE_COUNT>{{ thermal_cycle_count }}</THERMAL_CYCLE_COUNT>
+            <COMMENT_DESCRIPTION>{{ all_comments }}</COMMENT_DESCRIPTION>
         </DATA>
     </DATA_SET>
 </ROOT>
