@@ -55,7 +55,7 @@ def is_header(value):
 def read_parts_from_file(filename):
     file_name_non, file_extension = os.path.splitext(filename)
     part_names = []
-    with open(filename, mode='r') as file:
+    with open(filename, mode='r', encoding='utf-8-sig') as file:
         if file_extension == '.csv':
             reader = csv.reader(file)
             for i, line in enumerate(reader):
