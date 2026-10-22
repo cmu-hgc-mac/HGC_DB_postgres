@@ -49,10 +49,14 @@ async def write_to_db(partType=None, part_id_list=None, date_verified=None):
 
 HEADER_KEYWORDS = {'serial', 'number', 'name', 'barcode', 'bar', 'code', 'type', 'head', 'part'}
 
-def is_header(value):
+def is_header(value, partType=None):
+    if partType in ('baseplate', 'hexaboard') and not value.startswith('320'):
+        return True
+    if partType == 'sensor' and not (value.startswith('320') or value.startswith('OBA') or value[0].isdigit()):
+        return True
     return any(kw in value.lower() for kw in HEADER_KEYWORDS)
 
-def read_parts_from_file(filename):
+def read_parts_from_file(filename, partType=None):
     file_name_non, file_extension = os.path.splitext(filename)
     part_names = []
     with open(filename, mode='r', encoding='utf-8-sig') as file:
@@ -62,7 +66,7 @@ def read_parts_from_file(filename):
                 val = line[0].strip()
                 if not val:
                     continue
-                if i == 0 and is_header(val):
+                if i == 0 and is_header(val, partType=partType):
                     print(f"Skipping header row: '{val}'")
                     continue
                 part_names.append(val)
@@ -71,7 +75,7 @@ def read_parts_from_file(filename):
                 val = line.strip()
                 if not val:
                     continue
-                if i == 0 and is_header(val):
+                if i == 0 and is_header(val, partType=partType):
                     print(f"Skipping header row: '{val}'")
                     continue
                 part_names.append(val)
@@ -100,7 +104,7 @@ async def main():
         dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode() ## Decode base64 to get encrypted string and then decrypt
         db_params.update({'password': dbpassword})
 
-    part_names = read_parts_from_file(args.file_path)
+    part_names = read_parts_from_file(args.file_path, partType=partType)
     # batchIDs = [None for i in part_names]
     
     if partType == 'sensor':
