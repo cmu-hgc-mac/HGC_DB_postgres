@@ -562,48 +562,6 @@ def record_shipout():
 
     def enter_part_barcodes_out():
         lines_from_file = []
-        def upload_file_with_part_out():
-            popup2 = Toplevel(input_window)
-            popup2.transient(input_window)        
-            popup2.attributes("-topmost", True)
-            popup2.focus_force()
-            popup2.title("Upload text/csv file with module names")
-            file_entry = None
-            
-            def browse_file():
-                file_path = filedialog.askopenfilename(title="Select a File")
-                if file_path:
-                    file_entry.delete(0, 'end')  # Clear the current entry
-                    file_entry.insert(0, file_path)
-
-            browse_button = Button(popup2, text="Browse", command=browse_file)
-            browse_button.pack(pady=10)
-            file_entry = Entry(popup2, width=50, bd=2)
-            file_entry.pack(pady=10)
-
-            def enter_partnames_in_window():
-                if file_entry.get().strip():
-                    file_path = file_entry.get().strip()
-                    if file_path.endswith(".csv"):
-                        with open(file_path, newline="", encoding="utf-8") as file:
-                            reader = csv.reader(file)
-                            lines_from_file = [row[0] for row in reader if row]  
-                    else:
-                        with open(file_path, "r", encoding="utf-8") as file:
-                            lines_from_file = [line.strip() for line in file.readlines()]  
-                
-                if len(lines_from_file) < len(entries):
-                    popup2.destroy()
-                    for i in range(len(lines_from_file)):
-                        input_window.destroy()  
-                        entries[i].insert(0, lines_from_file[i])
-                else:
-                    show_error_on_top("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
-
-            submit_fileparts_button = Button(popup2, text="Load module barcodes", command=enter_partnames_in_window)
-            submit_fileparts_button.pack(pady=10)
-            bind_button_keys(submit_fileparts_button)
-
         entries = []
         abspath = os.path.dirname(os.path.abspath(__file__))
         dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
@@ -615,29 +573,10 @@ def record_shipout():
         else:
             # popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
             
-            popup1 = enter_part_barcodes_box(input_window, encryption_key, dbshipper_pass, upload_file_with_part_out, max_mod_per_box, entries)
+            popup1 = enter_part_barcodes_box(input_window, encryption_key, dbshipper_pass, max_mod_per_box, entries)
             popup1.transient(input_window)        
             popup1.attributes("-topmost", True)
             popup1.focus_force()
-
-    '''
-    def enter_box_for_crate_contents_out():
-        entries = []
-        abspath = os.path.dirname(os.path.abspath(__file__))
-        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
-        if not dbshipper_pass.strip(): 
-            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
-                input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            show_error_on_top("Input Error", "Database password is incorrect.")
-        else:
-            # popup1 = Toplevel(); popup1.title("Enter barcode of parts packed in this module container")
-            
-            popup1 = enter_part_barcodes_box_for_crate(input_window, encryption_key, dbshipper_pass, upload_file_with_part_out, max_mod_per_box, entries)
-            popup1.transient(input_window)        
-            popup1.attributes("-topmost", True)
-            popup1.focus_force()
-    '''
 
     def enter_shipment_contents_out():
         lines_from_file = []
@@ -666,18 +605,20 @@ def record_shipout():
                     if file_path.endswith(".csv"):
                         with open(file_path, newline="", encoding="utf-8") as file:
                             reader = csv.reader(file)
-                            lines_from_file = [row[0] for row in reader if row]  
+                            lines_from_file = [item.strip() for row in reader for item in row if item.strip()]
                     else:
                         with open(file_path, "r", encoding="utf-8") as file:
-                            lines_from_file = [line.strip() for line in file.readlines()]  
+                            lines_from_file = [line.strip() for line in file.readlines() if line.strip()]
+                            if (any(line.startswith("320") for line in lines_from_file)):
+                                show_error_on_top("Upload Error", "File must contain box IDs only.") 
+                                return
                 
                 if len(lines_from_file) < len(entries):
                     popup2.destroy()
                     for i in range(len(lines_from_file)):
-                        input_window.destroy()  
                         entries[i].insert(0, lines_from_file[i])
                 else:
-                    show_error_on_top("Too many parts in file",f"Provide a file with maximum {len(entries)} modules names present in this box.")
+                    show_error_on_top("Too many parts in file",f"Provide a file with maximum {len(entries)} box names present in this shipment.")
 
             submit_fileparts_button = Button(popup2, text="Load box IDs", command=enter_partnames_in_window)
             submit_fileparts_button.pack(pady=10)
@@ -698,26 +639,6 @@ def record_shipout():
             popup1.transient(input_window)        
             popup1.attributes("-topmost", True)
             popup1.focus_force()
-
-            
-    '''
-    def enter_container_contents_out():
-        entries = []
-        abspath = os.path.dirname(os.path.abspath(__file__))
-        # temptextfileout = str(os.path.join(abspath, "shipping","temporary_part_entries_in.txt"))
-        dbshipper_pass = base64.urlsafe_b64encode( cipher_suite.encrypt( (shipper_var.get()).encode()) ).decode() if shipper_var.get().strip() else "" ## Encrypt password and then convert to base64
-    
-        if not dbshipper_pass.strip(): # and lxuser_pass.strip() and lxpassword_pass.strip():
-            if askyesno_on_top("Input Error", "Do you want to cancel?\nDatabase password cannot be empty."):
-                input_window.destroy()  
-        elif not asyncio.run(check_good_conn(shipper_var.get().strip())):
-            show_error_on_top("Input Error", "Database password is incorrect.")
-        else:
-            popup1 = enter_part_barcodes_container(input_window, encryption_key, dbshipper_pass, max_box_per_shipment, entries)
-            popup1.transient(input_window)        
-            popup1.attributes("-topmost", True)
-            popup1.focus_force()
-    '''
             
     box_button = Button(input_window, text="Record Box", command=enter_part_barcodes_out, width=30)
     box_button.pack(pady=10)
@@ -726,13 +647,6 @@ def record_shipout():
     shipment_button = Button(input_window, text="Record Crate/Container", command=enter_shipment_contents_out, width=30)
     shipment_button.pack(pady=10)
     bind_button_keys(shipment_button)
-
-    '''
-    container_button = Button(input_window, text="Record Container", command=enter_container_contents_out, width=30)
-    container_button.pack(pady=10)
-    bind_button_keys(container_button)
-    '''
-
     
     Label(input_window, text="-------------------------------------").pack(pady=5)
     Label(input_window, text="Procedure:", fg="blue",wraplength=270).pack(pady=1)

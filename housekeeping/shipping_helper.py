@@ -29,9 +29,9 @@ institutions_list = ["CMU", "UCSB", "TIFR", "IHEP", "NTU", "TTU"]
 # Function for checking format of box, crate, and containter IDs
 def id_setter(id_no, letter):
      if (letter == "B"):
-          placeholder = "Enter box ID..."
+          placeholder = "Enter box ID for modules..."
           error_msg1 = "Must enter box ID."
-          error_msg2 = "Box ID must have form [INSTITUTION]-B[NUMBER]."
+          error_msg2 = "Box ID for modules must have form [INSTITUTION]-B[NUMBER]."
      elif (letter == "C/X"):
           placeholder = "Enter shipment ID..."
           error_msg1 = "Must enter shipment ID."
@@ -497,7 +497,7 @@ async def _module_thermal_cycled(encrypt_key, password, module_names, db_params 
 
 # Class for handling the recording of modules into boxes; contains module-loading popup as well as popups for giving boxes IDs and for putting them inside shipments (if needed)
 class enter_part_barcodes_box(tkinter.Toplevel):
-     def __init__(self, parent, encryption_key, dbshipper_pass, upload_file_with_part_out, max_mod_per_box, entries = None):
+     def __init__(self, parent, encryption_key, dbshipper_pass, max_mod_per_box, entries = None):
           super().__init__(parent)
           
           self.title("Enter barcode of parts packed in this module container")
@@ -522,7 +522,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
           available_boxes = get_boxes_sync(encrypt_key = encryption_key, password = dbshipper_pass)
           available_shipments = get_shipments_sync(encrypt_key = encryption_key, password = dbshipper_pass)
      
-          upload_from_file_button = Button(top_frame, text = "Upload parts from file (optional)", command = upload_file_with_part_out, state = "disabled")
+          upload_from_file_button = Button(top_frame, text = "Upload parts from file (optional)", command = lambda: open_upload_popup(), state = "disabled")
           datetime_now_label = Label(top_frame, text = f"Now:", justify = "right", anchor = "e")
           datetime_now_entry = Entry(top_frame, textvariable = datetime_now_var, width = 20, bd = 1.5, highlightbackground = "black", highlightthickness = 1, state = "readonly")
           
@@ -561,8 +561,12 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                box_id_entry["state"] = "readonly"
                dropdown_button_box["state"] = "disabled"
                upload_from_file_button["state"] = "normal"
-               for item in middle_frame.grid_slaves():
-                    item["state"] = "normal"
+               for row_frame in row_frames:
+                    for item in row_frame.winfo_children():
+                         item["state"] = "normal"
+               for button in add_buttons:
+                    button["state"] = "normal"
+                    box_entered[0] = True
                export_checkbox["state"] = "normal"
                shipment_checkbox["state"] = "normal"
                submit_button["state"] = "normal"
@@ -575,13 +579,33 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                     modules = get_modules_in_box_sync(encryption_key, dbshipper_pass, box_id)
                     sorted_modules = [list(y) for x, y in groupby(sorted(modules))]
                     available_modules = []
-                    for i in range(len(sorted_modules)):
-                         if (all(x == sorted_modules[i][0] for x in sorted_modules[i])):
-                              module_id = sorted_modules[i][0]
-                              available_modules.append(module_id)
+                    mod_pos_pairs = []
+                    for group in sorted_modules:
+                         if all(x == group[0] for x in group):
+                              module_id = group[0]
                               position = get_position_in_box_sync(encryption_key, dbshipper_pass, module_id)
-                              entries[int(position[0]) - 1].insert(0, module_id)
-                              current_modules.append(entries[int(position[0]) - 1].get())
+                              mod_pos_pairs.append((module_id, position[0]))
+                    for module_id, pos_str in mod_pos_pairs:
+                         pos_f = float(pos_str)
+                         if (pos_f != int(pos_f)):
+                              r = (math.ceil(pos_f) - 1) // cols
+                              if (len(row_entry_lists[r]) == 2):
+                                   rebuild_row(r, has_extra = True)
+                    for module_id, pos_str in mod_pos_pairs:
+                         pos_f = float(pos_str)
+                         r = (math.ceil(pos_f) - 1) // cols
+                         n = len(row_entry_lists[r])
+                         base = (r * cols) + 1
+                         if (abs(pos_f - base) < 0.01):
+                              slot = 0
+                         elif (abs(pos_f - (base + 0.5)) < 0.01):
+                              slot = 1
+                         else:
+                              slot = n - 1
+                         flat_idx = sum(len(row_entry_lists[i]) for i in range(r)) + slot
+                         entries[flat_idx].insert(0, module_id)
+                         available_modules.append(module_id)
+                         current_modules.append(entries[flat_idx].get())
                     shipments = get_shipment_number_sync(encryption_key, dbshipper_pass, modules)
                     datetimes = get_shipped_timestamp_bool_sync(encryption_key, dbshipper_pass, available_modules)
                     dt_bool = not any(datetimes)
@@ -589,6 +613,8 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                     if (dt_bool == False):
                          for i in range(int(max_mod_per_box)):
                               entries[i]["state"] = "disabled"
+                         for button in add_buttons:
+                              button["state"] = "disabled"
                          export_checkbox["state"] = "disabled"
                          shipment_checkbox["state"] = "disabled"
                          submit_button["state"] = "disabled"
@@ -627,18 +653,26 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                               dropdown_button_shipment["state"] = "disabled"
 
           def back():
+               box_entered[0] = False
+               for r in range(num_rows):
+                    if (len(row_entry_lists[r]) > 2):
+                         rebuild_row(r, has_extra = False)
                box_id_entry.delete(0, "end")
                box_id_entry._put_placeholder()
                box_id_entry["state"] = "normal"
                box_id_entry["fg"] = box_id_entry._default_fg_color
                dropdown_button_box["state"] = "normal"
                upload_from_file_button["state"] = "disabled"
-               for item in middle_frame.grid_slaves():
-                    item["state"] = "normal"
+               for row_frame in row_frames:
+                    for item in row_frame.winfo_children():
+                         item["state"] = "normal"
                for i in range(int(max_mod_per_box)):
                     entries[i].delete(0, "end")
-               for item in middle_frame.grid_slaves():
-                    item["state"] = "disabled"
+               for row_frame in row_frames:
+                    for item in row_frame.winfo_children():
+                         item["state"] = "disabled"
+               for button in add_buttons:
+                    button["state"] = "disabled"
                export_checkbox["state"] = "disabled"
                shipment_checkbox.deselect()
                shipment_checkbox["state"] = "disabled"
@@ -652,7 +686,7 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                ship_button.pack(side = "left", padx = 10, pady = 10)
                ship_button["state"] = "disabled"
                current_modules.clear()
-               cancel_button.grid(row = 1, column = 2, columnspan = 1, sticky="ne")
+               cancel_button.grid(row = 1, column = 2, columnspan = 1, sticky = "ne")
                back_button.grid_remove()
                enter_button["state"] = "normal"
                self.focus_set()
@@ -668,18 +702,133 @@ class enter_part_barcodes_box(tkinter.Toplevel):
           back_button.grid_remove()
           cancel_button.grid(row = 1, column = 2, columnspan = 1, sticky = "ne")
           
-          module_present_label = Label(middle_frame, wraplength = 600 ,fg = "red", text = f"Modules must be present in postgres `module_info` table to record shipments.", state = "disabled")
-          module_present_label.grid(row = 0, column = 0, columnspan = 5, pady = (0, 10), sticky = "s")
+          module_present_label = Label(middle_frame, wraplength = 600 ,fg = "red", text = f"Modules/partials must be present in postgres `module_info` table to record shipments.", state = "disabled")
+          module_present_label.grid(row = 0, column = 0, columnspan = 6, pady = (0, 10), sticky = "s")
           
           num_entries, cols = int(max_mod_per_box), 2
-          for i in range(num_entries):
-               row, col = (1 + (i // cols)), (i % cols)
-               listlabel = Label(middle_frame, text = f"{i + 1}:", state = "disabled")
-               listlabel.grid(row = row, column = (col * 2), padx = (10, 0), pady = 2)
-               entry = Entry(middle_frame, width = 30, state = "disabled")
-               entry.grid(row = row, column = ((col * 2) + 1), padx = (0, 10), pady = 2)
-               entries.append(entry)
+          num_rows = math.ceil(num_entries / cols)
+          row_frames = []
+          row_entry_lists = []
+          box_entered = [False]
 
+          def rebuild_row(r, has_extra):
+               frame = row_frames[r]
+               start = r * cols
+               old_contents = [entry.get() for entry in row_entry_lists[r]]
+               for widget in frame.winfo_children():
+                    widget.destroy()
+               if (has_extra):
+                    label_texts = [f"{start + 1}:", f"{start + 1.5}:", f"{start + 2}:"]
+                    num_in_row = 3
+               else:
+                    label_texts = [f"{start + 1}:", f"{start + 2}:"]
+                    num_in_row = 2
+               new_entries = []
+               for i in range(num_in_row):
+                    Label(frame, text = label_texts[i], state = "normal" if box_entered[0] else "disabled").pack(side = "left", padx = (10, 0))
+                    entry = Entry(frame, width = 30, state = "normal" if box_entered[0] else "disabled")
+                    entry.pack(side = "left")
+                    prev_count = len(old_contents)
+                    if ((prev_count == 3) and (not has_extra)):
+                         restored = [old_contents[0], old_contents[2]]
+                    elif ((prev_count == 2) and (has_extra)):
+                         restored = [old_contents[0], "", old_contents[1]]
+                    else:
+                         restored = old_contents
+                    if ((i < len(restored)) and (restored[i])):
+                         entry.insert(0, restored[i])
+                    new_entries.append(entry)                                                        
+               row_entry_lists[r] = new_entries
+               entries.clear()
+               for row_entries in row_entry_lists:
+                    entries.extend(row_entries)
+               btn_text = "-" if has_extra else "+"
+               btn_cmd = (lambda row = r: rebuild_row(row, False)) if has_extra else (lambda row = r: rebuild_row(row, True))
+               btn = add_buttons[r]
+               if (has_extra):
+                    btn.config(text = "-", command = lambda row = r: rebuild_row(row, False))
+               else:
+                    btn.config(text = "+", command = lambda row = r: rebuild_row(row, True))
+
+          add_buttons = []
+          for r in range(num_rows):
+               row_frame = Frame(middle_frame)
+               row_frame.grid(row = 1 + r, column = 0, columnspan = 5)
+               row_frames.append(row_frame)
+               row_entry_lists.append([])
+               btn = Button(middle_frame, text = "+", width = 2, state = "disabled")
+               btn.grid(row = 1 + r, column = 5, padx = (5, 10))                                 
+               add_buttons.append(btn)                                                   
+               rebuild_row(r, has_extra = False)
+
+          def open_upload_popup():
+               popup2 = Toplevel(self)
+               popup2.transient(self)
+               popup2.attributes("-topmost", True)
+               popup2.focus_force()
+               popup2.title("Upload text/csv file with module names")
+               file_entry_popup = Entry(popup2, width = 50, bd = 2)
+               
+               def browse_file():
+                    file_path = filedialog.askopenfilename(title = "Select a File")
+                    if (file_path):
+                         file_entry_popup.delete(0, "end")
+                         file_entry_popup.insert(0, file_path)
+
+               def load_modules():
+                    file_path = file_entry_popup.get().strip()
+                    if (not file_path):
+                         return                                                                                                                                     
+                    if (file_path.endswith(".csv")):                                                                                                                  
+                         with open(file_path, newline = "", encoding = "utf-8") as f:                                                                               
+                              reader = csv.reader(f)
+                              module_list = [item.strip() for row in reader for item in row if item.strip()]
+                    else:
+                         with open(file_path, "r", encoding = "utf-8") as f:                                                                                        
+                              module_list = [line.strip() for line in f if line.strip()]
+                    MODULE_PART_TYPES = {"M", "P"}
+                    if ((not all(len(m) >= 6)) and (m[:3] == "320") and (m[3] in MODULE_PART_TYPES) for m in module_list):
+                         show_error_on_top("Upload Error", "File must contain module IDs only.")
+                         return
+                    FULL_GEOMETRIES = {"F", "5"}
+                    PARTIAL_GEOMETRIES = {"T", "B", "L", "R"}
+                    def get_type(m):                                                                                                                                
+                         if ((len(m) >= 6) and (m[:3] == "320")):                                                                                                         
+                              if m[5] in FULL_GEOMETRIES: return "full"
+                              if m[5] in PARTIAL_GEOMETRIES: return "partial"
+                              return "unknown"
+                    type_groups = [(key, list(grp)) for key, grp in groupby(module_list, key = get_type)]
+                    if (any(key == "unknown" for key, _ in type_groups)):
+                         show_error_on_top("Upload Error", "See terminal.")
+                         print("Upload Error: File contains unrecognized module IDs.")
+                         return
+                    rows_needed = sum(math.ceil(len(grp) / cols) if key == "full" else math.ceil(len(grp) / (cols + 1)) for key, grp in type_groups)
+                    if (rows_needed > num_rows):
+                         show_error_on_top("Too many parts in file", f"Parts do not fit: need {rows_needed} rows but only {num_rows} available.")
+                         return
+                    for r in range(num_rows):
+                         if (len(row_entry_lists[r]) == 3):
+                              rebuild_row(r, has_extra = False)
+                    popup2.destroy()
+                    r = 0
+                    for key, grp in type_groups:
+                         idx = 0
+                         batch_size = cols if key == "full" else (cols + 1)
+                         while idx < len(grp):
+                              if ((key == "partial") and (len(row_entry_lists[r]) == 2)):
+                                   rebuild_row(r, has_extra = True)
+                              batch = grp[idx:idx + batch_size]        
+                              for slot, module in enumerate(batch):
+                                   row_entry_lists[r][slot].insert(0, module)
+                              idx += batch_size
+                              r += 1
+                         
+               browse_button = Button(popup2, text = "Browse", command =  browse_file)
+               browse_button.pack(pady = 10)
+               file_entry_popup.pack(pady = 10)
+               submit_button_popup = Button(popup2, text = "Load module barcodes", command = load_modules)
+               submit_button_popup.pack(pady = 10)
+                    
           def toggle_on_shipment():
                if (shipment_var.get() == 1):
                     shipment_id_entry["state"] = "normal"
@@ -773,6 +922,25 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                if (len(module_update_pack) > 0):
                     removed_modules = [m for m in current_modules if m not in module_update_pack]
                     added_modules = [m for m in module_update_pack if m not in current_modules]
+                    FULL_GEOMETRIES = {"F", "5"}
+                    PARTIAL_GEOMETRIES = {"T", "B", "L", "R"}
+                    for r, row_entries in enumerate(row_entry_lists):
+                         n = len(row_entries)
+                         for entry in row_entries:
+                              val = entry.get().strip()
+                              if (not val):
+                                   continue
+                              if ((len(val) >= 6) and (val[:3] == "320")):
+                                   res = val[4]
+                                   geom = val[5]
+                                   if ((n == 2) and (geom in PARTIAL_GEOMETRIES)):
+                                        show_error_on_top("Type Error", "See terminal.")
+                                        print(f"Type Error: {val} is a partial; it must be in a 3-entry row.")
+                                        return
+                                   if ((n == 3) and (geom in FULL_GEOMETRIES)):
+                                        show_error_on_top("Type Error", "See terminal.")
+                                        print(f"Type Error: {val} is a full module; it must be in a 2-entry row.")
+                                        return
                     removed_positions = set()
                     occupied_positions = set()
                     if (shipment_var.get() == 1):
@@ -786,12 +954,12 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                          for module in removed_modules:
                               position = get_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module)
                               if (position):
-                                   removed_positions.add(int(position[0]))
+                                   removed_positions.add(float(position[0]))
                          update_shipment_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = removed_modules, shipment_number = None)
                          for module in current_modules:
                               position = get_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module)
                               if (position):
-                                   occupied_positions.add(int(position[0]))
+                                   occupied_positions.add(float(position[0]))
                          already_empty = set(range(1, int(max_mod_per_box) + 1)) - occupied_positions
                          all_empty_after = already_empty | removed_positions
                          empty_row_starts = [i for i in range(1, int(max_mod_per_box), 2) if i in all_empty_after and (i + 1) in all_empty_after]
@@ -817,12 +985,25 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                     for module in removed_modules:
                          update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = None)
                     if ((removed_modules) and (should_shift)):
-                         for i, module in enumerate(module_update_pack, start = 1):
-                              update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = str(i))
+                         for r in range(num_rows):
+                              base = (r * cols) + 1
+                              row_entries = row_entry_lists[r]
+                              has_extra = len(row_entries) == 3
+                              slot_positions = [str(base), f"{base + 0.5}", str(base + 1)] if has_extra else [str(base), str(base + 1)]
+                              for pos, entry in zip(slot_positions, row_entries):
+                                   module = entry.get().strip()
+                                   if (module in set(removed_modules)):
+                                        update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = pos)
                     else:
-                         for i, module in enumerate(module_update_pack, start = 1):
-                              if module in set(added_modules):
-                                   update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = str(i))
+                         for r in range(num_rows):
+                              base = (r * cols) + 1
+                              row_entries = row_entry_lists[r]
+                              has_extra = len(row_entries) == 3
+                              slot_positions = [str(base), f"{base + 0.5}", str(base + 1)] if has_extra else [str(base), str(base + 1)]
+                              for pos, entry in zip(slot_positions, row_entries):
+                                   module = entry.get().strip()
+                                   if (module in set(added_modules)):
+                                        update_position_in_box_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_name = module, position_in_box = pos)
                     if (added_modules):
                          update_box_number_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = added_modules, box_number = box_id_entry.get())
                     update_packed_timestamp_sync(encrypt_key = encryption_key, password = dbshipper_pass.strip(), module_names = module_update_pack, timestamp = datetime_now_obj, savetofile = bool(export_var.get()))
@@ -834,6 +1015,8 @@ class enter_part_barcodes_box(tkinter.Toplevel):
                for i in range(int(max_mod_per_box)):
                     entries[i]["state"] = "disabled"
                     modules.append(entries[i].get())
+               for button in add_buttons:
+                    button["state"] = "disabled"
                upload_from_file_button["state"] = "disabled"
                shipment_checkbox["state"] = "disabled"
                shipment_id_entry["state"] = "disabled"
