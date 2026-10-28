@@ -53,7 +53,7 @@ async def update_module_qc_summary():
                     )
                     AND mbl.log_timestamp < mqs.grade_timestamp
                     AND mbl.cycle_count IS NOT NULL
-                    AND COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%'
+                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
                     ORDER BY mbl.batch_name, mbl.batch_no ASC
                 ) first_instances
             ) WHERE mqs.grade_timestamp IS NOT NULL;
@@ -86,7 +86,7 @@ async def update_module_info():
                         WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
                     )
                     AND mbl.cycle_count IS NOT NULL
-                    AND COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%'
+                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
                     ORDER BY mbl.batch_name, mbl.batch_no ASC
                 ) first_instances
             ),
@@ -101,7 +101,7 @@ async def update_module_info():
                         WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
                     )
                     AND mbl.cycle_count IS NOT NULL
-                    AND COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%'
+                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
                     ORDER BY mbl.batch_name, mbl.batch_no ASC
                 ) first_instances
             );
