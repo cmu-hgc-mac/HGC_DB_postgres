@@ -191,14 +191,14 @@ def update_table_datas_trigger(target_table, target_col, source_table, source_co
 
 
 # SQL query for populating module_info.thermal_cycle_date/thermal_cycle_count from mmts_batch_logging.
-# Only rows whose description contains 'MMTSjobRunning' or 'resolved using Postgres panel' (rows merged by
+# Only rows whose description contains 'MMTSjobFinished' or 'resolved using Postgres panel' (rows merged by
 # housekeeping/rectify_mmts_batch_names.py) are considered; the other logging events are ignored.
-# For each module in NEW.module_names, recompute from scratch over the earliest such row (lowest batch_no)
+# For each module in NEW.module_names, recompute from scratch over the latest such row (highest batch_no)
 # of every distinct batch_name whose module_names contains that module:
-#   thermal_cycle_count = SUM(cycle_count) over those earliest-instance rows
-#   thermal_cycle_date  = MAX(log_timestamp::date) over those earliest-instance rows
-# Fires on INSERT or UPDATE, but only acts when NEW is itself the earliest such row of its
-# batch_name, so later/duplicate/other-event rows of an existing batch_name are a no-op.
+#   thermal_cycle_count = SUM(cycle_count) over those latest-instance rows
+#   thermal_cycle_date  = MAX(log_timestamp::date) over those latest-instance rows
+# Fires on INSERT or UPDATE, but only acts when NEW is itself the latest such row of its
+# batch_name, so earlier/duplicate/other-event rows of an existing batch_name are a no-op.
 def update_thermal_cycle_trigger():
     trigger_sql = """
     CREATE OR REPLACE FUNCTION module_info_update_thermal_cycle_from_mmts_batch_logging()
@@ -206,16 +206,16 @@ def update_thermal_cycle_trigger():
     DECLARE
         v_module text;
     BEGIN
-        IF (COALESCE(NEW.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(NEW.description, '') LIKE '%resolved using Postgres panel%')
+        IF (COALESCE(NEW.description, '') LIKE '%MMTSjobFinished%' OR COALESCE(NEW.description, '') LIKE '%resolved using Postgres panel%')
             AND NOT EXISTS (
                 SELECT 1 FROM mmts_batch_logging
                 WHERE batch_name = NEW.batch_name
-                    AND batch_no < NEW.batch_no
-                    AND (COALESCE(description, '') LIKE '%MMTSjobRunning%' OR COALESCE(description, '') LIKE '%resolved using Postgres panel%')
+                    AND batch_no > NEW.batch_no
+                    AND (COALESCE(description, '') LIKE '%MMTSjobFinished%' OR COALESCE(description, '') LIKE '%resolved using Postgres panel%')
             ) THEN
             FOREACH v_module IN ARRAY COALESCE(NEW.module_names, ARRAY[]::text[])
             LOOP
-                WITH first_instances AS (
+                WITH latest_instances AS (
                     SELECT DISTINCT ON (mbl.batch_name)
                         mbl.cycle_count, mbl.log_timestamp
                     FROM mmts_batch_logging mbl
@@ -223,12 +223,12 @@ def update_thermal_cycle_trigger():
                         SELECT REPLACE(m,'-','') FROM unnest(mbl.module_names) AS m
                     )
                     AND mbl.cycle_count IS NOT NULL
-                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
-                    ORDER BY mbl.batch_name, mbl.batch_no ASC
+                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobFinished%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
+                    ORDER BY mbl.batch_name, mbl.batch_no DESC
                 )
                 UPDATE module_info
-                SET thermal_cycle_count = (SELECT SUM(cycle_count) FROM first_instances),
-                    thermal_cycle_date = (SELECT MAX(log_timestamp::date) FROM first_instances)
+                SET thermal_cycle_count = (SELECT SUM(cycle_count) FROM latest_instances),
+                    thermal_cycle_date = (SELECT MAX(log_timestamp::date) FROM latest_instances)
                 WHERE REPLACE(module_name,'-','') = REPLACE(v_module,'-','');
             END LOOP;
         END IF;

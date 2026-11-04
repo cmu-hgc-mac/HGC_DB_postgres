@@ -47,12 +47,12 @@ async def consolidate_batch_logging():
         return
 
     try:
-        # Only MMTSjobRunning rows are kept; the other logging events carry no extra batch information.
+        # Only MMTSjobFinished rows are kept; the other logging events carry no extra batch information.
         deleted_events = await conn.execute("""
             DELETE FROM mmts_batch_logging
-            WHERE description IN ('MMTSjobFinished', 'IVSCANRun', 'IVSCANEnd')
+            WHERE description IN ('MMTSjobRunning', 'IVSCANRun', 'IVSCANEnd')
         """)
-        print(f"Removed MMTSjobFinished/IVSCANRun/IVSCANEnd rows: {deleted_events.split()[-1]} row(s) deleted.")
+        print(f"Removed MMTSjobRunning/IVSCANRun/IVSCANEnd rows: {deleted_events.split()[-1]} row(s) deleted.")
 
         rows = await conn.fetch("""
             SELECT batch_no, batch_name, cycle_count, description
@@ -68,7 +68,7 @@ async def consolidate_batch_logging():
         saw_higher = False
 
         for row in rows:
-            if row['description'] != 'MMTSjobRunning':
+            if row['description'] != 'MMTSjobFinished':
                 if current_group:
                     groups.append(current_group)
                     current_group = []
@@ -95,11 +95,11 @@ async def consolidate_batch_logging():
         for group in groups:
             total_cycles = max(r['cycle_count'] for r in group)
 
-            # Surviving row: first MMTSjobRunning in iteration 1, fallback to first row in the batch.
+            # Surviving row: latest MMTSjobFinished (highest batch_no), fallback to last row in the batch.
             surviving = next(
-                (r for r in group
-                 if r['description'] == 'MMTSjobRunning' and r['cycle_count'] == 1),
-                group[0]
+                (r for r in reversed(group)
+                 if r['description'] == 'MMTSjobFinished'),
+                group[-1]
             )
             to_delete = [r['batch_no'] for r in group if r['batch_no'] != surviving['batch_no']]
 

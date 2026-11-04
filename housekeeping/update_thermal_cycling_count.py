@@ -42,7 +42,7 @@ async def update_module_qc_summary():
         update_query_mod = """
             UPDATE module_qc_summary mqs
             SET thermal_cycle_count = (
-                SELECT COALESCE(SUM(first_instances.cycle_count), 0)
+                SELECT COALESCE(SUM(latest_instances.cycle_count), 0)
                 FROM (
                     SELECT DISTINCT ON (mbl.batch_name) mbl.cycle_count
                     FROM mmts_batch_logging mbl
@@ -53,9 +53,9 @@ async def update_module_qc_summary():
                     )
                     AND mbl.log_timestamp < mqs.grade_timestamp
                     AND mbl.cycle_count IS NOT NULL
-                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
-                    ORDER BY mbl.batch_name, mbl.batch_no ASC
-                ) first_instances
+                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobFinished%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
+                    ORDER BY mbl.batch_name, mbl.batch_no DESC
+                ) latest_instances
             ) WHERE mqs.grade_timestamp IS NOT NULL;
         """
 
@@ -76,7 +76,7 @@ async def update_module_info():
         update_query_mod = """
             UPDATE module_info mi
             SET thermal_cycle_count = (
-                SELECT COALESCE(SUM(first_instances.cycle_count), 0)
+                SELECT COALESCE(SUM(latest_instances.cycle_count), 0)
                 FROM (
                     SELECT DISTINCT ON (mbl.batch_name) mbl.cycle_count, mbl.log_timestamp
                     FROM mmts_batch_logging mbl
@@ -86,12 +86,12 @@ async def update_module_info():
                         WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
                     )
                     AND mbl.cycle_count IS NOT NULL
-                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
-                    ORDER BY mbl.batch_name, mbl.batch_no ASC
-                ) first_instances
+                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobFinished%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
+                    ORDER BY mbl.batch_name, mbl.batch_no DESC
+                ) latest_instances
             ),
             thermal_cycle_date = (
-                SELECT MAX(first_instances.log_timestamp::date)
+                SELECT MAX(latest_instances.log_timestamp::date)
                 FROM (
                     SELECT DISTINCT ON (mbl.batch_name) mbl.cycle_count, mbl.log_timestamp
                     FROM mmts_batch_logging mbl
@@ -101,9 +101,9 @@ async def update_module_info():
                         WHERE elem ILIKE REPLACE(mi.module_name, '-', '')
                     )
                     AND mbl.cycle_count IS NOT NULL
-                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobRunning%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
-                    ORDER BY mbl.batch_name, mbl.batch_no ASC
-                ) first_instances
+                    AND (COALESCE(mbl.description, '') LIKE '%MMTSjobFinished%' OR COALESCE(mbl.description, '') LIKE '%resolved using Postgres panel%')
+                    ORDER BY mbl.batch_name, mbl.batch_no DESC
+                ) latest_instances
             );
         """
 
