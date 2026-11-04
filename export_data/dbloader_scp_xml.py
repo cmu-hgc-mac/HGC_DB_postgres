@@ -302,7 +302,7 @@ class mass_upload_to_dbloader_via_paramiko:
         self.ssh_conn = None
         self.connect()
         time.sleep(5) ## wait for the connection to happen
-        
+
     def _kb_interactive_handler(self, _title, _instructions, prompt_list):
         answers = []
         for prompt, _echo in prompt_list:
@@ -444,20 +444,32 @@ class mass_upload_to_dbloader_via_paramiko:
     
     def scp_logs_local(self):
         if ".csv" in self.terminal_output:
-            try:
-                self.log_save_time = datetime.datetime.now()
-                print("----> Saving log files to export_data/mass_upload_logs <----")
-                print(self.csv_outfile)
-                log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
-                terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
-                local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
-                shutil.move(self.temp_txt_file_name, local_terminal_path)
-                local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
-                sftp = self.ssh_server2.open_sftp()
-                sftp.get(self.csv_outfile, local_csv_path)              # Copy remote CSV to local
-                # sftp.get(log_outfile, local_log_path)
-            except Exception as e:
-                print(e)
+            log_outfile = os.path.splitext(self.csv_outfile)[0] + ".log"
+            terminal_outfile = os.path.splitext(self.csv_outfile)[0] + ".txt"
+            local_terminal_path = os.path.join(self.mass_upload_logs_fp, terminal_outfile)
+            local_log_path, local_csv_path = os.path.join(self.mass_upload_logs_fp, os.path.basename(log_outfile)), os.path.join(self.mass_upload_logs_fp, os.path.basename(self.csv_outfile))
+
+            downloaded = False
+            for attempt in range(5):
+                try:
+                    self.log_save_time = datetime.datetime.now()
+                    print("----> Saving log files to export_data/mass_upload_logs <----")
+                    print(self.csv_outfile)
+                    if not os.path.isfile(local_terminal_path):
+                        shutil.move(self.temp_txt_file_name, local_terminal_path)
+                    sftp = self.ssh_server2.open_sftp()
+                    sftp.get(self.csv_outfile, local_csv_path)              # Copy remote CSV to local
+                    # sftp.get(log_outfile, local_log_path)
+                    downloaded = True
+                    break
+                except Exception as e:
+                    print(f"Failed to fetch log CSV (attempt {attempt+1}/5): {e}")
+                    if attempt < 4:
+                        print("Retrying in 5 seconds ...")
+                        time.sleep(5)
+
+            if not downloaded:
+                print(f"Giving up on fetching {self.csv_outfile} after 5 attempts -- leaving it on the remote host for later recovery.")
                 return 255  # indicate failure
 
             if os.path.isfile(local_csv_path) and os.path.isfile(local_terminal_path):
@@ -607,6 +619,8 @@ def main():
         from task_scheduler.scheduler_helper import get_lxplus_username_password
         lxp_username, lxp_password, totp_uri = get_lxplus_username_password()
         mass_upload_to_dbloader = mass_upload_to_dbloader_via_paramiko
+        print("Waiting 10 seconds before connecting to LXPLUS ...")
+        time.sleep(10) ### gives CERN-side session/auth state time to settle, matching the natural delay when generate runs first
 
     print(f"Searching XML files in {directory_to_search} genetated on {search_date} ...")
     files_found_all = find_files_by_date(directory_to_search, search_date)

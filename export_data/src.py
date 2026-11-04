@@ -212,8 +212,12 @@ async def get_conn(dbpassword, encryption_key = None, user_type = None, pool=Fal
         cipher_suite = Fernet((encryption_key).encode())
         db_params.update({'password': cipher_suite.decrypt( base64.urlsafe_b64decode(dbpassword)).decode()})
     if pool:
-        pool = await asyncpg.create_pool(**db_params)
-        return pool
+        try:
+            pool = await asyncpg.create_pool(**db_params)
+            return pool
+        except Exception as e:
+            print(e)
+            return None
     else:
         try:
             conn = await asyncpg.connect(**db_params)

@@ -364,6 +364,9 @@ async def check_successful_upload_seq(dbpassword, db_type, encryption_key=None, 
     # Connect to PostgreSQL
     pool = await get_conn(dbpassword, encryption_key, pool=True)
     # print("Connected to database.")
+    if pool is None:
+        print("Could not connect to database -- skipping upload status check.")
+        return
 
     if db_type == 'int2r':
         print("We do not update the upload status for INT2R")
