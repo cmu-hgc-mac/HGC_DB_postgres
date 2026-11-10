@@ -102,10 +102,10 @@ def get_query_write(table_name, column_names, check_conflict_col = None, db_uplo
 
 def get_query_update(table_name, column_names, check_conflict_col = None, db_upload_data = None):
     update_columns = ', '.join([f"{column} = ${i+1}" for i, column in enumerate(column_names)])
-    if check_conflict_col in ['hxb_name', 'bp_name']:
+    if check_conflict_col in ['hxb_name']:
         query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL);"""
-    # elif check_conflict_col in ['bp_name']:
-    #     query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL OR bp_version IS NULL);"""
+    elif check_conflict_col in ['bp_name']:
+        query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR obsolete IS NULL OR bp_version IS NULL OR bp_batch IS NULL);"""
     elif check_conflict_col in ['sen_name']:
         query = f""" UPDATE {table_name} SET {update_columns} WHERE {check_conflict_col} = '{db_upload_data[check_conflict_col]}' AND (kind IS NULL OR cmsr_status IS NULL);"""
     else:
