@@ -17,7 +17,7 @@ if statusdict_test_upload:
     statusdict_select = [f"'{s}'" for s in statusdict_select]
     statusdict_select = f"({', '.join(statusdict_select)})" if statusdict_select else None
 else:
-    statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated')"
+    statusdict_select = f"('Frontside Encapsulated', 'Completely Encapsulated', 'Bolted')"
 
 def fetch_module_iv_data(prog_v, meas_v, meas_i, meas_r):
     return {
