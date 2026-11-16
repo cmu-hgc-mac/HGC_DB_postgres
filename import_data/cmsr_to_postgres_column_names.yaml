@@ -7,8 +7,8 @@ children_for_import:
       kind: kind
       comment_description: comment
       status: obsolete
-      version: bp_version
-      batch_number: bp_batch
+      version: bp_version      ### Definition: https://confluence.cern.ch/pages/viewpage.action?pageId=443678998&spaceKey=HGCLogic&title=What%2Bto%2Bput%2Bin%2Byour%2Bxml%2Bfile.#Whattoputinyourxmlfile.-Baseplates
+      batch_number: bp_batch   ### Definition: https://confluence.cern.ch/pages/viewpage.action?pageId=443678998&spaceKey=HGCLogic&title=What%2Bto%2Bput%2Bin%2Byour%2Bxml%2Bfile.#Whattoputinyourxmlfile.-Baseplates
     qc_cols:
       qc_cols_ka:   ### column_name_in_cmsr: column_name_in_postgres for KIT baseplates
         tolerance_grade: tolerance_grade
