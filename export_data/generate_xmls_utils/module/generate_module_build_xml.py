@@ -43,8 +43,22 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
         results = await conn.fetch(module_query)
 
     all_modules = {row['module_name'] for row in results if 'module_name' in row}
+
+    # Reconcile modules already present in the HGCAPI but not yet flagged as uploaded in Postgres
+    already_in_api = all_modules & api_modules
+    if already_in_api:
+        updated = await conn.execute(
+            """
+            UPDATE module_info
+            SET xml_upload_success = TRUE, xml_gen_datetime = COALESCE(xml_gen_datetime, CURRENT_DATE)
+            WHERE REPLACE(module_name, '-', '') = ANY($1)
+            AND (xml_upload_success IS NULL OR xml_upload_success = FALSE)
+            """,
+            list(already_in_api)
+        )
+        # print(f"Reconciled xml_upload_success for modules already in {cern_db_url}: {updated.split()[-1]} row(s) updated.")
+
     # Only generate XMLs for modules not yet in the HGCAPI
-    
     module_list = all_modules - api_modules if skip_uploaded else all_modules
     if not module_list:
         db_label = next((v['dbname'] for v in db_source_dict.values() if v['url'] == cern_db_url), cern_db_url)
