@@ -25,9 +25,10 @@ async def process_module(conn, yaml_file, xml_file_path, output_dir, date_start,
 
     # Fetch modules already known to the HGCAPI for this location
     api_data = read_from_cern_db(macID=LOCATION, partType='ml', cern_db_url=cern_db_url)
-    api_modules = set()
-    if api_data and 'parts' in api_data:
-        api_modules = {p['serial_number'].replace('-', '') for p in api_data['parts'] if p.get('serial_number')}
+    if not api_data or 'parts' not in api_data:
+        print(f"Could not retrieve module list from {cern_db_url.upper()} -- aborting to avoid treating every module as unuploaded.")
+        return
+    api_modules = {p['serial_number'].replace('-', '') for p in api_data['parts'] if p.get('serial_number')}
 
     # get applicable modules based on the specified time range
     module_list = set()
